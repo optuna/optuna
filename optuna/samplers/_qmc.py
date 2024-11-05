@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+import threading
 from typing import Any
 from typing import TYPE_CHECKING
 
@@ -25,6 +26,7 @@ if TYPE_CHECKING:
 _logger = logging.get_logger(__name__)
 
 _SUGGESTED_STATES = (TrialState.COMPLETE, TrialState.PRUNED)
+_threading_lock = threading.Lock()
 
 
 @experimental_class("3.0.0")
@@ -275,7 +277,11 @@ class QMCSampler(BaseSampler):
         if self._qmc_type == "halton":
             qmc_engine = qmc_module.Halton(d, seed=self._seed, scramble=self._scramble)
         elif self._qmc_type == "sobol":
-            qmc_engine = qmc_module.Sobol(d, seed=self._seed, scramble=self._scramble)
+            # Sobol engine likely shares its internal state among threads.
+            # Without threading.Lock, ValueError exceptions are raised in Sobol engine as discussed
+            # in https://github.com/optuna/optunahub-registry/pull/168#pullrequestreview-2404054969
+            with _threading_lock:
+                qmc_engine = qmc_module.Sobol(d, seed=self._seed, scramble=self._scramble)
         else:
             raise ValueError("Invalid `qmc_type`")
 
