@@ -80,7 +80,7 @@ def plot_contour(
     """
 
     _imports.check()
-    # not implementing log_scale in _imports.check() because it s called by other plotting utils
+    # not implementing log_scale in _check_plot_args because it s called by other plotting utils
     if not isinstance(log_scale, bool):
         raise ValueError("log_scale must be a boolean")
     _logger.warning(
