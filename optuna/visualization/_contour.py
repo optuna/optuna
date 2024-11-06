@@ -70,6 +70,7 @@ def plot_contour(
     *,
     target: Callable[[FrozenTrial], float] | None = None,
     target_name: str = "Objective Value",
+    log_scale: bool = False,
 ) -> "go.Figure":
     """Plot the parameter relationship as contour plot in a study.
 
@@ -88,6 +89,8 @@ def plot_contour(
                 Specify this argument if ``study`` is being used for multi-objective optimization.
         target_name:
             Target's name to display on the color bar.
+        log_scale:
+            Use a log scale to display the contour.
 
     Returns:
         A :class:`plotly.graph_objects.Figure` object.
@@ -98,7 +101,7 @@ def plot_contour(
     """
 
     _imports.check()
-    info = _get_contour_info(study, params, target, target_name)
+    info = _get_contour_info(study, params, target, target_name, log_scale)
     return _get_contour_plot(info)
 
 
@@ -109,6 +112,7 @@ def _get_contour_plot(info: _ContourInfo) -> "go.Figure":
     sub_plot_infos = info.sub_plot_infos
     reverse_scale = info.reverse_scale
     target_name = info.target_name
+    log_scale = info.log_scale
 
     if len(sorted_params) <= 1:
         return go.Figure(data=[], layout=layout)
@@ -117,7 +121,7 @@ def _get_contour_plot(info: _ContourInfo) -> "go.Figure":
         x_param = sorted_params[0]
         y_param = sorted_params[1]
         sub_plot_info = sub_plot_infos[0][0]
-        sub_plots = _get_contour_subplot(sub_plot_info, reverse_scale, target_name)
+        sub_plots = _get_contour_subplot(sub_plot_info, reverse_scale, target_name, log_scale)
         figure = go.Figure(data=sub_plots, layout=layout)
         figure.update_xaxes(title_text=x_param, range=sub_plot_info.xaxis.range)
         figure.update_yaxes(title_text=y_param, range=sub_plot_info.yaxis.range)
@@ -145,7 +149,7 @@ def _get_contour_plot(info: _ContourInfo) -> "go.Figure":
                     figure.add_trace(go.Scatter(), row=y_i + 1, col=x_i + 1)
                 else:
                     sub_plots = _get_contour_subplot(
-                        sub_plot_infos[y_i][x_i], reverse_scale, target_name
+                        sub_plot_infos[y_i][x_i], reverse_scale, target_name, log_scale
                     )
                     contour = sub_plots[0]
                     scatter = sub_plots[1]
@@ -184,6 +188,7 @@ def _get_contour_subplot(
     info: _SubContourInfo,
     reverse_scale: bool,
     target_name: str = "Objective Value",
+    log_scale: bool = False,
 ) -> tuple["Contour", "Scatter", "Scatter"]:
     x_indices = info.xaxis.indices
     y_indices = info.yaxis.indices
@@ -214,13 +219,35 @@ def _get_contour_subplot(
     xys = np.array(list(info.z_values.keys()))
     zs = np.array(list(info.z_values.values()))
 
+    if log_scale:
+        if np.min(zs) <= 0:
+            raise UserWarning("Log scale cannot be used with null nor negative z-values.")
+        zs = np.log10(zs)
+        min_z = np.floor(np.min(zs))
+        max_z = np.ceil(np.max(zs))
+        n_ticks = int(max_z - min_z + 1)
+        tickvals = np.linspace(min_z, max_z, n_ticks)
+        assert all(int(i) == i for i in tickvals)
+        ticktext = [f"1e{int(i)}" for i in tickvals]
+        colorbar = {
+            "title": target_name,
+            "tickmode": "array",
+            "tickvals": tickvals,
+            "ticktext": ticktext,
+        }
+        print(min_z, max_z)
+        print(tickvals)
+        print(ticktext)
+    else:
+        colorbar = {"title": target_name}
+
     z_values[xys[:, 1], xys[:, 0]] = zs
 
     contour = go.Contour(
         x=x_indices,
         y=y_indices,
         z=z_values,
-        colorbar={"title": target_name},
+        colorbar=colorbar,
         colorscale=COLOR_SCALE,
         connectgaps=True,
         contours_coloring="heatmap",
@@ -261,6 +288,9 @@ def _get_contour_info(
     log_scale: bool = False,
 ) -> _ContourInfo:
     _check_plot_args(study, target, target_name)
+    # not implementing log_scale in _check_plot_args because it s called by other plotting utils
+    if not isinstance(log_scale, bool):
+        raise ValueError("log_scale must be a boolean")
 
     trials = _filter_nonfinite(
         study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,)), target=target

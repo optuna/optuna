@@ -80,9 +80,6 @@ def plot_contour(
     """
 
     _imports.check()
-    # not implementing log_scale in _check_plot_args because it s called by other plotting utils
-    if not isinstance(log_scale, bool):
-        raise ValueError("log_scale must be a boolean")
     _logger.warning(
         "Output figures of this Matplotlib-based `plot_contour` function would be different from "
         "those of the Plotly-based `plot_contour`."
