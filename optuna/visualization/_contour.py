@@ -56,6 +56,7 @@ class _ContourInfo(NamedTuple):
     sub_plot_infos: list[list[_SubContourInfo]]
     reverse_scale: bool
     target_name: str
+    log_scale: bool
 
 
 class _PlotValues(NamedTuple):
@@ -257,6 +258,7 @@ def _get_contour_info(
     params: list[str] | None = None,
     target: Callable[[FrozenTrial], float] | None = None,
     target_name: str = "Objective Value",
+    log_scale: bool = False,
 ) -> _ContourInfo:
     _check_plot_args(study, target, target_name)
 
@@ -300,6 +302,7 @@ def _get_contour_info(
         sub_plot_infos=sub_plot_infos,
         reverse_scale=reverse_scale,
         target_name=target_name,
+        log_scale=log_scale,
     )
 
 

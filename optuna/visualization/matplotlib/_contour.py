@@ -25,6 +25,7 @@ if _imports.is_successful():
     from optuna.visualization.matplotlib._matplotlib_imports import Axes
     from optuna.visualization.matplotlib._matplotlib_imports import Colormap
     from optuna.visualization.matplotlib._matplotlib_imports import ContourSet
+    from optuna.visualization.matplotlib._matplotlib_imports import LogLocator
     from optuna.visualization.matplotlib._matplotlib_imports import plt
 
 _logger = get_logger(__name__)
@@ -40,6 +41,7 @@ def plot_contour(
     *,
     target: Callable[[FrozenTrial], float] | None = None,
     target_name: str = "Objective Value",
+    log_scale: bool = False,
 ) -> "Axes":
     """Plot the parameter relationship as contour plot in a study with Matplotlib.
 
@@ -66,6 +68,8 @@ def plot_contour(
                 Specify this argument if ``study`` is being used for multi-objective optimization.
         target_name:
             Target's name to display on the color bar.
+        log_scale:
+            Use a log scale to display the contour.
 
     Returns:
         A :class:`matplotlib.axes.Axes` object.
@@ -76,11 +80,14 @@ def plot_contour(
     """
 
     _imports.check()
+    # not implementing log_scale in _imports.check() because it s called by other plotting utils
+    if not isinstance(log_scale, bool):
+        raise ValueError("log_scale must be a boolean")
     _logger.warning(
         "Output figures of this Matplotlib-based `plot_contour` function would be different from "
         "those of the Plotly-based `plot_contour`."
     )
-    info = _get_contour_info(study, params, target, target_name)
+    info = _get_contour_info(study, params, target, target_name, log_scale)
     return _get_contour_plot(info)
 
 
@@ -89,6 +96,7 @@ def _get_contour_plot(info: _ContourInfo) -> "Axes":
     sub_plot_infos = info.sub_plot_infos
     reverse_scale = info.reverse_scale
     target_name = info.target_name
+    log_scale = info.log_scale
 
     if len(sorted_params) <= 1:
         _, ax = plt.subplots()
@@ -102,7 +110,7 @@ def _get_contour_plot(info: _ContourInfo) -> "Axes":
         axs.set_title("Contour Plot")
         cmap = _set_cmap(reverse_scale)
 
-        cs = _generate_contour_subplot(sub_plot_infos[0][0], axs, cmap)
+        cs = _generate_contour_subplot(sub_plot_infos[0][0], axs, cmap, log_scale)
         if isinstance(cs, ContourSet):
             axcb = fig.colorbar(cs)
             axcb.set_label(target_name)
@@ -117,7 +125,7 @@ def _get_contour_plot(info: _ContourInfo) -> "Axes":
         for x_i in range(len(sorted_params)):
             for y_i in range(len(sorted_params)):
                 ax = axs[y_i, x_i]
-                cs = _generate_contour_subplot(sub_plot_infos[y_i][x_i], ax, cmap)
+                cs = _generate_contour_subplot(sub_plot_infos[y_i][x_i], ax, cmap, log_scale)
                 if isinstance(cs, ContourSet):
                     cs_list.append(cs)
         if cs_list:
@@ -262,7 +270,7 @@ def _calculate_griddata(
 
 
 def _generate_contour_subplot(
-    info: _SubContourInfo, ax: "Axes", cmap: "Colormap"
+    info: _SubContourInfo, ax: "Axes", cmap: "Colormap", log_scale: bool
 ) -> "ContourSet" | None:
     if len(info.xaxis.indices) < 2 or len(info.yaxis.indices) < 2:
         ax.label_outer()
@@ -295,8 +303,9 @@ def _generate_contour_subplot(
             ax.set_yscale("log")
         if info.xaxis.name != info.yaxis.name:
             # Contour the gridded data.
-            ax.contour(xi, yi, zi, 15, linewidths=0.5, colors="k")
-            cs = ax.contourf(xi, yi, zi, 15, cmap=cmap.reversed())
+            locator = LogLocator(base=10, subs="all") if log_scale else None
+            ax.contour(xi, yi, zi, 15, linewidths=0.5, colors="k", locator=locator)
+            cs = ax.contourf(xi, yi, zi, 15, cmap=cmap.reversed(), locator=locator)
             assert isinstance(cs, ContourSet)
             # Plot data points.
             ax.scatter(

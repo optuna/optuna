@@ -14,6 +14,7 @@ with try_import() as _imports:
     from matplotlib.colors import Colormap
     from matplotlib.contour import ContourSet
     from matplotlib.figure import Figure
+    from matplotlib.ticker import LogLocator
 
     # TODO(ytknzw): Set precise version.
     if version.parse(matplotlib_version) < version.parse("3.0.0"):
@@ -36,4 +37,5 @@ __all__ = [
     "Colormap",
     "ContourSet",
     "Figure",
+    "LogLocator",
 ]

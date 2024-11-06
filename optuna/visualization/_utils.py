@@ -47,9 +47,7 @@ if is_available():
 
 
 def _check_plot_args(
-    study: Study | Sequence[Study],
-    target: Callable[[FrozenTrial], float] | None,
-    target_name: str,
+    study: Study | Sequence[Study], target: Callable[[FrozenTrial], float] | None, target_name: str
 ) -> None:
     studies: Sequence[Study]
     if isinstance(study, Study):
