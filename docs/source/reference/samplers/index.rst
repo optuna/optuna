@@ -11,6 +11,9 @@ The :mod:`~optuna.samplers` module defines a base class for parameter sampling a
 .. seealso::
     :ref:`user_defined_sampler` tutorial could be helpful if you want to implement your own sampler classes.
 
+.. seealso::
+    If you are unsure about which sampler to use, please consider using `AutoSampler <https://hub.optuna.org/samplers/auto_sampler/>`__, which automatically selects a sampler during optimization. For more detail, see `the article on AutoSampler <https://medium.com/optuna/autosampler-automatic-selection-of-optimization-algorithms-in-optuna-1443875fd8f9>`__.
+
 +----------------------------------+-------------------------------+-------------------------------+-------------------------------+-------------------------------+-----------------------------------------------------------------------------+-------------------------------+-------------------------------+-------------------------------+-------------------------------------------------------------------------------+
 |                                  |         RandomSampler         |          GridSampler          |          TPESampler           |         CmaEsSampler          |                                NSGAIISampler                                |          QMCSampler           |           GPSampler           |       BoTorchSampler          |                               BruteForceSampler                               |
 +==================================+===============================+===============================+===============================+===============================+=============================================================================+===============================+===============================+===============================+===============================================================================+
