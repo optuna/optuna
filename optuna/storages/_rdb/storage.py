@@ -763,10 +763,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                 trial_id=trial_id, key=key, value_json=json.dumps(value)
             )
             sqlite_upsert_stmt = sqlite_insert_stmt.on_conflict_do_update(
-                index_elements=[
-                    model_cls.trial_id,
-                    model_cls.key,
-                ],
+                index_elements=[model_cls.trial_id, model_cls.key],
                 set_=dict(value_json=sqlite_insert_stmt.excluded.value_json),
             )
             session.execute(sqlite_upsert_stmt)
