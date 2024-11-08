@@ -1048,15 +1048,14 @@ def test_trial_relative_params(
 ) -> None:
     # TODO(nabenabe): Consider moving this test to study.
     sampler = relative_sampler_class()
+    study = optuna.study.create_study(sampler=sampler)
 
-    with patch.object(sampler, "before_trial", side_effect=mock_before_trial):
-        study = optuna.study.create_study(sampler=sampler)
+    def objective(trial: Trial) -> float:
+        assert trial._relative_params is None
 
-        def objective(trial: Trial) -> float:
-            assert trial._relative_params is None
-            trial.suggest_float("x", -10, 10)
-            trial.suggest_float("y", -10, 10)
-            assert trial._relative_params is not None
-            return -1
+        trial.suggest_float("x", -10, 10)
+        trial.suggest_float("y", -10, 10)
+        assert trial._relative_params is not None
+        return -1
 
-        study.optimize(objective, n_trials=10, n_jobs=n_jobs)
+    study.optimize(objective, n_trials=10, n_jobs=n_jobs)
