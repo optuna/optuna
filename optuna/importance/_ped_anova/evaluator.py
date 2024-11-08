@@ -50,7 +50,7 @@ class _QuantileFilter:
 
         cutoff_val = max(
             np.partition(loss_values, min_n_top_trials - 1)[min_n_top_trials - 1],
-            # TODO(nabenabe0928): After dropping Python3.7, replace below with
+            # TODO(nabenabe0928): After dropping Python3.10, replace below with
             # np.quantile(loss_values, self._quantile, method="inverted_cdf").
             _quantile(loss_values, self._quantile),
         )

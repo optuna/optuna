@@ -13,9 +13,6 @@ with try_import() as _imports:
 
 
 @pytest.mark.filterwarnings("ignore::RuntimeWarning")
-@pytest.mark.skipif(
-    sys.version_info < (3, 8, 0), reason="SciPy 1.9.2 is not supported in Python 3.7"
-)
 @pytest.mark.parametrize(
     "a,b",
     [(-np.inf, np.inf), (-10, +10), (-1, +1), (-1e-3, +1e-3), (10, 100), (-100, -10), (0, 0)],
@@ -30,9 +27,6 @@ def test_ppf(a: float, b: float) -> None:
 
 
 @pytest.mark.filterwarnings("ignore::RuntimeWarning")
-@pytest.mark.skipif(
-    sys.version_info < (3, 8, 0), reason="SciPy 1.9.2 is not supported in Python 3.7"
-)
 @pytest.mark.parametrize(
     "a,b",
     [(-np.inf, np.inf), (-10, +10), (-1, +1), (-1e-3, +1e-3), (10, 100), (-100, -10), (0, 0)],
@@ -48,9 +42,6 @@ def test_logpdf(a: float, b: float, loc: float, scale: float) -> None:
         ), f"logpdf(x={x}, a={a}, b={b})"
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 8, 0), reason="SciPy 1.9.2 is not supported in Python 3.7"
-)
 @pytest.mark.skipif(
     not _imports.is_successful(), reason="Failed to import SciPy's internal function."
 )

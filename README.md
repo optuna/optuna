@@ -2,7 +2,7 @@
 
 # Optuna: A hyperparameter optimization framework
 
-[![Python](https://img.shields.io/badge/python-3.7%20%7C%203.8%20%7C%203.9%20%7C%203.10%20%7C%203.11%20%7C%203.12-blue)](https://www.python.org)
+[![Python](https://img.shields.io/badge/python-3.8%20%7C%203.9%20%7C%203.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue)](https://www.python.org)
 [![pypi](https://img.shields.io/pypi/v/optuna.svg)](https://pypi.python.org/pypi/optuna)
 [![conda](https://img.shields.io/conda/vn/conda-forge/optuna.svg)](https://anaconda.org/conda-forge/optuna)
 [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/optuna/optuna)
@@ -25,12 +25,12 @@ Optuna can dynamically construct the search spaces for the hyperparameters.
 
 ## :loudspeaker: News
 <!-- TODO: when you add a new line, please delete the oldest line -->
+* **Oct 21, 2024**: We posted [an article](https://medium.com/optuna/an-introduction-to-moea-d-and-examples-of-multi-objective-optimization-comparisons-8630565a4e89) introducing [MOEA/D](https://hub.optuna.org/samplers/moead/) and an example comparison with other optimization methods.
+* **Oct 15, 2024**: We posted [an article](https://medium.com/optuna/introducing-a-new-terminator-early-termination-of-black-box-optimization-based-on-expected-9a660774fcdb) about `Terminator`, which is expanded in Optuna 4.0.
 * **Sep 18, 2024**: We posted [an article](https://medium.com/optuna/introducing-the-stabilized-journalstorage-in-optuna-4-0-from-mechanism-to-use-case-e320795ffb61) about `JournalStorage`, which is stabilized in Optuna 4.0.
 * **Sep 2, 2024**: Optuna 4.0 is available!  You can install it by `pip install -U optuna`. Find the latest [here](https://github.com/optuna/optuna/releases) and check [our article](https://medium.com/optuna/optuna-4-0-whats-new-in-the-major-release-3325a8420d10).
 * **Aug 30, 2024**: We posted [an article](https://medium.com/optuna/optunahub-a-feature-sharing-platform-for-optuna-now-available-in-official-release-4b99efe9934d) about the official release of [OptunaHub](https://hub.optuna.org/).
 * **Aug 28, 2024**: We posted [an article](https://medium.com/optuna/a-natural-gradient-based-optimization-algorithm-registered-on-optunahub-0dbe17cb0f7d) about [implicit natural gradient optimization (`INGO`)](https://hub.optuna.org/samplers/implicit_natural_gradient/), a sampler newly supported in [OptunaHub](https://hub.optuna.org/).
-* **Aug 20, 2024**: We posted [an article](https://medium.com/optuna/file-management-during-llm-large-language-model-trainings-by-optuna-v4-0-0-artifact-store-5bdd5112f3c7) about [`ArtifactStore`](https://optuna.readthedocs.io/en/stable/reference/artifacts.html) officially supported from Optuna 4.0.
-* **Aug 15, 2024**: We posted [an article](https://medium.com/optuna/introduction-to-catcma-in-optunahub-ffa316309cb8) about [`CatCMA`](https://hub.optuna.org/samplers/catcma/), a sampler newly supported in [OptunaHub](https://hub.optuna.org/).
 
 ## :fire: Key Features
 
@@ -115,7 +115,7 @@ $ conda install -c conda-forge optuna
 ```
 
 > [!IMPORTANT]
-> Optuna supports Python 3.7 or newer.
+> Optuna supports Python 3.8 or newer.
 >
 > Also, we provide Optuna docker images on [DockerHub](https://hub.docker.com/r/optuna/optuna).
 

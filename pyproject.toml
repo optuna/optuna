@@ -15,12 +15,12 @@ classifiers = [
   "Intended Audience :: Developers",
   "License :: OSI Approved :: MIT License",
   "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.7",
   "Programming Language :: Python :: 3.8",
   "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
   "Programming Language :: Python :: 3 :: Only",
   "Topic :: Scientific/Engineering",
   "Topic :: Scientific/Engineering :: Mathematics",
@@ -29,13 +29,13 @@ classifiers = [
   "Topic :: Software Development :: Libraries",
   "Topic :: Software Development :: Libraries :: Python Modules",
 ]
-requires-python = ">=3.7"
+requires-python = ">=3.8"
 dependencies = [
   "alembic>=1.5.0",
   "colorlog",
   "numpy",
   "packaging>=20.0",
-  "sqlalchemy>=1.3.0",
+  "sqlalchemy>=1.4.2",
   "tqdm",
   "PyYAML",  # Only used in `optuna/cli.py`.
 ]
@@ -89,7 +89,7 @@ optional = [
   "scikit-learn>=0.24.2",
   # optuna/visualization/param_importances.py.
   "scipy",  # optuna/samplers/_gp
-  "torch",  # optuna/samplers/_gp
+  "torch; python_version<='3.12'", # TODO(gen740): Remove this line when 'torch', a dependency of 'optuna/_gp', supports Python 3.13
 ]
 test = [
   "coverage",
@@ -97,8 +97,8 @@ test = [
   "kaleido",
   "moto",
   "pytest",
-  "scipy>=1.9.2; python_version>='3.8'",
-  "torch",
+  "scipy>=1.9.2",
+  "torch; python_version<='3.12'", # TODO(gen740): Remove this line when 'torch', a dependency of 'optuna/_gp', supports Python 3.13
 ]
 
 [project.urls]
@@ -127,7 +127,7 @@ version = {attr = "optuna.version.__version__"}
 [tool.black]
 line-length = 99
 target-version = ['py38']
-exclude = '''
+force-exclude = '''
 /(
   \.eggs
   | \.git

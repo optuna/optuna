@@ -54,6 +54,12 @@ class EMMREvaluator(BaseImprovementEvaluator):
     - `A stopping criterion for Bayesian optimization by the gap of expected minimum simple
       regrets <https://proceedings.mlr.press/v206/ishibashi23a.html>`__
 
+    Also, there is our blog post explaining this evaluator:
+
+    - `Introducing A New Terminator: Early Termination of Black-box Optimization Based on
+      Expected Minimum Model Regret
+      <https://medium.com/optuna/introducing-a-new-terminator-early-termination-of-black-box-optimization-based-on-expected-9a660774fcdb>`__
+
     Args:
         deterministic_objective:
             A boolean value which indicates whether the objective function is deterministic.
@@ -77,10 +83,10 @@ class EMMREvaluator(BaseImprovementEvaluator):
 
             sampler = optuna.samplers.TPESampler(seed=0)
             study = optuna.create_study(sampler=sampler, direction="minimize")
-            emmr_improvement_valuator = EMMREvaluator()
-            median_error_evaluator = MedianErrorEvaluator(emmr_improvement_valuator)
+            emmr_improvement_evaluator = EMMREvaluator()
+            median_error_evaluator = MedianErrorEvaluator(emmr_improvement_evaluator)
             terminator = Terminator(
-                improvement_evaluator=emmr_improvement_valuator,
+                improvement_evaluator=emmr_improvement_evaluator,
                 error_evaluator=median_error_evaluator,
             )
 

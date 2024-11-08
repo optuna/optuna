@@ -20,7 +20,7 @@ jobs:
 
     strategy:
       matrix:
-        python-version: ['3.7', '3.8', '3.9']
+        python-version: ['3.8', '3.9']
 
     services:
       redis:
@@ -70,12 +70,9 @@ jobs:
       run: |
         # Install dependencies with minimum versions.
         pip uninstall -y alembic cmaes packaging sqlalchemy plotly scikit-learn pillow
-        pip install alembic==1.5.0 cmaes==0.10.0 packaging==20.0 sqlalchemy==1.3.0 tqdm==4.27.0 colorlog==0.3 PyYAML==5.1 'pillow<10.4.0'
+        pip install alembic==1.5.0 cmaes==0.10.0 packaging==20.0 sqlalchemy==1.4.2 tqdm==4.27.0 colorlog==0.3 PyYAML==5.1 'pillow<10.4.0'
         pip uninstall -y matplotlib pandas scipy
-        # Python v3.6 was dropped at NumPy v1.20.3.
-        if [ "${{ matrix.python-version }}" = "3.7" ]; then
-          pip install matplotlib==3.5.3 pandas==1.3.5 scipy==1.7.3 numpy==1.20.3
-        elif [ "${{ matrix.python-version }}" = "3.8" ]; then
+        if [ "${{ matrix.python-version }}" = "3.8" ]; then
           pip install matplotlib==3.7.5 pandas==2.0.3 scipy==1.10.1 numpy==1.20.3
         elif [ "${{ matrix.python-version }}" = "3.9" ]; then
           pip install matplotlib==3.8.4 pandas==2.2.2 scipy==1.13.0 numpy==1.26.4
