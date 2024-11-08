@@ -5,7 +5,6 @@ import math
 import typing
 from typing import Callable
 from typing import TYPE_CHECKING
-import warnings
 
 import numpy as np
 
@@ -263,21 +262,3 @@ def fit_kernel_params(
         "The default initial kernel params will be used instead."
     )
     return default_initial_kernel_params
-
-
-def clip_and_get_mean_and_std(
-    values: np.ndarray,
-) -> tuple[np.ndarray, float, float] | tuple[np.ndarray, np.ndarray, np.ndarray]:
-    if np.any(~np.isfinite(values)):
-        warnings.warn(
-            "GPSampler cannot handle infinite values. "
-            "We clamp those values to worst/best finite value."
-        )
-
-        finite_vals = values[np.isfinite(values)]
-        best_finite_val = np.max(finite_vals, axis=0, initial=0.0)
-        worst_finite_val = np.min(finite_vals, axis=0, initial=0.0)
-
-        values = np.clip(values, worst_finite_val, best_finite_val)
-
-    return values, np.mean(values, axis=0), np.std(values, axis=0)
