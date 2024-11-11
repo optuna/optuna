@@ -1,12 +1,13 @@
+from __future__ import annotations
+
 import abc
+from collections.abc import Sequence
 import copy
 import decimal
 import json
 from numbers import Real
 from typing import Any
 from typing import cast
-from typing import Dict
-from typing import Sequence
 from typing import Union
 import warnings
 
@@ -84,7 +85,7 @@ class BaseDistribution(abc.ABC):
 
         raise NotImplementedError
 
-    def _asdict(self) -> Dict:
+    def _asdict(self) -> dict:
         return self.__dict__
 
     def __eq__(self, other: Any) -> bool:
@@ -133,7 +134,7 @@ class FloatDistribution(BaseDistribution):
     """
 
     def __init__(
-        self, low: float, high: float, log: bool = False, step: Union[None, float] = None
+        self, low: float, high: float, log: bool = False, step: None | float = None
     ) -> None:
         if log and step is not None:
             raise ValueError("The parameter `step` is not supported when `log` is true.")
@@ -221,7 +222,7 @@ class UniformDistribution(FloatDistribution):
     def __init__(self, low: float, high: float) -> None:
         super().__init__(low=low, high=high, log=False, step=None)
 
-    def _asdict(self) -> Dict:
+    def _asdict(self) -> dict:
         d = copy.deepcopy(self.__dict__)
         d.pop("log")
         d.pop("step")
@@ -248,7 +249,7 @@ class LogUniformDistribution(FloatDistribution):
     def __init__(self, low: float, high: float) -> None:
         super().__init__(low=low, high=high, log=True, step=None)
 
-    def _asdict(self) -> Dict:
+    def _asdict(self) -> dict:
         d = copy.deepcopy(self.__dict__)
         d.pop("log")
         d.pop("step")
@@ -288,7 +289,7 @@ class DiscreteUniformDistribution(FloatDistribution):
     def __init__(self, low: float, high: float, q: float) -> None:
         super().__init__(low=low, high=high, step=q)
 
-    def _asdict(self) -> Dict:
+    def _asdict(self) -> dict:
         d = copy.deepcopy(self.__dict__)
         d.pop("log")
 
@@ -432,7 +433,7 @@ class IntUniformDistribution(IntDistribution):
     def __init__(self, low: int, high: int, step: int = 1) -> None:
         super().__init__(low=low, high=high, log=False, step=step)
 
-    def _asdict(self) -> Dict:
+    def _asdict(self) -> dict:
         d = copy.deepcopy(self.__dict__)
         d.pop("log")
         return d
@@ -470,7 +471,7 @@ class IntLogUniformDistribution(IntDistribution):
     def __init__(self, low: int, high: int, step: int = 1) -> None:
         super().__init__(low=low, high=high, log=True, step=step)
 
-    def _asdict(self) -> Dict:
+    def _asdict(self) -> dict:
         d = copy.deepcopy(self.__dict__)
         d.pop("log")
         return d
@@ -714,7 +715,7 @@ def _adjust_int_uniform_high(low: int, high: int, step: int) -> int:
     return high
 
 
-def _get_single_value(distribution: BaseDistribution) -> Union[int, float, CategoricalChoiceType]:
+def _get_single_value(distribution: BaseDistribution) -> int | float | CategoricalChoiceType:
     assert distribution.single()
 
     if isinstance(
