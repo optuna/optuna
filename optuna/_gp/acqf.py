@@ -113,7 +113,7 @@ class ConstrainedAcquisitionFunctionParams(AcquisitionFunctionParams):
             max_Y=acqf_params.max_Y,
             beta=acqf_params.beta,
             acqf_stabilizing_noise=acqf_params.acqf_stabilizing_noise,
-            acqf_params_for_constraints=constraints_acqf_params,
+            acqf_params_for_constraints=acqf_params_for_constraints,
         )
 
 
