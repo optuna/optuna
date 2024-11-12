@@ -115,7 +115,7 @@ def test_eval_acqf_with_constraints(x: np.ndarray, c: np.ndarray) -> None:
             Y=vals,
             acqf_stabilizing_noise=0.0,
         )
-        for vals in c
+        for vals in c.T
     ]
     acqf_params_with_constraints = ConstrainedAcquisitionFunctionParams.from_acqf_params(
         acqf_params, constraints_acqf_params
