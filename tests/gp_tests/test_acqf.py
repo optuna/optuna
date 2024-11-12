@@ -74,11 +74,13 @@ def test_eval_acqf(
 @pytest.mark.parametrize(
     "c",
     [
-        [np.array([2.0, 3.5, 4.0])],
-        [np.array([2.0, 3.5, 4.0]), np.array([2.5, 1.8, 2.1])],
+        np.array([[0.2], [0.3], [-0.4]]),
+        np.array([[0.2, 0.3, 0.4], [0.2, 0.3, 0.4], [0.2, 0.3, 0.4]]),
+        np.array([[0.2, 0.3, 0.4], [0.2, 0.3, -0.4], [-0.2, -0.3, -0.4]]),
+        np.array([[-0.2, -0.3, -0.4], [-0.2, -0.3, -0.4], [-0.2, -0.3, -0.4]]),
     ],
 )
-def test_eval_acqf_with_constraints(x: np.ndarray, c: list[np.ndarray]) -> None:
+def test_eval_acqf_with_constraints(x: np.ndarray, c: np.ndarray) -> None:
     n_dims = 2
     X = np.array([[0.1, 0.2], [0.2, 0.3], [0.3, 0.1]])
     Y = np.array([1.0, 2.0, 3.0])
@@ -93,12 +95,15 @@ def test_eval_acqf_with_constraints(x: np.ndarray, c: list[np.ndarray]) -> None:
         steps=np.zeros(n_dims),
     )
 
+    is_feasible = np.all(c <= 0, axis=1)
+    is_all_infeasible = not np.any(is_feasible)
     acqf_params = create_acqf_params(
         acqf_type=AcquisitionFunctionType.LOG_EI,
         kernel_params=kernel_params,
         search_space=search_space,
         X=X,
         Y=Y,
+        max_Y=-np.inf if is_all_infeasible else np.max(Y[is_feasible]),
         acqf_stabilizing_noise=0.0,
     )
     constraints_acqf_params = [
