@@ -159,7 +159,8 @@ def eval_acqf(acqf_params: AcquisitionFunctionParams, x: torch.Tensor) -> torch.
     )
 
     if acqf_params.acqf_type == AcquisitionFunctionType.LOG_EI:
-        # If none of the constraint functions are satisfied, max_Y is set to -np.inf.
+        # If there are no feasible trials, max_Y is set to -np.inf.
+        # If max_Y is set to -np.inf, we set logEI to zero to ignore it.
         f_val = (
             logei(mean=mean, var=var + acqf_params.acqf_stabilizing_noise, f0=acqf_params.max_Y)
             if not np.isneginf(acqf_params.max_Y)
