@@ -101,7 +101,7 @@ class ConstrainedAcquisitionFunctionParams(AcquisitionFunctionParams):
     def from_acqf_params(
         cls,
         acqf_params: AcquisitionFunctionParams,
-        constraints_acqf_params: list[AcquisitionFunctionParams],
+        acqf_params_for_constraints: list[AcquisitionFunctionParams],
     ) -> ConstrainedAcquisitionFunctionParams:
         return cls(
             acqf_type=acqf_params.acqf_type,
