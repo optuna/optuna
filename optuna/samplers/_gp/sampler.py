@@ -188,13 +188,11 @@ class GPSampler(BaseSampler):
 
             return values, np.mean(values, axis=0), np.std(values, axis=0)
 
-
-
         score_vals, score_vals_mean, score_vals_std = _clip_and_get_mean_and_std(score_vals)
         assert isinstance(score_vals_mean, float) and isinstance(score_vals_std, float)
         standardized_score_vals = (score_vals - score_vals_mean) / max(1e-10, score_vals_std)
-        constraint_vals, constraint_vals_mean, constraint_vals_std = (
-            _clip_and_get_mean_and_std(constraint_vals)
+        constraint_vals, constraint_vals_mean, constraint_vals_std = _clip_and_get_mean_and_std(
+            constraint_vals
         )
         assert isinstance(constraint_vals_mean, np.ndarray) and isinstance(
             constraint_vals_std, np.ndarray
