@@ -142,24 +142,6 @@ class GPSampler(BaseSampler):
         )
         return normalized_params
 
-    def _clip_and_get_mean_and_std(
-        self,
-        values: np.ndarray,
-    ) -> tuple[np.ndarray, float, float] | tuple[np.ndarray, np.ndarray, np.ndarray]:
-        if np.any(~np.isfinite(values)):
-            warnings.warn(
-                "GPSampler cannot handle infinite values. "
-                "We clamp those values to worst/best finite value."
-            )
-
-            finite_vals = values[np.isfinite(values)]
-            best_finite_val = np.max(finite_vals, axis=0, initial=0.0)
-            worst_finite_val = np.min(finite_vals, axis=0, initial=0.0)
-
-            values = np.clip(values, worst_finite_val, best_finite_val)
-
-        return values, np.mean(values, axis=0), np.std(values, axis=0)
-
     def sample_relative(
         self, study: Study, trial: FrozenTrial, search_space: dict[str, BaseDistribution]
     ) -> dict[str, Any]:
@@ -189,11 +171,30 @@ class GPSampler(BaseSampler):
             raise ValueError("The number of constraints must be the same for all trials.")
         constraint_vals = np.array(_constraint_vals)
 
-        score_vals, score_vals_mean, score_vals_std = self._clip_and_get_mean_and_std(score_vals)
+        def _clip_and_get_mean_and_std(
+            values: np.ndarray,
+        ) -> tuple[np.ndarray, float, float] | tuple[np.ndarray, np.ndarray, np.ndarray]:
+            if np.any(~np.isfinite(values)):
+                warnings.warn(
+                    "GPSampler cannot handle infinite values. "
+                    "We clamp those values to worst/best finite value."
+                )
+
+                finite_vals = values[np.isfinite(values)]
+                best_finite_val = np.max(finite_vals, axis=0, initial=0.0)
+                worst_finite_val = np.min(finite_vals, axis=0, initial=0.0)
+
+                values = np.clip(values, worst_finite_val, best_finite_val)
+
+            return values, np.mean(values, axis=0), np.std(values, axis=0)
+
+
+
+        score_vals, score_vals_mean, score_vals_std = _clip_and_get_mean_and_std(score_vals)
         assert isinstance(score_vals_mean, float) and isinstance(score_vals_std, float)
         standardized_score_vals = (score_vals - score_vals_mean) / max(1e-10, score_vals_std)
         constraint_vals, constraint_vals_mean, constraint_vals_std = (
-            self._clip_and_get_mean_and_std(constraint_vals)
+            _clip_and_get_mean_and_std(constraint_vals)
         )
         assert isinstance(constraint_vals_mean, np.ndarray) and isinstance(
             constraint_vals_std, np.ndarray
