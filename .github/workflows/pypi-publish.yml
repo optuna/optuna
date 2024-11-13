@@ -58,6 +58,8 @@ jobs:
         repository-url: https://test.pypi.org/legacy/
         # Temporary workaround to bypass Twine's bug with attestation support
         # See https://github.com/pypa/gh-action-pypi-publish/issues/283
+        # TODO(c-bata): Once a new version of twine is released, delete this line.
+        # https://github.com/pypa/twine/pull/1172 
         attestations: false
 
     - name: Publish distribution to PyPI
@@ -67,4 +69,6 @@ jobs:
       with:
         # Temporary workaround to bypass Twine's bug with attestation support
         # See https://github.com/pypa/gh-action-pypi-publish/issues/283
+        # TODO(c-bata): Once a new version of twine is released, delete this line.
+        # https://github.com/pypa/twine/pull/1172 
         attestations: false
