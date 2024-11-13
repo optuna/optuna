@@ -1,4 +1,6 @@
-from typing import Sequence
+from __future__ import annotations
+
+from collections.abc import Sequence
 
 import numpy as np
 import pytest
