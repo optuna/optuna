@@ -18,7 +18,7 @@ Optuna users should not use distribution classes directly, but instead use utili
    json_to_distribution
    check_distribution_compatibility
 
-The following modules are deprecated and will be removed in the future.
+The following classes are deprecated and will be removed in the future.
 
 .. autosummary::
    :toctree: generated/
