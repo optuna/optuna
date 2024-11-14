@@ -175,6 +175,9 @@ def plot_optimization_history(
     target: Callable[[FrozenTrial], float] | None = None,
     target_name: str = "Objective Value",
     error_bar: bool = False,
+    display_param_label: bool = False,
+    view_x_in_log_scale: bool = False,  # Renamed parameter
+    display_log_difference: bool = False  # New parameter
 ) -> "go.Figure":
     """Plot optimization history of all trials in a study.
 
@@ -192,6 +195,15 @@ def plot_optimization_history(
             Target's name to display on the axis label and the legend.
         error_bar:
             A flag to show the error bar.
+        display_param_label:
+            When set to :obj:`True`, hover labels will display the parameters used in each trial.
+            Defaults to :obj:`False`.
+        view_x_in_log_scale:
+            When set to :obj:`True`, the x-axis (trial numbers) will be displayed on a logarithmic
+            scale (log base 10). Defaults to :obj:`False`.
+        display_log_difference:
+            When set to :obj:`True`, the y-axis will show the log difference between each trial's
+            objective value and the best value so far. Defaults to :obj:`False`.
 
     Returns:
         A :class:`plotly.graph_objects.Figure` object.
@@ -200,100 +212,125 @@ def plot_optimization_history(
     _imports.check()
 
     info_list = _get_optimization_history_info_list(study, target, target_name, error_bar)
-    return _get_optimization_history_plot(info_list, target_name)
+    return _get_optimization_history_plot(
+        info_list,
+        target_name,
+        study,
+        display_param_label,
+        view_x_in_log_scale,
+        display_log_difference
+    )
 
 
 def _get_optimization_history_plot(
     info_list: list[_OptimizationHistoryInfo],
     target_name: str,
+    study: Study,
+    display_param_label: bool,
+    view_x_in_log_scale: bool,
+    display_log_difference: bool
 ) -> "go.Figure":
+    xaxis_config = {"title": "Trial"}
+    if view_x_in_log_scale:
+        xaxis_config["type"] = "log"
+
+    yaxis_config = {"title": target_name}
+    if display_log_difference:
+        yaxis_config["title"] = "Log Difference"
+
     layout = go.Layout(
         title="Optimization History Plot",
-        xaxis={"title": "Trial"},
-        yaxis={"title": target_name},
+        xaxis=xaxis_config,
+        yaxis=yaxis_config,
     )
 
     traces = []
     for trial_numbers, values_info, best_values_info in info_list:
-        infeasible_trial_numbers = [
-            n for n, s in zip(trial_numbers, values_info.states) if s == _ValueState.Infeasible
-        ]
-        if values_info.stds is None:
-            error_y = None
-            feasible_trial_numbers = [
-                num
-                for num, s in zip(trial_numbers, values_info.states)
-                if s == _ValueState.Feasible
-            ]
-            feasible_trial_values = []
-            for num in feasible_trial_numbers:
-                feasible_trial_values.append(values_info.values[num])
-            infeasible_trial_values = []
-            for num in infeasible_trial_numbers:
-                infeasible_trial_values.append(values_info.values[num])
+        # Adjust trial numbers if using log scale
+        if view_x_in_log_scale:
+            adjusted_trial_numbers = [n + 1 for n in trial_numbers]  # Shift to avoid log(0)
         else:
-            if (
-                _ValueState.Infeasible in values_info.states
-                or _ValueState.Incomplete in values_info.states
-            ):
-                _logger.warning(
-                    "Your study contains infeasible trials. "
-                    "In optimization history plot, "
-                    "error bars are calculated for only feasible trial values."
-                )
-            error_y = {"type": "data", "array": values_info.stds, "visible": True}
-            feasible_trial_numbers = trial_numbers
-            feasible_trial_values = values_info.values
-            infeasible_trial_values = []
+            adjusted_trial_numbers = trial_numbers
+
+        # Calculate log differences if required
+        if display_log_difference and best_values_info is not None:
+            log_differences = []
+            for v, bv in zip(values_info.values, best_values_info.values):
+                diff = abs(v - bv)
+                if diff > 0:
+                    log_diff = np.log10(diff)
+                else:
+                    log_diff = None  # Handle zero difference appropriately
+                log_differences.append(log_diff)
+            plot_values = log_differences
+        else:
+            plot_values = values_info.values
+
+        # Feasible trials
+        feasible_indices = [
+            i for i, s in enumerate(values_info.states) if s == _ValueState.Feasible
+        ]
+        feasible_trial_numbers = [adjusted_trial_numbers[i] for i in feasible_indices]
+        feasible_trial_values = [plot_values[i] for i in feasible_indices]
+
         traces.append(
             go.Scatter(
                 x=feasible_trial_numbers,
                 y=feasible_trial_values,
-                error_y=error_y,
                 mode="markers",
                 name=values_info.label_name,
             )
         )
-        if best_values_info is not None:
+
+        # Best values
+        if best_values_info is not None and not display_log_difference:
+            best_values = best_values_info.values
             traces.append(
                 go.Scatter(
-                    x=trial_numbers,
-                    y=best_values_info.values,
+                    x=adjusted_trial_numbers,
+                    y=best_values,
                     name=best_values_info.label_name,
                     mode="lines",
                 )
             )
-            if best_values_info.stds is not None:
-                upper = np.array(best_values_info.values) + np.array(best_values_info.stds)
-                traces.append(
-                    go.Scatter(
-                        x=trial_numbers,
-                        y=upper,
-                        mode="lines",
-                        line=dict(width=0.01),
-                        showlegend=False,
-                    )
-                )
-                lower = np.array(best_values_info.values) - np.array(best_values_info.stds)
-                traces.append(
-                    go.Scatter(
-                        x=trial_numbers,
-                        y=lower,
-                        mode="none",
-                        showlegend=False,
-                        fill="tonexty",
-                        fillcolor="rgba(255,0,0,0.2)",
-                    )
-                )
+
+        # Infeasible trials
+        infeasible_indices = [
+            i for i, s in enumerate(values_info.states) if s == _ValueState.Infeasible
+        ]
+        infeasible_trial_numbers = [adjusted_trial_numbers[i] for i in infeasible_indices]
+        infeasible_trial_values = [plot_values[i] for i in infeasible_indices]
+
         traces.append(
             go.Scatter(
                 x=infeasible_trial_numbers,
                 y=infeasible_trial_values,
-                error_y=error_y,
                 mode="markers",
                 name="Infeasible Trial",
                 marker={"color": "#cccccc"},
                 showlegend=False,
             )
         )
+
+    # Update hover labels
+    if display_param_label:
+        for trial_numbers, values_info, _, in info_list:
+            feasible_indices = [
+                i for i, s in enumerate(values_info.states) if s == _ValueState.Feasible
+            ]
+            for trace in traces:
+                if trace.name == values_info.label_name and trace.mode == "markers":
+                    hover_text = []
+                    for idx in feasible_indices:
+                        n = trial_numbers[idx]
+                        adjusted_n = adjusted_trial_numbers[idx]
+                        trial = study.trials[n]
+                        params = "<br>".join([f"{k}: {v}" for k, v in sorted(trial.params.items())])
+                        hover_text.append(
+                            f"Trial: {adjusted_n}<br>{values_info.label_name}: "
+                            f"{plot_values[idx]:.4f}<br>{params}"
+                        )
+                    trace.text = hover_text
+                    trace.hovertemplate = "%{text}<extra></extra>"
+
     return go.Figure(data=traces, layout=layout)
