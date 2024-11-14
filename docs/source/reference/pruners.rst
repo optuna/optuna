@@ -15,15 +15,15 @@ The :mod:`~optuna.pruners` module defines a :class:`~optuna.pruners.BasePruner` 
     :ref:`user_defined_pruner` tutorial could be helpful if you want to implement your own pruner classes.
 
 .. autosummary::
-   :toctree: generated/
-   :nosignatures:
+    :toctree: generated/
+    :nosignatures:
 
-   optuna.pruners.BasePruner
-   optuna.pruners.MedianPruner
-   optuna.pruners.NopPruner
-   optuna.pruners.PatientPruner
-   optuna.pruners.PercentilePruner
-   optuna.pruners.SuccessiveHalvingPruner
-   optuna.pruners.HyperbandPruner
-   optuna.pruners.ThresholdPruner
-   optuna.pruners.WilcoxonPruner
+    BasePruner
+    MedianPruner
+    NopPruner
+    PatientPruner
+    PercentilePruner
+    SuccessiveHalvingPruner
+    HyperbandPruner
+    ThresholdPruner
+    WilcoxonPruner

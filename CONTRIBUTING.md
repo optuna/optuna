@@ -118,9 +118,8 @@ Whether you edit any tutorial or not doesn't matter.
 
 To avoid having to run the tutorials, you may download executed tutorial artifacts named "tutorial" from our CI (see the capture below) and put them in `docs/build` before
 extracting the files in the zip to `docs/source/tutorial` directory.
-Note that the CI runs with Python 3.8 and the generated artifacts contain pickle files.
-The pickle files are serialized with [the protocol version 5](https://docs.python.org/3/library/pickle.html#data-stream-format) so you will see the error with Python 3.7 or older.
-Please use Python 3.8 or later if you build the documentation with artifacts.
+Note that the CI runs with Python 3.12 and the generated artifacts contain pickle files.
+Please use the same Python version as in the CI if you build the documentation with artifacts to avoid unexpected errors due to the python version difference.
 
 ![image](https://user-images.githubusercontent.com/16191443/107472296-0b211400-6bb2-11eb-9203-e2c42ce499ad.png)
 
@@ -205,4 +204,3 @@ Once you get a good understanding of how Minituna is designed, it will not be to
 We encourage you to practice reading the Minituna code with the following article.
 
 [An Introduction to the Implementation of Optuna, a Hyperparameter Optimization Framework](https://medium.com/optuna/an-introduction-to-the-implementation-of-optuna-a-hyperparameter-optimization-framework-33995d9ec354)
-
