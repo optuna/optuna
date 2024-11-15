@@ -114,6 +114,7 @@ def test_eval_acqf_with_constraints(x: np.ndarray, c: np.ndarray) -> None:
             X=X,
             Y=vals,
             acqf_stabilizing_noise=0.0,
+            max_Y=0.0,
         )
         for vals in c.T
     ]
