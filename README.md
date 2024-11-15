@@ -206,6 +206,7 @@ You can use the registered features and publish your packages.
 
 ```shell
 $ pip install optunahub
+$ pip install cmaes scipy torch # install AutoSampler dependencies
 ```
 
 You can load registered module with `optunahub.load_module`.
