@@ -273,12 +273,12 @@ class GPSampler(BaseSampler):
             )
         ]
 
-        acqf_params_with_constraints = acqf.ConstrainedAcquisitionFunctionParams.from_acqf_params(
+        constrained_acqf_params = acqf.ConstrainedAcquisitionFunctionParams.from_acqf_params(
             acqf_params, constraints_acqf_params
         )
 
         normalized_param = self._optimize_acqf(
-            acqf_params_with_constraints,
+            constrained_acqf_params,
             (
                 None
                 if is_all_infeasible
