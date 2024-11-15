@@ -162,7 +162,7 @@ class GPSampler(BaseSampler):
 
     def _get_constraint_vals_and_feasibility(
         self, study: Study, trials: list[FrozenTrial]
-    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray, np.ndarray, bool]:
         _constraint_vals = [
             study._storage.get_trial_system_attrs(trial._trial_id).get(_CONSTRAINTS_KEY, ())
             for trial in trials
@@ -179,7 +179,7 @@ class GPSampler(BaseSampler):
     def _get_constraints_acqf_params(
         self,
         constraint_vals: np.ndarray,
-        internal_search_space: np.ndarray,
+        internal_search_space: gp_search_space.SearchSpace,
         normalized_params: np.ndarray,
     ) -> list[acqf.AcquisitionFunctionParams]:
         constraint_vals, constraint_vals_mean, constraint_vals_std = (
