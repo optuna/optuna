@@ -37,7 +37,7 @@ jobs:
 
     - name: Install Dependencies
       run: |
-        sudo apt-get install optipng
+        sudo apt-get install chromium-browser optipng
         python -m pip install -U pip
         pip install --progress-bar off -U .[document] --extra-index-url https://download.pytorch.org/whl/cpu
 
@@ -91,7 +91,7 @@ jobs:
 
     - name: Install Dependencies
       run: |
-        sudo apt-get install optipng
+        sudo apt-get install chromium-browser optipng
         python -m pip install -U pip
         pip install --progress-bar off -U .[document] --extra-index-url https://download.pytorch.org/whl/cpu
 
