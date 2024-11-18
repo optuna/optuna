@@ -1,6 +1,7 @@
+from __future__ import annotations
+
+from collections.abc import Callable
 from typing import Any
-from typing import Callable
-from typing import Dict
 from unittest.mock import Mock
 from unittest.mock import patch
 import warnings
@@ -75,7 +76,7 @@ def test_infer_relative_search_space() -> None:
     assert len(relative_search_space.keys()) == 5
     assert set(relative_search_space.keys()) == {"x1", "x2", "x3", "x4", "x5"}
     # In case self._initial_trial already exists.
-    new_search_space: Dict[str, BaseDistribution] = {"x": Mock()}
+    new_search_space: dict[str, BaseDistribution] = {"x": Mock()}
     sampler._initial_search_space = new_search_space
     assert sampler.infer_relative_search_space(study, trial) == new_search_space
 
@@ -185,7 +186,7 @@ def test_sample_relative() -> None:
 
 def test_sample_relative_halton() -> None:
     n, d = 8, 5
-    search_space: Dict[str, BaseDistribution] = {
+    search_space: dict[str, BaseDistribution] = {
         f"x{i}": optuna.distributions.FloatDistribution(0, 1) for i in range(d)
     }
     sampler = _init_QMCSampler_without_exp_warning(scramble=False, qmc_type="halton")
@@ -215,7 +216,7 @@ def test_sample_relative_halton() -> None:
 
 def test_sample_relative_sobol() -> None:
     n, d = 8, 5
-    search_space: Dict[str, BaseDistribution] = {
+    search_space: dict[str, BaseDistribution] = {
         f"x{i}": optuna.distributions.FloatDistribution(0, 1) for i in range(d)
     }
     sampler = _init_QMCSampler_without_exp_warning(scramble=False, qmc_type="sobol")
