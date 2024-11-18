@@ -1,0 +1,24 @@
+cff-version: 1.2.0
+authors:
+  - name: Preferred Networks, Inc.
+title: "Optuna: A hyperparameter optimization framework"
+url: "https://github.com/optuna/optuna"
+preferred-citation:
+  type: conference-paper
+  authors:
+    - family-names: "Akiba"
+      given-names: "Takuya"
+    - family-names: "Sano"
+      given-names: "Shotaro"
+    - family-names: "Yanase"
+      given-names: "Toshihiko"
+    - family-names: "Ohta"
+      given-names: "Takeru"
+    - family-names: "Koyama"
+      given-names: "Masanori"
+  doi: "10.1145/3292500.3330701"
+  collection-title: "Proceedings of the 25th ACM SIGKDD international conference on knowledge discovery & data mining"
+  start: 2623
+  end: 2631
+  title: "Optuna: A next-generation hyperparameter optimization framework"
+  year: 2019
