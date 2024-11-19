@@ -9,10 +9,10 @@ The :mod:`~optuna.samplers.nsgaii` module defines crossover operations used by :
     :toctree: generated/
     :nosignatures:
 
-    optuna.samplers.nsgaii.BaseCrossover
-    optuna.samplers.nsgaii.UniformCrossover
-    optuna.samplers.nsgaii.BLXAlphaCrossover
-    optuna.samplers.nsgaii.SPXCrossover
-    optuna.samplers.nsgaii.SBXCrossover
-    optuna.samplers.nsgaii.VSBXCrossover
-    optuna.samplers.nsgaii.UNDXCrossover
+    BaseCrossover
+    UniformCrossover
+    BLXAlphaCrossover
+    SPXCrossover
+    SBXCrossover
+    VSBXCrossover
+    UNDXCrossover

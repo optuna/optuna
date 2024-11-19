@@ -9,10 +9,10 @@ The :mod:`optuna` module is primarily used as an alias for basic Optuna function
    :toctree: generated/
    :nosignatures:
 
-   optuna.create_study
-   optuna.load_study
-   optuna.delete_study
-   optuna.copy_study
-   optuna.get_all_study_names
-   optuna.get_all_study_summaries
-   optuna.TrialPruned
+   create_study
+   load_study
+   delete_study
+   copy_study
+   get_all_study_names
+   get_all_study_summaries
+   TrialPruned

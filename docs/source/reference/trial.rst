@@ -11,8 +11,8 @@ A :class:`~optuna.trial.Trial` instance represents a process of evaluating an ob
    :toctree: generated/
    :nosignatures:
 
-   optuna.trial.Trial
-   optuna.trial.FixedTrial
-   optuna.trial.FrozenTrial
-   optuna.trial.TrialState
-   optuna.trial.create_trial
+   Trial
+   FixedTrial
+   FrozenTrial
+   TrialState
+   create_trial

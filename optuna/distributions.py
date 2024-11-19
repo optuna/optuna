@@ -456,16 +456,6 @@ class IntLogUniformDistribution(IntDistribution):
         step:
             A discretization step. ``step`` must be a positive integer.
 
-            .. warning::
-                Deprecated in v2.0.0. ``step`` argument will be removed in the future.
-                The removal of this feature is currently scheduled for v4.0.0,
-                but this schedule is subject to change.
-
-                Samplers and other components in Optuna relying on this distribution will ignore
-                this value and assume that ``step`` is always 1.
-                User-defined samplers may continue to use other values besides 1 during the
-                deprecation.
-
     """
 
     def __init__(self, low: int, high: int, step: int = 1) -> None:

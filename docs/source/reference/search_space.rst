@@ -10,5 +10,5 @@ The :mod:`~optuna.search_space` module provides functionality for controlling se
    :toctree: generated/
    :nosignatures:
 
-   optuna.search_space.IntersectionSearchSpace
-   optuna.search_space.intersection_search_space
+   IntersectionSearchSpace
+   intersection_search_space
