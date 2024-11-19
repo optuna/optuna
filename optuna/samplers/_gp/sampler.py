@@ -142,48 +142,14 @@ class GPSampler(BaseSampler):
         )
         return normalized_params
 
-    def _clip_and_get_mean_and_std(
-        self,
-        values: np.ndarray,
-    ) -> tuple[np.ndarray, float, float] | tuple[np.ndarray, np.ndarray, np.ndarray]:
-        if np.any(~np.isfinite(values)):
-            warnings.warn(
-                "GPSampler cannot handle infinite values. "
-                "We clamp those values to worst/best finite value."
-            )
-
-            finite_vals = values[np.isfinite(values)]
-            best_finite_val = np.max(finite_vals, axis=0, initial=0.0)
-            worst_finite_val = np.min(finite_vals, axis=0, initial=0.0)
-
-            values = np.clip(values, worst_finite_val, best_finite_val)
-
-        return values, np.mean(values, axis=0), np.std(values, axis=0)
-
-    def _get_constraint_vals_and_feasibility(
-        self, study: Study, trials: list[FrozenTrial]
-    ) -> tuple[np.ndarray, np.ndarray, bool]:
-        _constraint_vals = [
-            study._storage.get_trial_system_attrs(trial._trial_id).get(_CONSTRAINTS_KEY, ())
-            for trial in trials
-        ]
-        if any(len(_constraint_vals[0]) != len(c) for c in _constraint_vals):
-            raise ValueError("The number of constraints must be the same for all trials.")
-        constraint_vals = np.array(_constraint_vals)
-
-        is_feasible = np.all(constraint_vals <= 0, axis=1)
-        is_all_infeasible = not np.any(is_feasible)
-
-        return constraint_vals, is_feasible, is_all_infeasible
-
     def _get_constraints_acqf_params(
         self,
         constraint_vals: np.ndarray,
         internal_search_space: gp_search_space.SearchSpace,
         normalized_params: np.ndarray,
     ) -> list[acqf.AcquisitionFunctionParams]:
-        constraint_vals, constraint_vals_mean, constraint_vals_std = (
-            self._clip_and_get_mean_and_std(constraint_vals)
+        constraint_vals, constraint_vals_mean, constraint_vals_std = _clip_and_get_mean_and_std(
+            constraint_vals
         )
         assert isinstance(constraint_vals_mean, np.ndarray) and isinstance(
             constraint_vals_std, np.ndarray
@@ -260,7 +226,7 @@ class GPSampler(BaseSampler):
         _sign = -1.0 if study.direction == StudyDirection.MINIMIZE else 1.0
         score_vals = np.array([_sign * cast(float, trial.value) for trial in trials])
 
-        score_vals, score_vals_mean, score_vals_std = self._clip_and_get_mean_and_std(score_vals)
+        score_vals, score_vals_mean, score_vals_std = _clip_and_get_mean_and_std(score_vals)
         assert isinstance(score_vals_mean, float) and isinstance(score_vals_std, float)
         standardized_score_vals = (score_vals - score_vals_mean) / max(1e-10, score_vals_std)
 
@@ -283,20 +249,25 @@ class GPSampler(BaseSampler):
         )
         self._kernel_params_cache = kernel_params
 
-        constraint_vals, is_feasible, is_all_infeasible = (
-            self._get_constraint_vals_and_feasibility(study, trials)
+        constraint_vals, is_feasible, is_all_infeasible = _get_constraint_vals_and_feasibility(
+            study, trials
         )
 
         # TODO(kAIto47802): If is_all_infeasible, the acquisition function for the objective
         # function is ignored, so skipping the computation of kernel_params and acqf_params
         # can improve speed.
+        max_Y = (
+            None
+            if self._constraints_func is None
+            else -np.inf if is_all_infeasible else np.max(standardized_score_vals[is_feasible])
+        )
         acqf_params = acqf.create_acqf_params(
             acqf_type=acqf.AcquisitionFunctionType.LOG_EI,
             kernel_params=kernel_params,
             search_space=internal_search_space,
             X=normalized_params,
             Y=standardized_score_vals,
-            max_Y=-np.inf if is_all_infeasible else np.max(standardized_score_vals[is_feasible]),
+            max_Y=max_Y,
         )
 
         constraints_acqf_params = self._get_constraints_acqf_params(
@@ -307,13 +278,18 @@ class GPSampler(BaseSampler):
             acqf_params, constraints_acqf_params
         )
 
-        normalized_param = self._optimize_acqf(
-            constrained_acqf_params,
-            (
+        best_params = (
+            normalized_params[np.argmax(standardized_score_vals), :]
+            if self._constraints_func is None
+            else (
                 None
                 if is_all_infeasible
                 else normalized_params[np.argmax(standardized_score_vals[is_feasible]), :]
-            ),
+            )
+        )
+        normalized_param = self._optimize_acqf(
+            constrained_acqf_params,
+            best_params,
         )
         return gp_search_space.get_unnormalized_param(search_space, normalized_param)
 
@@ -342,3 +318,38 @@ class GPSampler(BaseSampler):
         if self._constraints_func is not None:
             _process_constraints_after_trial(self._constraints_func, study, trial, state)
         self._independent_sampler.after_trial(study, trial, state, values)
+
+
+def _clip_and_get_mean_and_std(
+    values: np.ndarray,
+) -> tuple[np.ndarray, float, float] | tuple[np.ndarray, np.ndarray, np.ndarray]:
+    if np.any(~np.isfinite(values)):
+        warnings.warn(
+            "GPSampler cannot handle infinite values. "
+            "We clamp those values to worst/best finite value."
+        )
+
+        finite_vals = values[np.isfinite(values)]
+        best_finite_val = np.max(finite_vals, axis=0, initial=0.0)
+        worst_finite_val = np.min(finite_vals, axis=0, initial=0.0)
+
+        values = np.clip(values, worst_finite_val, best_finite_val)
+
+    return values, np.mean(values, axis=0), np.std(values, axis=0)
+
+
+def _get_constraint_vals_and_feasibility(
+    study: Study, trials: list[FrozenTrial]
+) -> tuple[np.ndarray, np.ndarray, bool]:
+    _constraint_vals = [
+        study._storage.get_trial_system_attrs(trial._trial_id).get(_CONSTRAINTS_KEY, ())
+        for trial in trials
+    ]
+    if any(len(_constraint_vals[0]) != len(c) for c in _constraint_vals):
+        raise ValueError("The number of constraints must be the same for all trials.")
+    constraint_vals = np.array(_constraint_vals)
+
+    is_feasible = np.all(constraint_vals <= 0, axis=1)
+    is_all_infeasible = not np.any(is_feasible)
+
+    return constraint_vals, is_feasible, is_all_infeasible
