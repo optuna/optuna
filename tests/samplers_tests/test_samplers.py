@@ -1043,15 +1043,15 @@ def test_reproducible_in_other_process(sampler_name: str, unset_seed_in_test: No
 
 @pytest.mark.parametrize("n_jobs", [1, 2])
 @parametrize_relative_sampler
-def test_cache_is_invalidated(
+def test_trial_relative_params(
     n_jobs: int, relative_sampler_class: Callable[[], BaseSampler]
 ) -> None:
+    # TODO(nabenabe): Consider moving this test to study.
     sampler = relative_sampler_class()
     study = optuna.study.create_study(sampler=sampler)
 
     def objective(trial: Trial) -> float:
         assert trial._relative_params is None
-        assert study._thread_local.cached_all_trials is None
 
         trial.suggest_float("x", -10, 10)
         trial.suggest_float("y", -10, 10)

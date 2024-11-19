@@ -25,12 +25,12 @@ Optuna can dynamically construct the search spaces for the hyperparameters.
 
 ## :loudspeaker: News
 <!-- TODO: when you add a new line, please delete the oldest line -->
+* **Nov 12, 2024**: We released Optuna 4.1 with new features, Python 3.13 support and much more! Check out [the release note](https://github.com/optuna/optuna/releases/tag/v4.1.0) for details.
+* **Nov 6, 2024**: A new article [AutoSampler: Automatic Selection of Optimization Algorithms in Optuna](https://medium.com/optuna/autosampler-automatic-selection-of-optimization-algorithms-in-optuna-1443875fd8f9) has been published.
 * **Oct 21, 2024**: We posted [an article](https://medium.com/optuna/an-introduction-to-moea-d-and-examples-of-multi-objective-optimization-comparisons-8630565a4e89) introducing [MOEA/D](https://hub.optuna.org/samplers/moead/) and an example comparison with other optimization methods.
 * **Oct 15, 2024**: We posted [an article](https://medium.com/optuna/introducing-a-new-terminator-early-termination-of-black-box-optimization-based-on-expected-9a660774fcdb) about `Terminator`, which is expanded in Optuna 4.0.
 * **Sep 18, 2024**: We posted [an article](https://medium.com/optuna/introducing-the-stabilized-journalstorage-in-optuna-4-0-from-mechanism-to-use-case-e320795ffb61) about `JournalStorage`, which is stabilized in Optuna 4.0.
 * **Sep 2, 2024**: Optuna 4.0 is available!  You can install it by `pip install -U optuna`. Find the latest [here](https://github.com/optuna/optuna/releases) and check [our article](https://medium.com/optuna/optuna-4-0-whats-new-in-the-major-release-3325a8420d10).
-* **Aug 30, 2024**: We posted [an article](https://medium.com/optuna/optunahub-a-feature-sharing-platform-for-optuna-now-available-in-official-release-4b99efe9934d) about the official release of [OptunaHub](https://hub.optuna.org/).
-* **Aug 28, 2024**: We posted [an article](https://medium.com/optuna/a-natural-gradient-based-optimization-algorithm-registered-on-optunahub-0dbe17cb0f7d) about [implicit natural gradient optimization (`INGO`)](https://hub.optuna.org/samplers/implicit_natural_gradient/), a sampler newly supported in [OptunaHub](https://hub.optuna.org/).
 
 ## :fire: Key Features
 
@@ -216,15 +216,14 @@ import optunahub
 
 
 def objective(trial: optuna.Trial) -> float:
-    x = trial.suggest_float("x", 0, 1)
+    x = trial.suggest_float("x", -5, 5)
+    y = trial.suggest_float("y", -5, 5)
+    return x**2 + y**2
 
-    return x
 
-
-mod = optunahub.load_module("samplers/simulated_annealing")
-
-study = optuna.create_study(sampler=mod.SimulatedAnnealingSampler())
-study.optimize(objective, n_trials=20)
+module = optunahub.load_module(package="samplers/auto_sampler")
+study = optuna.create_study(sampler=module.AutoSampler())
+study.optimize(objective, n_trials=10)
 
 print(study.best_trial.value, study.best_trial.params)
 ```

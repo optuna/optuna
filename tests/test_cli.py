@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+from collections.abc import Callable
 import json
 import os
 import platform
@@ -6,9 +9,6 @@ import subprocess
 from subprocess import CalledProcessError
 import tempfile
 from typing import Any
-from typing import Callable
-from typing import Optional
-from typing import Tuple
 from unittest.mock import MagicMock
 from unittest.mock import patch
 
@@ -52,7 +52,7 @@ def objective_func_branched_search_space(trial: Trial) -> float:
 
 
 # An example of objective functions for multi-objective optimization
-def objective_func_multi_objective(trial: Trial) -> Tuple[float, float]:
+def objective_func_multi_objective(trial: Trial) -> tuple[float, float]:
     x = trial.suggest_float("x", -10, 10)
     return (x + 5) ** 2, (x - 5) ** 2
 
@@ -301,7 +301,7 @@ def test_study_set_user_attr_command() -> None:
 
 @pytest.mark.skip_coverage
 @pytest.mark.parametrize("output_format", (None, "table", "json", "yaml"))
-def test_study_names_command(output_format: Optional[str]) -> None:
+def test_study_names_command(output_format: str | None) -> None:
     with StorageSupplier("sqlite") as storage:
         assert isinstance(storage, RDBStorage)
         storage_url = str(storage.engine.url)
@@ -366,7 +366,7 @@ def test_study_names_command_without_storage_url() -> None:
 
 @pytest.mark.skip_coverage
 @pytest.mark.parametrize("output_format", (None, "table", "json", "yaml"))
-def test_studies_command(output_format: Optional[str]) -> None:
+def test_studies_command(output_format: str | None) -> None:
     with StorageSupplier("sqlite") as storage:
         assert isinstance(storage, RDBStorage)
         storage_url = str(storage.engine.url)
@@ -436,7 +436,7 @@ def test_studies_command(output_format: Optional[str]) -> None:
 
 @pytest.mark.skip_coverage
 @pytest.mark.parametrize("output_format", (None, "table", "json", "yaml"))
-def test_studies_command_flatten(output_format: Optional[str]) -> None:
+def test_studies_command_flatten(output_format: str | None) -> None:
     with StorageSupplier("sqlite") as storage:
         assert isinstance(storage, RDBStorage)
         storage_url = str(storage.engine.url)
@@ -530,7 +530,7 @@ def test_studies_command_flatten(output_format: Optional[str]) -> None:
 @pytest.mark.skip_coverage
 @pytest.mark.parametrize("objective", (objective_func, objective_func_branched_search_space))
 @pytest.mark.parametrize("output_format", (None, "table", "json", "yaml"))
-def test_trials_command(objective: Callable[[Trial], float], output_format: Optional[str]) -> None:
+def test_trials_command(objective: Callable[[Trial], float], output_format: str | None) -> None:
     with StorageSupplier("sqlite") as storage:
         assert isinstance(storage, RDBStorage)
         storage_url = str(storage.engine.url)
@@ -611,7 +611,7 @@ def test_trials_command(objective: Callable[[Trial], float], output_format: Opti
 @pytest.mark.parametrize("objective", (objective_func, objective_func_branched_search_space))
 @pytest.mark.parametrize("output_format", (None, "table", "json", "yaml"))
 def test_trials_command_flatten(
-    objective: Callable[[Trial], float], output_format: Optional[str]
+    objective: Callable[[Trial], float], output_format: str | None
 ) -> None:
     with StorageSupplier("sqlite") as storage:
         assert isinstance(storage, RDBStorage)
@@ -689,7 +689,7 @@ def test_trials_command_flatten(
 @pytest.mark.parametrize("objective", (objective_func, objective_func_branched_search_space))
 @pytest.mark.parametrize("output_format", (None, "table", "json", "yaml"))
 def test_best_trial_command(
-    objective: Callable[[Trial], float], output_format: Optional[str]
+    objective: Callable[[Trial], float], output_format: str | None
 ) -> None:
     with StorageSupplier("sqlite") as storage:
         assert isinstance(storage, RDBStorage)
@@ -772,7 +772,7 @@ def test_best_trial_command(
 @pytest.mark.parametrize("objective", (objective_func, objective_func_branched_search_space))
 @pytest.mark.parametrize("output_format", (None, "table", "json", "yaml"))
 def test_best_trial_command_flatten(
-    objective: Callable[[Trial], float], output_format: Optional[str]
+    objective: Callable[[Trial], float], output_format: str | None
 ) -> None:
     with StorageSupplier("sqlite") as storage:
         assert isinstance(storage, RDBStorage)
@@ -848,7 +848,7 @@ def test_best_trial_command_flatten(
 
 @pytest.mark.skip_coverage
 @pytest.mark.parametrize("output_format", (None, "table", "json", "yaml"))
-def test_best_trials_command(output_format: Optional[str]) -> None:
+def test_best_trials_command(output_format: str | None) -> None:
     with StorageSupplier("sqlite") as storage:
         assert isinstance(storage, RDBStorage)
         storage_url = str(storage.engine.url)
@@ -932,7 +932,7 @@ def test_best_trials_command(output_format: Optional[str]) -> None:
 
 @pytest.mark.skip_coverage
 @pytest.mark.parametrize("output_format", (None, "table", "json", "yaml"))
-def test_best_trials_command_flatten(output_format: Optional[str]) -> None:
+def test_best_trials_command_flatten(output_format: str | None) -> None:
     with StorageSupplier("sqlite") as storage:
         assert isinstance(storage, RDBStorage)
         storage_url = str(storage.engine.url)
@@ -1153,9 +1153,9 @@ parametrize_for_ask = pytest.mark.parametrize(
 @pytest.mark.skip_coverage
 @parametrize_for_ask
 def test_ask(
-    sampler: Optional[str],
-    sampler_kwargs: Optional[str],
-    output_format: Optional[str],
+    sampler: str | None,
+    sampler_kwargs: str | None,
+    output_format: str | None,
 ) -> None:
     study_name = "test_study"
     search_space = (
@@ -1208,9 +1208,9 @@ def test_ask(
 @pytest.mark.skip_coverage
 @parametrize_for_ask
 def test_ask_flatten(
-    sampler: Optional[str],
-    sampler_kwargs: Optional[str],
-    output_format: Optional[str],
+    sampler: str | None,
+    sampler_kwargs: str | None,
+    output_format: str | None,
 ) -> None:
     study_name = "test_study"
     search_space = (
@@ -1406,10 +1406,10 @@ def test_ask_without_create_study_beforehand() -> None:
     ],
 )
 def test_create_study_and_ask(
-    direction: Optional[str],
-    directions: Optional[str],
-    sampler: Optional[str],
-    sampler_kwargs: Optional[str],
+    direction: str | None,
+    directions: str | None,
+    sampler: str | None,
+    sampler_kwargs: str | None,
 ) -> None:
     study_name = "test_study"
     search_space = (

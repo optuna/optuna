@@ -9,13 +9,13 @@ The :mod:`~optuna.study` module implements the :class:`~optuna.study.Study` obje
    :toctree: generated/
    :nosignatures:
 
-   optuna.study.Study
-   optuna.study.create_study
-   optuna.study.load_study
-   optuna.study.delete_study
-   optuna.study.copy_study
-   optuna.study.get_all_study_names
-   optuna.study.get_all_study_summaries
-   optuna.study.MaxTrialsCallback
-   optuna.study.StudyDirection
-   optuna.study.StudySummary
+   Study
+   create_study
+   load_study
+   delete_study
+   copy_study
+   get_all_study_names
+   get_all_study_summaries
+   MaxTrialsCallback
+   StudyDirection
+   StudySummary
