@@ -1,9 +1,9 @@
+from __future__ import annotations
+
 import copy
 import json
 from typing import Any
 from typing import cast
-from typing import Dict
-from typing import Optional
 import warnings
 
 import numpy as np
@@ -15,7 +15,7 @@ from optuna import distributions
 _choices = (None, True, False, 0, 1, 0.0, 1.0, float("nan"), float("inf"), -float("inf"), "", "a")
 _choices_json = '[null, true, false, 0, 1, 0.0, 1.0, NaN, Infinity, -Infinity, "", "a"]'
 
-EXAMPLE_DISTRIBUTIONS: Dict[str, Any] = {
+EXAMPLE_DISTRIBUTIONS: dict[str, Any] = {
     "i": distributions.IntDistribution(low=1, high=9, log=False),
     # i2 and i3 are identical to i, and tested for cases when `log` and `step` are omitted in json.
     "i2": distributions.IntDistribution(low=1, high=9, log=False),
@@ -221,7 +221,7 @@ def test_int_internal_representation(value: Any) -> None:
         (-1, dict(log=True)),
     ],
 )
-def test_int_internal_representation_error(value: Any, kwargs: Dict[str, Any]) -> None:
+def test_int_internal_representation_error(value: Any, kwargs: dict[str, Any]) -> None:
     i = distributions.IntDistribution(low=1, high=10, **kwargs)
     with pytest.raises(ValueError):
         i.to_internal_repr(value)
@@ -255,7 +255,7 @@ def test_float_internal_representation(value: Any) -> None:
         (-1.0, dict(log=True)),
     ],
 )
-def test_float_internal_representation_error(value: Any, kwargs: Dict[str, Any]) -> None:
+def test_float_internal_representation_error(value: Any, kwargs: dict[str, Any]) -> None:
     f = distributions.FloatDistribution(low=2.0, high=7.0, **kwargs)
     with pytest.raises(ValueError):
         f.to_internal_repr(value)
@@ -318,7 +318,7 @@ def test_int_contains(expected: bool, value: float, step: int) -> None:
         (False, 6.1, 2.0),
     ],
 )
-def test_float_contains(expected: bool, value: float, step: Optional[float]) -> None:
+def test_float_contains(expected: bool, value: float, step: float | None) -> None:
     with warnings.catch_warnings():
         # When `step` is 2.0, UserWarning will be raised since the range is not divisible by 2.
         # The range will be replaced with [2.0, 6.0].
@@ -401,7 +401,7 @@ def test_int_single(expected: bool, low: int, high: int, log: bool, step: int) -
     ],
 )
 def test_float_single(
-    expected: bool, low: float, high: float, log: bool, step: Optional[float]
+    expected: bool, low: float, high: float, log: bool, step: float | None
 ) -> None:
     with warnings.catch_warnings():
         # When `step` is 0.3, UserWarning will be raised since the range is not divisible by 0.3.
@@ -470,7 +470,7 @@ def test_int_distribution_asdict(key: str, low: int, high: int, log: bool, step:
     ],
 )
 def test_float_distribution_asdict(
-    key: str, low: float, high: float, log: bool, step: Optional[float]
+    key: str, low: float, high: float, log: bool, step: float | None
 ) -> None:
     expected_dict = {"low": low, "high": high, "log": log, "step": step}
     assert EXAMPLE_DISTRIBUTIONS[key]._asdict() == expected_dict
