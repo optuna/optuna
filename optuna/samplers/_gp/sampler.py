@@ -259,9 +259,6 @@ class GPSampler(BaseSampler):
 
         _sign = -1.0 if study.direction == StudyDirection.MINIMIZE else 1.0
         score_vals = np.array([_sign * cast(float, trial.value) for trial in trials])
-        constraint_vals, is_feasible, is_all_infeasible = (
-            self._get_constraint_vals_and_feasibility(study, trials)
-        )
 
         score_vals, score_vals_mean, score_vals_std = self._clip_and_get_mean_and_std(score_vals)
         assert isinstance(score_vals_mean, float) and isinstance(score_vals_std, float)
@@ -285,6 +282,10 @@ class GPSampler(BaseSampler):
             deterministic_objective=self._deterministic,
         )
         self._kernel_params_cache = kernel_params
+
+        constraint_vals, is_feasible, is_all_infeasible = (
+            self._get_constraint_vals_and_feasibility(study, trials)
+        )
 
         # TODO(kAIto47802): If is_all_infeasible, the acquisition function for the objective
         # function is ignored, so skipping the computation of kernel_params and acqf_params
