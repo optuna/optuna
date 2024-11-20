@@ -206,6 +206,8 @@ You can use the registered features and publish your packages.
 
 ```shell
 $ pip install optunahub
+# Install AutoSampler dependencies (CPU only is sufficient for PyTorch)
+$ pip install cmaes scipy torch --extra-index-url https://download.pytorch.org/whl/cpu
 ```
 
 You can load registered module with `optunahub.load_module`.
