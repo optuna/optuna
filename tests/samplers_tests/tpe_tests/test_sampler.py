@@ -1,10 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 import random
-from typing import Callable
-from typing import Dict
-from typing import Optional
-from typing import Union
 from unittest.mock import Mock
 from unittest.mock import patch
 import warnings
@@ -974,9 +971,9 @@ def frozen_trial_factory(
     state_fn: Callable[
         [int], optuna.trial.TrialState
     ] = lambda _: optuna.trial.TrialState.COMPLETE,
-    value_fn: Optional[Callable[[int], Union[int, float]]] = None,
+    value_fn: Callable[[int], int | float] | None = None,
     target_fn: Callable[[float], float] = lambda val: (val - 20.0) ** 2,
-    interm_val_fn: Callable[[int], Dict[int, float]] = lambda _: {},
+    interm_val_fn: Callable[[int], dict[int, float]] = lambda _: {},
 ) -> optuna.trial.FrozenTrial:
     if value_fn is None:
         random.seed(idx)
