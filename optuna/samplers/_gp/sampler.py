@@ -173,9 +173,7 @@ class GPSampler(BaseSampler):
             kernel_params = gp.fit_kernel_params(
                 X=normalized_params,
                 Y=vals,
-                is_categorical=(
-                    internal_search_space.scale_types == gp_search_space.ScaleType.CATEGORICAL
-                ),
+                is_categorical=is_categorical,
                 log_prior=self._log_prior,
                 minimum_noise=self._minimum_noise,
                 initial_kernel_params=cache,
