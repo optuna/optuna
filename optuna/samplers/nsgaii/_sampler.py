@@ -1,21 +1,17 @@
 from __future__ import annotations
 
-from collections import defaultdict
 from collections.abc import Callable
 from collections.abc import Sequence
-import hashlib
 from typing import Any
 from typing import TYPE_CHECKING
 
-import optuna
 from optuna._experimental import warn_experimental_argument
 from optuna.distributions import BaseDistribution
+from optuna.samplers._ga import BaseGASampler
 from optuna.samplers._lazy_random_state import LazyRandomState
 from optuna.samplers._random import RandomSampler
 from optuna.samplers.nsgaii._after_trial_strategy import NSGAIIAfterTrialStrategy
-from optuna.samplers.nsgaii._child_generation_strategy import (
-    NSGAIIChildGenerationStrategy,
-)
+from optuna.samplers.nsgaii._child_generation_strategy import NSGAIIChildGenerationStrategy
 from optuna.samplers.nsgaii._crossovers._base import BaseCrossover
 from optuna.samplers.nsgaii._crossovers._uniform import UniformCrossover
 from optuna.samplers.nsgaii._elite_population_selection_strategy import (
@@ -24,7 +20,6 @@ from optuna.samplers.nsgaii._elite_population_selection_strategy import (
 from optuna.search_space import IntersectionSearchSpace
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
-from optuna.samplers._ga import BaseGASampler
 
 
 if TYPE_CHECKING:
@@ -172,14 +167,11 @@ class NSGAIISampler(BaseGASampler):
             Callable[[Study, list[FrozenTrial]], list[FrozenTrial]] | None
         ) = None,
         child_generation_strategy: (
-            Callable[
-                [Study, dict[str, BaseDistribution], list[FrozenTrial]], dict[str, Any]
-            ]
+            Callable[[Study, dict[str, BaseDistribution], list[FrozenTrial]], dict[str, Any]]
             | None
         ) = None,
         after_trial_strategy: (
-            Callable[[Study, FrozenTrial, TrialState, Sequence[float] | None], None]
-            | None
+            Callable[[Study, FrozenTrial, TrialState, Sequence[float] | None], None] | None
         ) = None,
     ) -> None:
         # TODO(ohta): Reconsider the default value of each parameter.
@@ -274,12 +266,9 @@ class NSGAIISampler(BaseGASampler):
         search_space: dict[str, BaseDistribution],
     ) -> dict[str, Any]:
         generation = self.get_generation(study, trial)
-        self.set_generation_key(study, trial, generation)
-
         parent_population = self.get_parent_population(study, generation)
         if len(parent_population) == 0:
             return {}
-
         return self._child_generation_strategy(study, search_space, parent_population)
 
     def sample_independent(

@@ -53,6 +53,7 @@ def _nan_equal(a: Any, b: Any) -> bool:
 
     return a == b
 
+
 def test_generation_key_name() -> None:
     assert NSGAIISampler._GENERATION_KEY == "NSGAIISampler:generation"
 
@@ -64,9 +65,7 @@ def test_population_size() -> None:
     study = optuna.create_study(directions=["minimize"], sampler=sampler)
     study.optimize(lambda t: [t.suggest_float("x", 0, 9)], n_trials=40)
 
-    generations = Counter(
-        [t.system_attrs[NSGAIISampler._GENERATION_KEY] for t in study.trials]
-    )
+    generations = Counter([t.system_attrs[NSGAIISampler._GENERATION_KEY] for t in study.trials])
     assert generations == {0: 10, 1: 10, 2: 10, 3: 10}
 
     # Set `population_size` to 2.
@@ -75,9 +74,7 @@ def test_population_size() -> None:
     study = optuna.create_study(directions=["minimize"], sampler=sampler)
     study.optimize(lambda t: [t.suggest_float("x", 0, 9)], n_trials=40)
 
-    generations = Counter(
-        [t.system_attrs[NSGAIISampler._GENERATION_KEY] for t in study.trials]
-    )
+    generations = Counter([t.system_attrs[NSGAIISampler._GENERATION_KEY] for t in study.trials])
     assert generations == {i: 2 for i in range(20)}
 
     # Invalid population size.
