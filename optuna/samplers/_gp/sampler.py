@@ -318,8 +318,7 @@ def _warn_and_convert_inf(
 ) -> np.ndarray:
     if np.any(~np.isfinite(values)):
         warnings.warn(
-            "GPSampler cannot handle infinite values. "
-            "We clamp those values to worst/best finite value."
+            "GPSampler cannot handle +/-inf, so we clip them to the best/worst finite value."
         )
 
         finite_vals = values[np.isfinite(values)]
