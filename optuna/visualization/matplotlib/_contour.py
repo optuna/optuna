@@ -153,6 +153,43 @@ class _LabelEncoder:
         return list(range(len(self.labels)))
 
 
+def _filter_missing_values(
+    xaxis: _AxisInfo, yaxis: _AxisInfo
+) -> tuple[list[str | float], list[str | float]]:
+    x_values = []
+    y_values = []
+    for x_value, y_value in zip(xaxis.values, yaxis.values):
+        if x_value is not None and y_value is not None:
+            x_values.append(x_value)
+            y_values.append(y_value)
+    return x_values, y_values
+
+
+def _calculate_axis_data(
+    axis: _AxisInfo,
+    values: Sequence[str | float],
+) -> tuple[np.ndarray, list[str], list[int], list[int | float]]:
+    # Convert categorical values to int.
+    cat_param_labels: list[str] = []
+    cat_param_pos: list[int] = []
+    returned_values: Sequence[int | float]
+    if axis.is_cat:
+        enc = _LabelEncoder()
+        returned_values = enc.fit_transform(list(map(str, values)))
+        cat_param_labels = enc.get_labels()
+        cat_param_pos = enc.get_indices()
+    else:
+        returned_values = list(map(lambda x: float(x), values))
+
+    # For x and y, create 1-D array of evenly spaced coordinates on linear or log scale.
+    if axis.is_log:
+        ci = np.logspace(np.log10(axis.range[0]), np.log10(axis.range[1]), CONTOUR_POINT_NUM)
+    else:
+        ci = np.linspace(axis.range[0], axis.range[1], CONTOUR_POINT_NUM)
+
+    return ci, cat_param_labels, cat_param_pos, list(returned_values)
+
+
 def _calculate_griddata(
     info: _SubContourInfo,
 ) -> tuple[
@@ -194,30 +231,6 @@ def _calculate_griddata(
             _PlotValues([], []),
             _PlotValues([], []),
         )
-
-    def _calculate_axis_data(
-        axis: _AxisInfo,
-        values: Sequence[str | float],
-    ) -> tuple[np.ndarray, list[str], list[int], list[int | float]]:
-        # Convert categorical values to int.
-        cat_param_labels: list[str] = []
-        cat_param_pos: list[int] = []
-        returned_values: Sequence[int | float]
-        if axis.is_cat:
-            enc = _LabelEncoder()
-            returned_values = enc.fit_transform(list(map(str, values)))
-            cat_param_labels = enc.get_labels()
-            cat_param_pos = enc.get_indices()
-        else:
-            returned_values = list(map(lambda x: float(x), values))
-
-        # For x and y, create 1-D array of evenly spaced coordinates on linear or log scale.
-        if axis.is_log:
-            ci = np.logspace(np.log10(axis.range[0]), np.log10(axis.range[1]), CONTOUR_POINT_NUM)
-        else:
-            ci = np.linspace(axis.range[0], axis.range[1], CONTOUR_POINT_NUM)
-
-        return ci, cat_param_labels, cat_param_pos, list(returned_values)
 
     xi, cat_param_labels_x, cat_param_pos_x, transformed_x_values = _calculate_axis_data(
         xaxis,
@@ -271,6 +284,19 @@ def _generate_contour_subplot(
     ax.set(xlabel=info.xaxis.name, ylabel=info.yaxis.name)
     ax.set_xlim(info.xaxis.range[0], info.xaxis.range[1])
     ax.set_ylim(info.yaxis.range[0], info.yaxis.range[1])
+    x_values, y_values = _filter_missing_values(info.xaxis, info.yaxis)
+    if info.xaxis.is_cat:
+        _, x_cat_param_label, x_cat_param_pos, _ = _calculate_axis_data(info.xaxis, x_values)
+        ax.set_xticks(x_cat_param_pos)
+        ax.set_xticklabels(x_cat_param_label)
+    else:
+        ax.set_xscale("log" if info.xaxis.is_log else "linear")
+    if info.yaxis.is_cat:
+        _, y_cat_param_label, y_cat_param_pos, _ = _calculate_axis_data(info.yaxis, y_values)
+        ax.set_yticks(y_cat_param_pos)
+        ax.set_yticklabels(y_cat_param_label)
+    else:
+        ax.set_yscale("log" if info.yaxis.is_log else "linear")
 
     if info.xaxis.name == info.yaxis.name:
         ax.label_outer()
@@ -318,12 +344,6 @@ def _generate_contour_subplot(
                 linewidth=2.0,
             )
 
-    if info.xaxis.is_cat:
-        ax.set_xticks(x_cat_param_pos)
-        ax.set_xticklabels(x_cat_param_label)
-    if info.yaxis.is_cat:
-        ax.set_yticks(y_cat_param_pos)
-        ax.set_yticklabels(y_cat_param_label)
     ax.label_outer()
     return cs
 
