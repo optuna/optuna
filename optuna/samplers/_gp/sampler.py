@@ -161,8 +161,9 @@ class GPSampler(BaseSampler):
             # Clear cache if the search space changes.
             self._constraints_kernel_params_cache = None
 
+        is_categorical = internal_search_space.scale_types == gp_search_space.ScaleType.CATEGORICAL
         constraints_kernel_params = []
-        acqf_params_for_constraints = []
+        constraints_acqf_params = []
         for i, (vals, mean, std) in enumerate(zip(standardized_constraint_vals.T, means, stds)):
             cache = (
                 self._constraints_kernel_params_cache and self._constraints_kernel_params_cache[i]
