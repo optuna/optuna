@@ -282,7 +282,7 @@ class GPSampler(BaseSampler):
                 else normalized_params[np.argmax(standardized_score_vals[is_feasible]), :]
             )
 
-        normalized_param = self._optimize_acqf(
+        normalized_param = self._optimize_acqf(acqf_params, best_params)
             acqf_params,
             best_params,
         )
