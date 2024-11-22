@@ -259,6 +259,8 @@ class GPSampler(BaseSampler):
             # TODO(kAIto47802): If is_all_infeasible, the acquisition function for the objective
             # function is ignored, so skipping the computation of kernel_params and acqf_params
             # can improve speed.
+            # TODO(kAIto47802): Consider the case where all trials are feasible. We can ignore
+            # constraints in this case.
             max_Y = -np.inf if is_all_infeasible else np.max(standardized_score_vals[is_feasible])
             acqf_params = acqf.create_acqf_params(
                 acqf_type=acqf.AcquisitionFunctionType.LOG_EI,
