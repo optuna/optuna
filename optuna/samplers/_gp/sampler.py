@@ -283,8 +283,6 @@ class GPSampler(BaseSampler):
             )
 
         normalized_param = self._optimize_acqf(acqf_params, best_params)
-            acqf_params,
-            best_params,
         )
         return gp_search_space.get_unnormalized_param(search_space, normalized_param)
 
