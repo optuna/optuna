@@ -181,7 +181,7 @@ class GPSampler(BaseSampler):
             )
             constraints_kernel_params.append(kernel_params)
 
-            acqf_params_for_constraints.append(
+            constraints_acqf_params.append(
                 acqf.create_acqf_params(
                     acqf_type=acqf.AcquisitionFunctionType.LOG_PI,
                     kernel_params=kernel_params,
