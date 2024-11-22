@@ -11,7 +11,10 @@ import numpy as np
 
 import optuna
 from optuna._experimental import experimental_class
+from optuna._experimental import warn_experimental_argument
 from optuna.distributions import BaseDistribution
+from optuna.samplers._base import _CONSTRAINTS_KEY
+from optuna.samplers._base import _process_constraints_after_trial
 from optuna.samplers._base import BaseSampler
 from optuna.samplers._lazy_random_state import LazyRandomState
 from optuna.study import StudyDirection
@@ -37,6 +40,9 @@ else:
     optim_mixed = _LazyImport("optuna._gp.optim_mixed")
     acqf = _LazyImport("optuna._gp.acqf")
     prior = _LazyImport("optuna._gp.prior")
+
+
+EPS = 1e-10
 
 
 @experimental_class("3.6.0")
@@ -84,6 +90,7 @@ class GPSampler(BaseSampler):
         independent_sampler: BaseSampler | None = None,
         n_startup_trials: int = 10,
         deterministic_objective: bool = False,
+        constraints_func: Callable[[FrozenTrial], Sequence[float]] | None = None,
     ) -> None:
         self._rng = LazyRandomState(seed)
         self._independent_sampler = independent_sampler or optuna.samplers.RandomSampler(seed=seed)
@@ -95,8 +102,13 @@ class GPSampler(BaseSampler):
         self._minimum_noise: float = prior.DEFAULT_MINIMUM_NOISE_VAR
         # We cache the kernel parameters for initial values of fitting the next time.
         self._kernel_params_cache: "gp.KernelParamsTensor | None" = None
+        self._constraints_kernel_params_cache: "list[gp.KernelParamsTensor] | None" = None
         self._optimize_n_samples: int = 2048
         self._deterministic = deterministic_objective
+        self._constraints_func = constraints_func
+
+        if constraints_func is not None:
+            warn_experimental_argument("constraints_func")
 
     def reseed_rng(self) -> None:
         self._rng.rng.seed()
@@ -116,20 +128,74 @@ class GPSampler(BaseSampler):
     def _optimize_acqf(
         self,
         acqf_params: "acqf.AcquisitionFunctionParams",
-        best_params: np.ndarray,
+        best_params: np.ndarray | None,
     ) -> np.ndarray:
         # Advanced users can override this method to change the optimization algorithm.
         # However, we do not make any effort to keep backward compatibility between versions.
         # Particularly, we may remove this function in future refactoring.
         normalized_params, _acqf_val = optim_mixed.optimize_acqf_mixed(
             acqf_params,
-            warmstart_normalized_params_array=best_params[None, :],
+            warmstart_normalized_params_array=(
+                None if best_params is None else best_params[None, :]
+            ),
             n_preliminary_samples=2048,
             n_local_search=10,
             tol=1e-4,
             rng=self._rng.rng,
         )
         return normalized_params
+
+    def _get_constraints_acqf_params(
+        self,
+        constraint_vals: np.ndarray,
+        internal_search_space: gp_search_space.SearchSpace,
+        normalized_params: np.ndarray,
+    ) -> list[acqf.AcquisitionFunctionParams]:
+        constraint_vals = _warn_and_convert_inf(constraint_vals)
+        means = np.mean(constraint_vals, axis=0)
+        stds = np.std(constraint_vals, axis=0)
+        standardized_constraint_vals = (constraint_vals - means) / np.maximum(EPS, stds)
+        if self._kernel_params_cache is not None and len(
+            self._kernel_params_cache.inverse_squared_lengthscales
+        ) != len(internal_search_space.scale_types):
+            # Clear cache if the search space changes.
+            self._constraints_kernel_params_cache = None
+
+        is_categorical = internal_search_space.scale_types == gp_search_space.ScaleType.CATEGORICAL
+        constraints_kernel_params = []
+        constraints_acqf_params = []
+        for i, (vals, mean, std) in enumerate(zip(standardized_constraint_vals.T, means, stds)):
+            cache = (
+                self._constraints_kernel_params_cache and self._constraints_kernel_params_cache[i]
+            )
+            assert isinstance(cache, gp.KernelParamsTensor) or cache is None
+
+            kernel_params = gp.fit_kernel_params(
+                X=normalized_params,
+                Y=vals,
+                is_categorical=is_categorical,
+                log_prior=self._log_prior,
+                minimum_noise=self._minimum_noise,
+                initial_kernel_params=cache,
+                deterministic_objective=self._deterministic,
+            )
+            constraints_kernel_params.append(kernel_params)
+
+            constraints_acqf_params.append(
+                acqf.create_acqf_params(
+                    acqf_type=acqf.AcquisitionFunctionType.LOG_PI,
+                    kernel_params=kernel_params,
+                    search_space=internal_search_space,
+                    X=normalized_params,
+                    Y=vals,
+                    # Since 0 is the threshold value, we use the normalized value of 0.
+                    max_Y=-mean / max(EPS, std),
+                )
+            )
+
+        self._constraints_kernel_params_cache = constraints_kernel_params
+
+        return constraints_acqf_params
 
     def sample_relative(
         self, study: Study, trial: FrozenTrial, search_space: dict[str, BaseDistribution]
@@ -153,19 +219,8 @@ class GPSampler(BaseSampler):
         _sign = -1.0 if study.direction == StudyDirection.MINIMIZE else 1.0
         score_vals = np.array([_sign * cast(float, trial.value) for trial in trials])
 
-        if np.any(~np.isfinite(score_vals)):
-            warnings.warn(
-                "GPSampler cannot handle infinite values. "
-                "We clamp those values to worst/best finite value."
-            )
-
-            finite_score_vals = score_vals[np.isfinite(score_vals)]
-            best_finite_score = np.max(finite_score_vals, initial=0.0)
-            worst_finite_score = np.min(finite_score_vals, initial=0.0)
-
-            score_vals = np.clip(score_vals, worst_finite_score, best_finite_score)
-
-        standarized_score_vals = (score_vals - score_vals.mean()) / max(1e-10, score_vals.std())
+        score_vals = _warn_and_convert_inf(score_vals)
+        standardized_score_vals = (score_vals - np.mean(score_vals)) / max(EPS, np.std(score_vals))
 
         if self._kernel_params_cache is not None and len(
             self._kernel_params_cache.inverse_squared_lengthscales
@@ -175,7 +230,7 @@ class GPSampler(BaseSampler):
 
         kernel_params = gp.fit_kernel_params(
             X=normalized_params,
-            Y=standarized_score_vals,
+            Y=standardized_score_vals,
             is_categorical=(
                 internal_search_space.scale_types == gp_search_space.ScaleType.CATEGORICAL
             ),
@@ -186,17 +241,47 @@ class GPSampler(BaseSampler):
         )
         self._kernel_params_cache = kernel_params
 
-        acqf_params = acqf.create_acqf_params(
-            acqf_type=acqf.AcquisitionFunctionType.LOG_EI,
-            kernel_params=kernel_params,
-            search_space=internal_search_space,
-            X=normalized_params,
-            Y=standarized_score_vals,
-        )
+        best_params: np.ndarray | None
+        if self._constraints_func is None:
+            acqf_params = acqf.create_acqf_params(
+                acqf_type=acqf.AcquisitionFunctionType.LOG_EI,
+                kernel_params=kernel_params,
+                search_space=internal_search_space,
+                X=normalized_params,
+                Y=standardized_score_vals,
+            )
+            best_params = normalized_params[np.argmax(standardized_score_vals), :]
+        else:
+            constraint_vals, is_feasible = _get_constraint_vals_and_feasibility(study, trials)
+            is_all_infeasible = not np.any(is_feasible)
 
-        normalized_param = self._optimize_acqf(
-            acqf_params, normalized_params[np.argmax(standarized_score_vals), :]
-        )
+            # TODO(kAIto47802): If is_all_infeasible, the acquisition function for the objective
+            # function is ignored, so skipping the computation of kernel_params and acqf_params
+            # can improve speed.
+            # TODO(kAIto47802): Consider the case where all trials are feasible. We can ignore
+            # constraints in this case.
+            max_Y = -np.inf if is_all_infeasible else np.max(standardized_score_vals[is_feasible])
+            acqf_params = acqf.create_acqf_params(
+                acqf_type=acqf.AcquisitionFunctionType.LOG_EI,
+                kernel_params=kernel_params,
+                search_space=internal_search_space,
+                X=normalized_params,
+                Y=standardized_score_vals,
+                max_Y=max_Y,
+            )
+            constraints_acqf_params = self._get_constraints_acqf_params(
+                constraint_vals, internal_search_space, normalized_params
+            )
+            acqf_params = acqf.ConstrainedAcquisitionFunctionParams.from_acqf_params(
+                acqf_params, constraints_acqf_params
+            )
+            best_params = (
+                None
+                if is_all_infeasible
+                else normalized_params[np.argmax(standardized_score_vals[is_feasible]), :]
+            )
+
+        normalized_param = self._optimize_acqf(acqf_params, best_params)
         return gp_search_space.get_unnormalized_param(search_space, normalized_param)
 
     def sample_independent(
@@ -221,4 +306,37 @@ class GPSampler(BaseSampler):
         state: TrialState,
         values: Sequence[float] | None,
     ) -> None:
+        if self._constraints_func is not None:
+            _process_constraints_after_trial(self._constraints_func, study, trial, state)
         self._independent_sampler.after_trial(study, trial, state, values)
+
+
+def _warn_and_convert_inf(
+    values: np.ndarray,
+) -> np.ndarray:
+    if np.any(~np.isfinite(values)):
+        warnings.warn(
+            "GPSampler cannot handle +/-inf, so we clip them to the best/worst finite value."
+        )
+
+        finite_vals = values[np.isfinite(values)]
+        best_finite_val = np.max(finite_vals, axis=0, initial=0.0)
+        worst_finite_val = np.min(finite_vals, axis=0, initial=0.0)
+
+        return np.clip(values, worst_finite_val, best_finite_val)
+    return values
+
+
+def _get_constraint_vals_and_feasibility(
+    study: Study, trials: list[FrozenTrial]
+) -> tuple[np.ndarray, np.ndarray]:
+    _constraint_vals = [
+        study._storage.get_trial_system_attrs(trial._trial_id).get(_CONSTRAINTS_KEY, ())
+        for trial in trials
+    ]
+    if any(len(_constraint_vals[0]) != len(c) for c in _constraint_vals):
+        raise ValueError("The number of constraints must be the same for all trials.")
+    constraint_vals = np.array(_constraint_vals)
+
+    is_feasible = np.all(constraint_vals <= 0, axis=1)
+    return constraint_vals, is_feasible

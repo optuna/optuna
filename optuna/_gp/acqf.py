@@ -53,6 +53,14 @@ def logei(mean: torch.Tensor, var: torch.Tensor, f0: float) -> torch.Tensor:
     return val
 
 
+def logpi(mean: torch.Tensor, var: torch.Tensor, f0: float) -> torch.Tensor:
+    # Return the integral of N(mean, var) from -inf to f0
+    # This is identical to the integral of N(0, 1) from -inf to (f0-mean)/sigma
+    # Return E_{y ~ N(mean, var)}[bool(y <= f0)]
+    sigma = torch.sqrt(var)
+    return torch.special.log_ndtr((f0 - mean) / sigma)
+
+
 def ucb(mean: torch.Tensor, var: torch.Tensor, beta: float) -> torch.Tensor:
     return mean + torch.sqrt(beta * var)
 
@@ -67,6 +75,7 @@ class AcquisitionFunctionType(IntEnum):
     LOG_EI = 0
     UCB = 1
     LCB = 2
+    LOG_PI = 3
 
 
 @dataclass(frozen=True)
@@ -77,9 +86,35 @@ class AcquisitionFunctionParams:
     search_space: SearchSpace
     cov_Y_Y_inv: np.ndarray
     cov_Y_Y_inv_Y: np.ndarray
+    # TODO(kAIto47802): Want to change the name to a generic name like threshold,
+    # since it is not actually in operation as max_Y
     max_Y: float
     beta: float | None
     acqf_stabilizing_noise: float
+
+
+@dataclass(frozen=True)
+class ConstrainedAcquisitionFunctionParams(AcquisitionFunctionParams):
+    acqf_params_for_constraints: list[AcquisitionFunctionParams]
+
+    @classmethod
+    def from_acqf_params(
+        cls,
+        acqf_params: AcquisitionFunctionParams,
+        acqf_params_for_constraints: list[AcquisitionFunctionParams],
+    ) -> ConstrainedAcquisitionFunctionParams:
+        return cls(
+            acqf_type=acqf_params.acqf_type,
+            kernel_params=acqf_params.kernel_params,
+            X=acqf_params.X,
+            search_space=acqf_params.search_space,
+            cov_Y_Y_inv=acqf_params.cov_Y_Y_inv,
+            cov_Y_Y_inv_Y=acqf_params.cov_Y_Y_inv_Y,
+            max_Y=acqf_params.max_Y,
+            beta=acqf_params.beta,
+            acqf_stabilizing_noise=acqf_params.acqf_stabilizing_noise,
+            acqf_params_for_constraints=acqf_params_for_constraints,
+        )
 
 
 def create_acqf_params(
@@ -88,6 +123,7 @@ def create_acqf_params(
     search_space: SearchSpace,
     X: np.ndarray,
     Y: np.ndarray,
+    max_Y: float | None = None,
     beta: float | None = None,
     acqf_stabilizing_noise: float = 1e-12,
 ) -> AcquisitionFunctionParams:
@@ -106,7 +142,7 @@ def create_acqf_params(
         search_space=search_space,
         cov_Y_Y_inv=cov_Y_Y_inv,
         cov_Y_Y_inv_Y=cov_Y_Y_inv @ Y,
-        max_Y=np.max(Y),
+        max_Y=max_Y if max_Y is not None else np.max(Y),
         beta=beta,
         acqf_stabilizing_noise=acqf_stabilizing_noise,
     )
@@ -123,15 +159,31 @@ def eval_acqf(acqf_params: AcquisitionFunctionParams, x: torch.Tensor) -> torch.
     )
 
     if acqf_params.acqf_type == AcquisitionFunctionType.LOG_EI:
-        return logei(mean=mean, var=var + acqf_params.acqf_stabilizing_noise, f0=acqf_params.max_Y)
+        # If there are no feasible trials, max_Y is set to -np.inf.
+        # If max_Y is set to -np.inf, we set logEI to zero to ignore it.
+        f_val = (
+            logei(mean=mean, var=var + acqf_params.acqf_stabilizing_noise, f0=acqf_params.max_Y)
+            if not np.isneginf(acqf_params.max_Y)
+            else torch.tensor(0.0, dtype=torch.float64)
+        )
+    elif acqf_params.acqf_type == AcquisitionFunctionType.LOG_PI:
+        f_val = logpi(
+            mean=mean, var=var + acqf_params.acqf_stabilizing_noise, f0=acqf_params.max_Y
+        )
     elif acqf_params.acqf_type == AcquisitionFunctionType.UCB:
         assert acqf_params.beta is not None, "beta must be given to UCB."
-        return ucb(mean=mean, var=var, beta=acqf_params.beta)
+        f_val = ucb(mean=mean, var=var, beta=acqf_params.beta)
     elif acqf_params.acqf_type == AcquisitionFunctionType.LCB:
         assert acqf_params.beta is not None, "beta must be given to LCB."
-        return lcb(mean=mean, var=var, beta=acqf_params.beta)
+        f_val = lcb(mean=mean, var=var, beta=acqf_params.beta)
     else:
         assert False, "Unknown acquisition function type."
+
+    if isinstance(acqf_params, ConstrainedAcquisitionFunctionParams):
+        c_val = sum(eval_acqf(params, x) for params in acqf_params.acqf_params_for_constraints)
+        return f_val + c_val
+    else:
+        return f_val
 
 
 def eval_acqf_no_grad(acqf_params: AcquisitionFunctionParams, x: np.ndarray) -> np.ndarray:
