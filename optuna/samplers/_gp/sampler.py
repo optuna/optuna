@@ -195,7 +195,7 @@ class GPSampler(BaseSampler):
 
         self._constraints_kernel_params_cache = constraints_kernel_params
 
-        return acqf_params_for_constraints
+        return constraints_acqf_params
 
     def sample_relative(
         self, study: Study, trial: FrozenTrial, search_space: dict[str, BaseDistribution]
