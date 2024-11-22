@@ -1,6 +1,6 @@
-from typing import Callable
-from typing import Dict
-from typing import List
+from __future__ import annotations
+
+from collections.abc import Callable
 
 import numpy as np
 import pytest
@@ -233,7 +233,7 @@ def test_calculate_shape_check_categorical(
     mus: np.ndarray,
     prior_weight: float,
     prior: bool,
-    categorical_distance_func: Dict[
+    categorical_distance_func: dict[
         str,
         Callable[[CategoricalChoiceType, CategoricalChoiceType], float],
     ],
@@ -329,7 +329,7 @@ def test_invalid_prior_weight(prior_weight: float, mus: np.ndarray) -> None:
     ],
 )
 def test_calculate(
-    mus: np.ndarray, flags: Dict[str, bool], expected: Dict[str, List[float]]
+    mus: np.ndarray, flags: dict[str, bool], expected: dict[str, list[float]]
 ) -> None:
     parameters = _ParzenEstimatorParameters(
         prior_weight=1.0,
