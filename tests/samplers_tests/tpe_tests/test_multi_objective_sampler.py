@@ -1,9 +1,7 @@
+from __future__ import annotations
+
+from collections.abc import Callable
 import random
-from typing import Callable
-from typing import Dict
-from typing import List
-from typing import Optional
-from typing import Union
 from unittest.mock import patch
 from unittest.mock import PropertyMock
 
@@ -17,7 +15,7 @@ from optuna.samplers import TPESampler
 
 class MockSystemAttr:
     def __init__(self) -> None:
-        self.value: Dict[str, dict] = {}
+        self.value: dict[str, dict] = {}
 
     def set_trial_system_attr(self, _: int, key: str, value: dict) -> None:
         self.value[key] = value
@@ -28,7 +26,7 @@ def suggest(
     study: optuna.Study,
     trial: optuna.trial.FrozenTrial,
     distribution: optuna.distributions.BaseDistribution,
-    past_trials: List[optuna.trial.FrozenTrial],
+    past_trials: list[optuna.trial.FrozenTrial],
 ) -> float:
     attrs = MockSystemAttr()
     with patch.object(study._storage, "get_all_trials", return_value=past_trials), patch.object(
@@ -91,7 +89,7 @@ def test_multi_objective_sample_independent_n_startup_trial() -> None:
 
     def _suggest_and_return_call_count(
         sampler: optuna.samplers.BaseSampler,
-        past_trials: List[optuna.trial.FrozenTrial],
+        past_trials: list[optuna.trial.FrozenTrial],
     ) -> int:
         attrs = MockSystemAttr()
         with patch.object(
@@ -144,7 +142,7 @@ def test_multi_objective_sample_independent_misc_arguments() -> None:
 
 @pytest.mark.parametrize("log, step", [(False, None), (True, None), (False, 0.1)])
 def test_multi_objective_sample_independent_float_distributions(
-    log: bool, step: Optional[float]
+    log: bool, step: float | None
 ) -> None:
     # Prepare sample from float distribution for checking other distributions.
     study = optuna.create_study(directions=["minimize", "maximize"])
@@ -152,9 +150,7 @@ def test_multi_objective_sample_independent_float_distributions(
     float_dist = optuna.distributions.FloatDistribution(1.0, 100.0, log=log, step=step)
 
     if float_dist.step:
-        value_fn: Optional[Callable[[int], float]] = (
-            lambda number: int(random.random() * 1000) * 0.1
-        )
+        value_fn: Callable[[int], float] | None = lambda number: int(random.random() * 1000) * 0.1
     else:
         value_fn = None
 
@@ -464,11 +460,11 @@ def test_calculate_weights_below_for_multi_objective() -> None:
 
 def frozen_trial_factory(
     number: int,
-    values: List[float],
+    values: list[float],
     dist: optuna.distributions.BaseDistribution = optuna.distributions.FloatDistribution(
         1.0, 100.0
     ),
-    value_fn: Optional[Callable[[int], Union[int, float]]] = None,
+    value_fn: Callable[[int], int | float] | None = None,
     state_fn: Callable[
         [int], optuna.trial.TrialState
     ] = lambda _: optuna.trial.TrialState.COMPLETE,
