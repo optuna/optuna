@@ -1,5 +1,6 @@
+from __future__ import annotations
+
 import re
-from typing import List
 
 import pytest
 
@@ -17,7 +18,7 @@ class _SimpleClass:
 
 
 def test_convert_positional_args_decorator() -> None:
-    previous_positional_arg_names: List[str] = []
+    previous_positional_arg_names: list[str] = []
     decorator_converter = convert_positional_args(
         previous_positional_arg_names=previous_positional_arg_names
     )
@@ -40,7 +41,7 @@ def test_convert_positional_args_future_warning_for_methods() -> None:
 
 
 def test_convert_positional_args_future_warning() -> None:
-    previous_positional_arg_names: List[str] = ["a", "b"]
+    previous_positional_arg_names: list[str] = ["a", "b"]
     decorator_converter = convert_positional_args(
         previous_positional_arg_names=previous_positional_arg_names
     )
@@ -59,7 +60,7 @@ def test_convert_positional_args_future_warning() -> None:
 
 
 def test_convert_positional_args_mypy_type_inference() -> None:
-    previous_positional_arg_names: List[str] = []
+    previous_positional_arg_names: list[str] = []
     decorator_converter = convert_positional_args(
         previous_positional_arg_names=previous_positional_arg_names
     )
@@ -91,7 +92,7 @@ def test_convert_positional_args_mypy_type_inference() -> None:
     [(["a", "b", "c", "d"], True), (["a", "d"], True), (["b", "a"], False)],
 )
 def test_convert_positional_args_invalid_previous_positional_arg_names(
-    previous_positional_arg_names: List[str], raise_error: bool
+    previous_positional_arg_names: list[str], raise_error: bool
 ) -> None:
     decorator_converter = convert_positional_args(
         previous_positional_arg_names=previous_positional_arg_names
@@ -110,7 +111,7 @@ def test_convert_positional_args_invalid_previous_positional_arg_names(
 
 
 def test_convert_positional_args_invalid_positional_args() -> None:
-    previous_positional_arg_names: List[str] = ["a", "b"]
+    previous_positional_arg_names: list[str] = ["a", "b"]
     decorator_converter = convert_positional_args(
         previous_positional_arg_names=previous_positional_arg_names
     )
