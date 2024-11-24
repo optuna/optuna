@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from datetime import datetime
 import os
 import platform
@@ -5,8 +7,6 @@ import shutil
 import sys
 import tempfile
 from typing import Any
-from typing import Dict
-from typing import Optional
 from unittest.mock import Mock
 from unittest.mock import patch
 import warnings
@@ -107,7 +107,7 @@ def test_engine_kwargs() -> None:
     ],
 )
 def test_set_default_engine_kwargs_for_mysql(
-    url: str, engine_kwargs: Dict[str, Any], expected: bool
+    url: str, engine_kwargs: dict[str, Any], expected: bool
 ) -> None:
     RDBStorage._set_default_engine_kwargs_for_mysql(url, engine_kwargs)
     assert engine_kwargs["pool_pre_ping"] is expected
@@ -115,7 +115,7 @@ def test_set_default_engine_kwargs_for_mysql(
 
 def test_set_default_engine_kwargs_for_mysql_with_other_rdb() -> None:
     # Do not change engine_kwargs if database is not MySQL.
-    engine_kwargs: Dict[str, Any] = {}
+    engine_kwargs: dict[str, Any] = {}
     RDBStorage._set_default_engine_kwargs_for_mysql("sqlite:///example.db", engine_kwargs)
     assert "pool_pre_ping" not in engine_kwargs
     RDBStorage._set_default_engine_kwargs_for_mysql("postgres:///example.db", engine_kwargs)
@@ -143,7 +143,7 @@ def test_check_table_schema_compatibility() -> None:
         storage._version_manager.check_table_schema_compatibility()
 
 
-def create_test_storage(engine_kwargs: Optional[Dict[str, Any]] = None) -> RDBStorage:
+def create_test_storage(engine_kwargs: dict[str, Any] | None = None) -> RDBStorage:
     storage = RDBStorage("sqlite:///:memory:", engine_kwargs=engine_kwargs)
     return storage
 
