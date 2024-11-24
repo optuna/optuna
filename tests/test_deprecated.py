@@ -1,5 +1,6 @@
+from __future__ import annotations
+
 from typing import Any
-from typing import Optional
 
 import pytest
 
@@ -120,7 +121,7 @@ def test_deprecation_decorator_name() -> None:
 
 
 @pytest.mark.parametrize("text", [None, "", "test", "test" * 100])
-def test_deprecation_text_specified(text: Optional[str]) -> None:
+def test_deprecation_text_specified(text: str | None) -> None:
     def _func() -> int:
         return 10
 
@@ -148,7 +149,7 @@ def test_deprecation_text_specified(text: Optional[str]) -> None:
 
 
 @pytest.mark.parametrize("text", [None, "", "test", "test" * 100])
-def test_deprecation_class_text_specified(text: Optional[str]) -> None:
+def test_deprecation_class_text_specified(text: str | None) -> None:
     class _Class:
         def __init__(self, a: Any, b: Any, c: Any) -> None:
             pass
