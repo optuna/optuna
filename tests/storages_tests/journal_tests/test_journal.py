@@ -8,8 +8,6 @@ import pickle
 from types import TracebackType
 from typing import Any
 from typing import IO
-from typing import Optional
-from typing import Type
 from unittest import mock
 
 import _pytest.capture
@@ -43,7 +41,7 @@ JOURNAL_STORAGE_SUPPORTING_SNAPSHOT = ["journal_redis"]
 class JournalLogStorageSupplier:
     def __init__(self, storage_type: str) -> None:
         self.storage_type = storage_type
-        self.tempfile: Optional[IO[Any]] = None
+        self.tempfile: IO[Any] | None = None
 
     def __enter__(self) -> optuna.storages.journal.BaseJournalBackend:
         if self.storage_type.startswith("file"):
@@ -67,7 +65,7 @@ class JournalLogStorageSupplier:
             raise RuntimeError("Unknown log storage type: {}".format(self.storage_type))
 
     def __exit__(
-        self, exc_type: Type[BaseException], exc_val: BaseException, exc_tb: TracebackType
+        self, exc_type: type[BaseException], exc_val: BaseException, exc_tb: TracebackType
     ) -> None:
         if self.tempfile:
             self.tempfile.close()
@@ -104,7 +102,7 @@ def test_concurrent_append_logs_for_multi_threads(log_storage_type: str) -> None
         assert all(record == r for r in storage.read_logs(0))
 
 
-def pop_waiting_trial(file_path: str, study_name: str) -> Optional[int]:
+def pop_waiting_trial(file_path: str, study_name: str) -> int | None:
     file_storage = optuna.storages.journal.JournalFileBackend(file_path)
     storage = optuna.storages.JournalStorage(file_storage)
     study = optuna.load_study(storage=storage, study_name=study_name)
