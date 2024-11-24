@@ -36,6 +36,8 @@ If you use `venv`, simply `deactivate` and re-activate your development environm
 
 """
 
+from __future__ import annotations
+
 from argparse import ArgumentParser
 from typing import Tuple
 
