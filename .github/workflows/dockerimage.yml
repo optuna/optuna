@@ -8,11 +8,10 @@ on:
     types: [published]
   pull_request:
     paths:
+      - .dockerignore
       - .github/workflows/dockerimage.yml
       - Dockerfile
-      - .dockerignore
       - pyproject.toml
-      - .github/workflows/dockerimage.yml
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/master' && github.run_number || github.ref }}
