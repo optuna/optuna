@@ -6,10 +6,6 @@ import pickle
 import random
 from time import sleep
 from typing import Any
-from typing import Dict
-from typing import List
-from typing import Optional
-from typing import Tuple
 
 import numpy as np
 import pytest
@@ -33,7 +29,7 @@ from optuna.trial import TrialState
 
 ALL_STATES = list(TrialState)
 
-EXAMPLE_ATTRS: Dict[str, JSONSerializable] = {
+EXAMPLE_ATTRS: dict[str, JSONSerializable] = {
     "dataset": "MNIST",
     "none": None,
     "json_serializable": {"baseline_score": 0.001, "tags": ["image", "classification"]},
@@ -259,7 +255,7 @@ def test_study_user_and_system_attrs_confusion(storage_mode: str) -> None:
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_create_new_trial(storage_mode: str) -> None:
     def _check_trials(
-        trials: List[FrozenTrial],
+        trials: list[FrozenTrial],
         idx: int,
         trial_id: int,
         time_before_creation: datetime,
@@ -339,7 +335,7 @@ def test_create_new_trial_with_template_trial(
         trial_id=-1,  # dummy value (unused).
     )
 
-    def _check_trials(trials: List[FrozenTrial], idx: int, trial_id: int) -> None:
+    def _check_trials(trials: list[FrozenTrial], idx: int, trial_id: int) -> None:
         assert len(trials) == idx + 1
         assert len({t._trial_id for t in trials}) == idx + 1
         assert trial_id in {t._trial_id for t in trials}
@@ -725,7 +721,7 @@ def test_get_all_studies(storage_mode: str) -> None:
         frozen_studies = storage.get_all_studies()
         assert len(frozen_studies) == len(expected_frozen_studies)
         for _, expected_frozen_study in expected_frozen_studies.items():
-            frozen_study: Optional[FrozenStudy] = None
+            frozen_study: FrozenStudy | None = None
             for s in frozen_studies:
                 if s.study_name == expected_frozen_study.study_name:
                     frozen_study = s
@@ -926,7 +922,7 @@ def test_get_n_trials_state_option(storage_mode: str) -> None:
         [float("-inf")],
     ],
 )
-def test_get_best_trial(storage_mode: str, direction: StudyDirection, values: List[float]) -> None:
+def test_get_best_trial(storage_mode: str, direction: StudyDirection, values: list[float]) -> None:
     with StorageSupplier(storage_mode) as storage:
         study_id = storage.create_new_study(directions=[direction])
         with pytest.raises(ValueError):
@@ -1000,11 +996,11 @@ def _setup_studies(
     n_study: int,
     n_trial: int,
     seed: int,
-    direction: Optional[StudyDirection] = None,
-) -> Tuple[Dict[int, FrozenStudy], Dict[int, Dict[int, FrozenTrial]]]:
+    direction: StudyDirection | None = None,
+) -> tuple[dict[int, FrozenStudy], dict[int, dict[int, FrozenTrial]]]:
     generator = random.Random(seed)
-    study_id_to_frozen_study: Dict[int, FrozenStudy] = {}
-    study_id_to_trials: Dict[int, Dict[int, FrozenTrial]] = {}
+    study_id_to_frozen_study: dict[int, FrozenStudy] = {}
+    study_id_to_trials: dict[int, dict[int, FrozenTrial]] = {}
     for i in range(n_study):
         study_name = "test-study-name-{}".format(i)
         if direction is None:
@@ -1050,7 +1046,7 @@ def _generate_trial(generator: random.Random) -> FrozenTrial:
     params = {}
     distributions = {}
     user_attrs = {}
-    system_attrs: Dict[str, Any] = {}
+    system_attrs: dict[str, Any] = {}
     intermediate_values = {}
     for key, (value, dist) in example_params.items():
         if generator.choice([True, False]):
