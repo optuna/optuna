@@ -65,6 +65,9 @@ jobs:
         python -m pip install --upgrade pip
         pip install --progress-bar off -U setuptools
 
+    - name: Install Chromium
+      run: sudo apt-get update && sudo apt-get install -y chromium-browser
+      
     - name: Install
       run: |
         # Install minimal dependencies and confirm that `import optuna` is successful.
