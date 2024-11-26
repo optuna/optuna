@@ -240,7 +240,6 @@ def _format_output(
     output_format: str,
     flatten: bool,
 ) -> str:
-
     if isinstance(records, list):
         values, header = _convert_to_dict(records, columns, flatten)
     else:
