@@ -3,10 +3,6 @@ from __future__ import annotations
 import datetime
 import math
 from typing import Any
-from typing import Dict
-from typing import List
-from typing import Optional
-from typing import Tuple
 from unittest.mock import Mock
 from unittest.mock import patch
 import warnings
@@ -308,7 +304,7 @@ def test_suggest_low_equals_high(storage_mode: str) -> None:
         {"low": 0.0, "high": 3.45, "q": 0.1, "mod_high": 3.4},
     ],
 )
-def test_suggest_discrete_uniform_range(storage_mode: str, range_config: Dict[str, float]) -> None:
+def test_suggest_discrete_uniform_range(storage_mode: str, range_config: dict[str, float]) -> None:
     sampler = samplers.RandomSampler()
 
     # Check upper endpoints.
@@ -378,7 +374,7 @@ def test_suggest_int(storage_mode: str) -> None:
         {"low": 64, "high": 1312, "step": 160, "mod_high": 1184},
     ],
 )
-def test_suggest_int_range(storage_mode: str, range_config: Dict[str, int]) -> None:
+def test_suggest_int_range(storage_mode: str, range_config: dict[str, int]) -> None:
     sampler = samplers.RandomSampler()
 
     # Check upper endpoints.
@@ -497,7 +493,7 @@ def test_relative_parameters(storage_mode: str) -> None:
     class SamplerStubForTestRelativeParameters(samplers.BaseSampler):
         def infer_relative_search_space(
             self, study: "optuna.study.Study", trial: "optuna.trial.FrozenTrial"
-        ) -> Dict[str, distributions.BaseDistribution]:
+        ) -> dict[str, distributions.BaseDistribution]:
             return {
                 "x": FloatDistribution(low=5, high=6),
                 "y": FloatDistribution(low=5, high=6),
@@ -507,8 +503,8 @@ def test_relative_parameters(storage_mode: str) -> None:
             self,
             study: "optuna.study.Study",
             trial: "optuna.trial.FrozenTrial",
-            search_space: Dict[str, distributions.BaseDistribution],
-        ) -> Dict[str, Any]:
+            search_space: dict[str, distributions.BaseDistribution],
+        ) -> dict[str, Any]:
             return {"x": 5.5, "y": 5.5, "z": 5.5}
 
         def sample_independent(
@@ -563,7 +559,7 @@ def test_relative_parameters(storage_mode: str) -> None:
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_datetime_start(storage_mode: str) -> None:
-    trial_datetime_start: List[Optional[datetime.datetime]] = [None]
+    trial_datetime_start: list[datetime.datetime | None] = [None]
 
     def objective(trial: Trial) -> float:
         trial_datetime_start[0] = trial.datetime_start
@@ -641,7 +637,7 @@ def test_report_warning() -> None:
 def test_suggest_with_multi_objectives() -> None:
     study = create_study(directions=["maximize", "maximize"])
 
-    def objective(trial: Trial) -> Tuple[float, float]:
+    def objective(trial: Trial) -> tuple[float, float]:
         p0 = trial.suggest_float("p0", -10, 10)
         p1 = trial.suggest_float("p1", 3, 5)
         p2 = trial.suggest_float("p2", 0.00001, 0.1, log=True)
@@ -661,7 +657,7 @@ def test_suggest_with_multi_objectives() -> None:
 def test_raise_error_for_report_with_multi_objectives() -> None:
     study = create_study(directions=["maximize", "maximize"])
 
-    def objective(trial: Trial) -> Tuple[float, float]:
+    def objective(trial: Trial) -> tuple[float, float]:
         with pytest.raises(NotImplementedError):
             trial.report(1.0, 0)
         return 1.0, 1.0
@@ -672,7 +668,7 @@ def test_raise_error_for_report_with_multi_objectives() -> None:
 def test_raise_error_for_should_prune_multi_objectives() -> None:
     study = create_study(directions=["maximize", "maximize"])
 
-    def objective(trial: Trial) -> Tuple[float, float]:
+    def objective(trial: Trial) -> tuple[float, float]:
         with pytest.raises(NotImplementedError):
             trial.should_prune()
         return 1.0, 1.0
