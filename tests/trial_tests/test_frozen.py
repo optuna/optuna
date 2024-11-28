@@ -3,7 +3,6 @@ from __future__ import annotations
 import copy
 import datetime
 from typing import Any
-from typing import Tuple
 
 import pytest
 
@@ -171,7 +170,7 @@ def test_validate() -> None:
         invalid_trial._validate()
 
     # Invalid: Inconsistent `params` and `distributions`
-    inconsistent_pairs: list[Tuple[dict[str, Any], dict[str, BaseDistribution]]] = [
+    inconsistent_pairs: list[tuple[dict[str, Any], dict[str, BaseDistribution]]] = [
         # `params` has an extra element.
         ({"x": 0.1, "y": 0.5}, {"x": FloatDistribution(0, 1)}),
         # `distributions` has an extra element.
