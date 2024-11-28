@@ -102,12 +102,13 @@ def _generate_default_reference_point(
     n_objectives: int, dividing_parameter: int = 3
 ) -> np.ndarray:
     """Generates default reference points which are `uniformly` spread on a hyperplane."""
-    div_combs = itertools.combinations_with_replacement(range(n_objectives), dividing_parameter)
-    n_div_combs = math.comb(n_objectives + dividing_parameter - 1, dividing_parameter)
-    reference_points = np.zeros((n_div_combs, n_objectives))
-    for i, comb in enumerate(div_combs):
-        for j in comb:
-            reference_points[i, j] += 1.0
+    indices = np.array(
+        list(combinations_with_replacement(range(n_objectives), dividing_parameter))
+    )
+    row_indices = np.repeat(np.arange(len(indices)), dividing_parameter)
+    col_indices = indices.flatten()
+    reference_points = np.zeros((len(indices), n_objectives), dtype=float)
+    reference_points[row_indices, col_indices] += 1.0
     return reference_points
 
 
