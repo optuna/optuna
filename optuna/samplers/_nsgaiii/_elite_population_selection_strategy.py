@@ -18,6 +18,10 @@ if TYPE_CHECKING:
     from optuna.study import Study
 
 
+# Define a coefficient for scaling intervals, used in _filter_inf() to replace +-inf.
+_COEF = 3
+
+
 class NSGAIIIElitePopulationSelectionStrategy:
     def __init__(
         self,
@@ -119,7 +123,7 @@ def _filter_inf(population: list[FrozenTrial]) -> np.ndarray:
     objective_matrix_with_nan = np.where(np.isfinite(objective_matrix), objective_matrix, np.nan)
     max_objectives = np.nanmax(objective_matrix_with_nan, axis=0)
     min_objectives = np.nanmin(objective_matrix_with_nan, axis=0)
-    margins = 3.0 * (max_objectives - min_objectives)
+    margins = _COEF * (max_objectives - min_objectives)
     return np.clip(objective_matrix, min_objectives - margins, max_objectives + margins)
 
 
