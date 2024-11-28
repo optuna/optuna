@@ -3,8 +3,7 @@ from __future__ import annotations
 from collections import defaultdict
 from collections.abc import Callable
 from collections.abc import Sequence
-import itertools
-import math
+from itertools import combinations_with_replacement
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -108,7 +107,7 @@ def _generate_default_reference_point(
     row_indices = np.repeat(np.arange(len(indices)), dividing_parameter)
     col_indices = indices.flatten()
     reference_points = np.zeros((len(indices), n_objectives), dtype=float)
-    reference_points[row_indices, col_indices] += 1.0
+    np.add.at(reference_points, (row_indices, col_indices), 1.0)
     return reference_points
 
 
