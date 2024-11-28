@@ -1,4 +1,6 @@
-from typing import Callable
+from __future__ import annotations
+
+from collections.abc import Callable
 from unittest import mock
 
 import numpy as np
