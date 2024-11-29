@@ -234,3 +234,20 @@ for _ in range(3):
     # finish all trials in the batch
     for trial_number, objective in zip(trial_numbers, objectives):
         study.tell(trial_number, objective)
+
+###################################################################################################
+# .. tip::
+#
+#     :class:`optuna.samplers.TPESampler` class can take a boolean parameter ``constant_liar``. It
+#     is recommended to set this value to ``True`` during batched optimization to avoid having
+#     multiple workers evaluating similar parameter configurations. In particular, if each
+#     objective function evaluation is costly and the durations of the running states are
+#     significant, and/or the number of workers is high.
+
+###################################################################################################
+# .. tip::
+#
+#     :class:`optuna.samplers.CmaEsSampler` class can take a ``popsize`` attribute parameter
+#     used as the initial population size for the CMA-ES algorithm. In the context of batched
+#     optimization, it can  be set equal to a multiple of the batch size in order to benefit from
+#     parallelizable operations.
