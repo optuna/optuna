@@ -753,7 +753,7 @@ def _calculate_weights_below_for_multi_objective(
     if np.isinf(hv) or n_below_feasible == 1:
         weights_below[is_feasible] = 1.0
         # TODO(nabenabe): Assign EPS to non-Pareto solutions, and
-        # solutions with finite contrib if hv is inf.
+        # solutions with finite contrib if hv is inf. Ref: PR#5813.
         return weights_below
 
     contribs = np.zeros(n_below_feasible, dtype=float)
