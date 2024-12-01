@@ -12,6 +12,7 @@ from optuna.samplers._lazy_random_state import LazyRandomState
 from optuna.samplers.nsgaii._constraints_evaluation import _validate_constraints
 from optuna.samplers.nsgaii._elite_population_selection_strategy import _rank_population
 from optuna.trial import FrozenTrial
+from optuna.trial import TrialState
 
 
 if TYPE_CHECKING:
@@ -116,10 +117,7 @@ def _generate_default_reference_point(
 
 
 def _filter_inf(population: list[FrozenTrial]) -> np.ndarray:
-    objective_matrix = np.zeros((len(population), len(population[0].values)))
-    for i, trial in enumerate(population):
-        objective_matrix[i] = np.array(trial.values, dtype=float)
-
+    objective_matrix = np.asarray([t.values for t in population])
     objective_matrix_with_nan = np.where(np.isfinite(objective_matrix), objective_matrix, np.nan)
     max_objectives = np.nanmax(objective_matrix_with_nan, axis=0)
     min_objectives = np.nanmin(objective_matrix_with_nan, axis=0)
