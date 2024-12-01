@@ -12,7 +12,6 @@ from optuna.samplers._lazy_random_state import LazyRandomState
 from optuna.samplers.nsgaii._constraints_evaluation import _validate_constraints
 from optuna.samplers.nsgaii._elite_population_selection_strategy import _rank_population
 from optuna.trial import FrozenTrial
-from optuna.trial import TrialState
 
 
 if TYPE_CHECKING:
