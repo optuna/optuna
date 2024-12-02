@@ -661,8 +661,10 @@ def _split_complete_trials_multi_objective(
 ) -> tuple[list[FrozenTrial], list[FrozenTrial]]:
     if n_below == 0:
         return [], list(trials)
+    elif n_below == len(trials):
+        return list(trials), []
 
-    assert 0 < n_below <= len(trials)
+    assert 0 < n_below < len(trials)
     lvals = np.array([trial.values for trial in trials])
     lvals *= np.array([-1.0 if d == StudyDirection.MAXIMIZE else 1.0 for d in study.directions])
     nondomination_ranks = _fast_non_domination_rank(lvals, n_below=n_below)
