@@ -666,9 +666,8 @@ def _split_complete_trials_multi_objective(
     lvals = np.array([trial.values for trial in trials])
     lvals *= np.array([-1.0 if d == StudyDirection.MAXIMIZE else 1.0 for d in study.directions])
     nondomination_ranks = _fast_non_domination_rank(lvals, n_below=n_below)
-    sorted_ranks, counts_of_each_rank = np.unique(nondomination_ranks, return_counts=True)
-    before_tiebreak = np.cumsum(counts_of_each_rank) <= n_below
-    last_rank_before_tiebreak = sorted_ranks[before_tiebreak][-1] if any(before_tiebreak) else -1
+    _, rank_counts = np.unique(nondomination_ranks, return_counts=True)
+    last_rank_before_tiebreak = np.searchsorted(np.cumsum(rank_counts), n_below, side="right") - 1
     indices = np.arange(len(trials))
     indices_below = indices[nondomination_ranks <= last_rank_before_tiebreak]
 
