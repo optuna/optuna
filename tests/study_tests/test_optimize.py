@@ -1,6 +1,7 @@
-from typing import Callable
-from typing import Generator
-from typing import Optional
+from __future__ import annotations
+
+from collections.abc import Callable
+from collections.abc import Generator
 from unittest import mock
 
 from _pytest.logging import LogCaptureFixture
@@ -81,7 +82,7 @@ def test_run_trial_automatically_fail(storage_mode: str, caplog: LogCaptureFixtu
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_run_trial_pruned(storage_mode: str, caplog: LogCaptureFixture) -> None:
-    def gen_func(intermediate: Optional[float] = None) -> Callable[[Trial], float]:
+    def gen_func(intermediate: float | None = None) -> Callable[[Trial], float]:
         def func(trial: Trial) -> float:
             if intermediate is not None:
                 trial.report(step=1, value=intermediate)
