@@ -1,0 +1,689 @@
+/**
+ * Optuna GRPC API
+ */
+syntax = "proto3";
+
+package optuna;
+
+import "google/protobuf/any.proto";
+
+/**
+ * Optuna storage service defines APIs to interact with the storage.
+ */
+service StorageService {
+    /**
+     * Create a new study.
+     */
+    rpc CreateNewStudy(CreateNewStudyRequest) returns (CreateNewStudyReply);
+    
+    /**
+     * Delete a study.
+     */
+    rpc DeleteStudy(DeleteStudyRequest) returns (DeleteStudyReply);
+
+    /**
+     * Set a study's user attribute.
+     */
+    rpc SetStudyUserAttribute(SetStudyUserAttributeRequest) returns (SetStudyUserAttributeReply);
+
+    /**
+     * Set a study's system attribute.
+     */
+    rpc SetStudySystemAttribute(SetStudySystemAttributeRequest) returns (SetStudySystemAttributeReply);
+    
+    /**
+     * Get a study id by its name.
+     */
+    rpc GetStudyIdFromName(GetStudyIdFromNameRequest) returns (GetStudyIdFromNameReply);
+    
+    /**
+     * Get a study name by its id.
+     */
+    rpc GetStudyNameFromId(GetStudyNameFromIdRequest) returns (GetStudyNameFromIdReply);
+
+    /**
+     * Get study directions.
+     */
+    rpc GetStudyDirections(GetStudyDirectionsRequest) returns (GetStudyDirectionsReply);
+
+    /**
+     * Get study user attributes.
+     */
+    rpc GetStudyUserAttributes(GetStudyUserAttributesRequest) returns (GetStudyUserAttributesReply);
+
+    /**
+     * Get study system attributes.
+     */
+    rpc GetStudySystemAttributes(GetStudySystemAttributesRequest) returns (GetStudySystemAttributesReply);
+
+    /**
+     * Get all studies.
+     */
+    rpc GetAllStudies(GetAllStudiesRequest) returns (GetAllStudiesReply);
+    
+    /**
+     * Create a new trial.
+     */
+    rpc CreateNewTrial(CreateNewTrialRequest) returns (CreateNewTrialReply);
+    
+    /**
+     * Set a trial parameter.
+     */
+    rpc SetTrialParameter(SetTrialParameterRequest) returns (SetTrialParameterReply);
+
+    /**
+     * Get a trial id from its study id and trial number.
+     */
+    rpc GetTrialIdFromStudyIdTrialNumber(GetTrialIdFromStudyIdTrialNumberRequest) returns (GetTrialIdFromStudyIdTrialNumberReply);
+
+    /**
+     * Get a trial number from its id.
+     */
+    rpc GetTrialNumberFromId(GetTrialNumberFromIdRequest) returns (GetTrialNumberFromIdReply);
+
+    /**
+     * Get a trial parameter.
+     */
+    rpc GetTrialParameter(GetTrialParameterRequest) returns (GetTrialParameterReply);
+
+    /**
+     * Set trial state and values. 
+     */
+    rpc SetTrialStateValues(SetTrialStateValuesRequest) returns (SetTrialStateValuesReply);
+
+    /**
+     * Set a trial intermediate value. 
+     */
+    rpc SetTrialIntermediateValue(SetTrialIntermediateValueRequest) returns (SetTrialIntermediateValueReply);
+
+    /**
+     * Set a trial user attribute.
+     */
+    rpc SetTrialUserAttribute(SetTrialUserAttributeRequest) returns (SetTrialUserAttributeReply);
+
+    /**
+     * Set a trial system attribute.
+     */
+    rpc SetTrialSystemAttribute(SetTrialSystemAttributeRequest) returns (SetTrialSystemAttributeReply);
+
+    /**
+     * Get a trial by its ID.
+     */
+    rpc GetTrial(GetTrialRequest) returns (GetTrialReply);
+    
+    /**
+     * Get all trials in a study.
+     */
+    rpc GetAllTrials(GetAllTrialsRequest) returns (GetAllTrialsReply);
+
+    /**
+     * Get the number of trials in a study.
+     */
+    rpc GetNumberOfTrials(GetNumberOfTrialsRequest) returns (GetNumberOfTrialsReply);
+
+    /**
+     * Get a best trial in a study.
+     */
+    rpc GetBestTrial(GetBestTrialRequest) returns (GetBestTrialReply);
+    
+    /**
+     * Get trial parameters.
+     */
+    rpc GetTrialParameters(GetTrialParametersRequest) returns (GetTrialParametersReply);
+
+    /**
+     * Get trial user attributes.
+     */
+    rpc GetTrialUserAttributes(GetTrialUserAttributesRequest) returns (GetTrialUserAttributesReply);
+
+    /**
+     * Get trial system attributes.
+     */
+    rpc GetTrialSystemAttributes(GetTrialSystemAttributesRequest) returns (GetTrialSystemAttributesReply);
+
+    /**
+     * Remove a session. 
+     */
+    rpc RemoveSession(RemoveSessionRequest) returns (RemoveSessionReply);
+
+    /**
+     * Check if a trial is updatable.
+     */
+    rpc CheckTrialIsUpdatable(CheckTrialIsUpdatableRequest) returns (CheckTrialIsUpdatableReply);
+}
+
+/**
+ * ========================================
+ * Messages for Optuna storage service.
+ * ========================================
+ */
+
+/**
+ * Request to create a new study.
+ */
+message CreateNewStudyRequest {
+    repeated StudyDirection directions = 1;
+    string study_name = 2;
+}
+
+/**
+ * Reply to create a new study.
+ */
+message CreateNewStudyReply {
+    int64 study_id = 1;
+}
+
+/**
+ * Request to delete a study.
+ */
+message DeleteStudyRequest {
+    int64 study_id = 1;
+}
+
+/**
+ * Reply to delete a study.
+ */
+message DeleteStudyReply {}
+
+/**
+ * Request to set a study's user attribute.
+ */
+message SetStudyUserAttributeRequest {
+    int64 study_id = 1;
+    string key = 2;
+    JSONSerializable value = 3;
+}
+
+/**
+ * Reply to set a study's user attribute.
+ */
+message SetStudyUserAttributeReply {}
+
+/**
+ * Request to set a study's system attribute.
+ */
+message SetStudySystemAttributeRequest {
+    int64 study_id = 1;
+    string key = 2;
+    JSONSerializable value = 3;
+}
+
+/**
+ * Reply to set a study's system attribute.
+ */
+message SetStudySystemAttributeReply {}
+
+/**
+ * Request to get a study id by its name.
+ */
+message GetStudyIdFromNameRequest {
+    string study_name = 1;
+}
+
+/**
+ * Reply to get a study id by its name.
+ */
+message GetStudyIdFromNameReply {
+    int64 study_id = 1;
+}
+
+/**
+ * Request to get a study name by its id.
+ */
+message GetStudyNameFromIdRequest {
+    int64 study_id = 1;
+}
+
+/**
+ * Reply to get a study name by its id.
+ */
+message GetStudyNameFromIdReply {
+    string study_name = 1;
+}
+
+/**
+ * Request to get study directions.
+ */
+message GetStudyDirectionsRequest {
+    int64 study_id = 1;
+}
+
+/**
+ * Reply to get study directions.
+ */
+message GetStudyDirectionsReply {
+    repeated StudyDirection directions = 1;
+}
+
+/**
+ * Request to get study user attributes.
+ */
+message GetStudyUserAttributesRequest {
+    int64 study_id = 1;
+}
+
+/**
+ * Reply to get study user attributes.
+ */
+message GetStudyUserAttributesReply {
+    map<string, JSONSerializable> user_attributes = 1;
+}
+
+/**
+ * Request to get study system attributes.
+ */
+message GetStudySystemAttributesRequest {
+    int64 study_id = 1;
+}
+
+/**
+ * Reply to get study system attributes.
+ */
+message GetStudySystemAttributesReply {
+    map<string, JSONSerializable> system_attributes = 1;
+}
+
+/**
+ * Request to get all studies.
+ */
+message GetAllStudiesRequest {}
+
+/**
+ * Reply to get all studies.
+ */
+message GetAllStudiesReply {
+    repeated FrozenStudy frozen_studies = 1;
+}
+
+/**
+ * Request to create a new trial.
+ */
+message CreateNewTrialRequest {
+    int64 study_id = 1;
+    oneof template_trial {
+        FrozenTrial template_trial = 2;
+        None none = 3;
+    }
+}
+
+/**
+ * Reply to create a new trial.
+ */
+message CreateNewTrialReply {
+    int64 trial_id = 1;
+}
+
+/**
+ * Request to set a trial parameter.
+ */
+message SetTrialParameterRequest {
+    int64 trial_id = 1;
+    string param_name = 2;
+    float param_value_internal = 3;
+    BaseDistribution distribution = 4;
+}
+
+/**
+ * Reply to set a trial parameter.
+ */
+message SetTrialParameterReply {}
+
+/**
+ * Request to get a trial id from its study id and trial number.
+ */
+message GetTrialIdFromStudyIdTrialNumberRequest {
+    int64 study_id = 1;
+    int32 trial_number = 2;
+}
+
+/**
+ * Reply to get a trial id from its study id and trial number.
+ */
+message GetTrialIdFromStudyIdTrialNumberReply {
+    int64 trial_id = 1;
+}
+
+/**
+ * Request to get a trial number from its id.
+ */
+message GetTrialNumberFromIdRequest {
+    int64 trial_id = 1;
+}
+
+/**
+ * Reply to get a trial number from its id.
+ */
+message GetTrialNumberFromIdReply {
+    int32 trial_number = 1;
+}
+
+/**
+ * Request to get a trial parameter.
+ */
+message GetTrialParameterRequest {
+    int64 trial_id = 1;
+    string param_name = 2;
+}
+
+/**
+ * Reply to get a trial parameter.
+ */
+message GetTrialParameterReply {
+    float param_value_internal = 1;
+}
+
+/**
+ * Request to set trial state and values.
+ */
+message SetTrialStateValuesRequest {
+    int64 trial_id = 1;
+    TrialState state = 2;
+    oneof values {
+        repeated float values = 3;
+        None none = 4;
+    }
+}
+
+/**
+ * Reply to set trial state and values.
+ */
+message SetTrialStateValuesReply {
+    bool trial_updated = 1;
+}
+
+/**
+ * Request to set a trial intermediate value.
+ */
+message SetTrialIntermediateValueRequest {
+    int64 trial_id = 1;
+    int64 step = 2;
+    float intermediate_value = 3;
+}
+
+/**
+ * Reply to set a trial intermediate value.
+ */
+message SetTrialIntermediateValueReply {}
+
+/**
+ * Request to set a trial user attribute.
+ */
+message SetTrialUserAttributeRequest {
+    int64 trial_id = 1;
+    string key = 2;
+    JSONSerializable value = 3;
+}
+
+/**
+ * Reply to set a trial user attribute.
+ */
+message SetTrialUserAttributeReply {}
+
+/**
+ * Request to set a trial system attribute.
+ */
+message SetTrialSystemAttributeRequest {
+    int64 trial_id = 1;
+    string key = 2;
+    JSONSerializable value = 3;
+}
+
+/**
+ * Reply to set a trial system attribute.
+ */
+message SetTrialSystemAttributeReply {}
+
+/**
+ * Request to get a trial by its ID.
+ */
+message GetTrialRequest {
+    int64 trial_id = 1;
+}
+
+/**
+ * Reply to get a trial by its ID.
+ */
+message GetTrialReply {
+    FrozenTrial frozen_trial = 1;
+}
+
+/**
+ * Request to get all trials in a study.
+ */
+message GetAllTrialsRequest {
+    int64 study_id = 1;
+    bool deepcopy = 2;
+    oneof states {
+        repeated TrialState states = 3;
+        None none = 4;
+    }
+}
+
+/**
+ * Reply to get all trials in a study.
+ */
+message GetAllTrialsReply {
+    repeated FrozenTrial frozen_trials = 1;
+}
+
+/**
+ * Request to get the number of trials in a study.
+ */
+message GetNumberOfTrialsRequest {
+    int64 study_id = 1;
+    oneof states {
+        repeated TrialState states = 2;
+        TrialState state = 3;
+        None none = 4;
+    }
+}
+
+/**
+ * Reply to get the number of trials in a study.
+ */
+message GetNumberOfTrialsReply {
+    int64 number_of_trials = 1;
+}
+
+/**
+ * Request to get a best trial in a study.
+ */
+message GetBestTrialRequest {
+    int64 study_id = 1;
+}
+
+/**
+ * Reply to get a best trial in a study.
+ */
+message GetBestTrialReply {
+    FrozenTrial frozen_trial = 1;
+}
+
+/**
+ * Request to get trial parameters.
+ */
+message GetTrialParametersRequest {
+    int64 trial_id = 1;
+}
+
+/**
+ * Reply to get trial parameters.
+ */
+message GetTrialParametersReply {
+    map<string, float> trial_params = 1;
+}
+
+/**
+ * Request to get trial user attributes.
+ */
+message GetTrialUserAttributesRequest {
+    int64 trial_id = 1;
+}
+
+/**
+ * Reply to get trial user attributes.
+ */
+message GetTrialUserAttributesReply {
+    map<string, JSONSerializable> user_attributes = 1;
+}
+
+/**
+ * Request to get trial system attributes.
+ */
+message GetTrialSystemAttributesRequest {
+    int64 trial_id = 1;
+}
+
+/**
+ * Reply to get trial system attributes.
+ */
+message GetTrialSystemAttributesReply {
+    map<string, JSONSerializable> system_attributes = 1;
+}
+
+/**
+ * Request to remove a session.
+ */
+message RemoveSessionRequest {}
+
+/**
+ * Reply to remove a session.
+ */
+message RemoveSessionReply {}
+
+/**
+ * Request to check if a trial is updatable.
+ */
+message CheckTrialIsUpdatableRequest {
+    int64 trial_id = 1;
+    TrialState state = 2;
+}
+
+/**
+ * Reply to check if a trial is updatable.
+ */
+message CheckTrialIsUpdatableReply {}
+
+/**
+ * A class to represent None.
+ */
+message None {}
+
+/**
+ * Study direction.
+ */
+enum StudyDirection {
+    MINIMIZE = 0;
+    MAXIMIZE = 1;
+}
+
+/**
+ * Trial state.
+ */
+enum TrialState {
+    RUNNING = 0;
+    COMPLETE = 1;
+    PRUNED = 2;
+    FAIL = 3;
+    WAITING = 4;
+}
+
+/**
+ * JSON serializable.
+ */
+message JSONSerializable {
+    oneof value {
+        map<string, JSONSerializable> dict = 1;
+        repeated JSONSerializable list = 2;
+        string str = 3;
+        int64 int = 4;
+        float float = 5;
+        bool bool = 6;
+        None none = 7;
+    }
+}
+
+/**
+ * Base distribution.
+ */
+message BaseDistribution {
+    oneof distribution {
+        FloatDistribution float_distribution = 1;
+        IntDistribution int_distribution = 2;
+        CategoricalDistribution categorical_distribution = 3;
+    }
+}
+
+/**
+ * Float distribution.
+ */
+message FloatDistribution {
+    float low = 1;
+    float high = 2;
+    bool log = 3;
+    oneof step {
+        float step = 4;
+        None none = 5;
+    }
+}
+
+/**
+ * Int distribution.
+ */
+message IntDistribution {
+    int64 low = 1;
+    int64 high = 2;
+    bool log = 3;
+    oneof step {
+        int64 step = 4;
+        None none = 5;
+    }
+}
+
+/**
+ * Categorical distribution.
+ */
+message CategoricalDistribution {
+    repeated CategoricalChoiceType choices = 1;
+}
+
+/**
+ * Categorical choice type.
+ */
+message CategoricalChoiceType {
+    oneof choice {
+        string str = 1;
+        int64 int = 2;
+        float float = 3;
+        bool bool = 4;
+        None none = 5;
+    }
+}
+
+/**
+ * Frozen study.
+ */
+message FrozenStudy {
+    int64 study_id = 1;
+    string study_name = 2;
+    repeated StudyDirection directions = 3;
+    map<string, JSONSerializable> user_attributes = 4;
+    map<string, JSONSerializable> system_attributes = 5;
+}
+
+/**
+ * Frozen trial.
+ */
+message FrozenTrial {
+    int64 trial_id = 1;
+    int32 number = 2;
+    TrialState state = 3;
+    repeated float values = 4;
+    google.protobuf.Timestamp datetime_start = 5;
+    google.protobuf.Timestamp datetime_complete = 6;
+    map<string, google.protobuf.Any> params = 7;
+    map<string, BaseDistribution> distributions = 8;
+    map<string, JSONSerializable> user_attributes = 9;
+    map<string, JSONSerializable> system_attributes = 10;
+    map<int64, float> intermediate_values = 11;
+}
