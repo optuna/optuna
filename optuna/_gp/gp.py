@@ -257,7 +257,7 @@ def fit_kernel_params(
         except RuntimeError as e:
             error = e
 
-    logger.warning(
+    logger.warn(
         f"The optimization of kernel_params failed: \n{error}\n"
         "The default initial kernel params will be used instead."
     )
