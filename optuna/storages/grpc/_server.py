@@ -14,9 +14,9 @@ from optuna.storages import RDBStorage
 from optuna.storages.grpc import _api_pb2
 from optuna.storages.grpc._api_pb2_grpc import add_StorageServiceServicer_to_server
 from optuna.storages.grpc._api_pb2_grpc import StorageServiceServicer
-from optuna.study import StudyDirection
-from optuna.trial import FrozenTrial
-from optuna.trial import TrialState
+from optuna.study._study_direction import StudyDirection
+from optuna.trial._frozen import FrozenTrial
+from optuna.trial._state import TrialState
 
 
 DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S.%f"

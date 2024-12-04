@@ -11,7 +11,7 @@ import grpc
 
 from optuna.distributions import BaseDistribution
 from optuna.distributions import distribution_to_json
-from optuna.storages import BaseStorage
+from optuna.storages._base import BaseStorage
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.storages.grpc import _api_pb2
 from optuna.storages.grpc._api_pb2_grpc import StorageServiceStub
@@ -20,8 +20,8 @@ from optuna.storages.grpc._server import _to_proto_frozen_trial
 from optuna.storages.grpc._server import _to_proto_trial_state
 from optuna.study._frozen import FrozenStudy
 from optuna.study._study_direction import StudyDirection
-from optuna.trial import FrozenTrial
-from optuna.trial import TrialState
+from optuna.trial._frozen import FrozenTrial
+from optuna.trial._state import TrialState
 
 
 class GrpcStorageProxy(BaseStorage):
