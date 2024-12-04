@@ -43,8 +43,9 @@ repos:
         "types-setuptools",
         "types-tqdm",
         "typing_extensions>=3.10.0.0",
+        "types-protobuf",
       ]
-      exclude: docs|tutorial|optuna/storages/_rdb/alembic
+      exclude: docs|tutorial|optuna/storages/_rdb/alembic|optuna/storages/grpc/_api_pb2.pyi|optuna/storages/grpc/_api_pb2_grpc.py|optuna/storages/grpc/_api_pb2.py
       args: [
         --warn-unused-configs,
         --disallow-untyped-calls,
