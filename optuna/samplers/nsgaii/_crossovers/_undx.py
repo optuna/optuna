@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from typing import Optional
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -37,7 +36,7 @@ class UNDXCrossover(BaseCrossover):
 
     n_parents = 3
 
-    def __init__(self, sigma_xi: float = 0.5, sigma_eta: Optional[float] = None) -> None:
+    def __init__(self, sigma_xi: float = 0.5, sigma_eta: float | None = None) -> None:
         self._sigma_xi = sigma_xi
         self._sigma_eta = sigma_eta
 
