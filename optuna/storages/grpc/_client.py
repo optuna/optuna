@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Container
+from collections.abc import Iterable
 from collections.abc import Sequence
 from concurrent.futures import ThreadPoolExecutor
 import json
@@ -32,7 +33,7 @@ class GrpcStorageProxy(BaseStorage):
         port: int = 13000,
         thread_pool: ThreadPoolExecutor | None = None,
     ) -> None:
-        self._stub = StorageServiceStub(grpc.insecure_channel(f"{host}:{port}"))
+        self._stub = StorageServiceStub(grpc.insecure_channel(f"{host}:{port}"))  # type: ignore
 
     def create_new_study(
         self, directions: Sequence[StudyDirection], study_name: str | None = None
@@ -189,6 +190,8 @@ class GrpcStorageProxy(BaseStorage):
         deepcopy: bool = True,
         states: Container[TrialState] | None = None,
     ) -> list[FrozenTrial]:
+        if states is not None:
+            assert isinstance(states, Iterable)
         request = _api_pb2.GetAllTrialsRequest(
             study_id=study_id,
             deepcopy=deepcopy,

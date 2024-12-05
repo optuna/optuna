@@ -25,7 +25,10 @@ class _StudyDirection:
     ValueType = typing.NewType("ValueType", builtins.int)
     V: typing_extensions.TypeAlias = ValueType
 
-class _StudyDirectionEnumTypeWrapper(google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[_StudyDirection.ValueType], builtins.type):
+class _StudyDirectionEnumTypeWrapper(
+    google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[_StudyDirection.ValueType],
+    builtins.type,
+):
     DESCRIPTOR: google.protobuf.descriptor.EnumDescriptor
     MINIMIZE: _StudyDirection.ValueType  # 0
     MAXIMIZE: _StudyDirection.ValueType  # 1
@@ -43,7 +46,10 @@ class _TrialState:
     ValueType = typing.NewType("ValueType", builtins.int)
     V: typing_extensions.TypeAlias = ValueType
 
-class _TrialStateEnumTypeWrapper(google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[_TrialState.ValueType], builtins.type):
+class _TrialStateEnumTypeWrapper(
+    google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[_TrialState.ValueType],
+    builtins.type,
+):
     DESCRIPTOR: google.protobuf.descriptor.EnumDescriptor
     RUNNING: _TrialState.ValueType  # 0
     COMPLETE: _TrialState.ValueType  # 1
@@ -80,14 +86,20 @@ class CreateNewStudyRequest(google.protobuf.message.Message):
     STUDY_NAME_FIELD_NUMBER: builtins.int
     study_name: builtins.str
     @property
-    def directions(self) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[global___StudyDirection.ValueType]: ...
+    def directions(
+        self,
+    ) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[
+        global___StudyDirection.ValueType
+    ]: ...
     def __init__(
         self,
         *,
         directions: collections.abc.Iterable[global___StudyDirection.ValueType] | None = ...,
         study_name: builtins.str = ...,
     ) -> None: ...
-    def ClearField(self, field_name: typing.Literal["directions", b"directions", "study_name", b"study_name"]) -> None: ...
+    def ClearField(
+        self, field_name: typing.Literal["directions", b"directions", "study_name", b"study_name"]
+    ) -> None: ...
 
 global___CreateNewStudyRequest = CreateNewStudyRequest
 
@@ -164,7 +176,9 @@ class SetStudyUserAttributeRequest(google.protobuf.message.Message):
         key: builtins.str = ...,
         value: builtins.str = ...,
     ) -> None: ...
-    def ClearField(self, field_name: typing.Literal["key", b"key", "study_id", b"study_id", "value", b"value"]) -> None: ...
+    def ClearField(
+        self, field_name: typing.Literal["key", b"key", "study_id", b"study_id", "value", b"value"]
+    ) -> None: ...
 
 global___SetStudyUserAttributeRequest = SetStudyUserAttributeRequest
 
@@ -203,7 +217,9 @@ class SetStudySystemAttributeRequest(google.protobuf.message.Message):
         key: builtins.str = ...,
         value: builtins.str = ...,
     ) -> None: ...
-    def ClearField(self, field_name: typing.Literal["key", b"key", "study_id", b"study_id", "value", b"value"]) -> None: ...
+    def ClearField(
+        self, field_name: typing.Literal["key", b"key", "study_id", b"study_id", "value", b"value"]
+    ) -> None: ...
 
 global___SetStudySystemAttributeRequest = SetStudySystemAttributeRequest
 
@@ -326,7 +342,11 @@ class GetStudyDirectionsReply(google.protobuf.message.Message):
 
     DIRECTIONS_FIELD_NUMBER: builtins.int
     @property
-    def directions(self) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[global___StudyDirection.ValueType]: ...
+    def directions(
+        self,
+    ) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[
+        global___StudyDirection.ValueType
+    ]: ...
     def __init__(
         self,
         *,
@@ -377,17 +397,23 @@ class GetStudyUserAttributesReply(google.protobuf.message.Message):
             key: builtins.str = ...,
             value: builtins.str = ...,
         ) -> None: ...
-        def ClearField(self, field_name: typing.Literal["key", b"key", "value", b"value"]) -> None: ...
+        def ClearField(
+            self, field_name: typing.Literal["key", b"key", "value", b"value"]
+        ) -> None: ...
 
     USER_ATTRIBUTES_FIELD_NUMBER: builtins.int
     @property
-    def user_attributes(self) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.str]: ...
+    def user_attributes(
+        self,
+    ) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.str]: ...
     def __init__(
         self,
         *,
         user_attributes: collections.abc.Mapping[builtins.str, builtins.str] | None = ...,
     ) -> None: ...
-    def ClearField(self, field_name: typing.Literal["user_attributes", b"user_attributes"]) -> None: ...
+    def ClearField(
+        self, field_name: typing.Literal["user_attributes", b"user_attributes"]
+    ) -> None: ...
 
 global___GetStudyUserAttributesReply = GetStudyUserAttributesReply
 
@@ -432,17 +458,23 @@ class GetStudySystemAttributesReply(google.protobuf.message.Message):
             key: builtins.str = ...,
             value: builtins.str = ...,
         ) -> None: ...
-        def ClearField(self, field_name: typing.Literal["key", b"key", "value", b"value"]) -> None: ...
+        def ClearField(
+            self, field_name: typing.Literal["key", b"key", "value", b"value"]
+        ) -> None: ...
 
     SYSTEM_ATTRIBUTES_FIELD_NUMBER: builtins.int
     @property
-    def system_attributes(self) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.str]: ...
+    def system_attributes(
+        self,
+    ) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.str]: ...
     def __init__(
         self,
         *,
         system_attributes: collections.abc.Mapping[builtins.str, builtins.str] | None = ...,
     ) -> None: ...
-    def ClearField(self, field_name: typing.Literal["system_attributes", b"system_attributes"]) -> None: ...
+    def ClearField(
+        self, field_name: typing.Literal["system_attributes", b"system_attributes"]
+    ) -> None: ...
 
 global___GetStudySystemAttributesReply = GetStudySystemAttributesReply
 
@@ -470,13 +502,19 @@ class GetAllStudiesReply(google.protobuf.message.Message):
 
     FROZEN_STUDIES_FIELD_NUMBER: builtins.int
     @property
-    def frozen_studies(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___FrozenStudy]: ...
+    def frozen_studies(
+        self,
+    ) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[
+        global___FrozenStudy
+    ]: ...
     def __init__(
         self,
         *,
         frozen_studies: collections.abc.Iterable[global___FrozenStudy] | None = ...,
     ) -> None: ...
-    def ClearField(self, field_name: typing.Literal["frozen_studies", b"frozen_studies"]) -> None: ...
+    def ClearField(
+        self, field_name: typing.Literal["frozen_studies", b"frozen_studies"]
+    ) -> None: ...
 
 global___GetAllStudiesReply = GetAllStudiesReply
 
@@ -499,8 +537,13 @@ class CreateNewTrialRequest(google.protobuf.message.Message):
         study_id: builtins.int = ...,
         template_trial: global___FrozenTrial | None = ...,
     ) -> None: ...
-    def HasField(self, field_name: typing.Literal["template_trial", b"template_trial"]) -> builtins.bool: ...
-    def ClearField(self, field_name: typing.Literal["study_id", b"study_id", "template_trial", b"template_trial"]) -> None: ...
+    def HasField(
+        self, field_name: typing.Literal["template_trial", b"template_trial"]
+    ) -> builtins.bool: ...
+    def ClearField(
+        self,
+        field_name: typing.Literal["study_id", b"study_id", "template_trial", b"template_trial"],
+    ) -> None: ...
 
 global___CreateNewTrialRequest = CreateNewTrialRequest
 
@@ -547,7 +590,19 @@ class SetTrialParameterRequest(google.protobuf.message.Message):
         param_value_internal: builtins.float = ...,
         distribution: builtins.str = ...,
     ) -> None: ...
-    def ClearField(self, field_name: typing.Literal["distribution", b"distribution", "param_name", b"param_name", "param_value_internal", b"param_value_internal", "trial_id", b"trial_id"]) -> None: ...
+    def ClearField(
+        self,
+        field_name: typing.Literal[
+            "distribution",
+            b"distribution",
+            "param_name",
+            b"param_name",
+            "param_value_internal",
+            b"param_value_internal",
+            "trial_id",
+            b"trial_id",
+        ],
+    ) -> None: ...
 
 global___SetTrialParameterRequest = SetTrialParameterRequest
 
@@ -583,7 +638,9 @@ class GetTrialIdFromStudyIdTrialNumberRequest(google.protobuf.message.Message):
         study_id: builtins.int = ...,
         trial_number: builtins.int = ...,
     ) -> None: ...
-    def ClearField(self, field_name: typing.Literal["study_id", b"study_id", "trial_number", b"trial_number"]) -> None: ...
+    def ClearField(
+        self, field_name: typing.Literal["study_id", b"study_id", "trial_number", b"trial_number"]
+    ) -> None: ...
 
 global___GetTrialIdFromStudyIdTrialNumberRequest = GetTrialIdFromStudyIdTrialNumberRequest
 
@@ -620,7 +677,9 @@ class SetTrialStateValuesRequest(google.protobuf.message.Message):
     trial_id: builtins.int
     state: global___TrialState.ValueType
     @property
-    def values(self) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[builtins.float]: ...
+    def values(
+        self,
+    ) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[builtins.float]: ...
     def __init__(
         self,
         *,
@@ -628,7 +687,12 @@ class SetTrialStateValuesRequest(google.protobuf.message.Message):
         state: global___TrialState.ValueType = ...,
         values: collections.abc.Iterable[builtins.float] | None = ...,
     ) -> None: ...
-    def ClearField(self, field_name: typing.Literal["state", b"state", "trial_id", b"trial_id", "values", b"values"]) -> None: ...
+    def ClearField(
+        self,
+        field_name: typing.Literal[
+            "state", b"state", "trial_id", b"trial_id", "values", b"values"
+        ],
+    ) -> None: ...
 
 global___SetTrialStateValuesRequest = SetTrialStateValuesRequest
 
@@ -647,7 +711,9 @@ class SetTrialStateValuesReply(google.protobuf.message.Message):
         *,
         trial_updated: builtins.bool = ...,
     ) -> None: ...
-    def ClearField(self, field_name: typing.Literal["trial_updated", b"trial_updated"]) -> None: ...
+    def ClearField(
+        self, field_name: typing.Literal["trial_updated", b"trial_updated"]
+    ) -> None: ...
 
 global___SetTrialStateValuesReply = SetTrialStateValuesReply
 
@@ -672,7 +738,12 @@ class SetTrialIntermediateValueRequest(google.protobuf.message.Message):
         step: builtins.int = ...,
         intermediate_value: builtins.float = ...,
     ) -> None: ...
-    def ClearField(self, field_name: typing.Literal["intermediate_value", b"intermediate_value", "step", b"step", "trial_id", b"trial_id"]) -> None: ...
+    def ClearField(
+        self,
+        field_name: typing.Literal[
+            "intermediate_value", b"intermediate_value", "step", b"step", "trial_id", b"trial_id"
+        ],
+    ) -> None: ...
 
 global___SetTrialIntermediateValueRequest = SetTrialIntermediateValueRequest
 
@@ -711,7 +782,9 @@ class SetTrialUserAttributeRequest(google.protobuf.message.Message):
         key: builtins.str = ...,
         value: builtins.str = ...,
     ) -> None: ...
-    def ClearField(self, field_name: typing.Literal["key", b"key", "trial_id", b"trial_id", "value", b"value"]) -> None: ...
+    def ClearField(
+        self, field_name: typing.Literal["key", b"key", "trial_id", b"trial_id", "value", b"value"]
+    ) -> None: ...
 
 global___SetTrialUserAttributeRequest = SetTrialUserAttributeRequest
 
@@ -750,7 +823,9 @@ class SetTrialSystemAttributeRequest(google.protobuf.message.Message):
         key: builtins.str = ...,
         value: builtins.str = ...,
     ) -> None: ...
-    def ClearField(self, field_name: typing.Literal["key", b"key", "trial_id", b"trial_id", "value", b"value"]) -> None: ...
+    def ClearField(
+        self, field_name: typing.Literal["key", b"key", "trial_id", b"trial_id", "value", b"value"]
+    ) -> None: ...
 
 global___SetTrialSystemAttributeRequest = SetTrialSystemAttributeRequest
 
@@ -803,7 +878,9 @@ class GetTrialReply(google.protobuf.message.Message):
         *,
         frozen_trial: global___FrozenTrial | None = ...,
     ) -> None: ...
-    def HasField(self, field_name: typing.Literal["frozen_trial", b"frozen_trial"]) -> builtins.bool: ...
+    def HasField(
+        self, field_name: typing.Literal["frozen_trial", b"frozen_trial"]
+    ) -> builtins.bool: ...
     def ClearField(self, field_name: typing.Literal["frozen_trial", b"frozen_trial"]) -> None: ...
 
 global___GetTrialReply = GetTrialReply
@@ -822,7 +899,11 @@ class GetAllTrialsRequest(google.protobuf.message.Message):
     study_id: builtins.int
     deepcopy: builtins.bool
     @property
-    def states(self) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[global___TrialState.ValueType]: ...
+    def states(
+        self,
+    ) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[
+        global___TrialState.ValueType
+    ]: ...
     def __init__(
         self,
         *,
@@ -830,7 +911,12 @@ class GetAllTrialsRequest(google.protobuf.message.Message):
         deepcopy: builtins.bool = ...,
         states: collections.abc.Iterable[global___TrialState.ValueType] | None = ...,
     ) -> None: ...
-    def ClearField(self, field_name: typing.Literal["deepcopy", b"deepcopy", "states", b"states", "study_id", b"study_id"]) -> None: ...
+    def ClearField(
+        self,
+        field_name: typing.Literal[
+            "deepcopy", b"deepcopy", "states", b"states", "study_id", b"study_id"
+        ],
+    ) -> None: ...
 
 global___GetAllTrialsRequest = GetAllTrialsRequest
 
@@ -844,13 +930,19 @@ class GetAllTrialsReply(google.protobuf.message.Message):
 
     FROZEN_TRIALS_FIELD_NUMBER: builtins.int
     @property
-    def frozen_trials(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___FrozenTrial]: ...
+    def frozen_trials(
+        self,
+    ) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[
+        global___FrozenTrial
+    ]: ...
     def __init__(
         self,
         *,
         frozen_trials: collections.abc.Iterable[global___FrozenTrial] | None = ...,
     ) -> None: ...
-    def ClearField(self, field_name: typing.Literal["frozen_trials", b"frozen_trials"]) -> None: ...
+    def ClearField(
+        self, field_name: typing.Literal["frozen_trials", b"frozen_trials"]
+    ) -> None: ...
 
 global___GetAllTrialsReply = GetAllTrialsReply
 
@@ -876,7 +968,9 @@ class FrozenStudy(google.protobuf.message.Message):
             key: builtins.str = ...,
             value: builtins.str = ...,
         ) -> None: ...
-        def ClearField(self, field_name: typing.Literal["key", b"key", "value", b"value"]) -> None: ...
+        def ClearField(
+            self, field_name: typing.Literal["key", b"key", "value", b"value"]
+        ) -> None: ...
 
     @typing.final
     class SystemAttributesEntry(google.protobuf.message.Message):
@@ -892,7 +986,9 @@ class FrozenStudy(google.protobuf.message.Message):
             key: builtins.str = ...,
             value: builtins.str = ...,
         ) -> None: ...
-        def ClearField(self, field_name: typing.Literal["key", b"key", "value", b"value"]) -> None: ...
+        def ClearField(
+            self, field_name: typing.Literal["key", b"key", "value", b"value"]
+        ) -> None: ...
 
     STUDY_ID_FIELD_NUMBER: builtins.int
     STUDY_NAME_FIELD_NUMBER: builtins.int
@@ -902,11 +998,19 @@ class FrozenStudy(google.protobuf.message.Message):
     study_id: builtins.int
     study_name: builtins.str
     @property
-    def directions(self) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[global___StudyDirection.ValueType]: ...
+    def directions(
+        self,
+    ) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[
+        global___StudyDirection.ValueType
+    ]: ...
     @property
-    def user_attributes(self) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.str]: ...
+    def user_attributes(
+        self,
+    ) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.str]: ...
     @property
-    def system_attributes(self) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.str]: ...
+    def system_attributes(
+        self,
+    ) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.str]: ...
     def __init__(
         self,
         *,
@@ -916,7 +1020,21 @@ class FrozenStudy(google.protobuf.message.Message):
         user_attributes: collections.abc.Mapping[builtins.str, builtins.str] | None = ...,
         system_attributes: collections.abc.Mapping[builtins.str, builtins.str] | None = ...,
     ) -> None: ...
-    def ClearField(self, field_name: typing.Literal["directions", b"directions", "study_id", b"study_id", "study_name", b"study_name", "system_attributes", b"system_attributes", "user_attributes", b"user_attributes"]) -> None: ...
+    def ClearField(
+        self,
+        field_name: typing.Literal[
+            "directions",
+            b"directions",
+            "study_id",
+            b"study_id",
+            "study_name",
+            b"study_name",
+            "system_attributes",
+            b"system_attributes",
+            "user_attributes",
+            b"user_attributes",
+        ],
+    ) -> None: ...
 
 global___FrozenStudy = FrozenStudy
 
@@ -942,7 +1060,9 @@ class FrozenTrial(google.protobuf.message.Message):
             key: builtins.str = ...,
             value: builtins.float = ...,
         ) -> None: ...
-        def ClearField(self, field_name: typing.Literal["key", b"key", "value", b"value"]) -> None: ...
+        def ClearField(
+            self, field_name: typing.Literal["key", b"key", "value", b"value"]
+        ) -> None: ...
 
     @typing.final
     class DistributionsEntry(google.protobuf.message.Message):
@@ -958,7 +1078,9 @@ class FrozenTrial(google.protobuf.message.Message):
             key: builtins.str = ...,
             value: builtins.str = ...,
         ) -> None: ...
-        def ClearField(self, field_name: typing.Literal["key", b"key", "value", b"value"]) -> None: ...
+        def ClearField(
+            self, field_name: typing.Literal["key", b"key", "value", b"value"]
+        ) -> None: ...
 
     @typing.final
     class UserAttributesEntry(google.protobuf.message.Message):
@@ -974,7 +1096,9 @@ class FrozenTrial(google.protobuf.message.Message):
             key: builtins.str = ...,
             value: builtins.str = ...,
         ) -> None: ...
-        def ClearField(self, field_name: typing.Literal["key", b"key", "value", b"value"]) -> None: ...
+        def ClearField(
+            self, field_name: typing.Literal["key", b"key", "value", b"value"]
+        ) -> None: ...
 
     @typing.final
     class SystemAttributesEntry(google.protobuf.message.Message):
@@ -990,7 +1114,9 @@ class FrozenTrial(google.protobuf.message.Message):
             key: builtins.str = ...,
             value: builtins.str = ...,
         ) -> None: ...
-        def ClearField(self, field_name: typing.Literal["key", b"key", "value", b"value"]) -> None: ...
+        def ClearField(
+            self, field_name: typing.Literal["key", b"key", "value", b"value"]
+        ) -> None: ...
 
     @typing.final
     class IntermediateValuesEntry(google.protobuf.message.Message):
@@ -1006,7 +1132,9 @@ class FrozenTrial(google.protobuf.message.Message):
             key: builtins.int = ...,
             value: builtins.float = ...,
         ) -> None: ...
-        def ClearField(self, field_name: typing.Literal["key", b"key", "value", b"value"]) -> None: ...
+        def ClearField(
+            self, field_name: typing.Literal["key", b"key", "value", b"value"]
+        ) -> None: ...
 
     TRIAL_ID_FIELD_NUMBER: builtins.int
     NUMBER_FIELD_NUMBER: builtins.int
@@ -1025,17 +1153,29 @@ class FrozenTrial(google.protobuf.message.Message):
     datetime_start: builtins.str
     datetime_complete: builtins.str
     @property
-    def values(self) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[builtins.float]: ...
+    def values(
+        self,
+    ) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[builtins.float]: ...
     @property
-    def params(self) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.float]: ...
+    def params(
+        self,
+    ) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.float]: ...
     @property
-    def distributions(self) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.str]: ...
+    def distributions(
+        self,
+    ) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.str]: ...
     @property
-    def user_attributes(self) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.str]: ...
+    def user_attributes(
+        self,
+    ) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.str]: ...
     @property
-    def system_attributes(self) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.str]: ...
+    def system_attributes(
+        self,
+    ) -> google.protobuf.internal.containers.ScalarMap[builtins.str, builtins.str]: ...
     @property
-    def intermediate_values(self) -> google.protobuf.internal.containers.ScalarMap[builtins.int, builtins.float]: ...
+    def intermediate_values(
+        self,
+    ) -> google.protobuf.internal.containers.ScalarMap[builtins.int, builtins.float]: ...
     def __init__(
         self,
         *,
@@ -1051,6 +1191,32 @@ class FrozenTrial(google.protobuf.message.Message):
         system_attributes: collections.abc.Mapping[builtins.str, builtins.str] | None = ...,
         intermediate_values: collections.abc.Mapping[builtins.int, builtins.float] | None = ...,
     ) -> None: ...
-    def ClearField(self, field_name: typing.Literal["datetime_complete", b"datetime_complete", "datetime_start", b"datetime_start", "distributions", b"distributions", "intermediate_values", b"intermediate_values", "number", b"number", "params", b"params", "state", b"state", "system_attributes", b"system_attributes", "trial_id", b"trial_id", "user_attributes", b"user_attributes", "values", b"values"]) -> None: ...
+    def ClearField(
+        self,
+        field_name: typing.Literal[
+            "datetime_complete",
+            b"datetime_complete",
+            "datetime_start",
+            b"datetime_start",
+            "distributions",
+            b"distributions",
+            "intermediate_values",
+            b"intermediate_values",
+            "number",
+            b"number",
+            "params",
+            b"params",
+            "state",
+            b"state",
+            "system_attributes",
+            b"system_attributes",
+            "trial_id",
+            b"trial_id",
+            "user_attributes",
+            b"user_attributes",
+            "values",
+            b"values",
+        ],
+    ) -> None: ...
 
 global___FrozenTrial = FrozenTrial

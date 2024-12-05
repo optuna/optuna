@@ -402,7 +402,7 @@ class OptunaStorageProxyService(StorageServiceServicer):
             study.trials[trial.number] = trial
 
 
-def _to_proto_trial_state(state: TrialState) -> _api_pb2.TrialState:
+def _to_proto_trial_state(state: TrialState) -> _api_pb2.TrialState.ValueType:
     if state == TrialState.RUNNING:
         return _api_pb2.RUNNING
     if state == TrialState.COMPLETE:
@@ -416,7 +416,7 @@ def _to_proto_trial_state(state: TrialState) -> _api_pb2.TrialState:
     raise ValueError(f"Unknown TrialState: {state}")
 
 
-def _from_proto_trial_state(state: _api_pb2.global___TrialState) -> TrialState:
+def _from_proto_trial_state(state: _api_pb2.TrialState.ValueType) -> TrialState:
     if state == _api_pb2.RUNNING:
         return TrialState.RUNNING
     if state == _api_pb2.COMPLETE:
@@ -507,7 +507,9 @@ def run_server(
     storage_url: str, host: str, port: int, thread_pool: ThreadPoolExecutor | None = None
 ) -> None:
     server = grpc.server(thread_pool or ThreadPoolExecutor(max_workers=10))
-    add_StorageServiceServicer_to_server(OptunaStorageProxyService(storage_url), server)
+    add_StorageServiceServicer_to_server(
+        OptunaStorageProxyService(storage_url), server
+    )  # type: ignore
     server.add_insecure_port(f"{host}:{port}")
     server.start()
     print(f"Server started at {host}:{port}")
