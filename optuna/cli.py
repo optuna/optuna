@@ -199,6 +199,7 @@ def _dump_value(records: list[dict[str, Any]], header: list[str]) -> str:
 
 
 def _dump_table(records: list[dict[str, Any]], header: list[str]) -> str:
+
     rows = []
     for record in records:
         row = []
@@ -215,7 +216,10 @@ def _dump_table(records: list[dict[str, Any]], header: list[str]) -> str:
         for t in value_types:
             if t == ValueType.STRING:
                 value_type = ValueType.STRING
-        max_width = max(len(header[column]), max(row[column].width() for row in rows))
+        if not rows:
+            max_width = len(header[column])
+        else:
+            max_width = max(len(header[column]), max(row[column].width() for row in rows))
         separator += "-" * (max_width + 2) + "+"
         if value_type == ValueType.NUMERIC:
             header_string += f" {header[column]:>{max_width}} |"
@@ -228,7 +232,8 @@ def _dump_table(records: list[dict[str, Any]], header: list[str]) -> str:
     ret += separator + "\n"
     ret += header_string + "\n"
     ret += separator + "\n"
-    ret += "\n".join(rows_string) + "\n"
+    if rows:
+        ret += "\n".join(rows_string) + "\n"
     ret += separator + "\n"
 
     return ret
