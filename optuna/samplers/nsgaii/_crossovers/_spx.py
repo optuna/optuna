@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from typing import Optional
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -34,7 +33,7 @@ class SPXCrossover(BaseCrossover):
 
     n_parents = 3
 
-    def __init__(self, epsilon: Optional[float] = None) -> None:
+    def __init__(self, epsilon: float | None = None) -> None:
         self._epsilon = epsilon
 
     def crossover(
