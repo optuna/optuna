@@ -199,7 +199,6 @@ def _dump_value(records: list[dict[str, Any]], header: list[str]) -> str:
 
 
 def _dump_table(records: list[dict[str, Any]], header: list[str]) -> str:
-
     rows = []
     for record in records:
         row = []
