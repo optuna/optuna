@@ -1,4 +1,4 @@
-from typing import Optional
+from __future__ import annotations
 
 import numpy as np
 
@@ -66,7 +66,7 @@ class PatientPruner(BasePruner):
     """
 
     def __init__(
-        self, wrapped_pruner: Optional[BasePruner], patience: int, min_delta: float = 0.0
+        self, wrapped_pruner: BasePruner | None, patience: int, min_delta: float = 0.0
     ) -> None:
         if patience < 0:
             raise ValueError(f"patience cannot be negative but got {patience}.")
