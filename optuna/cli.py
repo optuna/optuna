@@ -231,7 +231,7 @@ def _dump_table(records: list[dict[str, Any]], header: list[str]) -> str:
     ret += separator + "\n"
     ret += header_string + "\n"
     ret += separator + "\n"
-    if rows:
+    if len(rows) == 0:
         ret += "\n".join(rows_string) + "\n"
     ret += separator + "\n"
 
