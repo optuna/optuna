@@ -269,7 +269,7 @@ message CreateNewTrialReply {
 message SetTrialParameterRequest {
     int64 trial_id = 1;
     string param_name = 2;
-    float param_value_internal = 3;
+    double param_value_internal = 3;
     string distribution = 4;
 }
 
@@ -299,7 +299,7 @@ message GetTrialIdFromStudyIdTrialNumberReply {
 message SetTrialStateValuesRequest {
     int64 trial_id = 1;
     TrialState state = 2;
-    repeated float values = 3;
+    repeated double values = 3;
 }
 
 /**
@@ -315,7 +315,7 @@ message SetTrialStateValuesReply {
 message SetTrialIntermediateValueRequest {
     int64 trial_id = 1;
     int64 step = 2;
-    float intermediate_value = 3;
+    double intermediate_value = 3;
 }
 
 /**
@@ -418,12 +418,12 @@ message FrozenTrial {
     int64 trial_id = 1;
     int64 number = 2;
     TrialState state = 3;
-    repeated float values = 4;
+    repeated double values = 4;
     string datetime_start = 5;
     string datetime_complete = 6;
-    map<string, float> params = 7;
+    map<string, double> params = 7;
     map<string, string> distributions = 8;
     map<string, string> user_attributes = 9;
     map<string, string> system_attributes = 10;
-    map<int64, float> intermediate_values = 11;
+    map<int64, double> intermediate_values = 11;
 }

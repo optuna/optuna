@@ -19,6 +19,7 @@ from optuna.storages import BaseStorage
 from optuna.storages import InMemoryStorage
 from optuna.storages import RDBStorage
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
+from optuna.storages.grpc import GrpcStorageProxy
 from optuna.study._frozen import FrozenStudy
 from optuna.study._study_direction import StudyDirection
 from optuna.testing.storages import STORAGE_MODES
@@ -69,7 +70,7 @@ def test_create_new_study_unique_id(storage_mode: str) -> None:
         study_id3 = storage.create_new_study(directions=[StudyDirection.MINIMIZE])
 
         # Study id must not be reused after deletion.
-        if not isinstance(storage, (RDBStorage, _CachedStorage)):
+        if not isinstance(storage, (RDBStorage, _CachedStorage, GrpcStorageProxy)):
             # TODO(ytsmiling) Fix RDBStorage so that it does not reuse study_id.
             assert len({study_id, study_id2, study_id3}) == 3
         frozen_studies = storage.get_all_studies()
@@ -770,7 +771,10 @@ def test_get_all_trials(storage_mode: str) -> None:
 @pytest.mark.parametrize("param_names", [["a", "b"], ["b", "a"]])
 def test_get_all_trials_params_order(storage_mode: str, param_names: list[str]) -> None:
     # We don't actually require that all storages to preserve the order of parameters,
-    # but all current implementations do, so we test this property.
+    # but all current implementations except for GrpcStorageProxy do, so we test this property.
+    if storage_mode == "grpc":
+        pytest.skip("GrpcStorageProxy does not preserve the order of parameters.")
+
     with StorageSupplier(storage_mode) as storage:
         study_id = storage.create_new_study(directions=[StudyDirection.MINIMIZE])
         trial_id = storage.create_new_trial(

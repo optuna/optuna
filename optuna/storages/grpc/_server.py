@@ -10,6 +10,7 @@ import grpc
 
 from optuna.distributions import distribution_to_json
 from optuna.distributions import json_to_distribution
+from optuna.exceptions import DuplicatedStudyError
 from optuna.storages import RDBStorage
 from optuna.storages.grpc import _api_pb2
 from optuna.storages.grpc._api_pb2_grpc import add_StorageServiceServicer_to_server
@@ -47,18 +48,21 @@ class OptunaStorageProxyService(StorageServiceServicer):
         request: _api_pb2.CreateNewStudyRequest,
         context: grpc.ServicerContext,
     ) -> _api_pb2.CreateNewStudyReply:
-        study_id = self._backend.create_new_study(
-            directions=request.directions,
-            study_name=request.study_name,
-        )
+        directions = [
+            StudyDirection.MINIMIZE if d == _api_pb2.MINIMIZE else StudyDirection.MAXIMIZE
+            for d in request.directions
+        ]
+        study_name = request.study_name
+
+        try:
+            study_id = self._backend.create_new_study(directions=directions, study_name=study_name)
+        except DuplicatedStudyError as e:
+            context.abort(code=grpc.StatusCode.ALREADY_EXISTS, details=str(e))
 
         with self._lock:
             study = _StudyInfo()
-            study.directions = [
-                StudyDirection.MINIMIZE if d == _api_pb2.MINIMIZE else StudyDirection.MAXIMIZE
-                for d in request.directions
-            ]
-            study.name = request.study_name
+            study.directions = directions
+            study.name = study_name
             self._studies[study_id] = study
 
         return _api_pb2.CreateNewStudyReply(study_id=study_id)
@@ -69,7 +73,10 @@ class OptunaStorageProxyService(StorageServiceServicer):
         context: grpc.ServicerContext,
     ) -> _api_pb2.DeleteStudyReply:
         study_id = request.study_id
-        self._backend.delete_study(study_id)
+        try:
+            self._backend.delete_study(study_id)
+        except KeyError as e:
+            context.abort(code=grpc.StatusCode.NOT_FOUND, details=str(e))
 
         with self._lock:
             if request.study_id in self._studies:
@@ -88,7 +95,12 @@ class OptunaStorageProxyService(StorageServiceServicer):
         request: _api_pb2.SetStudyUserAttributeRequest,
         context: grpc.ServicerContext,
     ) -> _api_pb2.SetStudyUserAttributeReply:
-        self._backend.set_study_user_attr(request.study_id, request.key, json.dumps(request.value))
+        try:
+            self._backend.set_study_user_attr(
+                request.study_id, request.key, json.loads(request.value)
+            )
+        except KeyError as e:
+            context.abort(code=grpc.StatusCode.NOT_FOUND, details=str(e))
         return _api_pb2.SetStudyUserAttributeReply()
 
     def SetStudySystemAttribute(
@@ -96,9 +108,12 @@ class OptunaStorageProxyService(StorageServiceServicer):
         request: _api_pb2.SetStudySystemAttributeRequest,
         context: grpc.ServicerContext,
     ) -> _api_pb2.SetStudySystemAttributeReply:
-        self._backend.set_study_system_attr(
-            request.study_id, request.key, json.dumps(request.value)
-        )
+        try:
+            self._backend.set_study_system_attr(
+                request.study_id, request.key, json.loads(request.value)
+            )
+        except KeyError as e:
+            context.abort(code=grpc.StatusCode.NOT_FOUND, details=str(e))
         return _api_pb2.SetStudySystemAttributeReply()
 
     def GetStudyIdFromName(
@@ -106,7 +121,10 @@ class OptunaStorageProxyService(StorageServiceServicer):
         request: _api_pb2.GetStudyIdFromNameRequest,
         context: grpc.ServicerContext,
     ) -> _api_pb2.GetStudyIdFromNameReply:
-        study_id = self._backend.get_study_id_from_name(request.study_name)
+        try:
+            study_id = self._backend.get_study_id_from_name(request.study_name)
+        except KeyError as e:
+            context.abort(code=grpc.StatusCode.NOT_FOUND, details=str(e))
         return _api_pb2.GetStudyIdFromNameReply(study_id=study_id)
 
     def GetStudyNameFromId(
@@ -122,12 +140,16 @@ class OptunaStorageProxyService(StorageServiceServicer):
                 if name is not None:
                     return _api_pb2.GetStudyNameFromIdReply(study_name=name)
 
-        name = self._backend.get_study_name_from_id(study_id)
+        try:
+            name = self._backend.get_study_name_from_id(study_id)
+        except KeyError as e:
+            context.abort(code=grpc.StatusCode.NOT_FOUND, details=str(e))
         with self._lock:
             if study_id not in self._studies:
                 self._studies[study_id] = _StudyInfo()
             self._studies[study_id].name = name
 
+        assert name is not None
         return _api_pb2.GetStudyNameFromIdReply(study_name=name)
 
     def GetStudyDirections(
@@ -151,12 +173,16 @@ class OptunaStorageProxyService(StorageServiceServicer):
                         ]
                     )
 
-        directions = self._backend.get_study_directions(study_id)
+        try:
+            directions = self._backend.get_study_directions(study_id)
+        except KeyError as e:
+            context.abort(code=grpc.StatusCode.NOT_FOUND, details=str(e))
         with self._lock:
             if study_id not in self._studies:
                 self._studies[study_id] = _StudyInfo()
             self._studies[study_id].directions = directions
 
+        assert directions is not None
         return _api_pb2.GetStudyDirectionsReply(
             directions=[
                 _api_pb2.MINIMIZE if d == StudyDirection.MINIMIZE else _api_pb2.MAXIMIZE
@@ -169,7 +195,10 @@ class OptunaStorageProxyService(StorageServiceServicer):
         request: _api_pb2.GetStudyUserAttributesRequest,
         context: grpc.ServicerContext,
     ) -> _api_pb2.GetStudyUserAttributesReply:
-        attributes = self._backend.get_study_user_attrs(request.study_id)
+        try:
+            attributes = self._backend.get_study_user_attrs(request.study_id)
+        except KeyError as e:
+            context.abort(code=grpc.StatusCode.NOT_FOUND, details=str(e))
         return _api_pb2.GetStudyUserAttributesReply(
             user_attributes={key: json.dumps(value) for key, value in attributes.items()}
         )
@@ -179,7 +208,10 @@ class OptunaStorageProxyService(StorageServiceServicer):
         request: _api_pb2.GetStudySystemAttributesRequest,
         context: grpc.ServicerContext,
     ) -> _api_pb2.GetStudySystemAttributesReply:
-        attributes = self._backend.get_study_system_attrs(request.study_id)
+        try:
+            attributes = self._backend.get_study_system_attrs(request.study_id)
+        except KeyError as e:
+            context.abort(code=grpc.StatusCode.NOT_FOUND, details=str(e))
         return _api_pb2.GetStudySystemAttributesReply(
             system_attributes={key: json.dumps(value) for key, value in attributes.items()}
         )
@@ -221,7 +253,10 @@ class OptunaStorageProxyService(StorageServiceServicer):
         if request.template_trial is not None:
             template_trial = _from_proto_frozen_trial(request.template_trial)
 
-        frozen_trial = self._backend._create_new_trial(study_id, template_trial)
+        try:
+            frozen_trial = self._backend._create_new_trial(study_id, template_trial)
+        except KeyError as e:
+            context.abort(code=grpc.StatusCode.NOT_FOUND, details=str(e))
         trial_id = frozen_trial._trial_id
         with self._lock:
             if study_id not in self._studies:
@@ -246,7 +281,14 @@ class OptunaStorageProxyService(StorageServiceServicer):
         param_name = request.param_name
         param_value_internal = request.param_value_internal
         distribution = json_to_distribution(request.distribution)
-        self._backend.set_trial_param(trial_id, param_name, param_value_internal, distribution)
+        try:
+            self._backend.set_trial_param(trial_id, param_name, param_value_internal, distribution)
+        except KeyError as e:
+            context.abort(code=grpc.StatusCode.NOT_FOUND, details=str(e))
+        except RuntimeError as e:
+            context.abort(code=grpc.StatusCode.FAILED_PRECONDITION, details=str(e))
+        except ValueError as e:
+            context.abort(code=grpc.StatusCode.INVALID_ARGUMENT, details=str(e))
         return _api_pb2.SetTrialParameterReply()
 
     def GetTrialIdFromStudyIdTrialNumber(
@@ -261,7 +303,12 @@ class OptunaStorageProxyService(StorageServiceServicer):
             if key in self._study_id_and_number_to_trial_id:
                 trial_id = self._study_id_and_number_to_trial_id[key]
 
-        trial_id = self._backend.get_trial_id_from_study_id_trial_number(study_id, trial_number)
+        try:
+            trial_id = self._backend.get_trial_id_from_study_id_trial_number(
+                study_id, trial_number
+            )
+        except KeyError as e:
+            context.abort(code=grpc.StatusCode.NOT_FOUND, details=str(e))
         return _api_pb2.GetTrialIdFromStudyIdTrialNumberReply(trial_id=trial_id)
 
     def SetTrialStateValues(
@@ -272,9 +319,14 @@ class OptunaStorageProxyService(StorageServiceServicer):
         trial_id = request.trial_id
         state = request.state
         values = request.values
-        trial_updated = self._backend.set_trial_state_values(
-            trial_id, _from_proto_trial_state(state), values
-        )
+        try:
+            trial_updated = self._backend.set_trial_state_values(
+                trial_id, _from_proto_trial_state(state), values
+            )
+        except KeyError as e:
+            context.abort(code=grpc.StatusCode.NOT_FOUND, details=str(e))
+        except RuntimeError as e:
+            context.abort(code=grpc.StatusCode.FAILED_PRECONDITION, details=str(e))
         return _api_pb2.SetTrialStateValuesReply(trial_updated=trial_updated)
 
     def SetTrialIntermediateValue(
@@ -285,7 +337,12 @@ class OptunaStorageProxyService(StorageServiceServicer):
         trial_id = request.trial_id
         step = request.step
         intermediate_value = request.intermediate_value
-        self._backend.set_trial_intermediate_value(trial_id, step, intermediate_value)
+        try:
+            self._backend.set_trial_intermediate_value(trial_id, step, intermediate_value)
+        except KeyError as e:
+            context.abort(code=grpc.StatusCode.NOT_FOUND, details=str(e))
+        except RuntimeError as e:
+            context.abort(code=grpc.StatusCode.FAILED_PRECONDITION, details=str(e))
         return _api_pb2.SetTrialIntermediateValueReply()
 
     def SetTrialUserAttribute(
@@ -296,7 +353,12 @@ class OptunaStorageProxyService(StorageServiceServicer):
         trial_id = request.trial_id
         key = request.key
         value = json.loads(request.value)
-        self._backend.set_trial_user_attr(trial_id, key, value)
+        try:
+            self._backend.set_trial_user_attr(trial_id, key, value)
+        except KeyError as e:
+            context.abort(code=grpc.StatusCode.NOT_FOUND, details=str(e))
+        except RuntimeError as e:
+            context.abort(code=grpc.StatusCode.FAILED_PRECONDITION, details=str(e))
         return _api_pb2.SetTrialUserAttributeReply()
 
     def SetTrialSystemAttribute(
@@ -307,7 +369,12 @@ class OptunaStorageProxyService(StorageServiceServicer):
         trial_id = request.trial_id
         key = request.key
         value = json.loads(request.value)
-        self._backend.set_trial_system_attr(trial_id, key, value)
+        try:
+            self._backend.set_trial_system_attr(trial_id, key, value)
+        except KeyError as e:
+            context.abort(code=grpc.StatusCode.NOT_FOUND, details=str(e))
+        except RuntimeError as e:
+            context.abort(code=grpc.StatusCode.FAILED_PRECONDITION, details=str(e))
         return _api_pb2.SetTrialSystemAttributeReply()
 
     def GetTrial(
@@ -320,8 +387,10 @@ class OptunaStorageProxyService(StorageServiceServicer):
             trial = self._get_cached_trial(trial_id)
 
         if trial is None:
-            trial = self._backend.get_trial(trial_id)
-
+            try:
+                trial = self._backend.get_trial(trial_id)
+            except KeyError as e:
+                context.abort(code=grpc.StatusCode.NOT_FOUND, details=str(e))
         assert trial is not None
 
         params = {}
@@ -337,22 +406,13 @@ class OptunaStorageProxyService(StorageServiceServicer):
     ) -> _api_pb2.GetAllTrialsReply:
         study_id = request.study_id
         deepcopy = request.deepcopy
-        states = (
-            [_from_proto_trial_state(state) for state in request.states]
-            if request.states
-            else None
-        )
-        self._read_trials_from_remote_storage(study_id)
+        states = [_from_proto_trial_state(state) for state in request.states]
+        self._read_trials_from_remote_storage(study_id, context)
 
         with self._lock:
             study = self._studies[study_id]
 
-            if states is not None:
-                trials_dict = {
-                    number: t for number, t in study.trials.items() if t.state in states
-                }
-            else:
-                trials_dict = study.trials
+            trials_dict = {number: t for number, t in study.trials.items() if t.state in states}
             trials = list(sorted(trials_dict.values(), key=lambda t: t.number))
             trials = copy.deepcopy(trials) if deepcopy else trials
 
@@ -367,17 +427,22 @@ class OptunaStorageProxyService(StorageServiceServicer):
         study = self._studies[study_id]
         return study.trials[number] if trial_id not in study.unfinished_trial_ids else None
 
-    def _read_trials_from_remote_storage(self, study_id: int) -> None:
+    def _read_trials_from_remote_storage(
+        self, study_id: int, context: grpc.ServicerContext
+    ) -> None:
         with self._lock:
             if study_id not in self._studies:
                 self._studies[study_id] = _StudyInfo()
             study = self._studies[study_id]
-            trials = self._backend._get_trials(
-                study_id,
-                states=None,
-                included_trial_ids=study.unfinished_trial_ids,
-                trial_id_greater_than=study.last_finished_trial_id,
-            )
+            try:
+                trials = self._backend._get_trials(
+                    study_id,
+                    states=None,
+                    included_trial_ids=study.unfinished_trial_ids,
+                    trial_id_greater_than=study.last_finished_trial_id,
+                )
+            except KeyError as e:
+                context.abort(code=grpc.StatusCode.NOT_FOUND, details=str(e))
             if not trials:
                 return
 
@@ -503,14 +568,44 @@ def _from_proto_frozen_trial(frozen_trial: _api_pb2.FrozenTrial) -> FrozenTrial:
     )
 
 
-def run_server(
+def make_server(
     storage_url: str, host: str, port: int, thread_pool: ThreadPoolExecutor | None = None
-) -> None:
+) -> grpc.Server:
     server = grpc.server(thread_pool or ThreadPoolExecutor(max_workers=10))
     add_StorageServiceServicer_to_server(
         OptunaStorageProxyService(storage_url), server
     )  # type: ignore
     server.add_insecure_port(f"{host}:{port}")
+    return server
+
+
+def run_server(
+    storage_url: str, host: str, port: int, thread_pool: ThreadPoolExecutor | None = None
+) -> None:
+    """Run a gRPC server for the given storage URL, host, and port.
+
+    Example:
+
+        Run this server with the following way:
+
+        .. code::
+
+            from optuna.storages.grpc import run_server
+
+            run_server("sqlite:///example.db", "localhost", 13000)
+
+        Please refer to the client class :class:`~optuna.storages.grpc.GrpcStorageProxy` for
+        the client usage.
+
+    Args:
+        storage_url: URL of the storage.
+        host: Host to listen on.
+        port: Port to listen on.
+        thread_pool:
+            Thread pool to use for the server. If :obj:`None`, a default thread pool
+            with 10 workers will be used.
+    """
+    server = make_server(storage_url, host, port, thread_pool)
     server.start()
     print(f"Server started at {host}:{port}")
     print("Listening...")

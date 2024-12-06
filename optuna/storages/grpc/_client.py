@@ -3,7 +3,6 @@ from __future__ import annotations
 from collections.abc import Container
 from collections.abc import Iterable
 from collections.abc import Sequence
-from concurrent.futures import ThreadPoolExecutor
 import json
 from typing import Any
 import uuid
@@ -12,6 +11,7 @@ import grpc
 
 from optuna.distributions import BaseDistribution
 from optuna.distributions import distribution_to_json
+from optuna.exceptions import DuplicatedStudyError
 from optuna.storages._base import BaseStorage
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.storages.grpc import _api_pb2
@@ -26,14 +26,45 @@ from optuna.trial._state import TrialState
 
 
 class GrpcStorageProxy(BaseStorage):
-    def __init__(
-        self,
-        *,
-        host: str = "localhost",
-        port: int = 13000,
-        thread_pool: ThreadPoolExecutor | None = None,
-    ) -> None:
+    """gRPC client for :func:`~optuna.storages.grpc.run_server`.
+
+    Example:
+
+        This is a simple example of using :class:`~optuna.storages.grpc.GrpcStorageProxy` with
+        :func:`~optuna.storages.grpc.run_server`.
+
+        .. testcode::
+
+            import optuna
+            from optuna.storages.grpc import GrpcStorageProxy
+
+            storage = GrpcStorageProxy(host="localhost", port=13000)
+            study = optuna.create_study(storage=storage)
+
+        Please refer to the example in :func:`~optuna.storages.grpc.run_server` for the server side
+        code.
+
+    Args:
+        host: The host of the gRPC server.
+        port: The port of the gRPC server.
+
+    """
+
+    def __init__(self, *, host: str = "localhost", port: int = 13000) -> None:
         self._stub = StorageServiceStub(grpc.insecure_channel(f"{host}:{port}"))  # type: ignore
+        self._host = host
+        self._port = port
+
+    def __getstate__(self) -> dict[Any, Any]:
+        state = self.__dict__.copy()
+        del state["_stub"]
+        return state
+
+    def __setstate__(self, state: dict[Any, Any]) -> None:
+        self.__dict__.update(state)
+        self._stub = StorageServiceStub(
+            grpc.insecure_channel(f"{self._host}:{self._port}")
+        )  # type: ignore
 
     def create_new_study(
         self, directions: Sequence[StudyDirection], study_name: str | None = None
@@ -47,38 +78,59 @@ class GrpcStorageProxy(BaseStorage):
             or DEFAULT_STUDY_NAME_PREFIX
             + str(uuid.uuid4()),  # TODO(HideakiImamura): Check if this is unique.
         )
-        response = self._stub.CreateNewStudy(request)
+        try:
+            response = self._stub.CreateNewStudy(request)
+        except grpc.RpcError as e:
+            raise DuplicatedStudyError from e
         return response.study_id
 
     def delete_study(self, study_id: int) -> None:
         request = _api_pb2.DeleteStudyRequest(study_id=study_id)
-        self._stub.DeleteStudy(request)
+        try:
+            self._stub.DeleteStudy(request)
+        except grpc.RpcError as e:
+            raise KeyError from e
 
     def set_study_user_attr(self, study_id: int, key: str, value: Any) -> None:
         request = _api_pb2.SetStudyUserAttributeRequest(
             study_id=study_id, key=key, value=json.dumps(value)
         )
-        self._stub.SetStudyUserAttribute(request)
+        try:
+            self._stub.SetStudyUserAttribute(request)
+        except grpc.RpcError as e:
+            raise KeyError from e
 
     def set_study_system_attr(self, study_id: int, key: str, value: Any) -> None:
         request = _api_pb2.SetStudySystemAttributeRequest(
             study_id=study_id, key=key, value=json.dumps(value)
         )
-        self._stub.SetStudySystemAttribute(request)
+        try:
+            self._stub.SetStudySystemAttribute(request)
+        except grpc.RpcError as e:
+            raise KeyError from e
 
     def get_study_id_from_name(self, study_name: str) -> int:
         request = _api_pb2.GetStudyIdFromNameRequest(study_name=study_name)
-        response = self._stub.GetStudyIdFromName(request)
+        try:
+            response = self._stub.GetStudyIdFromName(request)
+        except grpc.RpcError as e:
+            raise KeyError from e
         return response.study_id
 
     def get_study_name_from_id(self, study_id: int) -> str:
         request = _api_pb2.GetStudyNameFromIdRequest(study_id=study_id)
-        response = self._stub.GetStudyNameFromId(request)
+        try:
+            response = self._stub.GetStudyNameFromId(request)
+        except grpc.RpcError as e:
+            raise KeyError from e
         return response.study_name
 
     def get_study_directions(self, study_id: int) -> list[StudyDirection]:
         request = _api_pb2.GetStudyDirectionsRequest(study_id=study_id)
-        response = self._stub.GetStudyDirections(request)
+        try:
+            response = self._stub.GetStudyDirections(request)
+        except grpc.RpcError as e:
+            raise KeyError from e
         return [
             StudyDirection.MINIMIZE if d == _api_pb2.MINIMIZE else StudyDirection.MAXIMIZE
             for d in response.directions
@@ -86,12 +138,18 @@ class GrpcStorageProxy(BaseStorage):
 
     def get_study_user_attrs(self, study_id: int) -> dict[str, Any]:
         request = _api_pb2.GetStudyUserAttributesRequest(study_id=study_id)
-        response = self._stub.GetStudyUserAttributes(request)
+        try:
+            response = self._stub.GetStudyUserAttributes(request)
+        except grpc.RpcError as e:
+            raise KeyError from e
         return {key: json.loads(value) for key, value in response.user_attributes.items()}
 
     def get_study_system_attrs(self, study_id: int) -> dict[str, Any]:
         request = _api_pb2.GetStudySystemAttributesRequest(study_id=study_id)
-        response = self._stub.GetStudySystemAttributes(request)
+        try:
+            response = self._stub.GetStudySystemAttributes(request)
+        except grpc.RpcError as e:
+            raise KeyError from e
         return {key: json.loads(value) for key, value in response.system_attributes.items()}
 
     def get_all_studies(self) -> list[FrozenStudy]:
@@ -123,7 +181,10 @@ class GrpcStorageProxy(BaseStorage):
             request = _api_pb2.CreateNewTrialRequest(
                 study_id=study_id, template_trial=_to_proto_frozen_trial(template_trial)
             )
-        response = self._stub.CreateNewTrial(request)
+        try:
+            response = self._stub.CreateNewTrial(request)
+        except grpc.RpcError as e:
+            raise KeyError from e
         return response.trial_id
 
     def set_trial_param(
@@ -139,7 +200,15 @@ class GrpcStorageProxy(BaseStorage):
             param_value_internal=param_value_internal,
             distribution=distribution_to_json(distribution),
         )
-        self._stub.SetTrialParameter(request)
+        try:
+            self._stub.SetTrialParameter(request)
+        except grpc.RpcError as e:
+            if e.code() == grpc.StatusCode.NOT_FOUND:
+                raise KeyError from e
+            elif e.code() == grpc.StatusCode.FAILED_PRECONDITION:
+                raise RuntimeError from e
+            elif e.code() == grpc.StatusCode.INVALID_ARGUMENT:
+                raise ValueError from e
 
     def set_trial_state_values(
         self, trial_id: int, state: TrialState, values: Sequence[float] | None = None
@@ -149,7 +218,14 @@ class GrpcStorageProxy(BaseStorage):
             state=_to_proto_trial_state(state),
             values=values,
         )
-        response = self._stub.SetTrialStateValues(request)
+        try:
+            response = self._stub.SetTrialStateValues(request)
+        except grpc.RpcError as e:
+            if e.code() == grpc.StatusCode.NOT_FOUND:
+                raise KeyError from e
+            elif e.code() == grpc.StatusCode.FAILED_PRECONDITION:
+                raise RuntimeError from e
+
         return response.trial_updated
 
     def set_trial_intermediate_value(
@@ -158,30 +234,54 @@ class GrpcStorageProxy(BaseStorage):
         request = _api_pb2.SetTrialIntermediateValueRequest(
             trial_id=trial_id, step=step, intermediate_value=intermediate_value
         )
-        self._stub.SetTrialIntermediateValue(request)
+        try:
+            self._stub.SetTrialIntermediateValue(request)
+        except grpc.RpcError as e:
+            if e.code() == grpc.StatusCode.NOT_FOUND:
+                raise KeyError from e
+            elif e.code() == grpc.StatusCode.FAILED_PRECONDITION:
+                raise RuntimeError from e
 
     def set_trial_user_attr(self, trial_id: int, key: str, value: Any) -> None:
         request = _api_pb2.SetTrialUserAttributeRequest(
             trial_id=trial_id, key=key, value=json.dumps(value)
         )
-        self._stub.SetTrialUserAttribute(request)
+        try:
+            self._stub.SetTrialUserAttribute(request)
+        except grpc.RpcError as e:
+            if e.code() == grpc.StatusCode.NOT_FOUND:
+                raise KeyError from e
+            elif e.code() == grpc.StatusCode.FAILED_PRECONDITION:
+                raise RuntimeError from e
 
     def set_trial_system_attr(self, trial_id: int, key: str, value: Any) -> None:
         request = _api_pb2.SetTrialSystemAttributeRequest(
             trial_id=trial_id, key=key, value=json.dumps(value)
         )
-        self._stub.SetTrialSystemAttribute(request)
+        try:
+            self._stub.SetTrialSystemAttribute(request)
+        except grpc.RpcError as e:
+            if e.code() == grpc.StatusCode.NOT_FOUND:
+                raise KeyError from e
+            elif e.code() == grpc.StatusCode.FAILED_PRECONDITION:
+                raise RuntimeError from e
 
     def get_trial_id_from_study_id_trial_number(self, study_id: int, trial_number: int) -> int:
         request = _api_pb2.GetTrialIdFromStudyIdTrialNumberRequest(
             study_id=study_id, trial_number=trial_number
         )
-        response = self._stub.GetTrialIdFromStudyIdTrialNumber(request)
+        try:
+            response = self._stub.GetTrialIdFromStudyIdTrialNumber(request)
+        except grpc.RpcError as e:
+            raise KeyError from e
         return response.trial_id
 
     def get_trial(self, trial_id: int) -> FrozenTrial:
         request = _api_pb2.GetTrialRequest(trial_id=trial_id)
-        response = self._stub.GetTrial(request)
+        try:
+            response = self._stub.GetTrial(request)
+        except grpc.RpcError as e:
+            raise KeyError from e
         return _from_proto_frozen_trial(response.frozen_trial)
 
     def get_all_trials(
@@ -190,14 +290,22 @@ class GrpcStorageProxy(BaseStorage):
         deepcopy: bool = True,
         states: Container[TrialState] | None = None,
     ) -> list[FrozenTrial]:
-        if states is not None:
-            assert isinstance(states, Iterable)
+        if states is None:
+            states = [
+                TrialState.RUNNING,
+                TrialState.COMPLETE,
+                TrialState.PRUNED,
+                TrialState.FAIL,
+                TrialState.WAITING,
+            ]
+        assert isinstance(states, Iterable)
         request = _api_pb2.GetAllTrialsRequest(
             study_id=study_id,
             deepcopy=deepcopy,
-            states=(
-                [_to_proto_trial_state(state) for state in states] if states is not None else None
-            ),
+            states=[_to_proto_trial_state(state) for state in states],
         )
-        response = self._stub.GetAllTrials(request)
+        try:
+            response = self._stub.GetAllTrials(request)
+        except grpc.RpcError as e:
+            raise KeyError from e
         return [_from_proto_frozen_trial(trial) for trial in response.frozen_trials]
