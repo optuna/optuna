@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 import copy
-from typing import Dict
-from typing import Tuple
 from typing import TYPE_CHECKING
 
 import optuna
@@ -16,9 +14,9 @@ if TYPE_CHECKING:
 def _calculate(
     trials: list[optuna.trial.FrozenTrial],
     include_pruned: bool = False,
-    search_space: Dict[str, BaseDistribution] | None = None,
+    search_space: dict[str, BaseDistribution] | None = None,
     cached_trial_number: int = -1,
-) -> Tuple[Dict[str, BaseDistribution] | None, int]:
+) -> tuple[dict[str, BaseDistribution] | None, int]:
     states_of_interest = [
         optuna.trial.TrialState.COMPLETE,
         optuna.trial.TrialState.WAITING,
@@ -75,12 +73,12 @@ class IntersectionSearchSpace:
 
     def __init__(self, include_pruned: bool = False) -> None:
         self._cached_trial_number: int = -1
-        self._search_space: Dict[str, BaseDistribution] | None = None
+        self._search_space: dict[str, BaseDistribution] | None = None
         self._study_id: int | None = None
 
         self._include_pruned = include_pruned
 
-    def calculate(self, study: Study) -> Dict[str, BaseDistribution]:
+    def calculate(self, study: Study) -> dict[str, BaseDistribution]:
         """Returns the intersection search space of the :class:`~optuna.study.Study`.
 
         Args:
@@ -117,7 +115,7 @@ class IntersectionSearchSpace:
 def intersection_search_space(
     trials: list[optuna.trial.FrozenTrial],
     include_pruned: bool = False,
-) -> Dict[str, BaseDistribution]:
+) -> dict[str, BaseDistribution]:
     """Return the intersection search space of the given trials.
 
     Intersection search space contains the intersection of parameter distributions that have been
