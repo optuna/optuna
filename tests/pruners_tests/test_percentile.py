@@ -129,30 +129,27 @@ def test_get_best_intermediate_result_over_steps(
         _percentile._get_best_intermediate_result_over_steps(trial_empty, direction)
 
     # Input value has no NaNs but float values.
-    trial_id_float = study._storage.create_new_trial(study._study_id)
-    trial_float = optuna.trial.Trial(study, trial_id_float)
+    trial_float = study.ask()
     trial_float.report(0.1, step=0)
     trial_float.report(0.2, step=1)
-    frozen_trial_float = study._storage.get_trial(trial_id_float)
+    frozen_trial_float = study._storage.get_trial(trial_float._trial_id)
     assert expected == _percentile._get_best_intermediate_result_over_steps(
         frozen_trial_float, direction
     )
 
     # Input value has a float value and a NaN.
-    trial_id_float_nan = study._storage.create_new_trial(study._study_id)
-    trial_float_nan = optuna.trial.Trial(study, trial_id_float_nan)
+    trial_float_nan = study.ask()
     trial_float_nan.report(0.3, step=0)
     trial_float_nan.report(float("nan"), step=1)
-    frozen_trial_float_nan = study._storage.get_trial(trial_id_float_nan)
+    frozen_trial_float_nan = study._storage.get_trial(trial_float_nan._trial_id)
     assert 0.3 == _percentile._get_best_intermediate_result_over_steps(
         frozen_trial_float_nan, direction
     )
 
     # Input value has a NaN only.
-    trial_id_nan = study._storage.create_new_trial(study._study_id)
-    trial_nan = optuna.trial.Trial(study, trial_id_nan)
+    trial_nan = study.ask()
     trial_nan.report(float("nan"), step=0)
-    frozen_trial_nan = study._storage.get_trial(trial_id_nan)
+    frozen_trial_nan = study._storage.get_trial(trial_nan._trial_id)
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", category=RuntimeWarning)
         assert math.isnan(
