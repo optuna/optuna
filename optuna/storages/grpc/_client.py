@@ -7,8 +7,7 @@ import json
 from typing import Any
 import uuid
 
-import grpc
-
+from optuna._imports import try_import
 from optuna.distributions import BaseDistribution
 from optuna.distributions import distribution_to_json
 from optuna.exceptions import DuplicatedStudyError
@@ -23,6 +22,10 @@ from optuna.study._frozen import FrozenStudy
 from optuna.study._study_direction import StudyDirection
 from optuna.trial._frozen import FrozenTrial
 from optuna.trial._state import TrialState
+
+
+with try_import() as _imports:
+    import grpc
 
 
 class GrpcStorageProxy(BaseStorage):

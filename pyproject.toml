@@ -90,6 +90,7 @@ optional = [
   # optuna/visualization/param_importances.py.
   "scipy",  # optuna/samplers/_gp
   "torch; python_version<='3.12'", # TODO(gen740): Remove this line when 'torch', a dependency of 'optuna/_gp', supports Python 3.13
+  "grpcio",  # optuna/storages/grpc.
 ]
 test = [
   "coverage",
@@ -99,6 +100,7 @@ test = [
   "pytest",
   "scipy>=1.9.2",
   "torch; python_version<='3.12'", # TODO(gen740): Remove this line when 'torch', a dependency of 'optuna/_gp', supports Python 3.13
+  "grpcio",  # optuna/storages/grpc.
 ]
 
 [project.urls]

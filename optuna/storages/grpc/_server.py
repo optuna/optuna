@@ -6,8 +6,7 @@ from datetime import datetime
 import json
 import threading
 
-import grpc
-
+from optuna._imports import try_import
 from optuna.distributions import distribution_to_json
 from optuna.distributions import json_to_distribution
 from optuna.exceptions import DuplicatedStudyError
@@ -18,6 +17,10 @@ from optuna.storages.grpc._api_pb2_grpc import StorageServiceServicer
 from optuna.study._study_direction import StudyDirection
 from optuna.trial._frozen import FrozenTrial
 from optuna.trial._state import TrialState
+
+
+with try_import() as _imports:
+    import grpc
 
 
 DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S.%f"
