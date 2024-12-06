@@ -531,37 +531,6 @@ def test_crowding_distance_sort(values: list[list[float]]) -> None:
     assert sorted_dist == sorted(sorted_dist, reverse=True)
 
 
-# def test_study_system_attr_for_population_cache() -> None:
-#     sampler = NSGAIISampler(population_size=10)
-#     study = optuna.create_study(directions=["minimize"], sampler=sampler)
-#
-#     def get_cached_entries(
-#         study: optuna.study.Study,
-#     ) -> list[tuple[int, list[int]]]:
-#         study_system_attrs = study._storage.get_study_system_attrs(study._study_id)
-#         return [
-#             v
-#             for k, v in study_system_attrs.items()
-#             if k.startswith(NSGAIISampler._POPULATION_CACHE_KEY_PREFIX)
-#         ]
-#
-#     study.optimize(lambda t: [t.suggest_float("x", 0, 9)], n_trials=10)
-#     cached_entries = get_cached_entries(study)
-#     assert len(cached_entries) == 0
-#
-#     study.optimize(lambda t: [t.suggest_float("x", 0, 9)], n_trials=1)
-#     cached_entries = get_cached_entries(study)
-#     assert len(cached_entries) == 1
-#     assert cached_entries[0][0] == 0  # Cached generation.
-#     assert len(cached_entries[0][1]) == 10  # Population size.
-#
-#     study.optimize(lambda t: [t.suggest_float("x", 0, 9)], n_trials=10)
-#     cached_entries = get_cached_entries(study)
-#     assert len(cached_entries) == 1
-#     assert cached_entries[0][0] == 1  # Cached generation.
-#     assert len(cached_entries[0][1]) == 10  # Population size.
-
-
 def test_constraints_func_experimental_warning() -> None:
     with pytest.warns(optuna.exceptions.ExperimentalWarning):
         NSGAIISampler(constraints_func=lambda _: [0])
