@@ -1,9 +1,8 @@
+from __future__ import annotations
+
 import json
 import time
 from typing import Any
-from typing import Dict
-from typing import List
-from typing import Optional
 
 from optuna._deprecated import deprecated_class
 from optuna._experimental import experimental_class
@@ -44,16 +43,16 @@ class JournalRedisBackend(BaseJournalBackend, BaseJournalSnapshot):
         self._use_cluster = use_cluster
         self._prefix = prefix
 
-    def __getstate__(self) -> Dict[Any, Any]:
+    def __getstate__(self) -> dict[Any, Any]:
         state = self.__dict__.copy()
         del state["_redis"]
         return state
 
-    def __setstate__(self, state: Dict[Any, Any]) -> None:
+    def __setstate__(self, state: dict[Any, Any]) -> None:
         self.__dict__.update(state)
         self._redis = redis.Redis.from_url(self._url)
 
-    def read_logs(self, log_number_from: int) -> List[Dict[str, Any]]:
+    def read_logs(self, log_number_from: int) -> list[dict[str, Any]]:
         max_log_number_bytes = self._redis.get(f"{self._prefix}:log_number")
         if max_log_number_bytes is None:
             return []
@@ -75,7 +74,7 @@ class JournalRedisBackend(BaseJournalBackend, BaseJournalSnapshot):
                     raise err
         return logs
 
-    def append_logs(self, logs: List[Dict[str, Any]]) -> None:
+    def append_logs(self, logs: list[dict[str, Any]]) -> None:
         self._redis.setnx(f"{self._prefix}:log_number", -1)
         for log in logs:
             if not self._use_cluster:
@@ -93,7 +92,7 @@ class JournalRedisBackend(BaseJournalBackend, BaseJournalSnapshot):
     def save_snapshot(self, snapshot: bytes) -> None:
         self._redis.set(f"{self._prefix}:snapshot", snapshot)
 
-    def load_snapshot(self) -> Optional[bytes]:
+    def load_snapshot(self) -> bytes | None:
         snapshot_bytes = self._redis.get(f"{self._prefix}:snapshot")
         return snapshot_bytes
 
