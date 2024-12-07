@@ -558,7 +558,7 @@ class BaseStorage(abc.ABC):
                 ID of the trial.
 
         Returns:
-            Dictionary of a parameters. Keys are parameter names and values are internal
+            Dictionary of a parameters. Keys are parameter names and values are external
             representations of the parameter values.
 
         Raises:
