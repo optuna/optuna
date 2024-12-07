@@ -1,14 +1,13 @@
+from __future__ import annotations
+
+from collections.abc import Container
+from collections.abc import Sequence
 import copy
 import datetime
 import enum
 import pickle
 import threading
 from typing import Any
-from typing import Container
-from typing import Dict
-from typing import List
-from typing import Optional
-from typing import Sequence
 import uuid
 
 import optuna
@@ -109,14 +108,14 @@ class JournalStorage(BaseStorage):
                     self.restore_replay_result(snapshot)
             self._sync_with_backend()
 
-    def __getstate__(self) -> Dict[Any, Any]:
+    def __getstate__(self) -> dict[Any, Any]:
         state = self.__dict__.copy()
         del state["_worker_id_prefix"]
         del state["_replay_result"]
         del state["_thread_lock"]
         return state
 
-    def __setstate__(self, state: Dict[Any, Any]) -> None:
+    def __setstate__(self, state: dict[Any, Any]) -> None:
         self.__dict__.update(state)
         self._worker_id_prefix = str(uuid.uuid4()) + "-"
         self._replay_result = JournalStorageReplayResult(self._worker_id_prefix)
@@ -124,7 +123,7 @@ class JournalStorage(BaseStorage):
 
     def restore_replay_result(self, snapshot: bytes) -> None:
         try:
-            r: Optional[JournalStorageReplayResult] = pickle.loads(snapshot)
+            r: JournalStorageReplayResult | None = pickle.loads(snapshot)
         except (pickle.UnpicklingError, KeyError):
             _logger.warning("Failed to restore `JournalStorageReplayResult`.")
             return
@@ -138,7 +137,7 @@ class JournalStorage(BaseStorage):
         r._last_created_trial_id_by_this_process = -1
         self._replay_result = r
 
-    def _write_log(self, op_code: int, extra_fields: Dict[str, Any]) -> None:
+    def _write_log(self, op_code: int, extra_fields: dict[str, Any]) -> None:
         worker_id = self._replay_result.worker_id
         self._backend.append_logs([{"op_code": op_code, "worker_id": worker_id, **extra_fields}])
 
@@ -147,7 +146,7 @@ class JournalStorage(BaseStorage):
         self._replay_result.apply_logs(logs)
 
     def create_new_study(
-        self, directions: Sequence[StudyDirection], study_name: Optional[str] = None
+        self, directions: Sequence[StudyDirection], study_name: str | None = None
     ) -> int:
         study_name = study_name or DEFAULT_STUDY_NAME_PREFIX + str(uuid.uuid4())
 
@@ -181,13 +180,13 @@ class JournalStorage(BaseStorage):
             self._sync_with_backend()
 
     def set_study_user_attr(self, study_id: int, key: str, value: Any) -> None:
-        log: Dict[str, Any] = {"study_id": study_id, "user_attr": {key: value}}
+        log: dict[str, Any] = {"study_id": study_id, "user_attr": {key: value}}
         with self._thread_lock:
             self._write_log(JournalOperation.SET_STUDY_USER_ATTR, log)
             self._sync_with_backend()
 
     def set_study_system_attr(self, study_id: int, key: str, value: JSONSerializable) -> None:
-        log: Dict[str, Any] = {"study_id": study_id, "system_attr": {key: value}}
+        log: dict[str, Any] = {"study_id": study_id, "system_attr": {key: value}}
         with self._thread_lock:
             self._write_log(JournalOperation.SET_STUDY_SYSTEM_ATTR, log)
             self._sync_with_backend()
@@ -205,29 +204,29 @@ class JournalStorage(BaseStorage):
             self._sync_with_backend()
             return self._replay_result.get_study(study_id).study_name
 
-    def get_study_directions(self, study_id: int) -> List[StudyDirection]:
+    def get_study_directions(self, study_id: int) -> list[StudyDirection]:
         with self._thread_lock:
             self._sync_with_backend()
             return self._replay_result.get_study(study_id).directions
 
-    def get_study_user_attrs(self, study_id: int) -> Dict[str, Any]:
+    def get_study_user_attrs(self, study_id: int) -> dict[str, Any]:
         with self._thread_lock:
             self._sync_with_backend()
             return self._replay_result.get_study(study_id).user_attrs
 
-    def get_study_system_attrs(self, study_id: int) -> Dict[str, Any]:
+    def get_study_system_attrs(self, study_id: int) -> dict[str, Any]:
         with self._thread_lock:
             self._sync_with_backend()
             return self._replay_result.get_study(study_id).system_attrs
 
-    def get_all_studies(self) -> List[FrozenStudy]:
+    def get_all_studies(self) -> list[FrozenStudy]:
         with self._thread_lock:
             self._sync_with_backend()
             return copy.deepcopy(self._replay_result.get_all_studies())
 
     # Basic trial manipulation
-    def create_new_trial(self, study_id: int, template_trial: Optional[FrozenTrial] = None) -> int:
-        log: Dict[str, Any] = {
+    def create_new_trial(self, study_id: int, template_trial: FrozenTrial | None = None) -> int:
+        log: dict[str, Any] = {
             "study_id": study_id,
             "datetime_start": datetime.datetime.now().isoformat(timespec="microseconds"),
         }
@@ -283,7 +282,7 @@ class JournalStorage(BaseStorage):
         param_value_internal: float,
         distribution: BaseDistribution,
     ) -> None:
-        log: Dict[str, Any] = {
+        log: dict[str, Any] = {
             "trial_id": trial_id,
             "param_name": param_name,
             "param_value_internal": param_value_internal,
@@ -306,9 +305,9 @@ class JournalStorage(BaseStorage):
             return self._replay_result._study_id_to_trial_ids[study_id][trial_number]
 
     def set_trial_state_values(
-        self, trial_id: int, state: TrialState, values: Optional[Sequence[float]] = None
+        self, trial_id: int, state: TrialState, values: Sequence[float] | None = None
     ) -> bool:
-        log: Dict[str, Any] = {
+        log: dict[str, Any] = {
             "trial_id": trial_id,
             "state": state,
             "values": values,
@@ -331,7 +330,7 @@ class JournalStorage(BaseStorage):
     def set_trial_intermediate_value(
         self, trial_id: int, step: int, intermediate_value: float
     ) -> None:
-        log: Dict[str, Any] = {
+        log: dict[str, Any] = {
             "trial_id": trial_id,
             "step": step,
             "intermediate_value": intermediate_value,
@@ -342,7 +341,7 @@ class JournalStorage(BaseStorage):
             self._sync_with_backend()
 
     def set_trial_user_attr(self, trial_id: int, key: str, value: Any) -> None:
-        log: Dict[str, Any] = {
+        log: dict[str, Any] = {
             "trial_id": trial_id,
             "user_attr": {key: value},
         }
@@ -352,7 +351,7 @@ class JournalStorage(BaseStorage):
             self._sync_with_backend()
 
     def set_trial_system_attr(self, trial_id: int, key: str, value: JSONSerializable) -> None:
-        log: Dict[str, Any] = {
+        log: dict[str, Any] = {
             "trial_id": trial_id,
             "system_attr": {key: value},
         }
@@ -370,8 +369,8 @@ class JournalStorage(BaseStorage):
         self,
         study_id: int,
         deepcopy: bool = True,
-        states: Optional[Container[TrialState]] = None,
-    ) -> List[FrozenTrial]:
+        states: Container[TrialState] | None = None,
+    ) -> list[FrozenTrial]:
         with self._thread_lock:
             self._sync_with_backend()
             frozen_trials = self._replay_result.get_all_trials(study_id, states)
@@ -384,15 +383,15 @@ class JournalStorageReplayResult:
     def __init__(self, worker_id_prefix: str) -> None:
         self.log_number_read = 0
         self._worker_id_prefix = worker_id_prefix
-        self._studies: Dict[int, FrozenStudy] = {}
-        self._trials: Dict[int, FrozenTrial] = {}
+        self._studies: dict[int, FrozenStudy] = {}
+        self._trials: dict[int, FrozenTrial] = {}
 
-        self._study_id_to_trial_ids: Dict[int, List[int]] = {}
-        self._trial_id_to_study_id: Dict[int, int] = {}
+        self._study_id_to_trial_ids: dict[int, list[int]] = {}
+        self._trial_id_to_study_id: dict[int, int] = {}
         self._next_study_id: int = 0
-        self._worker_id_to_owned_trial_id: Dict[str, int] = {}
+        self._worker_id_to_owned_trial_id: dict[str, int] = {}
 
-    def apply_logs(self, logs: List[Dict[str, Any]]) -> None:
+    def apply_logs(self, logs: list[dict[str, Any]]) -> None:
         for log in logs:
             self.log_number_read += 1
             op = log["op_code"]
@@ -424,7 +423,7 @@ class JournalStorageReplayResult:
             raise KeyError(NOT_FOUND_MSG)
         return self._studies[study_id]
 
-    def get_all_studies(self) -> List[FrozenStudy]:
+    def get_all_studies(self) -> list[FrozenStudy]:
         return list(self._studies.values())
 
     def get_trial(self, trial_id: int) -> FrozenTrial:
@@ -433,12 +432,12 @@ class JournalStorageReplayResult:
         return self._trials[trial_id]
 
     def get_all_trials(
-        self, study_id: int, states: Optional[Container[TrialState]]
-    ) -> List[FrozenTrial]:
+        self, study_id: int, states: Container[TrialState] | None
+    ) -> list[FrozenTrial]:
         if study_id not in self._studies:
             raise KeyError(NOT_FOUND_MSG)
 
-        frozen_trials: List[FrozenTrial] = []
+        frozen_trials: list[FrozenTrial] = []
         for trial_id in self._study_id_to_trial_ids[study_id]:
             trial = self._trials[trial_id]
             if states is None or trial.state in states:
@@ -450,20 +449,20 @@ class JournalStorageReplayResult:
         return self._worker_id_prefix + str(threading.get_ident())
 
     @property
-    def owned_trial_id(self) -> Optional[int]:
+    def owned_trial_id(self) -> int | None:
         return self._worker_id_to_owned_trial_id.get(self.worker_id)
 
-    def _is_issued_by_this_worker(self, log: Dict[str, Any]) -> bool:
+    def _is_issued_by_this_worker(self, log: dict[str, Any]) -> bool:
         return log["worker_id"] == self.worker_id
 
-    def _study_exists(self, study_id: int, log: Dict[str, Any]) -> bool:
+    def _study_exists(self, study_id: int, log: dict[str, Any]) -> bool:
         if study_id in self._studies:
             return True
         if self._is_issued_by_this_worker(log):
             raise KeyError(NOT_FOUND_MSG)
         return False
 
-    def _apply_create_study(self, log: Dict[str, Any]) -> None:
+    def _apply_create_study(self, log: dict[str, Any]) -> None:
         study_name = log["study_name"]
         directions = [StudyDirection(d) for d in log["directions"]]
 
@@ -490,28 +489,28 @@ class JournalStorageReplayResult:
         )
         self._study_id_to_trial_ids[study_id] = []
 
-    def _apply_delete_study(self, log: Dict[str, Any]) -> None:
+    def _apply_delete_study(self, log: dict[str, Any]) -> None:
         study_id = log["study_id"]
 
         if self._study_exists(study_id, log):
             fs = self._studies.pop(study_id)
             assert fs._study_id == study_id
 
-    def _apply_set_study_user_attr(self, log: Dict[str, Any]) -> None:
+    def _apply_set_study_user_attr(self, log: dict[str, Any]) -> None:
         study_id = log["study_id"]
 
         if self._study_exists(study_id, log):
             assert len(log["user_attr"]) == 1
             self._studies[study_id].user_attrs.update(log["user_attr"])
 
-    def _apply_set_study_system_attr(self, log: Dict[str, Any]) -> None:
+    def _apply_set_study_system_attr(self, log: dict[str, Any]) -> None:
         study_id = log["study_id"]
 
         if self._study_exists(study_id, log):
             assert len(log["system_attr"]) == 1
             self._studies[study_id].system_attrs.update(log["system_attr"])
 
-    def _apply_create_trial(self, log: Dict[str, Any]) -> None:
+    def _apply_create_trial(self, log: dict[str, Any]) -> None:
         study_id = log["study_id"]
 
         if not self._study_exists(study_id, log):
@@ -556,7 +555,7 @@ class JournalStorageReplayResult:
             if self._trials[trial_id].state == TrialState.RUNNING:
                 self._worker_id_to_owned_trial_id[self.worker_id] = trial_id
 
-    def _apply_set_trial_param(self, log: Dict[str, Any]) -> None:
+    def _apply_set_trial_param(self, log: dict[str, Any]) -> None:
         trial_id = log["trial_id"]
 
         if not self._trial_exists_and_updatable(trial_id, log):
@@ -589,7 +588,7 @@ class JournalStorageReplayResult:
         trial.distributions = {**copy.copy(trial.distributions), param_name: distribution}
         self._trials[trial_id] = trial
 
-    def _apply_set_trial_state_values(self, log: Dict[str, Any]) -> None:
+    def _apply_set_trial_state_values(self, log: dict[str, Any]) -> None:
         trial_id = log["trial_id"]
 
         if not self._trial_exists_and_updatable(trial_id, log):
@@ -612,7 +611,7 @@ class JournalStorageReplayResult:
 
         self._trials[trial_id] = trial
 
-    def _apply_set_trial_intermediate_value(self, log: Dict[str, Any]) -> None:
+    def _apply_set_trial_intermediate_value(self, log: dict[str, Any]) -> None:
         trial_id = log["trial_id"]
 
         if self._trial_exists_and_updatable(trial_id, log):
@@ -623,7 +622,7 @@ class JournalStorageReplayResult:
             }
             self._trials[trial_id] = trial
 
-    def _apply_set_trial_user_attr(self, log: Dict[str, Any]) -> None:
+    def _apply_set_trial_user_attr(self, log: dict[str, Any]) -> None:
         trial_id = log["trial_id"]
 
         if self._trial_exists_and_updatable(trial_id, log):
@@ -632,7 +631,7 @@ class JournalStorageReplayResult:
             trial.user_attrs = {**copy.copy(trial.user_attrs), **log["user_attr"]}
             self._trials[trial_id] = trial
 
-    def _apply_set_trial_system_attr(self, log: Dict[str, Any]) -> None:
+    def _apply_set_trial_system_attr(self, log: dict[str, Any]) -> None:
         trial_id = log["trial_id"]
 
         if self._trial_exists_and_updatable(trial_id, log):
@@ -644,7 +643,7 @@ class JournalStorageReplayResult:
             }
             self._trials[trial_id] = trial
 
-    def _trial_exists_and_updatable(self, trial_id: int, log: Dict[str, Any]) -> bool:
+    def _trial_exists_and_updatable(self, trial_id: int, log: dict[str, Any]) -> bool:
         if trial_id not in self._trials:
             if self._is_issued_by_this_worker(log):
                 raise KeyError(NOT_FOUND_MSG)
