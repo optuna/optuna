@@ -1,15 +1,15 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from collections.abc import Container
 from collections.abc import Iterable
 from collections.abc import Mapping
+from collections.abc import Sequence
 import copy
 from numbers import Real
 import threading
 from typing import Any
-from typing import Callable
 from typing import cast
-from typing import Sequence
 from typing import TYPE_CHECKING
 from typing import Union
 import warnings
