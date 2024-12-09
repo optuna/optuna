@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from typing import Any
 
 import numpy as np
 
@@ -126,7 +127,9 @@ def _is_pareto_front_nd(unique_lexsorted_loss_values: np.ndarray) -> np.ndarray:
     loss_values = unique_lexsorted_loss_values[:, 1:]
     n_trials = loss_values.shape[0]
     on_front = np.zeros(n_trials, dtype=bool)
-    nondominated_indices = np.arange(n_trials)
+    nondominated_indices: np.ndarray[tuple[int, ...], np.dtype[np.signedinteger[Any]]] = np.arange(
+        n_trials
+    )
     while len(loss_values):
         # The following judges `np.any(loss_values[i] < loss_values[0])` for each `i`.
         nondominated_and_not_top = np.any(loss_values < loss_values[0], axis=1)
