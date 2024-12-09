@@ -329,7 +329,7 @@ def _warn_and_convert_inf(
 
 def _get_constraint_vals_and_feasibility(
     study: Study, trials: list[FrozenTrial]
-) -> tuple[np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.bool | np.ndarray]:
     _constraint_vals = [
         study._storage.get_trial_system_attrs(trial._trial_id).get(_CONSTRAINTS_KEY, ())
         for trial in trials
