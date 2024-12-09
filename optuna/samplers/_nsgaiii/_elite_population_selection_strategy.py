@@ -108,7 +108,7 @@ def _multi_choose(n: int, k: int) -> int:
 
 def _generate_default_reference_point(
     n_objectives: int, dividing_parameter: int = 3
-) -> np.ndarray:
+) -> np.ndarray[tuple[int, int], np.dtype[np.float64]]:
     """Generates default reference points which are `uniformly` spread on a hyperplane."""
     reference_points = np.zeros(
         (

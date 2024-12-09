@@ -110,7 +110,7 @@ class _SearchSpaceTransform:
             param = params[name]
 
             if isinstance(distribution, CategoricalDistribution):
-                choice_idx = distribution.to_internal_repr(param)
+                choice_idx = int(distribution.to_internal_repr(param))
                 trans_params[bound_idx + choice_idx] = 1
                 bound_idx += len(distribution.choices)
             else:
