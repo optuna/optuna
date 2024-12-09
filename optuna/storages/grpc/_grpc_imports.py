@@ -2,6 +2,11 @@ from optuna._imports import try_import
 
 
 with try_import() as _imports:
+    from google.protobuf import descriptor
+    from google.protobuf import descriptor_pool
+    from google.protobuf import runtime_version
+    from google.protobuf import symbol_database
+    from google.protobuf.internal import builder
     import grpc
     from grpc import __version__ as grpc_version
     from grpc._utilities import first_version_is_lower
@@ -25,4 +30,11 @@ with try_import() as _imports:
         )
 
 
-__all__ = ["grpc"]
+__all__ = [
+    "descriptor",
+    "descriptor_pool",
+    "runtime_version",
+    "symbol_database",
+    "builder",
+    "grpc",
+]
