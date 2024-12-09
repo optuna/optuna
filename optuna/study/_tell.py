@@ -1,9 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 import copy
 import math
-from typing import Optional
-from typing import Sequence
 from typing import TYPE_CHECKING
 from typing import Union
 import warnings
@@ -48,7 +47,7 @@ def _get_frozen_trial(study: Study, trial: Union[Trial, int]) -> FrozenTrial:
 
 
 def _check_state_and_values(
-    state: Optional[TrialState], values: Optional[Union[float, Sequence[float]]]
+    state: TrialState | None, values: Union[float, Sequence[float]] | None
 ) -> None:
     if state == TrialState.COMPLETE:
         if values is None:
@@ -65,7 +64,7 @@ def _check_state_and_values(
         raise ValueError(f"Cannot tell with state {state}.")
 
 
-def _check_values_are_feasible(study: Study, values: Sequence[float]) -> Optional[str]:
+def _check_values_are_feasible(study: Study, values: Sequence[float]) -> str | None:
     for v in values:
         # TODO(Imamura): Construct error message taking into account all values and do not early
         # return `value` is assumed to be ignored on failure so we can set it to any value.
@@ -89,8 +88,8 @@ def _check_values_are_feasible(study: Study, values: Sequence[float]) -> Optiona
 def _tell_with_warning(
     study: Study,
     trial: Union[Trial, int],
-    value_or_values: Optional[Union[float, Sequence[float]]] = None,
-    state: Optional[TrialState] = None,
+    value_or_values: Union[float, Sequence[float]] | None = None,
+    state: TrialState | None = None,
     skip_if_finished: bool = False,
     suppress_warning: bool = False,
 ) -> FrozenTrial:
@@ -122,7 +121,7 @@ def _tell_with_warning(
         raise ValueError(f"Cannot tell a {frozen_trial.state.name} trial.")
 
     # Validate the state and values arguments.
-    values: Optional[Sequence[float]]
+    values: Sequence[float] | None
     if value_or_values is None:
         values = None
     elif isinstance(value_or_values, Sequence):
