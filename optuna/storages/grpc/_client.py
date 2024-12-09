@@ -7,7 +7,6 @@ import json
 from typing import Any
 import uuid
 
-from optuna._imports import try_import
 from optuna.distributions import BaseDistribution
 from optuna.distributions import distribution_to_json
 from optuna.exceptions import DuplicatedStudyError
@@ -15,6 +14,7 @@ from optuna.storages._base import BaseStorage
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.storages.grpc import _api_pb2
 from optuna.storages.grpc._api_pb2_grpc import StorageServiceStub
+from optuna.storages.grpc._grpc_imports import _imports
 from optuna.storages.grpc._server import _from_proto_frozen_trial
 from optuna.storages.grpc._server import _to_proto_frozen_trial
 from optuna.storages.grpc._server import _to_proto_trial_state
@@ -24,8 +24,8 @@ from optuna.trial._frozen import FrozenTrial
 from optuna.trial._state import TrialState
 
 
-with try_import() as _imports:
-    import grpc
+if _imports.is_successful():
+    from optuna.storages.grpc._grpc_imports import grpc
 
 
 class GrpcStorageProxy(BaseStorage):

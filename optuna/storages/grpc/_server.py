@@ -6,21 +6,20 @@ from datetime import datetime
 import json
 import threading
 
-from optuna._imports import try_import
 from optuna.distributions import distribution_to_json
 from optuna.distributions import json_to_distribution
 from optuna.exceptions import DuplicatedStudyError
 from optuna.storages import RDBStorage
 from optuna.storages.grpc import _api_pb2
-from optuna.storages.grpc._api_pb2_grpc import add_StorageServiceServicer_to_server
-from optuna.storages.grpc._api_pb2_grpc import StorageServiceServicer
+from optuna.storages.grpc import _api_pb2_grpc
+from optuna.storages.grpc._grpc_imports import _imports
 from optuna.study._study_direction import StudyDirection
 from optuna.trial._frozen import FrozenTrial
 from optuna.trial._state import TrialState
 
 
-with try_import() as _imports:
-    import grpc
+if _imports.is_successful():
+    from optuna.storages.grpc._grpc_imports import grpc
 
 
 DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S.%f"
@@ -38,7 +37,7 @@ class _StudyInfo:
         self.name: str | None = None
 
 
-class OptunaStorageProxyService(StorageServiceServicer):
+class OptunaStorageProxyService(_api_pb2_grpc.StorageServiceServicer):
     def __init__(self, storage_url: str) -> None:
         self._backend = RDBStorage(storage_url)
         self._studies: dict[int, _StudyInfo] = {}
@@ -575,7 +574,7 @@ def make_server(
     storage_url: str, host: str, port: int, thread_pool: ThreadPoolExecutor | None = None
 ) -> grpc.Server:
     server = grpc.server(thread_pool or ThreadPoolExecutor(max_workers=10))
-    add_StorageServiceServicer_to_server(
+    _api_pb2_grpc.add_StorageServiceServicer_to_server(
         OptunaStorageProxyService(storage_url), server
     )  # type: ignore
     server.add_insecure_port(f"{host}:{port}")
