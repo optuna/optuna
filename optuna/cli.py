@@ -427,7 +427,7 @@ class _Studies(_BaseCommand):
             "-f",
             "--format",
             type=str,
-            choices=("json", "table", "yaml"),
+            choices=("value", "json", "table", "yaml"),
             default="table",
             help="Output format.",
         )
@@ -481,7 +481,7 @@ class _Trials(_BaseCommand):
             "-f",
             "--format",
             type=str,
-            choices=("json", "table", "yaml"),
+            choices=("value", "json", "table", "yaml"),
             default="table",
             help="Output format.",
         )
@@ -531,7 +531,7 @@ class _BestTrial(_BaseCommand):
             "-f",
             "--format",
             type=str,
-            choices=("json", "table", "yaml"),
+            choices=("value", "json", "table", "yaml"),
             default="table",
             help="Output format.",
         )
@@ -584,7 +584,7 @@ class _BestTrials(_BaseCommand):
             "-f",
             "--format",
             type=str,
-            choices=("json", "table", "yaml"),
+            choices=("value", "json", "table", "yaml"),
             default="table",
             help="Output format.",
         )
@@ -675,7 +675,7 @@ class _Ask(_BaseCommand):
             "-f",
             "--format",
             type=str,
-            choices=("json", "table", "yaml"),
+            choices=("value", "json", "table", "yaml"),
             default="json",
             help="Output format.",
         )
