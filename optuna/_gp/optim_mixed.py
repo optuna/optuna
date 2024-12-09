@@ -251,8 +251,10 @@ def local_search_mixed(
         if updated:
             last_changed_param = CONTINUOUS
 
-        for i, choices, xtol in zip(discrete_indices, choices_of_discrete_params, discrete_xtols):
-            assert isinstance(i, int)
+        for ind, choices, xtol in zip(
+            discrete_indices, choices_of_discrete_params, discrete_xtols
+        ):
+            i = int(ind)
             if last_changed_param == i:
                 # Parameters not changed since last time.
                 return (best_normalized_params, best_fval)
