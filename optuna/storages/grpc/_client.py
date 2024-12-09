@@ -36,7 +36,7 @@ class GrpcStorageProxy(BaseStorage):
         This is a simple example of using :class:`~optuna.storages.grpc.GrpcStorageProxy` with
         :func:`~optuna.storages.grpc.run_server`.
 
-        .. testcode::
+        .. code::
 
             import optuna
             from optuna.storages.grpc import GrpcStorageProxy

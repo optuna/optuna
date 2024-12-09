@@ -77,7 +77,6 @@ document = [
   "sphinx_rtd_theme>=1.2.0",
   "torch",
   "torchvision",
-  "grpcio",  # optuna/storages/grpc.
 ]
 optional = [
   "boto3",  # optuna/artifacts/_boto3.py.
