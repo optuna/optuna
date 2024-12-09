@@ -252,7 +252,7 @@ class OptunaStorageProxyService(_api_pb2_grpc.StorageServiceServicer):
         study_id = request.study_id
 
         template_trial = None
-        if request.template_trial is not None:
+        if not request.template_trial_is_none:
             template_trial = _from_proto_frozen_trial(request.template_trial)
 
         try:

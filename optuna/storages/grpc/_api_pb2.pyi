@@ -528,7 +528,9 @@ class CreateNewTrialRequest(google.protobuf.message.Message):
 
     STUDY_ID_FIELD_NUMBER: builtins.int
     TEMPLATE_TRIAL_FIELD_NUMBER: builtins.int
+    TEMPLATE_TRIAL_IS_NONE_FIELD_NUMBER: builtins.int
     study_id: builtins.int
+    template_trial_is_none: builtins.bool
     @property
     def template_trial(self) -> global___FrozenTrial: ...
     def __init__(
@@ -536,13 +538,21 @@ class CreateNewTrialRequest(google.protobuf.message.Message):
         *,
         study_id: builtins.int = ...,
         template_trial: global___FrozenTrial | None = ...,
+        template_trial_is_none: builtins.bool = ...,
     ) -> None: ...
     def HasField(
         self, field_name: typing.Literal["template_trial", b"template_trial"]
     ) -> builtins.bool: ...
     def ClearField(
         self,
-        field_name: typing.Literal["study_id", b"study_id", "template_trial", b"template_trial"],
+        field_name: typing.Literal[
+            "study_id",
+            b"study_id",
+            "template_trial",
+            b"template_trial",
+            "template_trial_is_none",
+            b"template_trial_is_none",
+        ],
     ) -> None: ...
 
 global___CreateNewTrialRequest = CreateNewTrialRequest

@@ -179,10 +179,14 @@ class GrpcStorageProxy(BaseStorage):
 
     def create_new_trial(self, study_id: int, template_trial: FrozenTrial | None = None) -> int:
         if template_trial is None:
-            request = _api_pb2.CreateNewTrialRequest(study_id=study_id)
+            request = _api_pb2.CreateNewTrialRequest(
+                study_id=study_id, template_trial_is_none=True
+            )
         else:
             request = _api_pb2.CreateNewTrialRequest(
-                study_id=study_id, template_trial=_to_proto_frozen_trial(template_trial)
+                study_id=study_id,
+                template_trial=_to_proto_frozen_trial(template_trial),
+                template_trial_is_none=False,
             )
         try:
             response = self._stub.CreateNewTrial(request)

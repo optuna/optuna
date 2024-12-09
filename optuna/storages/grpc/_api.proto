@@ -254,6 +254,7 @@ message GetAllStudiesReply {
 message CreateNewTrialRequest {
     int64 study_id = 1;
     FrozenTrial template_trial = 2;
+    bool template_trial_is_none = 3;
 }
 
 /**

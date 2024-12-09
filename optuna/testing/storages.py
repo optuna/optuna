@@ -4,6 +4,7 @@ import threading
 from types import TracebackType
 from typing import Any
 from typing import IO
+import uuid
 
 import fakeredis
 import grpc
@@ -81,12 +82,13 @@ class StorageSupplier:
         elif self.storage_specifier == "grpc":
             self.tempfile = NamedTemporaryFilePool().tempfile()
             url = "sqlite:///{}".format(self.tempfile.name)
+            port = 13000 + uuid.uuid4().int % 1000
 
-            self.server = optuna.storages.grpc._server.make_server(url, "localhost", 13000)
+            self.server = optuna.storages.grpc._server.make_server(url, "localhost", port)
             self.thread = threading.Thread(target=self.server.start)
             self.thread.start()
 
-            return GrpcStorageProxy(host="localhost", port=13000)
+            return GrpcStorageProxy(host="localhost", port=port)
         else:
             assert False
 
