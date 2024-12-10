@@ -14,6 +14,8 @@ The :mod:`~optuna.storages` module defines a :class:`~optuna.storages.BaseStorag
    fail_stale_trials
    JournalStorage
    InMemoryStorage
+   run_grpc_server
+   GrpcStorageProxy
 
 optuna.storages.journal
 -----------------------
@@ -38,16 +40,6 @@ Users can flexibly choose a lock object for :class:`~optuna.storages.journal.Jou
 
    journal.JournalFileSymlinkLock
    journal.JournalFileOpenLock
-
-optuna.storages.grpc
---------------------
-
-.. autosummary::
-   :toctree: generated/
-   :nosignatures:
-
-   grpc.run_server
-   grpc.GrpcStorageProxy
 
 Deprecated Modules
 ------------------

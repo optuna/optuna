@@ -7,7 +7,7 @@ from optuna.storages._heartbeat import fail_stale_trials
 from optuna.storages._in_memory import InMemoryStorage
 from optuna.storages._rdb.storage import RDBStorage
 from optuna.storages.grpc._client import GrpcStorageProxy
-from optuna.storages.grpc._server import run_server
+from optuna.storages.grpc._server import run_grpc_server
 from optuna.storages.journal._base import BaseJournalLogStorage
 from optuna.storages.journal._file import (
     DeprecatedJournalFileSymlinkLock as JournalFileSymlinkLock,
@@ -31,7 +31,7 @@ __all__ = [
     "RetryFailedTrialCallback",
     "_CachedStorage",
     "fail_stale_trials",
-    "run_server",
+    "run_grpc_server",
     "GrpcStorageProxy",
 ]
 

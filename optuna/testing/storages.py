@@ -84,7 +84,9 @@ class StorageSupplier:
             url = "sqlite:///{}".format(self.tempfile.name)
             port = 13000 + uuid.uuid4().int % 1000
 
-            self.server = optuna.storages.grpc._server.make_server(url, "localhost", port)
+            self.server = optuna.storages.grpc._server.make_server(
+                optuna.storages.RDBStorage(url), "localhost", port
+            )
             self.thread = threading.Thread(target=self.server.start)
             self.thread.start()
 

@@ -29,12 +29,12 @@ if _imports.is_successful():
 
 
 class GrpcStorageProxy(BaseStorage):
-    """gRPC client for :func:`~optuna.storages.grpc.run_server`.
+    """gRPC client for :func:`~optuna.storages.grpc.run_grpc_server`.
 
     Example:
 
         This is a simple example of using :class:`~optuna.storages.grpc.GrpcStorageProxy` with
-        :func:`~optuna.storages.grpc.run_server`.
+        :func:`~optuna.storages.grpc.run_grpc_server`.
 
         .. code::
 
@@ -44,8 +44,8 @@ class GrpcStorageProxy(BaseStorage):
             storage = GrpcStorageProxy(host="localhost", port=13000)
             study = optuna.create_study(storage=storage)
 
-        Please refer to the example in :func:`~optuna.storages.grpc.run_server` for the server side
-        code.
+        Please refer to the example in :func:`~optuna.storages.grpc.run_grpc_server` for the
+        server side code.
 
     Args:
         host: The host of the gRPC server.
@@ -86,7 +86,9 @@ class GrpcStorageProxy(BaseStorage):
         try:
             response = self._stub.CreateNewStudy(request)
         except grpc.RpcError as e:
-            raise DuplicatedStudyError from e
+            if e.code() == grpc.StatusCode.ALREADY_EXISTS:
+                raise DuplicatedStudyError from e
+            raise
         return response.study_id
 
     def delete_study(self, study_id: int) -> None:
@@ -94,7 +96,9 @@ class GrpcStorageProxy(BaseStorage):
         try:
             self._stub.DeleteStudy(request)
         except grpc.RpcError as e:
-            raise KeyError from e
+            if e.code() == grpc.StatusCode.NOT_FOUND:
+                raise KeyError from e
+            raise
 
     def set_study_user_attr(self, study_id: int, key: str, value: Any) -> None:
         request = api_pb2.SetStudyUserAttributeRequest(
@@ -103,7 +107,9 @@ class GrpcStorageProxy(BaseStorage):
         try:
             self._stub.SetStudyUserAttribute(request)
         except grpc.RpcError as e:
-            raise KeyError from e
+            if e.code() == grpc.StatusCode.NOT_FOUND:
+                raise KeyError from e
+            raise
 
     def set_study_system_attr(self, study_id: int, key: str, value: Any) -> None:
         request = api_pb2.SetStudySystemAttributeRequest(
@@ -112,14 +118,18 @@ class GrpcStorageProxy(BaseStorage):
         try:
             self._stub.SetStudySystemAttribute(request)
         except grpc.RpcError as e:
-            raise KeyError from e
+            if e.code() == grpc.StatusCode.NOT_FOUND:
+                raise KeyError from e
+            raise
 
     def get_study_id_from_name(self, study_name: str) -> int:
         request = api_pb2.GetStudyIdFromNameRequest(study_name=study_name)
         try:
             response = self._stub.GetStudyIdFromName(request)
         except grpc.RpcError as e:
-            raise KeyError from e
+            if e.code() == grpc.StatusCode.NOT_FOUND:
+                raise KeyError from e
+            raise
         return response.study_id
 
     def get_study_name_from_id(self, study_id: int) -> str:
@@ -127,7 +137,9 @@ class GrpcStorageProxy(BaseStorage):
         try:
             response = self._stub.GetStudyNameFromId(request)
         except grpc.RpcError as e:
-            raise KeyError from e
+            if e.code() == grpc.StatusCode.NOT_FOUND:
+                raise KeyError from e
+            raise
         return response.study_name
 
     def get_study_directions(self, study_id: int) -> list[StudyDirection]:
@@ -135,7 +147,9 @@ class GrpcStorageProxy(BaseStorage):
         try:
             response = self._stub.GetStudyDirections(request)
         except grpc.RpcError as e:
-            raise KeyError from e
+            if e.code() == grpc.StatusCode.NOT_FOUND:
+                raise KeyError from e
+            raise
         return [
             StudyDirection.MINIMIZE if d == api_pb2.MINIMIZE else StudyDirection.MAXIMIZE
             for d in response.directions
@@ -146,7 +160,9 @@ class GrpcStorageProxy(BaseStorage):
         try:
             response = self._stub.GetStudyUserAttributes(request)
         except grpc.RpcError as e:
-            raise KeyError from e
+            if e.code() == grpc.StatusCode.NOT_FOUND:
+                raise KeyError from e
+            raise
         return {key: json.loads(value) for key, value in response.user_attributes.items()}
 
     def get_study_system_attrs(self, study_id: int) -> dict[str, Any]:
@@ -154,7 +170,9 @@ class GrpcStorageProxy(BaseStorage):
         try:
             response = self._stub.GetStudySystemAttributes(request)
         except grpc.RpcError as e:
-            raise KeyError from e
+            if e.code() == grpc.StatusCode.NOT_FOUND:
+                raise KeyError from e
+            raise
         return {key: json.loads(value) for key, value in response.system_attributes.items()}
 
     def get_all_studies(self) -> list[FrozenStudy]:
@@ -191,7 +209,9 @@ class GrpcStorageProxy(BaseStorage):
         try:
             response = self._stub.CreateNewTrial(request)
         except grpc.RpcError as e:
-            raise KeyError from e
+            if e.code() == grpc.StatusCode.NOT_FOUND:
+                raise KeyError from e
+            raise
         return response.trial_id
 
     def set_trial_param(
@@ -216,6 +236,8 @@ class GrpcStorageProxy(BaseStorage):
                 raise RuntimeError from e
             elif e.code() == grpc.StatusCode.INVALID_ARGUMENT:
                 raise ValueError from e
+            else:
+                raise
 
     def set_trial_state_values(
         self, trial_id: int, state: TrialState, values: Sequence[float] | None = None
@@ -232,6 +254,8 @@ class GrpcStorageProxy(BaseStorage):
                 raise KeyError from e
             elif e.code() == grpc.StatusCode.FAILED_PRECONDITION:
                 raise RuntimeError from e
+            else:
+                raise
 
         return response.trial_updated
 
@@ -248,6 +272,8 @@ class GrpcStorageProxy(BaseStorage):
                 raise KeyError from e
             elif e.code() == grpc.StatusCode.FAILED_PRECONDITION:
                 raise RuntimeError from e
+            else:
+                raise
 
     def set_trial_user_attr(self, trial_id: int, key: str, value: Any) -> None:
         request = api_pb2.SetTrialUserAttributeRequest(
@@ -260,6 +286,8 @@ class GrpcStorageProxy(BaseStorage):
                 raise KeyError from e
             elif e.code() == grpc.StatusCode.FAILED_PRECONDITION:
                 raise RuntimeError from e
+            else:
+                raise
 
     def set_trial_system_attr(self, trial_id: int, key: str, value: Any) -> None:
         request = api_pb2.SetTrialSystemAttributeRequest(
@@ -272,6 +300,8 @@ class GrpcStorageProxy(BaseStorage):
                 raise KeyError from e
             elif e.code() == grpc.StatusCode.FAILED_PRECONDITION:
                 raise RuntimeError from e
+            else:
+                raise
 
     def get_trial_id_from_study_id_trial_number(self, study_id: int, trial_number: int) -> int:
         request = api_pb2.GetTrialIdFromStudyIdTrialNumberRequest(
@@ -280,7 +310,9 @@ class GrpcStorageProxy(BaseStorage):
         try:
             response = self._stub.GetTrialIdFromStudyIdTrialNumber(request)
         except grpc.RpcError as e:
-            raise KeyError from e
+            if e.code() == grpc.StatusCode.NOT_FOUND:
+                raise KeyError from e
+            raise
         return response.trial_id
 
     def get_trial(self, trial_id: int) -> FrozenTrial:
@@ -288,7 +320,9 @@ class GrpcStorageProxy(BaseStorage):
         try:
             response = self._stub.GetTrial(request)
         except grpc.RpcError as e:
-            raise KeyError from e
+            if e.code() == grpc.StatusCode.NOT_FOUND:
+                raise KeyError from e
+            raise
         return _from_proto_frozen_trial(response.frozen_trial)
 
     def get_all_trials(
@@ -314,5 +348,7 @@ class GrpcStorageProxy(BaseStorage):
         try:
             response = self._stub.GetAllTrials(request)
         except grpc.RpcError as e:
-            raise KeyError from e
+            if e.code() == grpc.StatusCode.NOT_FOUND:
+                raise KeyError from e
+            raise
         return [_from_proto_frozen_trial(trial) for trial in response.frozen_trials]

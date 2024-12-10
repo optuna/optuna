@@ -31,8 +31,8 @@ DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S.%f"
 
 
 class OptunaStorageProxyService(api_pb2_grpc.StorageServiceServicer):
-    def __init__(self, storage_url: str) -> None:
-        self._backend = RDBStorage(storage_url)
+    def __init__(self, storage: RDBStorage) -> None:
+        self._backend = storage
         self._lock = threading.Lock()
 
     def CreateNewStudy(
@@ -446,18 +446,18 @@ def _from_proto_frozen_trial(frozen_trial: api_pb2.FrozenTrial) -> FrozenTrial:
 
 
 def make_server(
-    storage_url: str, host: str, port: int, thread_pool: ThreadPoolExecutor | None = None
+    storage: RDBStorage, host: str, port: int, thread_pool: ThreadPoolExecutor | None = None
 ) -> grpc.Server:
     server = grpc.server(thread_pool or ThreadPoolExecutor(max_workers=10))
     api_pb2_grpc.add_StorageServiceServicer_to_server(
-        OptunaStorageProxyService(storage_url), server
+        OptunaStorageProxyService(storage), server
     )  # type: ignore
     server.add_insecure_port(f"{host}:{port}")
     return server
 
 
-def run_server(
-    storage_url: str, host: str, port: int, thread_pool: ThreadPoolExecutor | None = None
+def run_grpc_server(
+    storage: RDBStorage, host: str, port: int, thread_pool: ThreadPoolExecutor | None = None
 ) -> None:
     """Run a gRPC server for the given storage URL, host, and port.
 
@@ -467,9 +467,11 @@ def run_server(
 
         .. code::
 
-            from optuna.storages.grpc import run_server
+            from optuna.storages.grpc import run_grpc_server
+            from optuna.storages import RDBStorage
 
-            run_server("sqlite:///example.db", "localhost", 13000)
+            storage = RDBStorage("sqlite:///example.db")
+            run_grpc_server(storage, "localhost", 13000)
 
         Please refer to the client class :class:`~optuna.storages.grpc.GrpcStorageProxy` for
         the client usage.
@@ -482,7 +484,7 @@ def run_server(
             Thread pool to use for the server. If :obj:`None`, a default thread pool
             with 10 workers will be used.
     """
-    server = make_server(storage_url, host, port, thread_pool)
+    server = make_server(storage, host, port, thread_pool)
     server.start()
     print(f"Server started at {host}:{port}")
     print("Listening...")
