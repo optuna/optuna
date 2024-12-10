@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from typing import Callable
-from typing import Sequence
+from collections.abc import Callable
+from collections.abc import Sequence
 
 import numpy as np
 
@@ -349,9 +349,9 @@ def _generate_contour_subplot(
 
 
 def _create_zmap(
-    x_values: list[int | float],
-    y_values: list[int | float],
-    z_values: list[float],
+    x_values: Sequence[int | float],
+    y_values: Sequence[int | float],
+    z_values: Sequence[float],
     xi: np.ndarray,
     yi: np.ndarray,
 ) -> dict[tuple[int, int], float]:
