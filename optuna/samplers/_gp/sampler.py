@@ -338,6 +338,7 @@ def _get_constraint_vals_and_feasibility(
         raise ValueError("The number of constraints must be the same for all trials.")
 
     constraint_vals = np.array(_constraint_vals)
+    assert len(constraint_vals.shape) == 2, "constraint_vals must be a 2d array."
     is_feasible = np.all(constraint_vals <= 0, axis=1)
     assert not isinstance(is_feasible, np.bool), "MyPy Redefinition for NumPy v2.2.0."
     return constraint_vals, is_feasible
