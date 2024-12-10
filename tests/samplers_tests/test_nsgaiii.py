@@ -348,10 +348,10 @@ def test_crossover_invalid_population(crossover: BaseCrossover, population_size:
 def test_generate_reference_point(
     n_objectives: int, dividing_parameter: int, expected_reference_points: Sequence[Sequence[int]]
 ) -> None:
-    actual_reference_points = sorted(
-        _generate_default_reference_point(n_objectives, dividing_parameter).tolist()
-    )
-    assert actual_reference_points == expected_reference_points
+    actual_reference_points = _generate_default_reference_point(n_objectives, dividing_parameter)
+    order = np.lexsort([actual_reference_points[:, -i - 1] for i in range(n_objectives)])
+    sorted_actual_reference_points = actual_reference_points[order]
+    assert np.allclose(sorted_actual_reference_points, expected_reference_points)
 
 
 @pytest.mark.parametrize(
