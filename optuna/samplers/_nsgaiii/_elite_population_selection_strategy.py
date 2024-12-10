@@ -103,7 +103,7 @@ class NSGAIIIElitePopulationSelectionStrategy:
 
 def _generate_default_reference_point(
     n_objectives: int, dividing_parameter: int = 3
-) -> np.ndarray[tuple[int, int], np.dtype[np.float64]]:
+) -> np.ndarray:
     """Generates default reference points which are `uniformly` spread on a hyperplane."""
     indices = np.array(
         list(combinations_with_replacement(range(n_objectives), dividing_parameter))

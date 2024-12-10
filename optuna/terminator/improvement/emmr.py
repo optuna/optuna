@@ -299,7 +299,7 @@ def _compute_gp_posterior(
         X=X,  # normalized_params[..., :-1, :],
         Y=Y,  # standarized_score_vals[:-1],
     )
-    mean, var = gp.posterior(
+    mean_tensor, var_tensor = gp.posterior(
         acqf_params.kernel_params,
         torch.from_numpy(acqf_params.X),
         torch.from_numpy(
@@ -309,8 +309,8 @@ def _compute_gp_posterior(
         torch.from_numpy(acqf_params.cov_Y_Y_inv_Y),
         torch.from_numpy(x_params),  # best_params or normalized_params[..., -1, :]),
     )
-    mean = mean.detach().numpy().flatten()
-    var = var.detach().numpy().flatten()
+    mean = mean_tensor.detach().numpy().flatten()
+    var = var_tensor.detach().numpy().flatten()
     assert len(mean) == 1 and len(var) == 1
     return float(mean[0]), float(var[0])
 
