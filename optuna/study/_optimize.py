@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from collections.abc import Iterable
 from collections.abc import Sequence
 from concurrent.futures import FIRST_COMPLETED
@@ -12,7 +13,6 @@ import itertools
 import os
 import sys
 from typing import Any
-from typing import Callable
 import warnings
 
 import optuna

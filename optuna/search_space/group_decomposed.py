@@ -1,10 +1,6 @@
 from __future__ import annotations
 
 import copy
-from typing import Dict
-from typing import List
-from typing import Optional
-from typing import Tuple
 from typing import TYPE_CHECKING
 
 from optuna.distributions import BaseDistribution
@@ -17,13 +13,13 @@ if TYPE_CHECKING:
 
 class _SearchSpaceGroup:
     def __init__(self) -> None:
-        self._search_spaces: List[Dict[str, BaseDistribution]] = []
+        self._search_spaces: list[dict[str, BaseDistribution]] = []
 
     @property
-    def search_spaces(self) -> List[Dict[str, BaseDistribution]]:
+    def search_spaces(self) -> list[dict[str, BaseDistribution]]:
         return self._search_spaces
 
-    def add_distributions(self, distributions: Dict[str, BaseDistribution]) -> None:
+    def add_distributions(self, distributions: dict[str, BaseDistribution]) -> None:
         dist_keys = set(distributions.keys())
         next_search_spaces = []
 
@@ -44,7 +40,7 @@ class _SearchSpaceGroup:
 class _GroupDecomposedSearchSpace:
     def __init__(self, include_pruned: bool = False) -> None:
         self._search_space = _SearchSpaceGroup()
-        self._study_id: Optional[int] = None
+        self._study_id: int | None = None
         self._include_pruned = include_pruned
 
     def calculate(self, study: Study) -> _SearchSpaceGroup:
@@ -58,7 +54,7 @@ class _GroupDecomposedSearchSpace:
             if self._study_id != study._study_id:
                 raise ValueError("`_GroupDecomposedSearchSpace` cannot handle multiple studies.")
 
-        states_of_interest: Tuple[TrialState, ...]
+        states_of_interest: tuple[TrialState, ...]
         if self._include_pruned:
             states_of_interest = (TrialState.COMPLETE, TrialState.PRUNED)
         else:
