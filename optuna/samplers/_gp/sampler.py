@@ -339,5 +339,5 @@ def _get_constraint_vals_and_feasibility(
 
     constraint_vals = np.array(_constraint_vals)
     is_feasible = np.all(constraint_vals <= 0, axis=1)
-    assert isinstance(is_feasible, bool), "MyPy Redefinition for NumPy v2.2.0."
+    assert not isinstance(is_feasible, bool), "MyPy Redefinition for NumPy v2.2.0."
     return constraint_vals, is_feasible
