@@ -142,6 +142,7 @@ force-exclude = '''
   | build
   | dist
   | docs
+  | optuna/storages/grpc/_auto_generated
 )/
 '''
 
@@ -154,6 +155,7 @@ skip_glob = [
   'tutorial/**/*.py',
   'docs/visualization_examples/*.py',
   'docs/visualization_matplotlib_examples/*.py',
+  'optuna/storages/grpc/_auto_generated/*.py'
 ]
 line_length = 99
 lines_after_imports = 2
