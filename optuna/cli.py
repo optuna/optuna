@@ -250,10 +250,7 @@ def _format_output(
         values, header = _convert_to_dict([records], columns, flatten)
 
     if output_format == "value":
-        if isinstance(records, list):
-            return _dump_value(values, header).strip()
-        else:
-            return str(values[0]).strip()
+        return _dump_value(values, header).strip()
     elif output_format == "table":
         return _dump_table(values, header).strip()
     elif output_format == "json":
