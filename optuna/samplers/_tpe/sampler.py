@@ -683,7 +683,8 @@ def _split_complete_trials_multi_objective(
         )
         indices_below = np.append(indices_below, selected_indices)
 
-    below_indices_set = set(cast(list[int], indices_below.tolist()))
+    # TODO(nabenabe): Replace list with list[int] once Python 3.8 is dropped.
+    below_indices_set = set(cast(list, indices_below.tolist()))
     below_trials = [trials[i] for i in range(len(trials)) if i in below_indices_set]
     above_trials = [trials[i] for i in range(len(trials)) if i not in below_indices_set]
     return below_trials, above_trials
@@ -736,13 +737,12 @@ def _calculate_weights_below_for_multi_objective(
     below_trials: list[FrozenTrial],
     constraints_func: Callable[[FrozenTrial], Sequence[float]] | None,
 ) -> np.ndarray:
-    if constraints_func is None:
-        is_feasible = np.ones(len(below_trials), dtype=bool)
-    else:
-        is_feasible = cast(
-            np.ndarray[tuple[int], np.dtype[np.bool_]],
-            np.asarray([all(c <= 0 for c in constraints_func(t)) for t in below_trials]),
-        )
+    is_feasible = np.asarray(
+        [
+            constraints_func is None or all(c <= 0 for c in constraints_func(t))
+            for t in below_trials
+        ]
+    )
 
     n_below_feasible = np.count_nonzero(is_feasible)
     # For now, EPS weight is assigned to unpromising (e.g., infeasible) trials.
