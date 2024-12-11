@@ -250,10 +250,7 @@ def _format_output(
         values, header = _convert_to_dict([records], columns, flatten)
 
     if output_format == "value":
-        if isinstance(records, list):
-            return _dump_value(values, header).strip()
-        else:
-            return str(values[0]).strip()
+        return _dump_value(values, header).strip()
     elif output_format == "table":
         return _dump_table(values, header).strip()
     elif output_format == "json":
@@ -427,7 +424,7 @@ class _Studies(_BaseCommand):
             "-f",
             "--format",
             type=str,
-            choices=("json", "table", "yaml"),
+            choices=("value", "json", "table", "yaml"),
             default="table",
             help="Output format.",
         )
@@ -481,7 +478,7 @@ class _Trials(_BaseCommand):
             "-f",
             "--format",
             type=str,
-            choices=("json", "table", "yaml"),
+            choices=("value", "json", "table", "yaml"),
             default="table",
             help="Output format.",
         )
@@ -531,7 +528,7 @@ class _BestTrial(_BaseCommand):
             "-f",
             "--format",
             type=str,
-            choices=("json", "table", "yaml"),
+            choices=("value", "json", "table", "yaml"),
             default="table",
             help="Output format.",
         )
@@ -584,7 +581,7 @@ class _BestTrials(_BaseCommand):
             "-f",
             "--format",
             type=str,
-            choices=("json", "table", "yaml"),
+            choices=("value", "json", "table", "yaml"),
             default="table",
             help="Output format.",
         )
@@ -675,7 +672,7 @@ class _Ask(_BaseCommand):
             "-f",
             "--format",
             type=str,
-            choices=("json", "table", "yaml"),
+            choices=("value", "json", "table", "yaml"),
             default="json",
             help="Output format.",
         )
