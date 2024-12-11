@@ -97,7 +97,7 @@ def _solve_hssp_on_unique_loss_vals(
     contribs = np.prod(diff_of_loss_vals_and_ref_point, axis=-1)
     selected_indices = np.zeros(subset_size, dtype=int)
     selected_vecs = np.empty((subset_size, n_objectives))
-    indices = np.arange(n_solutions, dtype=int)
+    indices = np.arange(n_solutions)
     for k in range(subset_size):
         max_index = int(np.argmax(contribs))
         selected_indices[k] = indices[max_index]
