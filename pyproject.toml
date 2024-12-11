@@ -181,4 +181,4 @@ extra_checks = true
 no_implicit_reexport = true
 
 ignore_missing_imports = true
-exclude = .venv|venv|build|docs|tutorial|optuna/storages/_rdb/alembic
+exclude = [".venv", "venv", "build", "docs", "tutorial", "optuna/storages/_rdb/alembic"]
