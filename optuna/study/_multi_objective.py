@@ -128,7 +128,9 @@ def _is_pareto_front_nd(unique_lexsorted_loss_values: np.ndarray) -> np.ndarray:
     on_front = np.zeros(n_trials, dtype=bool)
     # TODO(nabenabe): Replace with the following once Python 3.8 is dropped.
     # nondominated_indices: np.ndarray[tuple[int], np.dtype[np.signedinteger]] = ...
-    nondominated_indices = np.arange(n_trials)
+    nondominated_indices: np.ndarray[tuple[int, ...], np.dtype[np.signedinteger]] = np.arange(
+        n_trials
+    )
     while len(loss_values):
         # The following judges `np.any(loss_values[i] < loss_values[0])` for each `i`.
         nondominated_and_not_top = np.any(loss_values < loss_values[0], axis=1)
@@ -138,10 +140,7 @@ def _is_pareto_front_nd(unique_lexsorted_loss_values: np.ndarray) -> np.ndarray:
         loss_values = loss_values[nondominated_and_not_top]
         # TODO(nabenabe): Replace with the following once Python 3.8 is dropped.
         # ... = cast(np.ndarray[tuple[int], np.dtype[np.signedinteger]], ...)
-        # NOTE(nabenabe): For now, we ignore the type for NumPy v2.2.0.
-        nondominated_indices = nondominated_indices[
-            nondominated_and_not_top
-        ]  # type: ignore[assignment]
+        nondominated_indices = nondominated_indices[nondominated_and_not_top]
 
     return on_front
 
