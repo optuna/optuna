@@ -1,5 +1,12 @@
 /**
  * Optuna GRPC API
+ * The following command generates the Python code from this file:
+ $ python -m grpc_tools.protoc \
+    --proto_path=optuna/storages/grpc \
+    --grpc_python_out=optuna/storages/grpc/_auto_generated \
+    --python_out=optuna/storages/grpc/_auto_generated \
+    --mypy_out=optuna/storages/grpc/_auto_generated \
+    optuna/storages/grpc/api.proto
  */
 syntax = "proto3";
 
