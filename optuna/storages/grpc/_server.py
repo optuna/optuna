@@ -328,6 +328,7 @@ class OptunaStorageProxyService(api_pb2_grpc.StorageServiceServicer):
         try:
             trials = self._backend.get_all_trials(
                 study_id,
+                deepcopy=False,
                 states=states,
             )
         except KeyError as e:
