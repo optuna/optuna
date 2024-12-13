@@ -55,7 +55,10 @@ class GrpcStorageProxy(BaseStorage):
 
     def __init__(self, *, host: str = "localhost", port: int = 13000) -> None:
         self._stub = api_pb2_grpc.StorageServiceStub(
-            grpc.insecure_channel(f"{host}:{port}")
+            grpc.insecure_channel(
+                f"{host}:{port}",
+                options=[("grpc.max_receive_message_length", -1)],
+            )
         )  # type: ignore
         self._host = host
         self._port = port
