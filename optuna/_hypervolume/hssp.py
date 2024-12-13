@@ -93,7 +93,7 @@ def _solve_hssp_on_unique_loss_vals(
     # The following logic can be used for non-unique rank_i_loss_vals as well.
     diff_of_loss_vals_and_ref_point = reference_point - rank_i_loss_vals
     (n_solutions, n_objectives) = rank_i_loss_vals.shape
-    assert isinstance(n_solutions, int), "MyPy Redefinition for NumPy v2.2.0."
+    n_solutions = int(n_solutions)  # MyPy Redefinition for NumPy v2.2.0.
     contribs = np.prod(diff_of_loss_vals_and_ref_point, axis=-1)
     selected_indices = np.zeros(subset_size, dtype=int)
     selected_vecs = np.empty((subset_size, n_objectives))
