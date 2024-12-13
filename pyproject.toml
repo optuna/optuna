@@ -187,5 +187,6 @@ no_implicit_reexport = true
 ignore_missing_imports = true
 exclude = [".venv", "venv", "build", "docs", "tutorial", "optuna/storages/_rdb/alembic", "optuna/storages/grpc/_auto_generated"]
 
-# [mypy-optuna.storages.grpc._auto_generated.*]
-# follow_imports = "skip"
+[[tool.mypy.overrides]]
+module = 'optuna.storages.grpc._auto_generated/*'
+follow_imports = "skip"
