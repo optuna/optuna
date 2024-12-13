@@ -3,6 +3,13 @@
 isort:skip_file
 *
 Optuna GRPC API
+The following command generates the Python code from this file:
+$ python -m grpc_tools.protoc \\
+--proto_path=optuna/storages/grpc \\
+--grpc_python_out=optuna/storages/grpc/_auto_generated \\
+--python_out=optuna/storages/grpc/_auto_generated \\
+--mypy_out=optuna/storages/grpc/_auto_generated \\
+optuna/storages/grpc/api.proto
 """
 
 import builtins
@@ -820,20 +827,17 @@ class GetAllTrialsRequest(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
     STUDY_ID_FIELD_NUMBER: builtins.int
-    DEEPCOPY_FIELD_NUMBER: builtins.int
     STATES_FIELD_NUMBER: builtins.int
     study_id: builtins.int
-    deepcopy: builtins.bool
     @property
     def states(self) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[global___TrialState.ValueType]: ...
     def __init__(
         self,
         *,
         study_id: builtins.int = ...,
-        deepcopy: builtins.bool = ...,
         states: collections.abc.Iterable[global___TrialState.ValueType] | None = ...,
     ) -> None: ...
-    def ClearField(self, field_name: typing.Literal["deepcopy", b"deepcopy", "states", b"states", "study_id", b"study_id"]) -> None: ...
+    def ClearField(self, field_name: typing.Literal["states", b"states", "study_id", b"study_id"]) -> None: ...
 
 global___GetAllTrialsRequest = GetAllTrialsRequest
 

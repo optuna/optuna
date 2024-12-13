@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor
-import copy
 from datetime import datetime
 import json
 import threading
@@ -325,7 +324,6 @@ class OptunaStorageProxyService(api_pb2_grpc.StorageServiceServicer):
         context: grpc.ServicerContext,
     ) -> api_pb2.GetAllTrialsReply:
         study_id = request.study_id
-        deepcopy = request.deepcopy
         states = [_from_proto_trial_state(state) for state in request.states]
         try:
             trials = self._backend.get_all_trials(
@@ -335,7 +333,6 @@ class OptunaStorageProxyService(api_pb2_grpc.StorageServiceServicer):
         except KeyError as e:
             context.abort(code=grpc.StatusCode.NOT_FOUND, details=str(e))
 
-        trials = copy.deepcopy(trials) if deepcopy else trials
         return api_pb2.GetAllTrialsReply(
             frozen_trials=[_to_proto_frozen_trial(trial) for trial in trials]
         )

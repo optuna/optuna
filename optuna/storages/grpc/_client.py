@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections.abc import Container
 from collections.abc import Iterable
 from collections.abc import Sequence
+import copy
 import json
 from typing import Any
 import uuid
@@ -345,7 +346,6 @@ class GrpcStorageProxy(BaseStorage):
         assert isinstance(states, Iterable)
         request = api_pb2.GetAllTrialsRequest(
             study_id=study_id,
-            deepcopy=deepcopy,
             states=[_to_proto_trial_state(state) for state in states],
         )
         try:
@@ -354,4 +354,6 @@ class GrpcStorageProxy(BaseStorage):
             if e.code() == grpc.StatusCode.NOT_FOUND:
                 raise KeyError from e
             raise
-        return [_from_proto_frozen_trial(trial) for trial in response.frozen_trials]
+        trials = [_from_proto_frozen_trial(trial) for trial in response.frozen_trials]
+        trials = copy.deepcopy(trials) if deepcopy else trials
+        return trials

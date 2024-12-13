@@ -378,8 +378,7 @@ message GetTrialReply {
  */
 message GetAllTrialsRequest {
     int64 study_id = 1;
-    bool deepcopy = 2;
-    repeated TrialState states = 3;
+    repeated TrialState states = 2;
 }
 
 /**
