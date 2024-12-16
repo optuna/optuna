@@ -315,10 +315,6 @@ def _generate_contour_subplot(
     ) = _calculate_griddata(info)
     cs = None
     if len(zi) > 0:
-        if info.xaxis.is_log:
-            ax.set_xscale("log")
-        if info.yaxis.is_log:
-            ax.set_yscale("log")
         if info.xaxis.name != info.yaxis.name:
             # Contour the gridded data.
             ax.contour(xi, yi, zi, 15, linewidths=0.5, colors="k")
