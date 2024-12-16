@@ -315,30 +315,29 @@ def _generate_contour_subplot(
     ) = _calculate_griddata(info)
     cs = None
     if len(zi) > 0:
-        if info.xaxis.name != info.yaxis.name:
-            # Contour the gridded data.
-            ax.contour(xi, yi, zi, 15, linewidths=0.5, colors="k")
-            cs = ax.contourf(xi, yi, zi, 15, cmap=cmap.reversed())
-            assert isinstance(cs, ContourSet)
-            # Plot data points.
-            ax.scatter(
-                feasible_plot_values.x,
-                feasible_plot_values.y,
-                marker="o",
-                c="black",
-                s=20,
-                edgecolors="grey",
-                linewidth=2.0,
-            )
-            ax.scatter(
-                infeasible_plot_values.x,
-                infeasible_plot_values.y,
-                marker="o",
-                c="#cccccc",
-                s=20,
-                edgecolors="grey",
-                linewidth=2.0,
-            )
+        # Contour the gridded data.
+        ax.contour(xi, yi, zi, 15, linewidths=0.5, colors="k")
+        cs = ax.contourf(xi, yi, zi, 15, cmap=cmap.reversed())
+        assert isinstance(cs, ContourSet)
+        # Plot data points.
+        ax.scatter(
+            feasible_plot_values.x,
+            feasible_plot_values.y,
+            marker="o",
+            c="black",
+            s=20,
+            edgecolors="grey",
+            linewidth=2.0,
+        )
+        ax.scatter(
+            infeasible_plot_values.x,
+            infeasible_plot_values.y,
+            marker="o",
+            c="#cccccc",
+            s=20,
+            edgecolors="grey",
+            linewidth=2.0,
+        )
 
     return cs
 
