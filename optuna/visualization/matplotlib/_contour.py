@@ -277,8 +277,9 @@ def _calculate_griddata(
 def _generate_contour_subplot(
     info: _SubContourInfo, ax: "Axes", cmap: "Colormap"
 ) -> "ContourSet" | None:
+    ax.label_outer()
+
     if len(info.xaxis.indices) < 2 or len(info.yaxis.indices) < 2:
-        ax.label_outer()
         return None
 
     ax.set(xlabel=info.xaxis.name, ylabel=info.yaxis.name)
@@ -299,7 +300,6 @@ def _generate_contour_subplot(
         ax.set_yscale("log" if info.yaxis.is_log else "linear")
 
     if info.xaxis.name == info.yaxis.name:
-        ax.label_outer()
         return None
 
     (
@@ -344,7 +344,6 @@ def _generate_contour_subplot(
                 linewidth=2.0,
             )
 
-    ax.label_outer()
     return cs
 
 
