@@ -37,3 +37,18 @@ def test_retry_history_with_failures() -> None:
                 range(n_retries)
             )
 
+
+def test_retry_history_with_more_than_max_retry() -> None:
+    max_retry = 3
+    callback = RetryFailedTrialCallback(max_retry=max_retry)
+    with StorageSupplier(
+        "sqlite", heartbeat_interval=1, grace_period=2, failed_trial_callback=callback
+    ) as storage:
+        study = optuna.create_study(storage=storage)
+        for n_retries in range(max_retry + 2):
+            trial = study.ask({"x": optuna.distributions.FloatDistribution(-1, 1)})
+            storage.set_trial_state_values(trial._trial_id, state=TrialState.FAIL)
+            callback(study, study.trials[trial.number])  # Manually call callback.
+
+        # After max_retry retries, the parameter should be different from the original.
+        assert study.trials[0].params["x"] != study.trials[-1].params["x"]
