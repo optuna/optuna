@@ -4,14 +4,16 @@ from optuna.testing.storages import StorageSupplier
 from optuna.trial import TrialState
 
 
-def test_retry_history() -> None:
-    # Test case 1: Trial that is not a retry should return empty list
+def test_retry_history_with_success() -> None:
+    # Trial that is not a retry should return empty list.
     with StorageSupplier("sqlite") as storage:
         study = optuna.create_study(storage=storage)
         trial = study.ask()
-        study.tell(trial, 1.0)  # Complete the trial to get FrozenTrial
+        study.tell(trial, 1.0)  # Complete the trial to get FrozenTrial.
         assert RetryFailedTrialCallback.retry_history(study.trials[0]) == []
 
+
+def test_retry_history_with_failures() -> None:
     # Test case 2: First retry should contain only the original trial number
     callback = RetryFailedTrialCallback(max_retry=3)
     with StorageSupplier(
