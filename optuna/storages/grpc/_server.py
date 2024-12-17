@@ -19,17 +19,17 @@ if _imports.is_successful():
     from optuna.storages.grpc._grpc_imports import api_pb2
     from optuna.storages.grpc._grpc_imports import api_pb2_grpc
     from optuna.storages.grpc._grpc_imports import grpc
+    from optuna.storages.grpc._grpc_imports import StorageServiceServicer
 else:
 
-    class api_pb2_grpc:  # type: ignore
-        class StorageServiceServicer:
-            pass
+    class StorageServiceServicer:  # type: ignore
+        pass
 
 
 DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S.%f"
 
 
-class OptunaStorageProxyService(api_pb2_grpc.StorageServiceServicer):
+class OptunaStorageProxyService(StorageServiceServicer):
     def __init__(self, storage: BaseStorage) -> None:
         self._backend = storage
         self._lock = threading.Lock()
@@ -167,8 +167,8 @@ class OptunaStorageProxyService(api_pb2_grpc.StorageServiceServicer):
     ) -> api_pb2.GetAllStudiesReply:
         studies = self._backend.get_all_studies()
         return api_pb2.GetAllStudiesReply(
-            frozen_studies=[
-                api_pb2.FrozenStudy(
+            studies=[
+                api_pb2.Study(
                     study_id=study._study_id,
                     study_name=study.study_name,
                     directions=[
@@ -195,7 +195,7 @@ class OptunaStorageProxyService(api_pb2_grpc.StorageServiceServicer):
 
         template_trial = None
         if not request.template_trial_is_none:
-            template_trial = _from_proto_frozen_trial(request.template_trial)
+            template_trial = _from_proto_trial(request.template_trial)
 
         try:
             trial_id = self._backend.create_new_trial(study_id, template_trial)
@@ -316,7 +316,7 @@ class OptunaStorageProxyService(api_pb2_grpc.StorageServiceServicer):
         except KeyError as e:
             context.abort(code=grpc.StatusCode.NOT_FOUND, details=str(e))
 
-        return api_pb2.GetTrialReply(frozen_trial=_to_proto_frozen_trial(trial))
+        return api_pb2.GetTrialReply(trial=_to_proto_trial(trial))
 
     def GetAllTrials(
         self,
@@ -334,9 +334,7 @@ class OptunaStorageProxyService(api_pb2_grpc.StorageServiceServicer):
         except KeyError as e:
             context.abort(code=grpc.StatusCode.NOT_FOUND, details=str(e))
 
-        return api_pb2.GetAllTrialsReply(
-            frozen_trials=[_to_proto_frozen_trial(trial) for trial in trials]
-        )
+        return api_pb2.GetAllTrialsReply(trials=[_to_proto_trial(trial) for trial in trials])
 
 
 def _to_proto_trial_state(state: TrialState) -> api_pb2.TrialState.ValueType:
@@ -367,76 +365,62 @@ def _from_proto_trial_state(state: api_pb2.TrialState.ValueType) -> TrialState:
     raise ValueError(f"Unknown api_pb2.TrialState: {state}")
 
 
-def _to_proto_frozen_trial(frozen_trial: FrozenTrial) -> api_pb2.FrozenTrial:
+def _to_proto_trial(trial: FrozenTrial) -> api_pb2.Trial:
     params = {}
-    for key, value in frozen_trial.params.items():
-        params[key] = frozen_trial.distributions[key].to_internal_repr(value)
+    for key, value in trial.params.items():
+        params[key] = trial.distributions[key].to_internal_repr(value)
 
-    return api_pb2.FrozenTrial(
-        trial_id=frozen_trial._trial_id,
-        number=frozen_trial.number,
-        state=_to_proto_trial_state(frozen_trial.state),
-        values=frozen_trial.values,
+    return api_pb2.Trial(
+        trial_id=trial._trial_id,
+        number=trial.number,
+        state=_to_proto_trial_state(trial.state),
+        values=trial.values,
         datetime_start=(
-            frozen_trial.datetime_start.strftime(DATETIME_FORMAT)
-            if frozen_trial.datetime_start
-            else ""
+            trial.datetime_start.strftime(DATETIME_FORMAT) if trial.datetime_start else ""
         ),
         datetime_complete=(
-            frozen_trial.datetime_complete.strftime(DATETIME_FORMAT)
-            if frozen_trial.datetime_complete
-            else ""
+            trial.datetime_complete.strftime(DATETIME_FORMAT) if trial.datetime_complete else ""
         ),
         distributions={
             key: distribution_to_json(distribution)
-            for key, distribution in frozen_trial.distributions.items()
+            for key, distribution in trial.distributions.items()
         },
         params=params,
-        user_attributes={key: json.dumps(value) for key, value in frozen_trial.user_attrs.items()},
-        system_attributes={
-            key: json.dumps(value) for key, value in frozen_trial.system_attrs.items()
-        },
-        intermediate_values={
-            step: value for step, value in frozen_trial.intermediate_values.items()
-        },
+        user_attributes={key: json.dumps(value) for key, value in trial.user_attrs.items()},
+        system_attributes={key: json.dumps(value) for key, value in trial.system_attrs.items()},
+        intermediate_values={step: value for step, value in trial.intermediate_values.items()},
     )
 
 
-def _from_proto_frozen_trial(frozen_trial: api_pb2.FrozenTrial) -> FrozenTrial:
+def _from_proto_trial(trial: api_pb2.Trial) -> FrozenTrial:
     datetime_start = (
-        datetime.strptime(frozen_trial.datetime_start, DATETIME_FORMAT)
-        if frozen_trial.datetime_start
-        else None
+        datetime.strptime(trial.datetime_start, DATETIME_FORMAT) if trial.datetime_start else None
     )
     datetime_complete = (
-        datetime.strptime(frozen_trial.datetime_complete, DATETIME_FORMAT)
-        if frozen_trial.datetime_complete
+        datetime.strptime(trial.datetime_complete, DATETIME_FORMAT)
+        if trial.datetime_complete
         else None
     )
     distributions = {
-        key: json_to_distribution(value) for key, value in frozen_trial.distributions.items()
+        key: json_to_distribution(value) for key, value in trial.distributions.items()
     }
     params = {}
-    for key, value in frozen_trial.params.items():
+    for key, value in trial.params.items():
         params[key] = distributions[key].to_external_repr(value)
 
     return FrozenTrial(
-        trial_id=frozen_trial.trial_id,
-        number=frozen_trial.number,
-        state=_from_proto_trial_state(frozen_trial.state),
+        trial_id=trial.trial_id,
+        number=trial.number,
+        state=_from_proto_trial_state(trial.state),
         value=None,
-        values=frozen_trial.values if frozen_trial.values else None,
+        values=trial.values if trial.values else None,
         datetime_start=datetime_start,
         datetime_complete=datetime_complete,
         params=params,
         distributions=distributions,
-        user_attrs={key: json.loads(value) for key, value in frozen_trial.user_attributes.items()},
-        system_attrs={
-            key: json.loads(value) for key, value in frozen_trial.system_attributes.items()
-        },
-        intermediate_values={
-            step: value for step, value in frozen_trial.intermediate_values.items()
-        },
+        user_attrs={key: json.loads(value) for key, value in trial.user_attributes.items()},
+        system_attrs={key: json.loads(value) for key, value in trial.system_attributes.items()},
+        intermediate_values={step: value for step, value in trial.intermediate_values.items()},
     )
 
 
@@ -451,8 +435,12 @@ def make_server(
     return server
 
 
-def run_grpc_server(
-    storage: BaseStorage, host: str, port: int, thread_pool: ThreadPoolExecutor | None = None
+def run_grpc_proxy_server(
+    storage: BaseStorage,
+    *,
+    host: str = "localhost",
+    port: int = 13000,
+    thread_pool: ThreadPoolExecutor | None = None,
 ) -> None:
     """Run a gRPC server for the given storage URL, host, and port.
 

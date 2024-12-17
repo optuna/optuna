@@ -1,12 +1,16 @@
 /**
  * Optuna GRPC API
  * The following command generates the Python code from this file:
+ $ pip install mypy-protobuf==3.6.0 protobuf==5.28.1 grpcio==1.68.1 grpcio-tools==1.68.1
  $ python -m grpc_tools.protoc \
     --proto_path=optuna/storages/grpc \
     --grpc_python_out=optuna/storages/grpc/_auto_generated \
     --python_out=optuna/storages/grpc/_auto_generated \
     --mypy_out=optuna/storages/grpc/_auto_generated \
     optuna/storages/grpc/api.proto
+ $ sed -i -e \
+    "s/import api_pb2 as api__pb2/import optuna.storages.grpc._auto_generated.api_pb2 as api__pb2/g" \
+    optuna/storages/grpc/_auto_generated/api_pb2_grpc.py
  */
 syntax = "proto3";
 
@@ -20,7 +24,7 @@ service StorageService {
      * Create a new study.
      */
     rpc CreateNewStudy(CreateNewStudyRequest) returns (CreateNewStudyReply);
-    
+
     /**
      * Delete a study.
      */
@@ -35,12 +39,12 @@ service StorageService {
      * Set a study's system attribute.
      */
     rpc SetStudySystemAttribute(SetStudySystemAttributeRequest) returns (SetStudySystemAttributeReply);
-    
+
     /**
      * Get a study id by its name.
      */
     rpc GetStudyIdFromName(GetStudyIdFromNameRequest) returns (GetStudyIdFromNameReply);
-    
+
     /**
      * Get a study name by its id.
      */
@@ -65,12 +69,12 @@ service StorageService {
      * Get all studies.
      */
     rpc GetAllStudies(GetAllStudiesRequest) returns (GetAllStudiesReply);
-    
+
     /**
      * Create a new trial.
      */
     rpc CreateNewTrial(CreateNewTrialRequest) returns (CreateNewTrialReply);
-    
+
     /**
      * Set a trial parameter.
      */
@@ -105,7 +109,7 @@ service StorageService {
      * Get a trial by its ID.
      */
     rpc GetTrial(GetTrialRequest) returns (GetTrialReply);
-    
+
     /**
      * Get all trials in a study.
      */
@@ -252,7 +256,7 @@ message GetAllStudiesRequest {}
  * Reply to get all studies.
  */
 message GetAllStudiesReply {
-    repeated FrozenStudy frozen_studies = 1;
+    repeated Study studies = 1;
 }
 
 /**
@@ -260,7 +264,7 @@ message GetAllStudiesReply {
  */
 message CreateNewTrialRequest {
     int64 study_id = 1;
-    FrozenTrial template_trial = 2;
+    Trial template_trial = 2;
     bool template_trial_is_none = 3;
 }
 
@@ -370,7 +374,7 @@ message GetTrialRequest {
  * Reply to get a trial by its ID.
  */
 message GetTrialReply {
-    FrozenTrial frozen_trial = 1;
+    Trial trial = 1;
 }
 
 /**
@@ -385,7 +389,7 @@ message GetAllTrialsRequest {
  * Reply to get all trials in a study.
  */
 message GetAllTrialsReply {
-    repeated FrozenTrial frozen_trials = 1;
+    repeated Trial trials = 1;
 }
 
 /**
@@ -408,9 +412,9 @@ enum TrialState {
 }
 
 /**
- * Frozen study.
+ * Study.
  */
-message FrozenStudy {
+message Study {
     int64 study_id = 1;
     string study_name = 2;
     repeated StudyDirection directions = 3;
@@ -419,9 +423,9 @@ message FrozenStudy {
 }
 
 /**
- * Frozen trial.
+ * Trial.
  */
-message FrozenTrial {
+message Trial {
     int64 trial_id = 1;
     int64 number = 2;
     TrialState state = 3;

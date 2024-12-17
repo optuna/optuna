@@ -3,7 +3,6 @@ from __future__ import annotations
 from collections.abc import Container
 from collections.abc import Iterable
 from collections.abc import Sequence
-import copy
 import json
 from typing import Any
 import uuid
@@ -14,8 +13,8 @@ from optuna.exceptions import DuplicatedStudyError
 from optuna.storages._base import BaseStorage
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.storages.grpc._grpc_imports import _imports
-from optuna.storages.grpc._server import _from_proto_frozen_trial
-from optuna.storages.grpc._server import _to_proto_frozen_trial
+from optuna.storages.grpc._server import _from_proto_trial
+from optuna.storages.grpc._server import _to_proto_trial
 from optuna.storages.grpc._server import _to_proto_trial_state
 from optuna.study._frozen import FrozenStudy
 from optuna.study._study_direction import StudyDirection
@@ -83,9 +82,7 @@ class GrpcStorageProxy(BaseStorage):
                 api_pb2.MINIMIZE if d == StudyDirection.MINIMIZE else api_pb2.MAXIMIZE
                 for d in directions
             ],
-            study_name=study_name
-            or DEFAULT_STUDY_NAME_PREFIX
-            + str(uuid.uuid4()),  # TODO(HideakiImamura): Check if this is unique.
+            study_name=study_name or DEFAULT_STUDY_NAME_PREFIX + str(uuid.uuid4()),
         )
         try:
             response = self._stub.CreateNewStudy(request)
@@ -198,7 +195,7 @@ class GrpcStorageProxy(BaseStorage):
                     key: json.loads(value) for key, value in study.system_attributes.items()
                 },
             )
-            for study in response.frozen_studies
+            for study in response.studies
         ]
 
     def create_new_trial(self, study_id: int, template_trial: FrozenTrial | None = None) -> int:
@@ -207,7 +204,7 @@ class GrpcStorageProxy(BaseStorage):
         else:
             request = api_pb2.CreateNewTrialRequest(
                 study_id=study_id,
-                template_trial=_to_proto_frozen_trial(template_trial),
+                template_trial=_to_proto_trial(template_trial),
                 template_trial_is_none=False,
             )
         try:
@@ -327,7 +324,7 @@ class GrpcStorageProxy(BaseStorage):
             if e.code() == grpc.StatusCode.NOT_FOUND:
                 raise KeyError from e
             raise
-        return _from_proto_frozen_trial(response.frozen_trial)
+        return _from_proto_trial(response.trial)
 
     def get_all_trials(
         self,
@@ -354,6 +351,5 @@ class GrpcStorageProxy(BaseStorage):
             if e.code() == grpc.StatusCode.NOT_FOUND:
                 raise KeyError from e
             raise
-        trials = [_from_proto_frozen_trial(trial) for trial in response.frozen_trials]
-        trials = copy.deepcopy(trials) if deepcopy else trials
+        trials = [_from_proto_trial(trial) for trial in response.trials]
         return trials

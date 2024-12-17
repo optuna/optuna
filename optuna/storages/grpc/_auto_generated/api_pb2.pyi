@@ -4,12 +4,16 @@ isort:skip_file
 *
 Optuna GRPC API
 The following command generates the Python code from this file:
+$ pip install mypy-protobuf==3.6.0 protobuf==5.28.1 grpcio==1.68.1 grpcio-tools==1.68.1
 $ python -m grpc_tools.protoc \\
 --proto_path=optuna/storages/grpc \\
 --grpc_python_out=optuna/storages/grpc/_auto_generated \\
 --python_out=optuna/storages/grpc/_auto_generated \\
 --mypy_out=optuna/storages/grpc/_auto_generated \\
 optuna/storages/grpc/api.proto
+$ sed -i -e \\
+"s/import api_pb2 as api__pb2/import optuna.storages.grpc._auto_generated.api_pb2 as api__pb2/g" \\
+optuna/storages/grpc/_auto_generated/api_pb2_grpc.py
 """
 
 import builtins
@@ -475,15 +479,15 @@ class GetAllStudiesReply(google.protobuf.message.Message):
 
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
-    FROZEN_STUDIES_FIELD_NUMBER: builtins.int
+    STUDIES_FIELD_NUMBER: builtins.int
     @property
-    def frozen_studies(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___FrozenStudy]: ...
+    def studies(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___Study]: ...
     def __init__(
         self,
         *,
-        frozen_studies: collections.abc.Iterable[global___FrozenStudy] | None = ...,
+        studies: collections.abc.Iterable[global___Study] | None = ...,
     ) -> None: ...
-    def ClearField(self, field_name: typing.Literal["frozen_studies", b"frozen_studies"]) -> None: ...
+    def ClearField(self, field_name: typing.Literal["studies", b"studies"]) -> None: ...
 
 global___GetAllStudiesReply = GetAllStudiesReply
 
@@ -501,12 +505,12 @@ class CreateNewTrialRequest(google.protobuf.message.Message):
     study_id: builtins.int
     template_trial_is_none: builtins.bool
     @property
-    def template_trial(self) -> global___FrozenTrial: ...
+    def template_trial(self) -> global___Trial: ...
     def __init__(
         self,
         *,
         study_id: builtins.int = ...,
-        template_trial: global___FrozenTrial | None = ...,
+        template_trial: global___Trial | None = ...,
         template_trial_is_none: builtins.bool = ...,
     ) -> None: ...
     def HasField(self, field_name: typing.Literal["template_trial", b"template_trial"]) -> builtins.bool: ...
@@ -805,16 +809,16 @@ class GetTrialReply(google.protobuf.message.Message):
 
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
-    FROZEN_TRIAL_FIELD_NUMBER: builtins.int
+    TRIAL_FIELD_NUMBER: builtins.int
     @property
-    def frozen_trial(self) -> global___FrozenTrial: ...
+    def trial(self) -> global___Trial: ...
     def __init__(
         self,
         *,
-        frozen_trial: global___FrozenTrial | None = ...,
+        trial: global___Trial | None = ...,
     ) -> None: ...
-    def HasField(self, field_name: typing.Literal["frozen_trial", b"frozen_trial"]) -> builtins.bool: ...
-    def ClearField(self, field_name: typing.Literal["frozen_trial", b"frozen_trial"]) -> None: ...
+    def HasField(self, field_name: typing.Literal["trial", b"trial"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing.Literal["trial", b"trial"]) -> None: ...
 
 global___GetTrialReply = GetTrialReply
 
@@ -849,22 +853,22 @@ class GetAllTrialsReply(google.protobuf.message.Message):
 
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
-    FROZEN_TRIALS_FIELD_NUMBER: builtins.int
+    TRIALS_FIELD_NUMBER: builtins.int
     @property
-    def frozen_trials(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___FrozenTrial]: ...
+    def trials(self) -> google.protobuf.internal.containers.RepeatedCompositeFieldContainer[global___Trial]: ...
     def __init__(
         self,
         *,
-        frozen_trials: collections.abc.Iterable[global___FrozenTrial] | None = ...,
+        trials: collections.abc.Iterable[global___Trial] | None = ...,
     ) -> None: ...
-    def ClearField(self, field_name: typing.Literal["frozen_trials", b"frozen_trials"]) -> None: ...
+    def ClearField(self, field_name: typing.Literal["trials", b"trials"]) -> None: ...
 
 global___GetAllTrialsReply = GetAllTrialsReply
 
 @typing.final
-class FrozenStudy(google.protobuf.message.Message):
+class Study(google.protobuf.message.Message):
     """*
-    Frozen study.
+    Study.
     """
 
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
@@ -925,12 +929,12 @@ class FrozenStudy(google.protobuf.message.Message):
     ) -> None: ...
     def ClearField(self, field_name: typing.Literal["directions", b"directions", "study_id", b"study_id", "study_name", b"study_name", "system_attributes", b"system_attributes", "user_attributes", b"user_attributes"]) -> None: ...
 
-global___FrozenStudy = FrozenStudy
+global___Study = Study
 
 @typing.final
-class FrozenTrial(google.protobuf.message.Message):
+class Trial(google.protobuf.message.Message):
     """*
-    Frozen trial.
+    Trial.
     """
 
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
@@ -1060,4 +1064,4 @@ class FrozenTrial(google.protobuf.message.Message):
     ) -> None: ...
     def ClearField(self, field_name: typing.Literal["datetime_complete", b"datetime_complete", "datetime_start", b"datetime_start", "distributions", b"distributions", "intermediate_values", b"intermediate_values", "number", b"number", "params", b"params", "state", b"state", "system_attributes", b"system_attributes", "trial_id", b"trial_id", "user_attributes", b"user_attributes", "values", b"values"]) -> None: ...
 
-global___FrozenTrial = FrozenTrial
+global___Trial = Trial
