@@ -29,12 +29,12 @@ if _imports.is_successful():
 
 
 class GrpcStorageProxy(BaseStorage):
-    """gRPC client for :func:`~optuna.storages.grpc.run_grpc_server`.
+    """gRPC client for :func:`~optuna.storages.grpc.run_grpc_proxy_server`.
 
     Example:
 
         This is a simple example of using :class:`~optuna.storages.grpc.GrpcStorageProxy` with
-        :func:`~optuna.storages.grpc.run_grpc_server`.
+        :func:`~optuna.storages.grpc.run_grpc_proxy_server`.
 
         .. code::
 
@@ -44,7 +44,7 @@ class GrpcStorageProxy(BaseStorage):
             storage = GrpcStorageProxy(host="localhost", port=13000)
             study = optuna.create_study(storage=storage)
 
-        Please refer to the example in :func:`~optuna.storages.grpc.run_grpc_server` for the
+        Please refer to the example in :func:`~optuna.storages.grpc.run_grpc_proxy_server` for the
         server side code.
 
     Args:

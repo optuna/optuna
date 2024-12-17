@@ -1018,6 +1018,9 @@ def test_optimize_infinite_budget_progbar() -> None:
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_get_trials(storage_mode: str) -> None:
+    if storage_mode == "grpc":
+        pytest.skip("gRPC storage doesn't use `copy.deepcopy`.")
+
     with StorageSupplier(storage_mode) as storage:
         study = create_study(storage=storage)
         study.optimize(lambda t: t.suggest_int("x", 1, 5), n_trials=5)

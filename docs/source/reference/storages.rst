@@ -14,7 +14,7 @@ The :mod:`~optuna.storages` module defines a :class:`~optuna.storages.BaseStorag
    fail_stale_trials
    JournalStorage
    InMemoryStorage
-   run_grpc_server
+   run_grpc_proxy_server
    GrpcStorageProxy
 
 optuna.storages.journal
