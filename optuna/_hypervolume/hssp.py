@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Any
-
 import numpy as np
 
 import optuna
@@ -92,16 +90,14 @@ def _solve_hssp_on_unique_loss_vals(
     if rank_i_loss_vals.shape[-1] == 2:
         return _solve_hssp_2d(rank_i_loss_vals, rank_i_indices, subset_size, reference_point)
 
+    assert subset_size < rank_i_indices.size
     # The following logic can be used for non-unique rank_i_loss_vals as well.
     diff_of_loss_vals_and_ref_point = reference_point - rank_i_loss_vals
-    assert subset_size <= rank_i_indices.size
-    n_objectives = reference_point.size
+    (n_solutions, n_objectives) = rank_i_loss_vals.shape
     contribs = np.prod(diff_of_loss_vals_and_ref_point, axis=-1)
     selected_indices = np.zeros(subset_size, dtype=int)
     selected_vecs = np.empty((subset_size, n_objectives))
-    indices: np.ndarray[tuple[int, ...], np.dtype[Any]] = np.arange(
-        rank_i_loss_vals.shape[0], dtype=int
-    )
+    indices = np.arange(n_solutions)
     for k in range(subset_size):
         max_index = int(np.argmax(contribs))
         selected_indices[k] = indices[max_index]
