@@ -102,6 +102,7 @@ test = [
   "scipy>=1.9.2",
   "torch; python_version<='3.12'", # TODO(gen740): Remove this line when 'torch', a dependency of 'optuna/_gp', supports Python 3.13
   "grpcio",  # optuna/storages/grpc.
+  "protobuf>=5.28.1",  # optuna/storages/grpc.
 ]
 
 [project.urls]

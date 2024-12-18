@@ -48,7 +48,7 @@ class GrpcStorageProxy(BaseStorage):
         server side code.
 
     Args:
-        host: The host of the gRPC server.
+        host: The hostname of the gRPC server.
         port: The port of the gRPC server.
 
     """

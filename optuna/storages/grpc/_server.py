@@ -450,18 +450,18 @@ def run_grpc_proxy_server(
 
         .. code::
 
-            from optuna.storages.grpc import run_grpc_server
+            from optuna.storages.grpc import run_grpc_proxy_server
             from optuna.storages import RDBStorage
 
             storage = RDBStorage("sqlite:///example.db")
-            run_grpc_server(storage, "localhost", 13000)
+            run_grpc_proxy_server(storage, host="localhost", port=13000)
 
         Please refer to the client class :class:`~optuna.storages.grpc.GrpcStorageProxy` for
         the client usage.
 
     Args:
         storage_url: URL of the storage.
-        host: Host to listen on.
+        host: Hostname to listen on.
         port: Port to listen on.
         thread_pool:
             Thread pool to use for the server. If :obj:`None`, a default thread pool
