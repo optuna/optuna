@@ -90,10 +90,10 @@ def _solve_hssp_on_unique_loss_vals(
     if rank_i_loss_vals.shape[-1] == 2:
         return _solve_hssp_2d(rank_i_loss_vals, rank_i_indices, subset_size, reference_point)
 
+    assert subset_size < rank_i_indices.size
     # The following logic can be used for non-unique rank_i_loss_vals as well.
     diff_of_loss_vals_and_ref_point = reference_point - rank_i_loss_vals
     (n_solutions, n_objectives) = rank_i_loss_vals.shape
-    n_solutions = int(n_solutions)  # MyPy Redefinition for NumPy v2.2.0.
     contribs = np.prod(diff_of_loss_vals_and_ref_point, axis=-1)
     selected_indices = np.zeros(subset_size, dtype=int)
     selected_vecs = np.empty((subset_size, n_objectives))
@@ -102,8 +102,7 @@ def _solve_hssp_on_unique_loss_vals(
         max_index = int(np.argmax(contribs))
         selected_indices[k] = indices[max_index]
         selected_vecs[k] = rank_i_loss_vals[max_index].copy()
-        assert n_solutions - k > 0
-        keep = np.ones(n_solutions - k, dtype=bool)
+        keep = np.ones(contribs.size, dtype=bool)
         keep[max_index] = False
         contribs = contribs[keep]
         indices = indices[keep]
