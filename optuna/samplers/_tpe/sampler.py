@@ -27,6 +27,7 @@ from optuna.search_space import IntersectionSearchSpace
 from optuna.search_space.group_decomposed import _GroupDecomposedSearchSpace
 from optuna.search_space.group_decomposed import _SearchSpaceGroup
 from optuna.study._multi_objective import _fast_non_domination_rank
+from optuna.study._multi_objective import _is_pareto_front
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
@@ -589,6 +590,13 @@ class TPESampler(BaseSampler):
         self._random_sampler.after_trial(study, trial, state, values)
 
 
+def _get_reference_point(loss_vals: np.ndarray) -> np.ndarray:
+    worst_point = np.max(loss_vals, axis=0)
+    reference_point = np.maximum(1.1 * worst_point, 0.9 * worst_point)
+    reference_point[reference_point == 0] = EPS
+    return reference_point
+
+
 def _split_trials(
     study: Study, trials: list[FrozenTrial], n_below: int, constraints_enabled: bool
 ) -> tuple[list[FrozenTrial], list[FrozenTrial]]:
@@ -742,52 +750,36 @@ def _calculate_weights_below_for_multi_objective(
     below_trials: list[FrozenTrial],
     constraints_func: Callable[[FrozenTrial], Sequence[float]] | None,
 ) -> np.ndarray:
-    loss_vals = []
-    feasible_mask = np.ones(len(below_trials), dtype=bool)
-    for i, trial in enumerate(below_trials):
-        # Hypervolume contributions are calculated only using feasible trials.
-        if constraints_func is not None:
-            if any(constraint > 0 for constraint in constraints_func(trial)):
-                feasible_mask[i] = False
-                continue
-        values = []
-        for value, direction in zip(trial.values, study.directions):
-            if direction == StudyDirection.MINIMIZE:
-                values.append(value)
-            else:
-                values.append(-value)
-        loss_vals.append(values)
-    lvals = np.asarray(loss_vals, dtype=float)
+    is_feasible = np.asarray(
+        [
+            constraints_func is None or all(c <= 0 for c in constraints_func(t))
+            for t in below_trials
+        ]
+    )
 
+    n_below_feasible = np.count_nonzero(is_feasible)
+    # For now, EPS weight is assigned to unpromising (e.g., infeasible) trials.
+    weights_below = np.full(len(below_trials), EPS)
+    if n_below_feasible == 0:
+        return weights_below
+
+    lvals = np.asarray([t.values for t in below_trials])[is_feasible]
+    lvals *= np.array([-1.0 if d == StudyDirection.MAXIMIZE else 1.0 for d in study.directions])
+    ref_point = _get_reference_point(lvals)
+    on_front = _is_pareto_front(lvals, assume_unique_lexsorted=False)
+    hv = compute_hypervolume(lvals[on_front], ref_point, assume_pareto=True)
+    if np.isinf(hv) or n_below_feasible == 1:
+        weights_below[is_feasible] = 1.0
+        # TODO(nabenabe): Assign EPS to non-Pareto solutions, and
+        # solutions with finite contrib if hv is inf. Ref: PR#5813.
+        return weights_below
+
+    contribs = np.zeros(n_below_feasible, dtype=float)
+    # NOTE(nabenabe): Hypervolume contribution of a non-Pareto solution is zero.
+    pareto_indices = ~np.eye(n_below_feasible, dtype=bool)[on_front]
+    contribs[on_front] = hv - np.asarray(
+        [compute_hypervolume(lvals[indices], ref_point) for indices in pareto_indices]
+    )
     # Calculate weights based on hypervolume contributions.
-    n_below = len(lvals)
-    weights_below: np.ndarray
-    if n_below == 0:
-        weights_below = np.asarray([])
-    elif n_below == 1:
-        weights_below = np.asarray([1.0])
-    else:
-        worst_point = np.max(lvals, axis=0)
-        reference_point = np.maximum(1.1 * worst_point, 0.9 * worst_point)
-        reference_point[reference_point == 0] = EPS
-        hv = compute_hypervolume(lvals, reference_point)
-        indices_mat = ~np.eye(n_below).astype(bool)
-        contributions = np.asarray(
-            [
-                hv - compute_hypervolume(lvals[indices_mat[i]], reference_point)
-                for i in range(n_below)
-            ]
-        )
-        contributions[np.isnan(contributions)] = np.inf
-        max_contribution = np.maximum(np.max(contributions), EPS)
-        if not np.isfinite(max_contribution):
-            weights_below = np.ones_like(contributions, dtype=float)
-            # TODO(nabenabe0928): Make the weights for non Pareto solutions to zero.
-            weights_below[np.isfinite(contributions)] = EPS
-        else:
-            weights_below = np.clip(contributions / max_contribution, EPS, 1)
-
-    # For now, EPS weight is assigned to infeasible trials.
-    weights_below_all = np.full(len(below_trials), EPS)
-    weights_below_all[feasible_mask] = weights_below
-    return weights_below_all
+    weights_below[is_feasible] = np.maximum(contribs / max(np.max(contribs), EPS), EPS)
+    return weights_below
