@@ -27,7 +27,6 @@ from optuna.search_space import IntersectionSearchSpace
 from optuna.search_space.group_decomposed import _GroupDecomposedSearchSpace
 from optuna.search_space.group_decomposed import _SearchSpaceGroup
 from optuna.study._multi_objective import _fast_non_domination_rank
-from optuna.study._multi_objective import _is_pareto_front
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
