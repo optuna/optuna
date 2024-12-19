@@ -1,8 +1,9 @@
+from __future__ import annotations
+
 import itertools
 import multiprocessing
 import time
 from typing import Any
-from typing import Optional
 from unittest.mock import Mock
 from unittest.mock import patch
 import warnings
@@ -122,7 +123,7 @@ def test_failed_trial_callback(storage_mode: str) -> None:
 @pytest.mark.parametrize(
     "storage_mode,max_retry", itertools.product(STORAGE_MODES_HEARTBEAT, [None, 0, 1])
 )
-def test_retry_failed_trial_callback(storage_mode: str, max_retry: Optional[int]) -> None:
+def test_retry_failed_trial_callback(storage_mode: str, max_retry: int | None) -> None:
     heartbeat_interval = 1
     grace_period = 2
 
@@ -168,7 +169,7 @@ def test_retry_failed_trial_callback(storage_mode: str, max_retry: Optional[int]
     "storage_mode,max_retry", itertools.product(STORAGE_MODES_HEARTBEAT, [None, 0, 1])
 )
 def test_retry_failed_trial_callback_intermediate(
-    storage_mode: str, max_retry: Optional[int]
+    storage_mode: str, max_retry: int | None
 ) -> None:
     heartbeat_interval = 1
     grace_period = 2
@@ -214,7 +215,7 @@ def test_retry_failed_trial_callback_intermediate(
 
 
 @pytest.mark.parametrize("grace_period", [None, 2])
-def test_fail_stale_trials(grace_period: Optional[int]) -> None:
+def test_fail_stale_trials(grace_period: int | None) -> None:
     storage_mode = "sqlite"
     heartbeat_interval = 1
     _grace_period = (heartbeat_interval * 2) if grace_period is None else grace_period

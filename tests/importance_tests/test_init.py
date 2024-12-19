@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from typing import Any
-from typing import Type
 
 import numpy as np
 import pytest
@@ -22,7 +21,7 @@ from optuna.testing.storages import StorageSupplier
 from optuna.trial import Trial
 
 
-evaluators: list[Type[BaseImportanceEvaluator]] = [
+evaluators: list[type[BaseImportanceEvaluator]] = [
     MeanDecreaseImpurityImportanceEvaluator,
     FanovaImportanceEvaluator,
 ]

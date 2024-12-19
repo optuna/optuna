@@ -64,11 +64,14 @@ def _check_trials(trials: Sequence[optuna.trial.FrozenTrial]) -> None:
     assert all("x" in trial.params for trial in trials)
     assert all("y" in trial.params for trial in trials)
     assert all(
-        np.isclose(
-            np.asarray([trial.value for trial in trials]),
-            [f(trial.params["x"], trial.params["y"]) for trial in trials],
-            atol=1e-4,
-        ).tolist()
+        [
+            condition
+            for condition in np.isclose(
+                np.asarray([trial.value for trial in trials]),
+                [f(trial.params["x"], trial.params["y"]) for trial in trials],
+                atol=1e-4,
+            )
+        ]
     )
 
     # Check intermediate values.
@@ -78,11 +81,14 @@ def _check_trials(trials: Sequence[optuna.trial.FrozenTrial]) -> None:
 
     # Check attrs.
     assert all(
-        np.isclose(
-            [trial.user_attrs["x"] for trial in trials],
-            [trial.params["x"] for trial in trials],
-            atol=1e-4,
-        ).tolist()
+        [
+            condition
+            for condition in np.isclose(
+                [trial.user_attrs["x"] for trial in trials],
+                [trial.params["x"] for trial in trials],
+                atol=1e-4,
+            )
+        ]
     )
 
 

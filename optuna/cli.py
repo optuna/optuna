@@ -2,6 +2,8 @@
 If you want to add a new command, you also need to update the constant `_COMMANDS`
 """
 
+from __future__ import annotations
+
 import argparse
 from argparse import ArgumentParser
 from argparse import Namespace
@@ -13,12 +15,6 @@ import logging
 import os
 import sys
 from typing import Any
-from typing import Dict
-from typing import List
-from typing import Optional
-from typing import Tuple
-from typing import Type
-from typing import Union
 import warnings
 
 import sqlalchemy.exc
@@ -43,7 +39,7 @@ _dataframe = _LazyImport("optuna.study._dataframe")
 _DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 
-def _check_storage_url(storage_url: Optional[str]) -> str:
+def _check_storage_url(storage_url: str | None) -> str:
     if storage_url is not None:
         return storage_url
 
@@ -58,7 +54,7 @@ def _check_storage_url(storage_url: Optional[str]) -> str:
     raise CLIUsageError("Storage URL is not specified.")
 
 
-def _get_storage(storage_url: Optional[str], storage_class: Optional[str]) -> BaseStorage:
+def _get_storage(storage_url: str | None, storage_class: str | None) -> BaseStorage:
     storage_url = _check_storage_url(storage_url)
     if storage_class:
         if storage_class == JournalRedisBackend.__name__:
@@ -100,8 +96,8 @@ def _format_value(value: Any) -> Any:
 
 
 def _convert_to_dict(
-    records: List[Dict[Tuple[str, str], Any]], columns: List[Tuple[str, str]], flatten: bool
-) -> Tuple[List[Dict[str, Any]], List[str]]:
+    records: list[dict[tuple[str, str], Any]], columns: list[tuple[str, str]], flatten: bool
+) -> tuple[list[dict[str, Any]], list[str]]:
     header = []
     ret = []
     if flatten:
@@ -136,7 +132,7 @@ def _convert_to_dict(
             if column[0] not in header:
                 header.append(column[0])
         for record in records:
-            attrs: Dict[str, Any] = {column_name: {} for column_name in header}
+            attrs: dict[str, Any] = {column_name: {} for column_name in header}
             for column in columns:
                 if column not in record:
                     continue
@@ -192,7 +188,7 @@ class CellValue:
             return f"{value:<{width}}"
 
 
-def _dump_value(records: List[Dict[str, Any]], header: List[str]) -> str:
+def _dump_value(records: list[dict[str, Any]], header: list[str]) -> str:
     values = []
     for record in records:
         row = []
@@ -202,7 +198,7 @@ def _dump_value(records: List[Dict[str, Any]], header: List[str]) -> str:
     return "\n".join(values)
 
 
-def _dump_table(records: List[Dict[str, Any]], header: List[str]) -> str:
+def _dump_table(records: list[dict[str, Any]], header: list[str]) -> str:
     rows = []
     for record in records:
         row = []
@@ -219,7 +215,10 @@ def _dump_table(records: List[Dict[str, Any]], header: List[str]) -> str:
         for t in value_types:
             if t == ValueType.STRING:
                 value_type = ValueType.STRING
-        max_width = max(len(header[column]), max(row[column].width() for row in rows))
+        if len(rows) == 0:
+            max_width = len(header[column])
+        else:
+            max_width = max(len(header[column]), max(row[column].width() for row in rows))
         separator += "-" * (max_width + 2) + "+"
         if value_type == ValueType.NUMERIC:
             header_string += f" {header[column]:>{max_width}} |"
@@ -232,15 +231,16 @@ def _dump_table(records: List[Dict[str, Any]], header: List[str]) -> str:
     ret += separator + "\n"
     ret += header_string + "\n"
     ret += separator + "\n"
-    ret += "\n".join(rows_string) + "\n"
+    for row_string in rows_string:
+        ret += row_string + "\n"
     ret += separator + "\n"
 
     return ret
 
 
 def _format_output(
-    records: Union[List[Dict[Tuple[str, str], Any]], Dict[Tuple[str, str], Any]],
-    columns: List[Tuple[str, str]],
+    records: list[dict[tuple[str, str], Any]] | dict[tuple[str, str], Any],
+    columns: list[tuple[str, str]],
     output_format: str,
     flatten: bool,
 ) -> str:
@@ -250,10 +250,7 @@ def _format_output(
         values, header = _convert_to_dict([records], columns, flatten)
 
     if output_format == "value":
-        if isinstance(records, list):
-            return _dump_value(values, header).strip()
-        else:
-            return str(values[0]).strip()
+        return _dump_value(values, header).strip()
     elif output_format == "table":
         return _dump_table(values, header).strip()
     elif output_format == "json":
@@ -427,7 +424,7 @@ class _Studies(_BaseCommand):
             "-f",
             "--format",
             type=str,
-            choices=("json", "table", "yaml"),
+            choices=("value", "json", "table", "yaml"),
             default="table",
             help="Output format.",
         )
@@ -449,7 +446,7 @@ class _Studies(_BaseCommand):
                 if s.datetime_start is not None
                 else None
             )
-            record: Dict[Tuple[str, str], Any] = {}
+            record: dict[tuple[str, str], Any] = {}
             record[("name", "")] = s.study_name
             record[("direction", "")] = tuple(d.name for d in s.directions)
             record[("n_trials", "")] = s.n_trials
@@ -481,7 +478,7 @@ class _Trials(_BaseCommand):
             "-f",
             "--format",
             type=str,
-            choices=("json", "table", "yaml"),
+            choices=("value", "json", "table", "yaml"),
             default="table",
             help="Output format.",
         )
@@ -531,7 +528,7 @@ class _BestTrial(_BaseCommand):
             "-f",
             "--format",
             type=str,
-            choices=("json", "table", "yaml"),
+            choices=("value", "json", "table", "yaml"),
             default="table",
             help="Output format.",
         )
@@ -584,7 +581,7 @@ class _BestTrials(_BaseCommand):
             "-f",
             "--format",
             type=str,
-            choices=("json", "table", "yaml"),
+            choices=("value", "json", "table", "yaml"),
             default="table",
             help="Output format.",
         )
@@ -675,7 +672,7 @@ class _Ask(_BaseCommand):
             "-f",
             "--format",
             type=str,
-            choices=("json", "table", "yaml"),
+            choices=("value", "json", "table", "yaml"),
             default="json",
             help="Output format.",
         )
@@ -742,7 +739,7 @@ class _Ask(_BaseCommand):
 
         self.logger.info(f"Asked trial {trial.number} with parameters {trial.params}.")
 
-        record: Dict[Tuple[str, str], Any] = {("number", ""): trial.number}
+        record: dict[tuple[str, str], Any] = {("number", ""): trial.number}
         columns = [("number", "")]
 
         if len(trial.params) == 0 and not parsed_args.flatten:
@@ -792,7 +789,7 @@ class _Tell(_BaseCommand):
         )
 
         if parsed_args.state is not None:
-            state: Optional[TrialState] = TrialState[parsed_args.state.upper()]
+            state: TrialState | None = TrialState[parsed_args.state.upper()]
         else:
             state = None
 
@@ -811,7 +808,7 @@ class _Tell(_BaseCommand):
         return 0
 
 
-_COMMANDS: Dict[str, Type[_BaseCommand]] = {
+_COMMANDS: dict[str, type[_BaseCommand]] = {
     "create-study": _CreateStudy,
     "delete-study": _DeleteStudy,
     "study set-user-attr": _StudySetUserAttribute,
@@ -892,7 +889,7 @@ def _add_common_arguments(parser: ArgumentParser) -> ArgumentParser:
 
 def _add_commands(
     main_parser: ArgumentParser, parent_parser: ArgumentParser
-) -> Dict[str, ArgumentParser]:
+) -> dict[str, ArgumentParser]:
     subparsers = main_parser.add_subparsers()
     command_name_to_subparser = {}
 
@@ -914,7 +911,7 @@ def _add_commands(
     return command_name_to_subparser
 
 
-def _get_parser(description: str = "") -> Tuple[ArgumentParser, Dict[str, ArgumentParser]]:
+def _get_parser(description: str = "") -> tuple[ArgumentParser, dict[str, ArgumentParser]]:
     # Use `parent_parser` is necessary to avoid namespace conflict for -h/--help
     # between `main_parser` and `subparser`.
     parent_parser = ArgumentParser(add_help=False)
@@ -928,7 +925,7 @@ def _get_parser(description: str = "") -> Tuple[ArgumentParser, Dict[str, Argume
     return main_parser, command_name_to_subparser
 
 
-def _preprocess_argv(argv: List[str]) -> List[str]:
+def _preprocess_argv(argv: list[str]) -> list[str]:
     # Some preprocess is necessary for argv because some subcommand includes space
     # (e.g. optuna storage upgrade).
     argv = argv[1:] if len(argv) > 1 else ["help"]

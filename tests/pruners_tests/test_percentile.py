@@ -1,6 +1,6 @@
+from __future__ import annotations
+
 import math
-from typing import List
-from typing import Tuple
 import warnings
 
 import pytest
@@ -65,7 +65,7 @@ def test_percentile_pruner_with_one_trial() -> None:
     "direction_value", [("minimize", [1, 2, 3, 4, 5], 2.1), ("maximize", [1, 2, 3, 4, 5], 3.9)]
 )
 def test_25_percentile_pruner_intermediate_values(
-    direction_value: Tuple[str, List[float], float]
+    direction_value: tuple[str, list[float], float]
 ) -> None:
     direction, intermediate_values, latest_value = direction_value
     pruner = optuna.pruners.PercentilePruner(25.0, 0, 0)
@@ -112,7 +112,7 @@ def test_25_percentile_pruner_intermediate_values_nan() -> None:
     "direction_expected", [(StudyDirection.MINIMIZE, 0.1), (StudyDirection.MAXIMIZE, 0.2)]
 )
 def test_get_best_intermediate_result_over_steps(
-    direction_expected: Tuple[StudyDirection, float]
+    direction_expected: tuple[StudyDirection, float]
 ) -> None:
     direction, expected = direction_expected
 
@@ -129,30 +129,27 @@ def test_get_best_intermediate_result_over_steps(
         _percentile._get_best_intermediate_result_over_steps(trial_empty, direction)
 
     # Input value has no NaNs but float values.
-    trial_id_float = study._storage.create_new_trial(study._study_id)
-    trial_float = optuna.trial.Trial(study, trial_id_float)
+    trial_float = study.ask()
     trial_float.report(0.1, step=0)
     trial_float.report(0.2, step=1)
-    frozen_trial_float = study._storage.get_trial(trial_id_float)
+    frozen_trial_float = study._storage.get_trial(trial_float._trial_id)
     assert expected == _percentile._get_best_intermediate_result_over_steps(
         frozen_trial_float, direction
     )
 
     # Input value has a float value and a NaN.
-    trial_id_float_nan = study._storage.create_new_trial(study._study_id)
-    trial_float_nan = optuna.trial.Trial(study, trial_id_float_nan)
+    trial_float_nan = study.ask()
     trial_float_nan.report(0.3, step=0)
     trial_float_nan.report(float("nan"), step=1)
-    frozen_trial_float_nan = study._storage.get_trial(trial_id_float_nan)
+    frozen_trial_float_nan = study._storage.get_trial(trial_float_nan._trial_id)
     assert 0.3 == _percentile._get_best_intermediate_result_over_steps(
         frozen_trial_float_nan, direction
     )
 
     # Input value has a NaN only.
-    trial_id_nan = study._storage.create_new_trial(study._study_id)
-    trial_nan = optuna.trial.Trial(study, trial_id_nan)
+    trial_nan = study.ask()
     trial_nan.report(float("nan"), step=0)
-    frozen_trial_nan = study._storage.get_trial(trial_id_nan)
+    frozen_trial_nan = study._storage.get_trial(trial_nan._trial_id)
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", category=RuntimeWarning)
         assert math.isnan(
@@ -161,7 +158,7 @@ def test_get_best_intermediate_result_over_steps(
 
 
 def test_get_percentile_intermediate_result_over_trials() -> None:
-    def setup_study(trial_num: int, _intermediate_values: List[List[float]]) -> Study:
+    def setup_study(trial_num: int, _intermediate_values: list[list[float]]) -> Study:
         _study = optuna.study.create_study(direction="minimize")
         trial_ids = [_study._storage.create_new_trial(_study._study_id) for _ in range(trial_num)]
 

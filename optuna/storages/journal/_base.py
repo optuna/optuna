@@ -1,8 +1,7 @@
+from __future__ import annotations
+
 import abc
 from typing import Any
-from typing import Dict
-from typing import List
-from typing import Optional
 
 from optuna._deprecated import deprecated_class
 
@@ -19,7 +18,7 @@ class BaseJournalBackend(abc.ABC):
     """
 
     @abc.abstractmethod
-    def read_logs(self, log_number_from: int) -> List[Dict[str, Any]]:
+    def read_logs(self, log_number_from: int) -> list[dict[str, Any]]:
         """Read logs with a log number greater than or equal to ``log_number_from``.
 
         If ``log_number_from`` is 0, read all the logs.
@@ -35,7 +34,7 @@ class BaseJournalBackend(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def append_logs(self, logs: List[Dict[str, Any]]) -> None:
+    def append_logs(self, logs: list[dict[str, Any]]) -> None:
         """Append logs to the backend.
 
         Args:
@@ -63,7 +62,7 @@ class BaseJournalSnapshot(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def load_snapshot(self) -> Optional[bytes]:
+    def load_snapshot(self) -> bytes | None:
         """Load snapshot from the backend.
 
         Returns:

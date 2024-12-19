@@ -208,7 +208,8 @@ def local_search_mixed(
     # TODO(kAIto47802): Think of a better way to handle this.
     lengthscales = 1 / np.sqrt(inverse_squared_lengthscales[continuous_indices])
 
-    discrete_indices = np.where(steps > 0)[0]
+    # NOTE(nabenabe): MyPy Redefinition for NumPy v2.2.0. (Cast signed int to int)
+    discrete_indices = np.where(steps > 0)[0].astype(int)
     choices_of_discrete_params = [
         (
             np.arange(bounds[i, 1])

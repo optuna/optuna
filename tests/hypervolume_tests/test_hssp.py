@@ -1,6 +1,7 @@
+from __future__ import annotations
+
 import itertools
 import math
-from typing import Tuple
 
 import numpy as np
 import pytest
@@ -8,7 +9,7 @@ import pytest
 import optuna
 
 
-def _compute_hssp_truth_and_approx(test_case: np.ndarray, subset_size: int) -> Tuple[float, float]:
+def _compute_hssp_truth_and_approx(test_case: np.ndarray, subset_size: int) -> tuple[float, float]:
     r = 1.1 * np.max(test_case, axis=0)
     truth = 0.0
     for subset in itertools.permutations(test_case, subset_size):

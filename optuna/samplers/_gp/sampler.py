@@ -1,9 +1,9 @@
 from __future__ import annotations
 
+from collections.abc import Callable
+from collections.abc import Sequence
 from typing import Any
-from typing import Callable
 from typing import cast
-from typing import Sequence
 from typing import TYPE_CHECKING
 import warnings
 
@@ -336,7 +336,9 @@ def _get_constraint_vals_and_feasibility(
     ]
     if any(len(_constraint_vals[0]) != len(c) for c in _constraint_vals):
         raise ValueError("The number of constraints must be the same for all trials.")
-    constraint_vals = np.array(_constraint_vals)
 
+    constraint_vals = np.array(_constraint_vals)
+    assert len(constraint_vals.shape) == 2, "constraint_vals must be a 2d array."
     is_feasible = np.all(constraint_vals <= 0, axis=1)
+    assert not isinstance(is_feasible, np.bool_), "MyPy Redefinition for NumPy v2.2.0."
     return constraint_vals, is_feasible
