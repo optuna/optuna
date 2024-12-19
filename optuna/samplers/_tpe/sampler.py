@@ -683,7 +683,6 @@ def _split_complete_trials_multi_objective(
         )
         indices_below = np.append(indices_below, selected_indices)
 
-    # TODO(nabenabe): Replace list with list[int] once Python 3.8 is dropped.
     below_indices_set = set(cast(list, indices_below.tolist()))
     below_trials = [trials[i] for i in range(len(trials)) if i in below_indices_set]
     above_trials = [trials[i] for i in range(len(trials)) if i not in below_indices_set]
