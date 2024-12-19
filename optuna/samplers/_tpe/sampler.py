@@ -589,6 +589,13 @@ class TPESampler(BaseSampler):
         self._random_sampler.after_trial(study, trial, state, values)
 
 
+def _get_reference_point(loss_vals: np.ndarray) -> np.ndarray:
+    worst_point = np.max(loss_vals, axis=0)
+    reference_point = np.maximum(1.1 * worst_point, 0.9 * worst_point)
+    reference_point[reference_point == 0] = EPS
+    return reference_point
+
+
 def _split_trials(
     study: Study, trials: list[FrozenTrial], n_below: int, constraints_enabled: bool
 ) -> tuple[list[FrozenTrial], list[FrozenTrial]]:
@@ -652,46 +659,33 @@ def _split_complete_trials_multi_objective(
     trials: Sequence[FrozenTrial], study: Study, n_below: int
 ) -> tuple[list[FrozenTrial], list[FrozenTrial]]:
     if n_below == 0:
-        # The type of trials must be `list`, but not `Sequence`.
         return [], list(trials)
+    elif n_below == len(trials):
+        return list(trials), []
 
+    assert 0 < n_below < len(trials)
     lvals = np.array([trial.values for trial in trials])
     lvals *= np.array([-1.0 if d == StudyDirection.MAXIMIZE else 1.0 for d in study.directions])
-
-    # Solving HSSP for variables number of times is a waste of time.
     nondomination_ranks = _fast_non_domination_rank(lvals, n_below=n_below)
-    assert 0 <= n_below <= len(lvals)
+    ranks, rank_counts = np.unique(nondomination_ranks, return_counts=True)
+    last_rank_before_tiebreak = int(np.max(ranks[np.cumsum(rank_counts) <= n_below], initial=-1))
+    assert all(ranks[: last_rank_before_tiebreak + 1] == np.arange(last_rank_before_tiebreak + 1))
+    indices = np.arange(len(trials))
+    indices_below = indices[nondomination_ranks <= last_rank_before_tiebreak]
 
-    indices = np.array(range(len(lvals)))
-    indices_below = np.empty(n_below, dtype=int)
+    if indices_below.size < n_below:  # Tie-break with Hypervolume subset selection problem (HSSP).
+        assert ranks[last_rank_before_tiebreak + 1] == last_rank_before_tiebreak + 1
+        need_tiebreak = nondomination_ranks == last_rank_before_tiebreak + 1
+        rank_i_lvals = lvals[need_tiebreak]
+        subset_size = n_below - indices_below.size
+        selected_indices = _solve_hssp(
+            rank_i_lvals, indices[need_tiebreak], subset_size, _get_reference_point(rank_i_lvals)
+        )
+        indices_below = np.append(indices_below, selected_indices)
 
-    # Nondomination rank-based selection
-    i = 0
-    last_idx = 0
-    while last_idx < n_below and last_idx + sum(nondomination_ranks == i) <= n_below:
-        length = indices[nondomination_ranks == i].shape[0]
-        indices_below[last_idx : last_idx + length] = indices[nondomination_ranks == i]
-        last_idx += length
-        i += 1
-
-    # Hypervolume subset selection problem (HSSP)-based selection
-    subset_size = n_below - last_idx
-    if subset_size > 0:
-        rank_i_lvals = lvals[nondomination_ranks == i]
-        rank_i_indices = indices[nondomination_ranks == i]
-        worst_point = np.max(rank_i_lvals, axis=0)
-        reference_point = np.maximum(1.1 * worst_point, 0.9 * worst_point)
-        reference_point[reference_point == 0] = EPS
-        selected_indices = _solve_hssp(rank_i_lvals, rank_i_indices, subset_size, reference_point)
-        indices_below[last_idx:] = selected_indices
-
-    below_trials = []
-    above_trials = []
-    for index in range(len(trials)):
-        if index in indices_below:
-            below_trials.append(trials[index])
-        else:
-            above_trials.append(trials[index])
+    below_indices_set = set(cast(list, indices_below.tolist()))
+    below_trials = [trials[i] for i in range(len(trials)) if i in below_indices_set]
+    above_trials = [trials[i] for i in range(len(trials)) if i not in below_indices_set]
     return below_trials, above_trials
 
 
