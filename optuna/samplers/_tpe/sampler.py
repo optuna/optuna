@@ -750,36 +750,30 @@ def _calculate_weights_below_for_multi_objective(
     below_trials: list[FrozenTrial],
     constraints_func: Callable[[FrozenTrial], Sequence[float]] | None,
 ) -> np.ndarray:
-    is_feasible = np.asarray(
-        [
-            constraints_func is None or all(c <= 0 for c in constraints_func(t))
-            for t in below_trials
-        ]
-    )
+    def _feasible(trial: FrozenTrial) -> bool:
+        return constraints_func is None or all(c <= 0 for c in constraints_func(trial))
 
+    is_feasible = np.asarray([_feasible(t) for t in below_trials])
+    weights_below = np.where(is_feasible, 1.0, EPS)  # Assign EPS to infeasible trials.
     n_below_feasible = np.count_nonzero(is_feasible)
-    # For now, EPS weight is assigned to unpromising (e.g., infeasible) trials.
-    weights_below = np.full(len(below_trials), EPS)
-    if n_below_feasible == 0:
+    if n_below_feasible <= 1:
         return weights_below
 
     lvals = np.asarray([t.values for t in below_trials])[is_feasible]
     lvals *= np.array([-1.0 if d == StudyDirection.MAXIMIZE else 1.0 for d in study.directions])
     ref_point = _get_reference_point(lvals)
     on_front = _is_pareto_front(lvals, assume_unique_lexsorted=False)
-    hv = compute_hypervolume(lvals[on_front], ref_point, assume_pareto=True)
-    if np.isinf(hv) or n_below_feasible == 1:
-        weights_below[is_feasible] = 1.0
+    pareto_sols = lvals[on_front]
+    hv = compute_hypervolume(pareto_sols, ref_point, assume_pareto=True)
+    if np.isinf(hv):
         # TODO(nabenabe): Assign EPS to non-Pareto solutions, and
         # solutions with finite contrib if hv is inf. Ref: PR#5813.
         return weights_below
 
+    loo_mat = ~np.eye(pareto_sols.shape[0], dtype=bool)  # Leave-one-out bool matrix.
     contribs = np.zeros(n_below_feasible, dtype=float)
-    # NOTE(nabenabe): Hypervolume contribution of a non-Pareto solution is zero.
-    pareto_indices = ~np.eye(n_below_feasible, dtype=bool)[on_front]
-    contribs[on_front] = hv - np.asarray(
-        [compute_hypervolume(lvals[indices], ref_point) for indices in pareto_indices]
+    contribs[on_front] = hv - np.array(
+        [compute_hypervolume(pareto_sols[loo], ref_point) for loo in loo_mat]
     )
-    # Calculate weights based on hypervolume contributions.
     weights_below[is_feasible] = np.maximum(contribs / max(np.max(contribs), EPS), EPS)
     return weights_below
