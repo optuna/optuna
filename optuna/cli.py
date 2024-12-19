@@ -193,7 +193,7 @@ def _dump_value(records: list[dict[str, Any]], header: list[str]) -> str:
     for record in records:
         row = []
         for column_name in header:
-            row.append(str(record.get(column_name, "")))
+            row.append(str(record[column_name]) if record.get(column_name) is not None else "")
         values.append(" ".join(row))
     return "\n".join(values)
 
