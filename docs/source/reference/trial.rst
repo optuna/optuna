@@ -9,6 +9,7 @@ A :class:`~optuna.trial.Trial` instance represents a process of evaluating an ob
 
 .. autosummary::
    :toctree: generated/
+   :template: autosummary/class_for_trial.rst
    :nosignatures:
 
    Trial
