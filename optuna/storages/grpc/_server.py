@@ -460,7 +460,7 @@ def run_grpc_proxy_server(
         the client usage.
 
     Args:
-        storage_url: URL of the storage.
+        storage: A storage object to proxy.
         host: Hostname to listen on.
         port: Port to listen on.
         thread_pool:
