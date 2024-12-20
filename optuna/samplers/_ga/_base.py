@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import abc
+from typing import Any
 
 import optuna
 from optuna.samplers._base import BaseSampler
@@ -32,17 +33,17 @@ class BaseGASampler(BaseSampler, abc.ABC):
     _GENERATION_KEY = "BaseGASampler:generation"
     _PARENT_CACHE_KEY_PREFIX = "BaseGASampler:parent:"
 
-    def __init_subclass__(cls, **kwargs):
+    def __init_subclass__(cls, **kwargs: Any):
         super().__init_subclass__(**kwargs)
         cls._GENERATION_KEY = f"{cls.__name__}:generation"
         cls._PARENT_CACHE_KEY_PREFIX = f"{cls.__name__}:parent:"
 
     @classmethod
-    def _get_generation_key(cls):
+    def _get_generation_key(cls) -> str:
         return cls._GENERATION_KEY
 
     @classmethod
-    def _get_parent_cache_key_prefix(cls):
+    def _get_parent_cache_key_prefix(cls) -> str:
         return cls._PARENT_CACHE_KEY_PREFIX
 
     def __init__(self, population_size: int):
@@ -53,7 +54,7 @@ class BaseGASampler(BaseSampler, abc.ABC):
         return self._population_size
 
     @population_size.setter
-    def population_size(self, value: int):
+    def population_size(self, value: int) -> None:
         self._population_size = value
 
     @abc.abstractmethod

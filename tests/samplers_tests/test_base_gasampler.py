@@ -48,7 +48,7 @@ class BaseGASAmplerTestSampler(BaseGASampler):
         raise NotImplementedError
 
 
-def test_systemattr_keys():
+def test_systemattr_keys() -> None:
     assert BaseGASAmplerTestSampler._get_generation_key() == "BaseGASAmplerTestSampler:generation"
     assert (
         BaseGASAmplerTestSampler._get_parent_cache_key_prefix()
@@ -85,7 +85,7 @@ def test_systemattr_keys():
         },
     ],
 )
-def test_get_generation(args):
+def test_get_generation(args: dict[str, Any]) -> None:
     test_sampler = BaseGASAmplerTestSampler(population_size=args["population_size"])
     mock_study = Mock(
         _get_trials=Mock(
@@ -111,7 +111,7 @@ def test_get_generation(args):
     assert len(mock_trial.mock_calls) == 0
 
 
-def test_get_generation_already_set():
+def test_get_generation_already_set() -> None:
     test_sampler = BaseGASAmplerTestSampler(population_size=42)
 
     mock_study = MagicMock()
@@ -152,7 +152,7 @@ def test_get_generation_already_set():
         },
     ],
 )
-def test_get_population(args):
+def test_get_population(args: dict[str, Any]) -> None:
     test_sampler = BaseGASAmplerTestSampler(population_size=args["population_size"])
     mock_study = Mock(
         _get_trials=Mock(
@@ -210,7 +210,7 @@ def test_get_population(args):
         },
     ],
 )
-def test_get_parent_population(args):
+def test_get_parent_population(args: dict[str, Any]) -> None:
     test_sampler = BaseGASAmplerTestSampler(population_size=3)
 
     mock_study = MagicMock()
