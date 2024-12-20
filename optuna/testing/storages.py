@@ -1,12 +1,16 @@
 from __future__ import annotations
 
+import threading
 from types import TracebackType
 from typing import Any
 from typing import IO
+import uuid
 
 import fakeredis
+import grpc
 
 import optuna
+from optuna.storages import GrpcStorageProxy
 from optuna.storages.journal import JournalFileBackend
 from optuna.testing.tempfile_pool import NamedTemporaryFilePool
 
@@ -17,6 +21,7 @@ STORAGE_MODES: list[Any] = [
     "cached_sqlite",
     "journal",
     "journal_redis",
+    "grpc",
 ]
 
 
@@ -33,6 +38,8 @@ class StorageSupplier:
         self.storage_specifier = storage_specifier
         self.extra_args = kwargs
         self.tempfile: IO[Any] | None = None
+        self.server: grpc.Server | None = None
+        self.thread: threading.Thread | None = None
 
     def __enter__(
         self,
@@ -41,6 +48,7 @@ class StorageSupplier:
         | optuna.storages._CachedStorage
         | optuna.storages.RDBStorage
         | optuna.storages.JournalStorage
+        | optuna.storages.GrpcStorageProxy
     ):
         if self.storage_specifier == "inmemory":
             if len(self.extra_args) > 0:
@@ -71,6 +79,18 @@ class StorageSupplier:
             self.tempfile = NamedTemporaryFilePool().tempfile()
             file_storage = JournalFileBackend(self.tempfile.name)
             return optuna.storages.JournalStorage(file_storage)
+        elif self.storage_specifier == "grpc":
+            self.tempfile = NamedTemporaryFilePool().tempfile()
+            url = "sqlite:///{}".format(self.tempfile.name)
+            port = 13000 + uuid.uuid4().int % 1000
+
+            self.server = optuna.storages._grpc.server.make_server(
+                optuna.storages.RDBStorage(url), "localhost", port
+            )
+            self.thread = threading.Thread(target=self.server.start)
+            self.thread.start()
+
+            return GrpcStorageProxy(host="localhost", port=port)
         else:
             assert False
 
@@ -79,3 +99,10 @@ class StorageSupplier:
     ) -> None:
         if self.tempfile:
             self.tempfile.close()
+
+        if self.server:
+            assert self.thread is not None
+            self.server.stop(None)
+            self.thread.join()
+            self.server = None
+            self.thread = None
