@@ -41,7 +41,7 @@ class GrpcStorageProxy(BaseStorage):
         .. code::
 
             import optuna
-            from optuna.storages.grpc import GrpcStorageProxy
+            from optuna.storages import GrpcStorageProxy
 
             storage = GrpcStorageProxy(host="localhost", port=13000)
             study = optuna.create_study(storage=storage)
