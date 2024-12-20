@@ -5,6 +5,7 @@ from datetime import datetime
 import json
 import threading
 
+from optuna import logging
 from optuna.distributions import distribution_to_json
 from optuna.distributions import json_to_distribution
 from optuna.exceptions import DuplicatedStudyError
@@ -26,6 +27,7 @@ else:
         pass
 
 
+_logger = logging.get_logger(__name__)
 DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S.%f"
 
 
@@ -469,6 +471,6 @@ def run_grpc_proxy_server(
     """
     server = make_server(storage, host, port, thread_pool)
     server.start()
-    print(f"Server started at {host}:{port}")
-    print("Listening...")
+    _logger.info(f"Server started at {host}:{port}")
+    _logger.info("Listening...")
     server.wait_for_termination()
