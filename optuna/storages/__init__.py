@@ -3,6 +3,8 @@ from __future__ import annotations
 from optuna.storages._base import BaseStorage
 from optuna.storages._cached_storage import _CachedStorage
 from optuna.storages._callbacks import RetryFailedTrialCallback
+from optuna.storages._grpc import GrpcStorageProxy
+from optuna.storages._grpc import run_grpc_proxy_server
 from optuna.storages._heartbeat import fail_stale_trials
 from optuna.storages._in_memory import InMemoryStorage
 from optuna.storages._rdb.storage import RDBStorage
@@ -29,6 +31,8 @@ __all__ = [
     "RetryFailedTrialCallback",
     "_CachedStorage",
     "fail_stale_trials",
+    "GrpcStorageProxy",
+    "run_grpc_proxy_server",
 ]
 
 

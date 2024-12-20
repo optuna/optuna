@@ -10,7 +10,7 @@ import fakeredis
 import grpc
 
 import optuna
-from optuna.storages.grpc import GrpcStorageProxy
+from optuna.storages import GrpcStorageProxy
 from optuna.storages.journal import JournalFileBackend
 from optuna.testing.tempfile_pool import NamedTemporaryFilePool
 
@@ -48,7 +48,7 @@ class StorageSupplier:
         | optuna.storages._CachedStorage
         | optuna.storages.RDBStorage
         | optuna.storages.JournalStorage
-        | optuna.storages.grpc.GrpcStorageProxy
+        | optuna.storages.GrpcStorageProxy
     ):
         if self.storage_specifier == "inmemory":
             if len(self.extra_args) > 0:
@@ -84,7 +84,7 @@ class StorageSupplier:
             url = "sqlite:///{}".format(self.tempfile.name)
             port = 13000 + uuid.uuid4().int % 1000
 
-            self.server = optuna.storages.grpc._server.make_server(
+            self.server = optuna.storages._grpc.server.make_server(
                 optuna.storages.RDBStorage(url), "localhost", port
             )
             self.thread = threading.Thread(target=self.server.start)

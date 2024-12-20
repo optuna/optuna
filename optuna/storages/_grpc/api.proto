@@ -3,14 +3,14 @@
  * The following command generates the Python code from this file:
  $ pip install mypy-protobuf==3.6.0 protobuf==5.28.1 grpcio==1.68.1 grpcio-tools==1.68.1
  $ python -m grpc_tools.protoc \
-    --proto_path=optuna/storages/grpc \
-    --grpc_python_out=optuna/storages/grpc/_auto_generated \
-    --python_out=optuna/storages/grpc/_auto_generated \
-    --mypy_out=optuna/storages/grpc/_auto_generated \
-    optuna/storages/grpc/api.proto
+    --proto_path=optuna/storages/_grpc \
+    --grpc_python_out=optuna/storages/_grpc/auto_generated \
+    --python_out=optuna/storages/_grpc/auto_generated \
+    --mypy_out=optuna/storages/_grpc/auto_generated \
+    optuna/storages/_grpc/api.proto
  $ sed -i -e \
-    "s/import api_pb2 as api__pb2/import optuna.storages.grpc._auto_generated.api_pb2 as api__pb2/g" \
-    optuna/storages/grpc/_auto_generated/api_pb2_grpc.py
+    "s/import api_pb2 as api__pb2/import optuna.storages._grpc.auto_generated.api_pb2 as api__pb2/g" \
+    optuna/storages/_grpc/auto_generated/api_pb2_grpc.py
  */
 syntax = "proto3";
 

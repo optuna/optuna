@@ -7,15 +7,16 @@ import json
 from typing import Any
 import uuid
 
+from optuna._experimental import experimental_class
 from optuna.distributions import BaseDistribution
 from optuna.distributions import distribution_to_json
 from optuna.exceptions import DuplicatedStudyError
 from optuna.storages._base import BaseStorage
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
-from optuna.storages.grpc._grpc_imports import _imports
-from optuna.storages.grpc._server import _from_proto_trial
-from optuna.storages.grpc._server import _to_proto_trial
-from optuna.storages.grpc._server import _to_proto_trial_state
+from optuna.storages._grpc.grpc_imports import _imports
+from optuna.storages._grpc.server import _from_proto_trial
+from optuna.storages._grpc.server import _to_proto_trial
+from optuna.storages._grpc.server import _to_proto_trial_state
 from optuna.study._frozen import FrozenStudy
 from optuna.study._study_direction import StudyDirection
 from optuna.trial._frozen import FrozenTrial
@@ -23,18 +24,19 @@ from optuna.trial._state import TrialState
 
 
 if _imports.is_successful():
-    from optuna.storages.grpc._grpc_imports import api_pb2
-    from optuna.storages.grpc._grpc_imports import api_pb2_grpc
-    from optuna.storages.grpc._grpc_imports import grpc
+    from optuna.storages._grpc.grpc_imports import api_pb2
+    from optuna.storages._grpc.grpc_imports import api_pb2_grpc
+    from optuna.storages._grpc.grpc_imports import grpc
 
 
+@experimental_class("4.2.0")
 class GrpcStorageProxy(BaseStorage):
-    """gRPC client for :func:`~optuna.storages.grpc.run_grpc_proxy_server`.
+    """gRPC client for :func:`~optuna.storages.run_grpc_proxy_server`.
 
     Example:
 
-        This is a simple example of using :class:`~optuna.storages.grpc.GrpcStorageProxy` with
-        :func:`~optuna.storages.grpc.run_grpc_proxy_server`.
+        This is a simple example of using :class:`~optuna.storages.GrpcStorageProxy` with
+        :func:`~optuna.storages.run_grpc_proxy_server`.
 
         .. code::
 
@@ -44,7 +46,7 @@ class GrpcStorageProxy(BaseStorage):
             storage = GrpcStorageProxy(host="localhost", port=13000)
             study = optuna.create_study(storage=storage)
 
-        Please refer to the example in :func:`~optuna.storages.grpc.run_grpc_proxy_server` for the
+        Please refer to the example in :func:`~optuna.storages.run_grpc_proxy_server` for the
         server side code.
 
     Args:

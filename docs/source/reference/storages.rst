@@ -14,6 +14,8 @@ The :mod:`~optuna.storages` module defines a :class:`~optuna.storages.BaseStorag
    fail_stale_trials
    JournalStorage
    InMemoryStorage
+   run_grpc_proxy_server
+   GrpcStorageProxy
 
 optuna.storages.journal
 -----------------------
@@ -38,21 +40,6 @@ Users can flexibly choose a lock object for :class:`~optuna.storages.journal.Jou
 
    journal.JournalFileSymlinkLock
    journal.JournalFileOpenLock
-
-optuna.storages.grpc
---------------------
-
-The :mod:`~optuna.storages.grpc` module provides a gRPC server and a client. 
-The server is a proxy server, which forwards requests to the actual storage server. 
-The client is a proxy client, which forwards requests to the proxy server. 
-The client is an implementation of :class:`~optuna.storages.BaseStorage` and can be used as a storage object in Optuna.
-
-.. autosummary::
-   :toctree: generated/
-   :nosignatures:
-
-   grpc.run_grpc_proxy_server
-   grpc.GrpcStorageProxy
 
 Deprecated Modules
 ------------------

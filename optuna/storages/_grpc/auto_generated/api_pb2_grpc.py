@@ -3,7 +3,7 @@
 import grpc
 import warnings
 
-import optuna.storages.grpc._auto_generated.api_pb2 as api__pb2
+import optuna.storages._grpc.auto_generated.api_pb2 as api__pb2
 
 GRPC_GENERATED_VERSION = '1.68.1'
 GRPC_VERSION = grpc.__version__

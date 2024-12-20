@@ -6,21 +6,22 @@ import json
 import threading
 
 from optuna import logging
+from optuna._experimental import experimental_func
 from optuna.distributions import distribution_to_json
 from optuna.distributions import json_to_distribution
 from optuna.exceptions import DuplicatedStudyError
 from optuna.storages import BaseStorage
-from optuna.storages.grpc._grpc_imports import _imports
+from optuna.storages._grpc.grpc_imports import _imports
 from optuna.study._study_direction import StudyDirection
 from optuna.trial._frozen import FrozenTrial
 from optuna.trial._state import TrialState
 
 
 if _imports.is_successful():
-    from optuna.storages.grpc._grpc_imports import api_pb2
-    from optuna.storages.grpc._grpc_imports import api_pb2_grpc
-    from optuna.storages.grpc._grpc_imports import grpc
-    from optuna.storages.grpc._grpc_imports import StorageServiceServicer
+    from optuna.storages._grpc.grpc_imports import api_pb2
+    from optuna.storages._grpc.grpc_imports import api_pb2_grpc
+    from optuna.storages._grpc.grpc_imports import grpc
+    from optuna.storages._grpc.grpc_imports import StorageServiceServicer
 else:
 
     class StorageServiceServicer:  # type: ignore
@@ -437,6 +438,7 @@ def make_server(
     return server
 
 
+@experimental_func("4.2.0")
 def run_grpc_proxy_server(
     storage: BaseStorage,
     *,
@@ -452,13 +454,13 @@ def run_grpc_proxy_server(
 
         .. code::
 
-            from optuna.storages.grpc import run_grpc_proxy_server
+            from optuna.storages import run_grpc_proxy_server
             from optuna.storages import RDBStorage
 
             storage = RDBStorage("sqlite:///example.db")
             run_grpc_proxy_server(storage, host="localhost", port=13000)
 
-        Please refer to the client class :class:`~optuna.storages.grpc.GrpcStorageProxy` for
+        Please refer to the client class :class:`~optuna.storages.GrpcStorageProxy` for
         the client usage.
 
     Args:
