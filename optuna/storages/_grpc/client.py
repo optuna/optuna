@@ -56,7 +56,8 @@ class GrpcStorageProxy(BaseStorage):
 
     .. warning::
 
-       Currently, gRPC storage proxy does not work as expected when using a SQLite3 database as the backend and calling :func:`optuna.delete_study`.
+       Currently, gRPC storage proxy does not work as expected when using a SQLite3 database
+       as the backend and calling :func:`optuna.delete_study`.
     """
 
     def __init__(self, *, host: str = "localhost", port: int = 13000) -> None:
@@ -108,7 +109,7 @@ class GrpcStorageProxy(BaseStorage):
             if e.code() == grpc.StatusCode.NOT_FOUND:
                 raise KeyError from e
             raise
-        # TODO(c-bata): Fix an issue of cache invalidation when using SQLite3 with multiple gRPC proxy servers.
+        # TODO(c-bata): Fix a cache invalidation issue when using SQLite3
         # Please see https://github.com/optuna/optuna/pull/5872/files#r1893708995 for details.
         self._cache.delete_study_cache(study_id)
 
