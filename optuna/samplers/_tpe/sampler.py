@@ -683,7 +683,7 @@ def _split_complete_trials_multi_objective(
         )
         indices_below = np.append(indices_below, selected_indices)
 
-    below_indices_set = set(indices_below.tolist())
+    below_indices_set = set(cast(list, indices_below.tolist()))
     below_trials = [trials[i] for i in range(len(trials)) if i in below_indices_set]
     above_trials = [trials[i] for i in range(len(trials)) if i not in below_indices_set]
     return below_trials, above_trials
