@@ -823,32 +823,35 @@ class GetTrialReply(google.protobuf.message.Message):
 global___GetTrialReply = GetTrialReply
 
 @typing.final
-class GetAllTrialsRequest(google.protobuf.message.Message):
+class GetTrialsRequest(google.protobuf.message.Message):
     """*
-    Request to get all trials in a study.
+    Request to get trials in a study.
     """
 
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
     STUDY_ID_FIELD_NUMBER: builtins.int
-    STATES_FIELD_NUMBER: builtins.int
+    INCLUDED_TRIAL_IDS_FIELD_NUMBER: builtins.int
+    TRIAL_ID_GREATER_THAN_FIELD_NUMBER: builtins.int
     study_id: builtins.int
+    trial_id_greater_than: builtins.int
     @property
-    def states(self) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[global___TrialState.ValueType]: ...
+    def included_trial_ids(self) -> google.protobuf.internal.containers.RepeatedScalarFieldContainer[builtins.int]: ...
     def __init__(
         self,
         *,
         study_id: builtins.int = ...,
-        states: collections.abc.Iterable[global___TrialState.ValueType] | None = ...,
+        included_trial_ids: collections.abc.Iterable[builtins.int] | None = ...,
+        trial_id_greater_than: builtins.int = ...,
     ) -> None: ...
-    def ClearField(self, field_name: typing.Literal["states", b"states", "study_id", b"study_id"]) -> None: ...
+    def ClearField(self, field_name: typing.Literal["included_trial_ids", b"included_trial_ids", "study_id", b"study_id", "trial_id_greater_than", b"trial_id_greater_than"]) -> None: ...
 
-global___GetAllTrialsRequest = GetAllTrialsRequest
+global___GetTrialsRequest = GetTrialsRequest
 
 @typing.final
-class GetAllTrialsReply(google.protobuf.message.Message):
+class GetTrialsReply(google.protobuf.message.Message):
     """*
-    Reply to get all trials in a study.
+    Reply to get trials in a study.
     """
 
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
@@ -863,7 +866,7 @@ class GetAllTrialsReply(google.protobuf.message.Message):
     ) -> None: ...
     def ClearField(self, field_name: typing.Literal["trials", b"trials"]) -> None: ...
 
-global___GetAllTrialsReply = GetAllTrialsReply
+global___GetTrialsReply = GetTrialsReply
 
 @typing.final
 class Study(google.protobuf.message.Message):
