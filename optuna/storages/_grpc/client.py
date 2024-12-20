@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from collections.abc import Container
-from collections.abc import Iterable
 from collections.abc import Sequence
 import copy
 import json
@@ -349,7 +348,7 @@ class GrpcClientCache:
         self.lock = threading.Lock()
 
     def get_all_trials(
-        self, study_id: int, states: Container[TrialState] | None = None
+        self, study_id: int, states: Container[TrialState] | None
     ) -> list[FrozenTrial]:
         with self.lock:
             self._read_trials_from_remote_storage(study_id)
