@@ -105,6 +105,7 @@ class GrpcStorageProxy(BaseStorage):
             if e.code() == grpc.StatusCode.NOT_FOUND:
                 raise KeyError from e
             raise
+        self._cache.delete_study_cache(study_id)
 
     def set_study_user_attr(self, study_id: int, key: str, value: Any) -> None:
         request = api_pb2.SetStudyUserAttributeRequest(
@@ -347,6 +348,10 @@ class GrpcClientCache:
         self.grpc_client = grpc_client
         self.lock = threading.Lock()
 
+    def delete_study_cache(self, study_id: int) -> None:
+        with self.lock:
+            self.studies.pop(study_id, None)
+
     def get_all_trials(
         self, study_id: int, states: Container[TrialState] | None
     ) -> list[FrozenTrial]:
@@ -375,6 +380,7 @@ class GrpcClientCache:
             res = self.grpc_client.GetTrials(req)
         except grpc.RpcError as e:
             if e.code() == grpc.StatusCode.NOT_FOUND:
+                self.delete_study_cache(study_id)
                 raise KeyError from e
             raise
         if not res.trials:
