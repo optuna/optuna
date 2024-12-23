@@ -1,10 +1,10 @@
 from __future__ import annotations
 
+from collections.abc import Callable
+from collections.abc import Sequence
 import json
 from typing import Any
-from typing import Callable
 from typing import cast
-from typing import Sequence
 import warnings
 
 import numpy as np
