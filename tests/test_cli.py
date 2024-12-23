@@ -35,6 +35,9 @@ from optuna.trial import Trial
 from optuna.trial import TrialState
 
 
+output_formats = pytest.mark.parametrize("output_format", (None, "value", "table", "json", "yaml"))
+
+
 # An example of objective functions
 def objective_func(trial: Trial) -> float:
     x = trial.suggest_float("x", -10, 10)
@@ -317,7 +320,7 @@ def test_study_set_user_attr_command() -> None:
 
 
 @pytest.mark.skip_coverage
-@pytest.mark.parametrize("output_format", (None, "value", "table", "json", "yaml"))
+@output_formats
 def test_study_names_command(output_format: str | None) -> None:
     with StorageSupplier("sqlite") as storage:
         assert isinstance(storage, RDBStorage)
@@ -380,7 +383,7 @@ def test_study_names_command_without_storage_url() -> None:
 
 
 @pytest.mark.skip_coverage
-@pytest.mark.parametrize("output_format", (None, "value", "table", "json", "yaml"))
+@output_formats
 def test_studies_command(output_format: str | None) -> None:
     with StorageSupplier("sqlite") as storage:
         assert isinstance(storage, RDBStorage)
@@ -448,7 +451,7 @@ def test_studies_command(output_format: str | None) -> None:
 
 
 @pytest.mark.skip_coverage
-@pytest.mark.parametrize("output_format", (None, "value", "table", "json", "yaml"))
+@output_formats
 def test_studies_command_flatten(output_format: str | None) -> None:
     with StorageSupplier("sqlite") as storage:
         assert isinstance(storage, RDBStorage)
@@ -540,7 +543,7 @@ def test_studies_command_flatten(output_format: str | None) -> None:
 
 @pytest.mark.skip_coverage
 @pytest.mark.parametrize("objective", (objective_func, objective_func_branched_search_space))
-@pytest.mark.parametrize("output_format", (None, "value", "table", "json", "yaml"))
+@output_formats
 def test_trials_command(objective: Callable[[Trial], float], output_format: str | None) -> None:
     with StorageSupplier("sqlite") as storage:
         assert isinstance(storage, RDBStorage)
@@ -619,7 +622,7 @@ def test_trials_command(objective: Callable[[Trial], float], output_format: str 
 
 @pytest.mark.skip_coverage
 @pytest.mark.parametrize("objective", (objective_func, objective_func_branched_search_space))
-@pytest.mark.parametrize("output_format", (None, "value", "table", "json", "yaml"))
+@output_formats
 def test_trials_command_flatten(
     objective: Callable[[Trial], float], output_format: str | None
 ) -> None:
@@ -696,7 +699,7 @@ def test_trials_command_flatten(
 
 @pytest.mark.skip_coverage
 @pytest.mark.parametrize("objective", (objective_func, objective_func_branched_search_space))
-@pytest.mark.parametrize("output_format", (None, "value", "table", "json", "yaml"))
+@output_formats
 def test_best_trial_command(
     objective: Callable[[Trial], float], output_format: str | None
 ) -> None:
@@ -778,7 +781,7 @@ def test_best_trial_command(
 
 @pytest.mark.skip_coverage
 @pytest.mark.parametrize("objective", (objective_func, objective_func_branched_search_space))
-@pytest.mark.parametrize("output_format", (None, "value", "table", "json", "yaml"))
+@output_formats
 def test_best_trial_command_flatten(
     objective: Callable[[Trial], float], output_format: str | None
 ) -> None:
@@ -854,7 +857,7 @@ def test_best_trial_command_flatten(
 
 
 @pytest.mark.skip_coverage
-@pytest.mark.parametrize("output_format", (None, "value", "table", "json", "yaml"))
+@output_formats
 def test_best_trials_command(output_format: str | None) -> None:
     with StorageSupplier("sqlite") as storage:
         assert isinstance(storage, RDBStorage)
@@ -940,7 +943,7 @@ def test_best_trials_command(output_format: str | None) -> None:
 
 
 @pytest.mark.skip_coverage
-@pytest.mark.parametrize("output_format", (None, "value", "table", "json", "yaml"))
+@output_formats
 def test_best_trials_command_flatten(output_format: str | None) -> None:
     with StorageSupplier("sqlite") as storage:
         assert isinstance(storage, RDBStorage)
@@ -1281,7 +1284,7 @@ def test_ask_flatten(
 
 
 @pytest.mark.skip_coverage
-@pytest.mark.parametrize("output_format", (None, "value", "table", "json", "yaml"))
+@output_formats
 def test_ask_empty_search_space(output_format: str) -> None:
     study_name = "test_study"
 
@@ -1322,7 +1325,7 @@ def test_ask_empty_search_space(output_format: str) -> None:
 
 
 @pytest.mark.skip_coverage
-@pytest.mark.parametrize("output_format", (None, "value", "table", "json", "yaml"))
+@output_formats
 def test_ask_empty_search_space_flatten(output_format: str) -> None:
     study_name = "test_study"
 
