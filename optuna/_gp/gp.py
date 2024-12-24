@@ -1,9 +1,9 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 import math
-import typing
-from typing import Callable
+from typing import Any
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -38,7 +38,7 @@ logger = get_logger(__name__)
 
 class Matern52Kernel(torch.autograd.Function):
     @staticmethod
-    def forward(ctx: typing.Any, squared_distance: torch.Tensor) -> torch.Tensor:  # type: ignore
+    def forward(ctx: Any, squared_distance: torch.Tensor) -> torch.Tensor:  # type: ignore
         sqrt5d = torch.sqrt(5 * squared_distance)
         exp_part = torch.exp(-sqrt5d)
         val = exp_part * ((5 / 3) * squared_distance + sqrt5d + 1)
@@ -48,7 +48,7 @@ class Matern52Kernel(torch.autograd.Function):
         return val
 
     @staticmethod
-    def backward(ctx: typing.Any, grad: torch.Tensor) -> torch.Tensor:  # type: ignore
+    def backward(ctx: Any, grad: torch.Tensor) -> torch.Tensor:  # type: ignore
         # Let x be squared_distance, f(x) be forward(ctx, x), and g(f) be a provided function,
         # then deriv := df/dx, grad := dg/df, and deriv * grad = df/dx * dg/df = dg/dx.
         (deriv,) = ctx.saved_tensors

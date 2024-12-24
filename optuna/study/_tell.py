@@ -4,7 +4,6 @@ from collections.abc import Sequence
 import copy
 import math
 from typing import TYPE_CHECKING
-from typing import Union
 import warnings
 
 import optuna
@@ -26,7 +25,7 @@ STUDY_TELL_WARNING_KEY = "STUDY_TELL_WARNING"
 _logger = logging.get_logger(__name__)
 
 
-def _get_frozen_trial(study: Study, trial: Union[Trial, int]) -> FrozenTrial:
+def _get_frozen_trial(study: Study, trial: Trial | int) -> FrozenTrial:
     if isinstance(trial, optuna.Trial):
         trial_id = trial._trial_id
     elif isinstance(trial, int):
@@ -47,7 +46,7 @@ def _get_frozen_trial(study: Study, trial: Union[Trial, int]) -> FrozenTrial:
 
 
 def _check_state_and_values(
-    state: TrialState | None, values: Union[float, Sequence[float]] | None
+    state: TrialState | None, values: float | Sequence[float] | None
 ) -> None:
     if state == TrialState.COMPLETE:
         if values is None:
@@ -87,8 +86,8 @@ def _check_values_are_feasible(study: Study, values: Sequence[float]) -> str | N
 
 def _tell_with_warning(
     study: Study,
-    trial: Union[Trial, int],
-    value_or_values: Union[float, Sequence[float]] | None = None,
+    trial: Trial | int,
+    value_or_values: float | Sequence[float] | None = None,
     state: TrialState | None = None,
     skip_if_finished: bool = False,
     suppress_warning: bool = False,
