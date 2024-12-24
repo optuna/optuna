@@ -124,7 +124,10 @@ def compute_hypervolume(
         sorted_pareto_sols = loss_vals[loss_vals[:, 0].argsort()]
 
     if reference_point.shape[0] == 2:
-        return _compute_2d(sorted_pareto_sols, reference_point)
+        hv = _compute_2d(sorted_pareto_sols, reference_point)
+    else:
+        hv = _compute_hv(sorted_pareto_sols, reference_point)
 
-    # TODO(nabenabe): Return inf if hv is nan.
-    return _compute_hv(sorted_pareto_sols, reference_point)
+    # NOTE(nabenabe): `nan` happens when inf - inf happens, but this is inf in hypervolume due to
+    # the submodularity.
+    return hv if np.isfinite(hv) else float("inf")
