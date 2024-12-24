@@ -126,4 +126,5 @@ def compute_hypervolume(
     if reference_point.shape[0] == 2:
         return _compute_2d(sorted_pareto_sols, reference_point)
 
+    # TODO(nabenabe): Return inf if hv is nan.
     return _compute_hv(sorted_pareto_sols, reference_point)
