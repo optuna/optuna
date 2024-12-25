@@ -6,8 +6,9 @@ Create Date: 2021-11-21 23:48:42.424430
 
 """
 
+from __future__ import annotations
+
 from typing import Any
-from typing import List
 
 import sqlalchemy as sa
 from alembic import op
@@ -136,7 +137,7 @@ def restore_old_distribution(distribution_json: str) -> str:
     return distribution_to_json(old_distribution)
 
 
-def persist(session: orm.Session, distributions: List[BaseDistribution]) -> None:
+def persist(session: orm.Session, distributions: list[BaseDistribution]) -> None:
     if len(distributions) == 0:
         return
     session.bulk_save_objects(distributions)
@@ -152,7 +153,7 @@ def upgrade() -> None:
 
     session = orm.Session(bind=bind)
     try:
-        distributions: List[BaseDistribution] = []
+        distributions: list[BaseDistribution] = []
         for distribution in session.query(TrialParamModel).yield_per(BATCH_SIZE):
             distribution.distribution_json = migrate_new_distribution(
                 distribution.distribution_json,
