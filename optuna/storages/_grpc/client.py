@@ -386,7 +386,7 @@ class GrpcClientCache:
             res = self.grpc_client.GetTrials(req)
         except grpc.RpcError as e:
             if e.code() == grpc.StatusCode.NOT_FOUND:
-                self.delete_study_cache(study_id)
+                self.studies.pop(study_id, None)
                 raise KeyError from e
             raise
         if not res.trials:
