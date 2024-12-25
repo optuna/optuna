@@ -1,6 +1,11 @@
 from __future__ import annotations
 
 from collections import defaultdict
+from collections.abc import Callable
+from collections.abc import Container
+from collections.abc import Generator
+from collections.abc import Iterable
+from collections.abc import Sequence
 from contextlib import contextmanager
 import copy
 from datetime import datetime
@@ -12,15 +17,6 @@ import random
 import sqlite3
 import time
 from typing import Any
-from typing import Callable
-from typing import Container
-from typing import Dict
-from typing import Generator
-from typing import Iterable
-from typing import List
-from typing import Optional
-from typing import Sequence
-from typing import Set
 from typing import TYPE_CHECKING
 import uuid
 
@@ -199,14 +195,12 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
     def __init__(
         self,
         url: str,
-        engine_kwargs: Optional[Dict[str, Any]] = None,
+        engine_kwargs: dict[str, Any] | None = None,
         skip_compatibility_check: bool = False,
         *,
-        heartbeat_interval: Optional[int] = None,
-        grace_period: Optional[int] = None,
-        failed_trial_callback: Optional[
-            Callable[["optuna.study.Study", FrozenTrial], None]
-        ] = None,
+        heartbeat_interval: int | None = None,
+        grace_period: int | None = None,
+        failed_trial_callback: Callable[["optuna.study.Study", FrozenTrial], None] | None = None,
         skip_table_creation: bool = False,
     ) -> None:
         self.engine_kwargs = engine_kwargs or {}
@@ -240,14 +234,14 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         if not skip_compatibility_check:
             self._version_manager.check_table_schema_compatibility()
 
-    def __getstate__(self) -> Dict[Any, Any]:
+    def __getstate__(self) -> dict[Any, Any]:
         state = self.__dict__.copy()
         del state["scoped_session"]
         del state["engine"]
         del state["_version_manager"]
         return state
 
-    def __setstate__(self, state: Dict[Any, Any]) -> None:
+    def __setstate__(self, state: dict[Any, Any]) -> None:
         self.__dict__.update(state)
         try:
             self.engine = sqlalchemy.engine.create_engine(self.url, **self.engine_kwargs)
@@ -266,7 +260,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
             self._version_manager.check_table_schema_compatibility()
 
     def create_new_study(
-        self, directions: Sequence[StudyDirection], study_name: Optional[str] = None
+        self, directions: Sequence[StudyDirection], study_name: str | None = None
     ) -> int:
         try:
             with _create_scoped_session(self.scoped_session) as session:
@@ -346,14 +340,14 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
 
         return study_name
 
-    def get_study_directions(self, study_id: int) -> List[StudyDirection]:
+    def get_study_directions(self, study_id: int) -> list[StudyDirection]:
         with _create_scoped_session(self.scoped_session) as session:
             study = models.StudyModel.find_or_raise_by_id(study_id, session)
             directions = [d.direction for d in study.directions]
 
         return directions
 
-    def get_study_user_attrs(self, study_id: int) -> Dict[str, Any]:
+    def get_study_user_attrs(self, study_id: int) -> dict[str, Any]:
         with _create_scoped_session(self.scoped_session) as session:
             # Ensure that that study exists.
             models.StudyModel.find_or_raise_by_id(study_id, session)
@@ -362,7 +356,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
 
         return user_attrs
 
-    def get_study_system_attrs(self, study_id: int) -> Dict[str, Any]:
+    def get_study_system_attrs(self, study_id: int) -> dict[str, Any]:
         with _create_scoped_session(self.scoped_session) as session:
             # Ensure that that study exists.
             models.StudyModel.find_or_raise_by_id(study_id, session)
@@ -371,7 +365,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
 
         return system_attrs
 
-    def get_trial_user_attrs(self, trial_id: int) -> Dict[str, Any]:
+    def get_trial_user_attrs(self, trial_id: int) -> dict[str, Any]:
         with _create_scoped_session(self.scoped_session) as session:
             # Ensure trial exists.
             models.TrialModel.find_or_raise_by_id(trial_id, session)
@@ -381,7 +375,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
 
         return user_attrs
 
-    def get_trial_system_attrs(self, trial_id: int) -> Dict[str, Any]:
+    def get_trial_system_attrs(self, trial_id: int) -> dict[str, Any]:
         with _create_scoped_session(self.scoped_session) as session:
             # Ensure trial exists.
             models.TrialModel.find_or_raise_by_id(trial_id, session)
@@ -391,7 +385,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
 
         return system_attrs
 
-    def get_all_studies(self) -> List[FrozenStudy]:
+    def get_all_studies(self) -> list[FrozenStudy]:
         with _create_scoped_session(self.scoped_session) as session:
             studies = (
                 session.query(
@@ -432,11 +426,11 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
 
             return frozen_studies
 
-    def create_new_trial(self, study_id: int, template_trial: Optional[FrozenTrial] = None) -> int:
+    def create_new_trial(self, study_id: int, template_trial: FrozenTrial | None = None) -> int:
         return self._create_new_trial(study_id, template_trial)._trial_id
 
     def _create_new_trial(
-        self, study_id: int, template_trial: Optional[FrozenTrial] = None
+        self, study_id: int, template_trial: FrozenTrial | None = None
     ) -> FrozenTrial:
         """Create a new trial and returns a :class:`~optuna.trial.FrozenTrial`.
 
@@ -502,7 +496,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
     def _get_prepared_new_trial(
         self,
         study_id: int,
-        template_trial: Optional[FrozenTrial],
+        template_trial: FrozenTrial | None,
         session: "sqlalchemy_orm.Session",
     ) -> "models.TrialModel":
         if template_trial is None:
@@ -638,7 +632,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         return param_value
 
     def set_trial_state_values(
-        self, trial_id: int, state: TrialState, values: Optional[Sequence[float]] = None
+        self, trial_id: int, state: TrialState, values: Sequence[float] | None = None
     ) -> bool:
         try:
             with _create_scoped_session(self.scoped_session) as session:
@@ -805,8 +799,8 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         self,
         study_id: int,
         deepcopy: bool = True,
-        states: Optional[Container[TrialState]] = None,
-    ) -> List[FrozenTrial]:
+        states: Container[TrialState] | None = None,
+    ) -> list[FrozenTrial]:
         trials = self._get_trials(study_id, states, set(), -1)
 
         return copy.deepcopy(trials) if deepcopy else trials
@@ -814,10 +808,10 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
     def _get_trials(
         self,
         study_id: int,
-        states: Optional[Container[TrialState]],
-        included_trial_ids: Set[int],
+        states: Container[TrialState] | None,
+        included_trial_ids: set[int],
         trial_id_greater_than: int,
-    ) -> List[FrozenTrial]:
+    ) -> list[FrozenTrial]:
         included_trial_ids = set(
             trial_id for trial_id in included_trial_ids if trial_id <= trial_id_greater_than
         )
@@ -879,7 +873,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         return trials
 
     def _build_frozen_trial_from_trial_model(self, trial: "models.TrialModel") -> FrozenTrial:
-        values: Optional[List[float]]
+        values: list[float] | None
         if trial.values:
             values = [0 for _ in trial.values]
             for value_model in trial.values:
@@ -938,7 +932,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         return self.get_trial(trial_id)
 
     @staticmethod
-    def _set_default_engine_kwargs_for_mysql(url: str, engine_kwargs: Dict[str, Any]) -> None:
+    def _set_default_engine_kwargs_for_mysql(url: str, engine_kwargs: dict[str, Any]) -> None:
         # Skip if RDB is not MySQL.
         if not url.startswith("mysql"):
             return
@@ -988,7 +982,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
 
         return self._version_manager.get_head_version()
 
-    def get_all_versions(self) -> List[str]:
+    def get_all_versions(self) -> list[str]:
         """Return the schema version list."""
 
         return self._version_manager.get_all_versions()
@@ -1006,7 +1000,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                 assert heartbeat is not None
                 heartbeat.heartbeat = session.execute(sqlalchemy.func.now()).scalar()
 
-    def _get_stale_trial_ids(self, study_id: int) -> List[int]:
+    def _get_stale_trial_ids(self, study_id: int) -> list[int]:
         assert self.heartbeat_interval is not None
         if self.grace_period is None:
             grace_period = 2 * self.heartbeat_interval
@@ -1039,12 +1033,12 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
 
         return stale_trial_ids
 
-    def get_heartbeat_interval(self) -> Optional[int]:
+    def get_heartbeat_interval(self) -> int | None:
         return self.heartbeat_interval
 
     def get_failed_trial_callback(
         self,
-    ) -> Optional[Callable[["optuna.study.Study", FrozenTrial], None]]:
+    ) -> Callable[["optuna.study.Study", FrozenTrial], None] | None:
         return self.failed_trial_callback
 
 
@@ -1150,7 +1144,7 @@ class _VersionManager:
         assert base is not None, "There should be exactly one base, i.e. v0.9.0.a."
         return base
 
-    def get_all_versions(self) -> List[str]:
+    def get_all_versions(self) -> list[str]:
         script = self._create_alembic_script()
         return [r.revision for r in script.walk_revisions()]
 
