@@ -104,6 +104,8 @@ def _get_output(command: list[str], output_format: str) -> Any:
 
     # Since keys are not given in value format, it checks matching with the output in table format.
     if output_format == "value":
+        # NOTE(nabenabe): We cannot use this function for `test_ask_XXX` because this part executes
+        # the provided command, creating another trial for `ask` and making the output different.
         table_command = copy.copy(command)
         table_command += ["--format", "table"]
         table_output = str(subprocess.check_output(table_command).decode().strip())
