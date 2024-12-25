@@ -6,6 +6,8 @@ Create Date: 2022-06-02 09:57:22.818798
 
 """
 
+from __future__ import annotations
+
 import enum
 
 import numpy as np
@@ -13,8 +15,6 @@ from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import orm
-from typing import Optional
-from typing import Tuple
 
 try:
     from sqlalchemy.orm import declarative_base
@@ -53,7 +53,7 @@ class TrialValueModel(BaseModel):
     def value_to_stored_repr(
         cls,
         value: float,
-    ) -> Tuple[Optional[float], TrialValueType]:
+    ) -> tuple[float | None, TrialValueType]:
         if value == float("inf"):
             return (None, cls.TrialValueType.INF_POS)
         elif value == float("-inf"):
@@ -62,7 +62,7 @@ class TrialValueModel(BaseModel):
             return (value, cls.TrialValueType.FINITE)
 
     @classmethod
-    def stored_repr_to_value(cls, value: Optional[float], float_type: TrialValueType) -> float:
+    def stored_repr_to_value(cls, value: float | None, float_type: TrialValueType) -> float:
         if float_type == cls.TrialValueType.INF_POS:
             assert value is None
             return float("inf")
