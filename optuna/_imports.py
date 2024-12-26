@@ -4,7 +4,6 @@ import importlib
 import types
 from types import TracebackType
 from typing import Any
-from typing import Type
 
 
 _INTEGRATION_IMPORT_ERROR_TEMPLATE = (
@@ -35,7 +34,7 @@ class _DeferredImportExceptionContextManager:
 
     def __exit__(
         self,
-        exc_type: Type[Exception] | None,
+        exc_type: type[Exception] | None,
         exc_value: Exception | None,
         traceback: TracebackType | None,
     ) -> bool | None:
