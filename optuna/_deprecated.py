@@ -1,8 +1,9 @@
+from __future__ import annotations
+
+from collections.abc import Callable
 import functools
 import textwrap
 from typing import Any
-from typing import Callable
-from typing import Optional
 from typing import TYPE_CHECKING
 from typing import TypeVar
 import warnings
@@ -53,8 +54,8 @@ def _format_text(text: str) -> str:
 def deprecated_func(
     deprecated_version: str,
     removed_version: str,
-    name: Optional[str] = None,
-    text: Optional[str] = None,
+    name: str | None = None,
+    text: str | None = None,
 ) -> "Callable[[Callable[FP, FT]], Callable[FP, FT]]":
     """Decorate function as deprecated.
 
@@ -120,8 +121,8 @@ def deprecated_func(
 def deprecated_class(
     deprecated_version: str,
     removed_version: str,
-    name: Optional[str] = None,
-    text: Optional[str] = None,
+    name: str | None = None,
+    text: str | None = None,
 ) -> "Callable[[CT], CT]":
     """Decorate class as deprecated.
 
