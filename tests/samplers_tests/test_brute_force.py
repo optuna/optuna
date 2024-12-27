@@ -1,3 +1,5 @@
+import time
+
 import numpy as np
 import pytest
 
@@ -299,3 +301,22 @@ def test_parallel_optimize() -> None:
     x1 = trial1.suggest_categorical("x", ["a", "b"])
     x2 = trial2.suggest_categorical("x", ["a", "b"])
     assert {x1, x2} == {"a", "b"}
+
+
+def test_parallel_optimize_with_sleep() -> None:
+    def objective(trial: Trial) -> float:
+        x = trial.suggest_int("x", 0, 1)
+        time.sleep(x)
+        y = trial.suggest_int("y", 0, 1)
+        return x + y
+
+    # Seed is fixed to reproduce the same result.
+    # See: https://github.com/optuna/optuna/issues/5780
+    study = optuna.create_study(sampler=samplers.BruteForceSampler(seed=42))
+    study.optimize(objective, n_jobs=2)
+
+    expected_suggested_values = [{"x": i, "y": j} for i in range(2) for j in range(2)]
+    all_suggested_values = [t.params for t in study.trials]
+    assert len(all_suggested_values) == len(expected_suggested_values)
+    for a in expected_suggested_values:
+        assert a in all_suggested_values
