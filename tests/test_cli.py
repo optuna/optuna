@@ -595,7 +595,7 @@ def test_trials_command(objective: Callable[[Trial], float], output_format: str 
                     and isinstance(expected_value, float)
                     and np.isnan(expected_value)
                 ):
-                    if output_format is None or output_format == "table":
+                    if output_format in (None, "table", "value"):
                         assert key[1] not in eval(trial["params"])
                     else:
                         assert key[1] not in trial["params"]
