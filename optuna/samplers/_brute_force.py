@@ -36,6 +36,7 @@ class _TreeNode:
 
     param_name: str | None = None
     children: dict[float, "_TreeNode"] | None = None
+    is_running: bool = False
 
     def expand(self, param_name: str | None, search_space: Iterable[float]) -> None:
         # If the node is unexpanded, expand it.
@@ -51,6 +52,9 @@ class _TreeNode:
                 raise ValueError(
                     f"search_space mismatch: {set(self.children.keys())} != {set(search_space)}"
                 )
+
+    def set_running(self) -> None:
+        self.is_running = True
 
     def set_leaf(self) -> None:
         self.expand(None, [])
@@ -68,22 +72,29 @@ class _TreeNode:
             current_node = current_node.children[value]
         return current_node
 
-    def count_unexpanded(self) -> int:
+    def count_unexpanded(self, exclude_running: bool) -> int:
         # Count the number of unexpanded nodes in the subtree.
         return (
             1
-            if self.children is None
-            else sum(child.count_unexpanded() for child in self.children.values())
+            if self.children is None and (not exclude_running or not self.is_running)
+            else (
+                0
+                if self.children is None
+                else sum(
+                    child.count_unexpanded(exclude_running) for child in self.children.values()
+                )
+            )
         )
 
-    def sample_child(self, rng: np.random.RandomState) -> float:
+    def sample_child(self, rng: np.random.RandomState, exclude_running: bool) -> float:
         assert self.children is not None
         # Sample an unexpanded node in the subtree uniformly, and return the first
         # parameter value in the path to the node.
         # Equivalently, we sample the child node with weights proportional to the number
         # of unexpanded nodes in the subtree.
         weights = np.array(
-            [child.count_unexpanded() for child in self.children.values()], dtype=np.float64
+            [child.count_unexpanded(exclude_running) for child in self.children.values()],
+            dtype=np.float64,
         )
         weights /= weights.sum()
         return rng.choice(list(self.children.keys()), p=weights)
@@ -130,10 +141,14 @@ class BruteForceSampler(BaseSampler):
             that it is not recommended using this option in distributed optimization settings since
             this option cannot ensure the order of trials and may increase the number of duplicate
             suggestions during distributed optimization.
+        enforce_unique_samples:
+            If this is :obj:`True`, the sampler strictly avoids duplicate samples. Please note that
+            the sampler may stop before trying the entire search space when this option is enabled.
     """
 
-    def __init__(self, seed: int | None = None) -> None:
+    def __init__(self, seed: int | None = None, enforce_unique_samples: bool = False) -> None:
         self._rng = LazyRandomState(seed)
+        self._enforce_unique_samples = enforce_unique_samples
 
     def infer_relative_search_space(
         self, study: Study, trial: FrozenTrial
@@ -150,7 +165,6 @@ class BruteForceSampler(BaseSampler):
         tree: _TreeNode, trials: Iterable[FrozenTrial], params: dict[str, Any]
     ) -> None:
         # Populate tree under given params from the given trials.
-        incomplete_leaves: list[_TreeNode] = []
         for trial in trials:
             if not all(p in trial.params and trial.params[p] == v for p, v in params.items()):
                 continue
@@ -170,12 +184,7 @@ class BruteForceSampler(BaseSampler):
                 if trial.state.is_finished():
                     leaf.set_leaf()
                 else:
-                    incomplete_leaves.append(leaf)
-
-        # Add all incomplete leaf nodes at the end because they may not have complete search space.
-        for leaf in incomplete_leaves:
-            if leaf.children is None:
-                leaf.set_leaf()
+                    leaf.set_running()
 
     def sample_independent(
         self,
@@ -184,6 +193,8 @@ class BruteForceSampler(BaseSampler):
         param_name: str,
         param_distribution: BaseDistribution,
     ) -> Any:
+        exclude_running = self._enforce_unique_samples
+
         trials = study.get_trials(
             deepcopy=False,
             states=(
@@ -200,10 +211,12 @@ class BruteForceSampler(BaseSampler):
         # being initialized as an empty graph, which is created with n_jobs > 1
         # where we get trials[i].params = {} for some i.
         self._populate_tree(tree, (t for t in trials if t.number != trial.number), trial.params)
-        if tree.count_unexpanded() == 0:
+        if tree.count_unexpanded(exclude_running) == 0:
             return param_distribution.to_external_repr(self._rng.rng.choice(candidates))
         else:
-            return param_distribution.to_external_repr(tree.sample_child(self._rng.rng))
+            return param_distribution.to_external_repr(
+                tree.sample_child(self._rng.rng, exclude_running)
+            )
 
     def after_trial(
         self,
@@ -212,6 +225,8 @@ class BruteForceSampler(BaseSampler):
         state: TrialState,
         values: Sequence[float] | None,
     ) -> None:
+        exclude_running = self._enforce_unique_samples
+
         trials = study.get_trials(
             deepcopy=False,
             states=(
@@ -240,7 +255,7 @@ class BruteForceSampler(BaseSampler):
             {},
         )
 
-        if tree.count_unexpanded() == 0:
+        if tree.count_unexpanded(exclude_running) == 0:
             study.stop()
 
 
