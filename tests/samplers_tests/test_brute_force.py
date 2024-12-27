@@ -90,7 +90,7 @@ def test_tree_node_count_unexpanded() -> None:
             2: _TreeNode(),
         },
     )
-    assert tree.count_unexpanded() == 3
+    assert tree.count_unexpanded(exclude_running=False) == 3
 
 
 def test_study_optimize_with_single_search_space() -> None:
@@ -316,6 +316,22 @@ def test_parallel_optimize_with_sleep() -> None:
     study.optimize(objective, n_jobs=2)
 
     expected_suggested_values = [{"x": i, "y": j} for i in range(2) for j in range(2)]
+    all_suggested_values = [t.params for t in study.trials]
+    assert len(all_suggested_values) == len(expected_suggested_values)
+    for a in expected_suggested_values:
+        assert a in all_suggested_values
+
+    study = optuna.create_study(
+        sampler=samplers.BruteForceSampler(seed=42, enforce_unique_samples=True)
+    )
+    study.optimize(objective, n_jobs=2)
+
+    expected_suggested_values = list(
+        filter(
+            lambda v: v["x"] != 1 or v["y"] != 1,
+            [{"x": i, "y": j} for i in range(2) for j in range(2)],
+        )
+    )
     all_suggested_values = [t.params for t in study.trials]
     assert len(all_suggested_values) == len(expected_suggested_values)
     for a in expected_suggested_values:
