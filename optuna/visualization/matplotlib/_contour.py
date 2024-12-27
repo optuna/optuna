@@ -108,7 +108,7 @@ def _get_contour_plot(info: _ContourInfo) -> "Axes":
             axcb.set_label(target_name)
     else:
         # Set up the graph style.
-        fig, axs = plt.subplots(n_params, n_params)
+        fig, axs = plt.subplots(n_params, n_params, sharex="col", sharey="row")
         fig.suptitle("Contour Plot")
         cmap = _set_cmap(reverse_scale)
 
@@ -175,7 +175,9 @@ def _calculate_axis_data(
     returned_values: Sequence[int | float]
     if axis.is_cat:
         enc = _LabelEncoder()
-        returned_values = enc.fit_transform(list(map(str, values)))
+        # prepare for all values in categorical distribution
+        enc.fit(list(map(str, filter(lambda value: value is not None, axis.values))))
+        returned_values = enc.transform(list(map(str, values)))
         cat_param_labels = enc.get_labels()
         cat_param_pos = enc.get_indices()
     else:
