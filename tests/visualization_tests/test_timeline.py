@@ -1,10 +1,10 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 import datetime
 from io import BytesIO
 import time
 from typing import Any
-from typing import Callable
 
 import _pytest.capture
 import pytest
