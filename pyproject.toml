@@ -74,6 +74,7 @@ document = [
   "sphinx",
   "sphinx-copybutton",
   "sphinx-gallery",
+  "sphinx-notfound-page",
   "sphinx_rtd_theme>=1.2.0",
   "torch",
   "torchvision",
