@@ -175,7 +175,9 @@ def _calculate_axis_data(
     returned_values: Sequence[int | float]
     if axis.is_cat:
         enc = _LabelEncoder()
-        returned_values = enc.fit_transform(list(map(str, values)))
+        # prepare all values in categorical distribution
+        enc.fit(list(map(str, filter(lambda value: value is not None, axis.values))))
+        returned_values = enc.transform(list(map(str, values)))
         cat_param_labels = enc.get_labels()
         cat_param_pos = enc.get_indices()
     else:
