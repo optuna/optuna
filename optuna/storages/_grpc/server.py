@@ -322,23 +322,25 @@ class OptunaStorageProxyService(StorageServiceServicer):
 
         return api_pb2.GetTrialReply(trial=_to_proto_trial(trial))
 
-    def GetAllTrials(
+    def GetTrials(
         self,
-        request: api_pb2.GetAllTrialsRequest,
+        request: api_pb2.GetTrialsRequest,
         context: grpc.ServicerContext,
-    ) -> api_pb2.GetAllTrialsReply:
+    ) -> api_pb2.GetTrialsReply:
         study_id = request.study_id
-        states = [_from_proto_trial_state(state) for state in request.states]
+        included_trial_ids = set(request.included_trial_ids)
+        trial_id_greater_than = request.trial_id_greater_than
         try:
-            trials = self._backend.get_all_trials(
-                study_id,
-                deepcopy=False,
-                states=states,
-            )
+            trials = self._backend.get_all_trials(study_id, deepcopy=False)
         except KeyError as e:
             context.abort(code=grpc.StatusCode.NOT_FOUND, details=str(e))
 
-        return api_pb2.GetAllTrialsReply(trials=[_to_proto_trial(trial) for trial in trials])
+        filtered_trials = [
+            _to_proto_trial(t)
+            for t in trials
+            if t._trial_id > trial_id_greater_than or t._trial_id in included_trial_ids
+        ]
+        return api_pb2.GetTrialsReply(trials=filtered_trials)
 
 
 def _to_proto_trial_state(state: TrialState) -> api_pb2.TrialState.ValueType:
