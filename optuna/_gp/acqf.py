@@ -22,6 +22,65 @@ else:
     torch = _LazyImport("torch")
 
 
+def _sample_from_normal_sobol(dim: int, n_samples: int, seed: int | None = None) -> torch.Tensor:
+    sobol_engine = torch.quasirandom.SobolEngine(dimension=dim, scramble=True, seed=seed)
+    # The Sobol sequence in [-1, 1].
+    samples = 2.0 * (sobol_engine.draw(n_samples, dtype=torch.float64) - 0.5)
+    # Inverse transform to standard normal (values to close to 0/1 result in inf values).
+    return torch.erfinv(samples) * float(np.sqrt(2))
+
+
+def logehvi(
+    means: torch.Tensor,  # (..., n_objectives)
+    cov: torch.Tensor,  # (..., n_objectives, n_objectives)
+    fixed_samples: torch.Tensor,  # (n_qmc_samples, n_objectives)
+    non_dominated_lower_bounds: torch.Tensor,  # (n_sub_hyper_rectangles, n_objectives)
+    non_dominated_upper_bounds: torch.Tensor,  # (n_sub_hyper_rectangles, n_objectives)
+    is_objective_independent: bool = False,
+) -> torch.Tensor:  # (..., )
+    def _loghvi(
+        loss_vals: torch.Tensor,  # (..., n_objectives)
+        non_dominated_lower_bounds: torch.Tensor,  # (n_sub_hyper_rectangles, n_objectives)
+        non_dominated_upper_bounds: torch.Tensor,  # (n_sub_hyper_rectangles, n_objectives)
+    ) -> torch.Tensor:  # shape = (..., )
+        # This function calculates Eq. (1) of [Daulton20].
+        # TODO(nabenabe): Adapt to Eq. (3) when we support batch optimization.
+        diff = torch.nn.functional.relu(
+            non_dominated_upper_bounds
+            - torch.maximum(loss_vals[..., torch.newaxis, :], non_dominated_lower_bounds)
+        )
+        return torch.special.logsumexp(diff.log().sum(axis=-1), axis=-1)
+
+    def _logehvi(
+        loss_vals: torch.Tensor,  # (..., n_qmc_samples, n_objectives)
+        non_dominated_lower_bounds: torch.Tensor,  # (n_sub_hyper_rectangles, n_objectives)
+        non_dominated_upper_bounds: torch.Tensor,  # (n_sub_hyper_rectangles, n_objectives)
+    ) -> torch.Tensor:  # shape = (..., )
+        log_n_qmc_samples = float(np.log(loss_vals.shape[-2]))
+        log_hvi_vals = _loghvi(loss_vals, non_dominated_lower_bounds, non_dominated_upper_bounds)
+        return -log_n_qmc_samples + torch.special.logsumexp(log_hvi_vals, axis=-1)
+
+    # NOTE(nabenabe): By using fixed samples from the Sobol sequence, EHVI becomes deterministic,
+    # making it possible to optimize the acqf by l-BFGS.
+    n_objectives = means.shape[-1]
+    assert cov.shape[-1] == n_objectives and cov.shape[-2] == n_objectives
+    if is_objective_independent:
+        L = torch.zeros_like(cov, dtype=torch.float64)
+        objective_indices = torch.arange(n_objectives)
+        L[..., objective_indices, objective_indices] = torch.sqrt(
+            cov[..., objective_indices, objective_indices]
+        )
+    else:
+        L = torch.linalg.cholesky(cov)
+
+    # NOTE(nabenabe): matmul (+squeeze) below is equivalent to einsum("BMM,NM->BNM").
+    loss_vals_from_qmc = (
+        means[..., torch.newaxis, :]
+        + torch.matmul(L[..., torch.newaxis, :, :], fixed_samples[..., torch.newaxis]).squeeze()
+    )
+    return _logehvi(loss_vals_from_qmc, non_dominated_lower_bounds, non_dominated_upper_bounds)
+
+
 def standard_logei(z: torch.Tensor) -> torch.Tensor:
     # Return E_{x ~ N(0, 1)}[max(0, x+z)]
 
