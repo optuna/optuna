@@ -193,7 +193,7 @@ class WilcoxonPruner(BasePruner):
 
         diff_values = step_values[idx1] - best_step_values[idx2]
 
-        if len(diff_values) < self._n_startup_steps:
+        if len(diff_values) < max(2, self._n_startup_steps):
             return False
 
         if study.direction == StudyDirection.MAXIMIZE:
