@@ -138,7 +138,7 @@ class WilcoxonPruner(BasePruner):
         p_threshold: float = 0.1,
         n_startup_steps: int = 2,
     ) -> None:
-        if n_startup_steps < 0:
+        if n_startup_steps < 0:  # TODO: Consider changing the RHS to 2.
             raise ValueError(f"n_startup_steps must be nonnegative but got {n_startup_steps}.")
         if not 0.0 <= p_threshold <= 1.0:
             raise ValueError(f"p_threshold must be between 0 and 1 but got {p_threshold}.")
