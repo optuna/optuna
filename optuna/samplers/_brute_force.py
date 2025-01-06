@@ -96,6 +96,14 @@ class _TreeNode:
             [child.count_unexpanded(exclude_running) for child in self.children.values()],
             dtype=np.float64,
         )
+        if any(
+            not value.is_running and weights[i] > 0
+            for i, value in enumerate(self.children.values())
+        ):
+            # Prioritize picking non-running and unexpanded nodes.
+            for i, child in enumerate(self.children.values()):
+                if child.is_running:
+                    weights[i] = 0.0
         weights /= weights.sum()
         return rng.choice(list(self.children.keys()), p=weights)
 
