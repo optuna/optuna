@@ -82,6 +82,7 @@ class GrpcStorageProxy(BaseStorage):
         self._stub = api_pb2_grpc.StorageServiceStub(
             grpc.insecure_channel(f"{self._host}:{self._port}")
         )  # type: ignore
+        self._cache = GrpcClientCache(self._stub)
 
     def create_new_study(
         self, directions: Sequence[StudyDirection], study_name: str | None = None
