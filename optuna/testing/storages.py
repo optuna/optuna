@@ -5,7 +5,6 @@ from types import TracebackType
 from typing import Any
 from typing import IO
 from typing import TYPE_CHECKING
-import uuid
 
 import fakeredis
 
@@ -90,7 +89,7 @@ class StorageSupplier:
         elif self.storage_specifier == "grpc":
             self.tempfile = NamedTemporaryFilePool().tempfile()
             url = "sqlite:///{}".format(self.tempfile.name)
-            port = 13000 + uuid.uuid4().int % 1000
+            port = self.extra_args.get("port", 13000)
 
             self.server = optuna.storages._grpc.server.make_server(
                 optuna.storages.RDBStorage(url), "localhost", port
