@@ -464,7 +464,9 @@ def run_grpc_proxy_server(
             run_grpc_proxy_server(storage, host="localhost", port=13000)
 
         Please refer to the client class :class:`~optuna.storages.GrpcStorageProxy` for
-        the client usage.
+        the client usage. Please use :func:`~optuna.storages.get_storage` instead of
+        :class:`~optuna.storages.RDBStorage` since ``RDBStorage`` by itself does not use cache in
+        process and it may cause significant slowdown.
 
     Args:
         storage: A storage object to proxy.
