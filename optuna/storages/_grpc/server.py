@@ -4,6 +4,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 import json
 import threading
+from typing import TYPE_CHECKING
 
 from optuna import logging
 from optuna._experimental import experimental_func
@@ -17,22 +18,24 @@ from optuna.trial._frozen import FrozenTrial
 from optuna.trial._state import TrialState
 
 
-if _imports.is_successful():
-    from optuna.storages._grpc.grpc_imports import api_pb2
-    from optuna.storages._grpc.grpc_imports import api_pb2_grpc
-    from optuna.storages._grpc.grpc_imports import grpc
-    from optuna.storages._grpc.grpc_imports import StorageServiceServicer
-else:
+if TYPE_CHECKING:
+    import grpc
 
-    class StorageServiceServicer:  # type: ignore
-        pass
+    from optuna.storages._grpc.auto_generated import api_pb2
+    from optuna.storages._grpc.auto_generated import api_pb2_grpc
+else:
+    from optuna._imports import _LazyImport
+
+    api_pb2 = _LazyImport("optuna.storages._grpc.auto_generated.api_pb2")
+    api_pb2_grpc = _LazyImport("optuna.storages._grpc.auto_generated.api_pb2_grpc")
+    grpc = _LazyImport("grpc")
 
 
 _logger = logging.get_logger(__name__)
 DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S.%f"
 
 
-class OptunaStorageProxyService(StorageServiceServicer):
+class OptunaStorageProxyService(api_pb2_grpc.StorageServiceServicer):
     def __init__(self, storage: BaseStorage) -> None:
         _imports.check()
         self._backend = storage

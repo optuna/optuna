@@ -6,6 +6,7 @@ import copy
 import json
 import threading
 from typing import Any
+from typing import TYPE_CHECKING
 import uuid
 
 from optuna._experimental import experimental_class
@@ -24,10 +25,17 @@ from optuna.trial._frozen import FrozenTrial
 from optuna.trial._state import TrialState
 
 
-if _imports.is_successful():
-    from optuna.storages._grpc.grpc_imports import api_pb2
-    from optuna.storages._grpc.grpc_imports import api_pb2_grpc
-    from optuna.storages._grpc.grpc_imports import grpc
+if TYPE_CHECKING:
+    import grpc
+
+    from optuna.storages._grpc.auto_generated import api_pb2
+    from optuna.storages._grpc.auto_generated import api_pb2_grpc
+else:
+    from optuna._imports import _LazyImport
+
+    api_pb2 = _LazyImport("optuna.storages._grpc.auto_generated.api_pb2")
+    api_pb2_grpc = _LazyImport("optuna.storages._grpc.auto_generated.api_pb2_grpc")
+    grpc = _LazyImport("grpc")
 
 
 @experimental_class("4.2.0")
