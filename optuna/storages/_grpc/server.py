@@ -34,314 +34,328 @@ _logger = logging.get_logger(__name__)
 DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S.%f"
 
 
-class OptunaStorageProxyService(api_pb2_grpc.StorageServiceServicer):
-    def __init__(self, storage: BaseStorage) -> None:
-        self._backend = storage
-        self._lock = threading.Lock()
+def make_server(
+    storage: BaseStorage, host: str, port: int, thread_pool: ThreadPoolExecutor | None = None
+) -> grpc.Server:
+    class OptunaStorageProxyService(api_pb2_grpc.StorageServiceServicer):
+        def __init__(self, storage: BaseStorage) -> None:
+            self._backend = storage
+            self._lock = threading.Lock()
 
-    def CreateNewStudy(
-        self,
-        request: api_pb2.CreateNewStudyRequest,
-        context: grpc.ServicerContext,
-    ) -> api_pb2.CreateNewStudyReply:
-        directions = [
-            StudyDirection.MINIMIZE if d == api_pb2.MINIMIZE else StudyDirection.MAXIMIZE
-            for d in request.directions
-        ]
-        study_name = request.study_name
-
-        try:
-            study_id = self._backend.create_new_study(directions=directions, study_name=study_name)
-        except DuplicatedStudyError as e:
-            context.abort(code=grpc.StatusCode.ALREADY_EXISTS, details=str(e))
-        return api_pb2.CreateNewStudyReply(study_id=study_id)
-
-    def DeleteStudy(
-        self,
-        request: api_pb2.DeleteStudyRequest,
-        context: grpc.ServicerContext,
-    ) -> api_pb2.DeleteStudyReply:
-        study_id = request.study_id
-        try:
-            self._backend.delete_study(study_id)
-        except KeyError as e:
-            context.abort(code=grpc.StatusCode.NOT_FOUND, details=str(e))
-        return api_pb2.DeleteStudyReply()
-
-    def SetStudyUserAttribute(
-        self,
-        request: api_pb2.SetStudyUserAttributeRequest,
-        context: grpc.ServicerContext,
-    ) -> api_pb2.SetStudyUserAttributeReply:
-        try:
-            self._backend.set_study_user_attr(
-                request.study_id, request.key, json.loads(request.value)
-            )
-        except KeyError as e:
-            context.abort(code=grpc.StatusCode.NOT_FOUND, details=str(e))
-        return api_pb2.SetStudyUserAttributeReply()
-
-    def SetStudySystemAttribute(
-        self,
-        request: api_pb2.SetStudySystemAttributeRequest,
-        context: grpc.ServicerContext,
-    ) -> api_pb2.SetStudySystemAttributeReply:
-        try:
-            self._backend.set_study_system_attr(
-                request.study_id, request.key, json.loads(request.value)
-            )
-        except KeyError as e:
-            context.abort(code=grpc.StatusCode.NOT_FOUND, details=str(e))
-        return api_pb2.SetStudySystemAttributeReply()
-
-    def GetStudyIdFromName(
-        self,
-        request: api_pb2.GetStudyIdFromNameRequest,
-        context: grpc.ServicerContext,
-    ) -> api_pb2.GetStudyIdFromNameReply:
-        try:
-            study_id = self._backend.get_study_id_from_name(request.study_name)
-        except KeyError as e:
-            context.abort(code=grpc.StatusCode.NOT_FOUND, details=str(e))
-        return api_pb2.GetStudyIdFromNameReply(study_id=study_id)
-
-    def GetStudyNameFromId(
-        self,
-        request: api_pb2.GetStudyNameFromIdRequest,
-        context: grpc.ServicerContext,
-    ) -> api_pb2.GetStudyNameFromIdReply:
-        study_id = request.study_id
-
-        try:
-            name = self._backend.get_study_name_from_id(study_id)
-        except KeyError as e:
-            context.abort(code=grpc.StatusCode.NOT_FOUND, details=str(e))
-        assert name is not None
-        return api_pb2.GetStudyNameFromIdReply(study_name=name)
-
-    def GetStudyDirections(
-        self,
-        request: api_pb2.GetStudyDirectionsRequest,
-        context: grpc.ServicerContext,
-    ) -> api_pb2.GetStudyDirectionsReply:
-        study_id = request.study_id
-
-        try:
-            directions = self._backend.get_study_directions(study_id)
-        except KeyError as e:
-            context.abort(code=grpc.StatusCode.NOT_FOUND, details=str(e))
-
-        assert directions is not None
-        return api_pb2.GetStudyDirectionsReply(
-            directions=[
-                api_pb2.MINIMIZE if d == StudyDirection.MINIMIZE else api_pb2.MAXIMIZE
-                for d in directions
+        def CreateNewStudy(
+            self,
+            request: api_pb2.CreateNewStudyRequest,
+            context: grpc.ServicerContext,
+        ) -> api_pb2.CreateNewStudyReply:
+            directions = [
+                StudyDirection.MINIMIZE if d == api_pb2.MINIMIZE else StudyDirection.MAXIMIZE
+                for d in request.directions
             ]
-        )
+            study_name = request.study_name
 
-    def GetStudyUserAttributes(
-        self,
-        request: api_pb2.GetStudyUserAttributesRequest,
-        context: grpc.ServicerContext,
-    ) -> api_pb2.GetStudyUserAttributesReply:
-        try:
-            attributes = self._backend.get_study_user_attrs(request.study_id)
-        except KeyError as e:
-            context.abort(code=grpc.StatusCode.NOT_FOUND, details=str(e))
-        return api_pb2.GetStudyUserAttributesReply(
-            user_attributes={key: json.dumps(value) for key, value in attributes.items()}
-        )
-
-    def GetStudySystemAttributes(
-        self,
-        request: api_pb2.GetStudySystemAttributesRequest,
-        context: grpc.ServicerContext,
-    ) -> api_pb2.GetStudySystemAttributesReply:
-        try:
-            attributes = self._backend.get_study_system_attrs(request.study_id)
-        except KeyError as e:
-            context.abort(code=grpc.StatusCode.NOT_FOUND, details=str(e))
-        return api_pb2.GetStudySystemAttributesReply(
-            system_attributes={key: json.dumps(value) for key, value in attributes.items()}
-        )
-
-    def GetAllStudies(
-        self,
-        request: api_pb2.GetAllStudiesRequest,
-        context: grpc.ServicerContext,
-    ) -> api_pb2.GetAllStudiesReply:
-        studies = self._backend.get_all_studies()
-        return api_pb2.GetAllStudiesReply(
-            studies=[
-                api_pb2.Study(
-                    study_id=study._study_id,
-                    study_name=study.study_name,
-                    directions=[
-                        api_pb2.MINIMIZE if d == StudyDirection.MINIMIZE else api_pb2.MAXIMIZE
-                        for d in study.directions
-                    ],
-                    user_attributes={
-                        key: json.dumps(value) for key, value in study.user_attrs.items()
-                    },
-                    system_attributes={
-                        key: json.dumps(value) for key, value in study.system_attrs.items()
-                    },
+            try:
+                study_id = self._backend.create_new_study(
+                    directions=directions, study_name=study_name
                 )
-                for study in studies
+            except DuplicatedStudyError as e:
+                context.abort(code=grpc.StatusCode.ALREADY_EXISTS, details=str(e))
+            return api_pb2.CreateNewStudyReply(study_id=study_id)
+
+        def DeleteStudy(
+            self,
+            request: api_pb2.DeleteStudyRequest,
+            context: grpc.ServicerContext,
+        ) -> api_pb2.DeleteStudyReply:
+            study_id = request.study_id
+            try:
+                self._backend.delete_study(study_id)
+            except KeyError as e:
+                context.abort(code=grpc.StatusCode.NOT_FOUND, details=str(e))
+            return api_pb2.DeleteStudyReply()
+
+        def SetStudyUserAttribute(
+            self,
+            request: api_pb2.SetStudyUserAttributeRequest,
+            context: grpc.ServicerContext,
+        ) -> api_pb2.SetStudyUserAttributeReply:
+            try:
+                self._backend.set_study_user_attr(
+                    request.study_id, request.key, json.loads(request.value)
+                )
+            except KeyError as e:
+                context.abort(code=grpc.StatusCode.NOT_FOUND, details=str(e))
+            return api_pb2.SetStudyUserAttributeReply()
+
+        def SetStudySystemAttribute(
+            self,
+            request: api_pb2.SetStudySystemAttributeRequest,
+            context: grpc.ServicerContext,
+        ) -> api_pb2.SetStudySystemAttributeReply:
+            try:
+                self._backend.set_study_system_attr(
+                    request.study_id, request.key, json.loads(request.value)
+                )
+            except KeyError as e:
+                context.abort(code=grpc.StatusCode.NOT_FOUND, details=str(e))
+            return api_pb2.SetStudySystemAttributeReply()
+
+        def GetStudyIdFromName(
+            self,
+            request: api_pb2.GetStudyIdFromNameRequest,
+            context: grpc.ServicerContext,
+        ) -> api_pb2.GetStudyIdFromNameReply:
+            try:
+                study_id = self._backend.get_study_id_from_name(request.study_name)
+            except KeyError as e:
+                context.abort(code=grpc.StatusCode.NOT_FOUND, details=str(e))
+            return api_pb2.GetStudyIdFromNameReply(study_id=study_id)
+
+        def GetStudyNameFromId(
+            self,
+            request: api_pb2.GetStudyNameFromIdRequest,
+            context: grpc.ServicerContext,
+        ) -> api_pb2.GetStudyNameFromIdReply:
+            study_id = request.study_id
+
+            try:
+                name = self._backend.get_study_name_from_id(study_id)
+            except KeyError as e:
+                context.abort(code=grpc.StatusCode.NOT_FOUND, details=str(e))
+            assert name is not None
+            return api_pb2.GetStudyNameFromIdReply(study_name=name)
+
+        def GetStudyDirections(
+            self,
+            request: api_pb2.GetStudyDirectionsRequest,
+            context: grpc.ServicerContext,
+        ) -> api_pb2.GetStudyDirectionsReply:
+            study_id = request.study_id
+
+            try:
+                directions = self._backend.get_study_directions(study_id)
+            except KeyError as e:
+                context.abort(code=grpc.StatusCode.NOT_FOUND, details=str(e))
+
+            assert directions is not None
+            return api_pb2.GetStudyDirectionsReply(
+                directions=[
+                    api_pb2.MINIMIZE if d == StudyDirection.MINIMIZE else api_pb2.MAXIMIZE
+                    for d in directions
+                ]
+            )
+
+        def GetStudyUserAttributes(
+            self,
+            request: api_pb2.GetStudyUserAttributesRequest,
+            context: grpc.ServicerContext,
+        ) -> api_pb2.GetStudyUserAttributesReply:
+            try:
+                attributes = self._backend.get_study_user_attrs(request.study_id)
+            except KeyError as e:
+                context.abort(code=grpc.StatusCode.NOT_FOUND, details=str(e))
+            return api_pb2.GetStudyUserAttributesReply(
+                user_attributes={key: json.dumps(value) for key, value in attributes.items()}
+            )
+
+        def GetStudySystemAttributes(
+            self,
+            request: api_pb2.GetStudySystemAttributesRequest,
+            context: grpc.ServicerContext,
+        ) -> api_pb2.GetStudySystemAttributesReply:
+            try:
+                attributes = self._backend.get_study_system_attrs(request.study_id)
+            except KeyError as e:
+                context.abort(code=grpc.StatusCode.NOT_FOUND, details=str(e))
+            return api_pb2.GetStudySystemAttributesReply(
+                system_attributes={key: json.dumps(value) for key, value in attributes.items()}
+            )
+
+        def GetAllStudies(
+            self,
+            request: api_pb2.GetAllStudiesRequest,
+            context: grpc.ServicerContext,
+        ) -> api_pb2.GetAllStudiesReply:
+            studies = self._backend.get_all_studies()
+            return api_pb2.GetAllStudiesReply(
+                studies=[
+                    api_pb2.Study(
+                        study_id=study._study_id,
+                        study_name=study.study_name,
+                        directions=[
+                            api_pb2.MINIMIZE if d == StudyDirection.MINIMIZE else api_pb2.MAXIMIZE
+                            for d in study.directions
+                        ],
+                        user_attributes={
+                            key: json.dumps(value) for key, value in study.user_attrs.items()
+                        },
+                        system_attributes={
+                            key: json.dumps(value) for key, value in study.system_attrs.items()
+                        },
+                    )
+                    for study in studies
+                ]
+            )
+
+        def CreateNewTrial(
+            self,
+            request: api_pb2.CreateNewTrialRequest,
+            context: grpc.ServicerContext,
+        ) -> api_pb2.CreateNewTrialReply:
+            study_id = request.study_id
+
+            template_trial = None
+            if not request.template_trial_is_none:
+                template_trial = _from_proto_trial(request.template_trial)
+
+            try:
+                trial_id = self._backend.create_new_trial(study_id, template_trial)
+            except KeyError as e:
+                context.abort(code=grpc.StatusCode.NOT_FOUND, details=str(e))
+
+            return api_pb2.CreateNewTrialReply(trial_id=trial_id)
+
+        def SetTrialParameter(
+            self,
+            request: api_pb2.SetTrialParameterRequest,
+            context: grpc.ServicerContext,
+        ) -> api_pb2.SetTrialParameterReply:
+            trial_id = request.trial_id
+            param_name = request.param_name
+            param_value_internal = request.param_value_internal
+            distribution = json_to_distribution(request.distribution)
+            try:
+                self._backend.set_trial_param(
+                    trial_id, param_name, param_value_internal, distribution
+                )
+            except KeyError as e:
+                context.abort(code=grpc.StatusCode.NOT_FOUND, details=str(e))
+            except RuntimeError as e:
+                context.abort(code=grpc.StatusCode.FAILED_PRECONDITION, details=str(e))
+            except ValueError as e:
+                context.abort(code=grpc.StatusCode.INVALID_ARGUMENT, details=str(e))
+            return api_pb2.SetTrialParameterReply()
+
+        def GetTrialIdFromStudyIdTrialNumber(
+            self,
+            request: api_pb2.GetTrialIdFromStudyIdTrialNumberRequest,
+            context: grpc.ServicerContext,
+        ) -> api_pb2.GetTrialIdFromStudyIdTrialNumberReply:
+            study_id = request.study_id
+            trial_number = request.trial_number
+
+            try:
+                trial_id = self._backend.get_trial_id_from_study_id_trial_number(
+                    study_id, trial_number
+                )
+            except KeyError as e:
+                context.abort(code=grpc.StatusCode.NOT_FOUND, details=str(e))
+            return api_pb2.GetTrialIdFromStudyIdTrialNumberReply(trial_id=trial_id)
+
+        def SetTrialStateValues(
+            self,
+            request: api_pb2.SetTrialStateValuesRequest,
+            context: grpc.ServicerContext,
+        ) -> api_pb2.SetTrialStateValuesReply:
+            trial_id = request.trial_id
+            state = request.state
+            values = request.values
+            try:
+                trial_updated = self._backend.set_trial_state_values(
+                    trial_id, _from_proto_trial_state(state), values
+                )
+            except KeyError as e:
+                context.abort(code=grpc.StatusCode.NOT_FOUND, details=str(e))
+            except RuntimeError as e:
+                context.abort(code=grpc.StatusCode.FAILED_PRECONDITION, details=str(e))
+            return api_pb2.SetTrialStateValuesReply(trial_updated=trial_updated)
+
+        def SetTrialIntermediateValue(
+            self,
+            request: api_pb2.SetTrialIntermediateValueRequest,
+            context: grpc.ServicerContext,
+        ) -> api_pb2.SetTrialIntermediateValueReply:
+            trial_id = request.trial_id
+            step = request.step
+            intermediate_value = request.intermediate_value
+            try:
+                self._backend.set_trial_intermediate_value(trial_id, step, intermediate_value)
+            except KeyError as e:
+                context.abort(code=grpc.StatusCode.NOT_FOUND, details=str(e))
+            except RuntimeError as e:
+                context.abort(code=grpc.StatusCode.FAILED_PRECONDITION, details=str(e))
+            return api_pb2.SetTrialIntermediateValueReply()
+
+        def SetTrialUserAttribute(
+            self,
+            request: api_pb2.SetTrialUserAttributeRequest,
+            context: grpc.ServicerContext,
+        ) -> api_pb2.SetTrialUserAttributeReply:
+            trial_id = request.trial_id
+            key = request.key
+            value = json.loads(request.value)
+            try:
+                self._backend.set_trial_user_attr(trial_id, key, value)
+            except KeyError as e:
+                context.abort(code=grpc.StatusCode.NOT_FOUND, details=str(e))
+            except RuntimeError as e:
+                context.abort(code=grpc.StatusCode.FAILED_PRECONDITION, details=str(e))
+            return api_pb2.SetTrialUserAttributeReply()
+
+        def SetTrialSystemAttribute(
+            self,
+            request: api_pb2.SetTrialSystemAttributeRequest,
+            context: grpc.ServicerContext,
+        ) -> api_pb2.SetTrialSystemAttributeReply:
+            trial_id = request.trial_id
+            key = request.key
+            value = json.loads(request.value)
+            try:
+                self._backend.set_trial_system_attr(trial_id, key, value)
+            except KeyError as e:
+                context.abort(code=grpc.StatusCode.NOT_FOUND, details=str(e))
+            except RuntimeError as e:
+                context.abort(code=grpc.StatusCode.FAILED_PRECONDITION, details=str(e))
+            return api_pb2.SetTrialSystemAttributeReply()
+
+        def GetTrial(
+            self,
+            request: api_pb2.GetTrialRequest,
+            context: grpc.ServicerContext,
+        ) -> api_pb2.GetTrialReply:
+            trial_id = request.trial_id
+            try:
+                trial = self._backend.get_trial(trial_id)
+            except KeyError as e:
+                context.abort(code=grpc.StatusCode.NOT_FOUND, details=str(e))
+
+            return api_pb2.GetTrialReply(trial=_to_proto_trial(trial))
+
+        def GetTrials(
+            self,
+            request: api_pb2.GetTrialsRequest,
+            context: grpc.ServicerContext,
+        ) -> api_pb2.GetTrialsReply:
+            study_id = request.study_id
+            included_trial_ids = set(request.included_trial_ids)
+            trial_id_greater_than = request.trial_id_greater_than
+            try:
+                trials = self._backend.get_all_trials(study_id, deepcopy=False)
+            except KeyError as e:
+                context.abort(code=grpc.StatusCode.NOT_FOUND, details=str(e))
+
+            filtered_trials = [
+                _to_proto_trial(t)
+                for t in trials
+                if t._trial_id > trial_id_greater_than or t._trial_id in included_trial_ids
             ]
-        )
+            return api_pb2.GetTrialsReply(trials=filtered_trials)
 
-    def CreateNewTrial(
-        self,
-        request: api_pb2.CreateNewTrialRequest,
-        context: grpc.ServicerContext,
-    ) -> api_pb2.CreateNewTrialReply:
-        study_id = request.study_id
-
-        template_trial = None
-        if not request.template_trial_is_none:
-            template_trial = _from_proto_trial(request.template_trial)
-
-        try:
-            trial_id = self._backend.create_new_trial(study_id, template_trial)
-        except KeyError as e:
-            context.abort(code=grpc.StatusCode.NOT_FOUND, details=str(e))
-
-        return api_pb2.CreateNewTrialReply(trial_id=trial_id)
-
-    def SetTrialParameter(
-        self,
-        request: api_pb2.SetTrialParameterRequest,
-        context: grpc.ServicerContext,
-    ) -> api_pb2.SetTrialParameterReply:
-        trial_id = request.trial_id
-        param_name = request.param_name
-        param_value_internal = request.param_value_internal
-        distribution = json_to_distribution(request.distribution)
-        try:
-            self._backend.set_trial_param(trial_id, param_name, param_value_internal, distribution)
-        except KeyError as e:
-            context.abort(code=grpc.StatusCode.NOT_FOUND, details=str(e))
-        except RuntimeError as e:
-            context.abort(code=grpc.StatusCode.FAILED_PRECONDITION, details=str(e))
-        except ValueError as e:
-            context.abort(code=grpc.StatusCode.INVALID_ARGUMENT, details=str(e))
-        return api_pb2.SetTrialParameterReply()
-
-    def GetTrialIdFromStudyIdTrialNumber(
-        self,
-        request: api_pb2.GetTrialIdFromStudyIdTrialNumberRequest,
-        context: grpc.ServicerContext,
-    ) -> api_pb2.GetTrialIdFromStudyIdTrialNumberReply:
-        study_id = request.study_id
-        trial_number = request.trial_number
-
-        try:
-            trial_id = self._backend.get_trial_id_from_study_id_trial_number(
-                study_id, trial_number
-            )
-        except KeyError as e:
-            context.abort(code=grpc.StatusCode.NOT_FOUND, details=str(e))
-        return api_pb2.GetTrialIdFromStudyIdTrialNumberReply(trial_id=trial_id)
-
-    def SetTrialStateValues(
-        self,
-        request: api_pb2.SetTrialStateValuesRequest,
-        context: grpc.ServicerContext,
-    ) -> api_pb2.SetTrialStateValuesReply:
-        trial_id = request.trial_id
-        state = request.state
-        values = request.values
-        try:
-            trial_updated = self._backend.set_trial_state_values(
-                trial_id, _from_proto_trial_state(state), values
-            )
-        except KeyError as e:
-            context.abort(code=grpc.StatusCode.NOT_FOUND, details=str(e))
-        except RuntimeError as e:
-            context.abort(code=grpc.StatusCode.FAILED_PRECONDITION, details=str(e))
-        return api_pb2.SetTrialStateValuesReply(trial_updated=trial_updated)
-
-    def SetTrialIntermediateValue(
-        self,
-        request: api_pb2.SetTrialIntermediateValueRequest,
-        context: grpc.ServicerContext,
-    ) -> api_pb2.SetTrialIntermediateValueReply:
-        trial_id = request.trial_id
-        step = request.step
-        intermediate_value = request.intermediate_value
-        try:
-            self._backend.set_trial_intermediate_value(trial_id, step, intermediate_value)
-        except KeyError as e:
-            context.abort(code=grpc.StatusCode.NOT_FOUND, details=str(e))
-        except RuntimeError as e:
-            context.abort(code=grpc.StatusCode.FAILED_PRECONDITION, details=str(e))
-        return api_pb2.SetTrialIntermediateValueReply()
-
-    def SetTrialUserAttribute(
-        self,
-        request: api_pb2.SetTrialUserAttributeRequest,
-        context: grpc.ServicerContext,
-    ) -> api_pb2.SetTrialUserAttributeReply:
-        trial_id = request.trial_id
-        key = request.key
-        value = json.loads(request.value)
-        try:
-            self._backend.set_trial_user_attr(trial_id, key, value)
-        except KeyError as e:
-            context.abort(code=grpc.StatusCode.NOT_FOUND, details=str(e))
-        except RuntimeError as e:
-            context.abort(code=grpc.StatusCode.FAILED_PRECONDITION, details=str(e))
-        return api_pb2.SetTrialUserAttributeReply()
-
-    def SetTrialSystemAttribute(
-        self,
-        request: api_pb2.SetTrialSystemAttributeRequest,
-        context: grpc.ServicerContext,
-    ) -> api_pb2.SetTrialSystemAttributeReply:
-        trial_id = request.trial_id
-        key = request.key
-        value = json.loads(request.value)
-        try:
-            self._backend.set_trial_system_attr(trial_id, key, value)
-        except KeyError as e:
-            context.abort(code=grpc.StatusCode.NOT_FOUND, details=str(e))
-        except RuntimeError as e:
-            context.abort(code=grpc.StatusCode.FAILED_PRECONDITION, details=str(e))
-        return api_pb2.SetTrialSystemAttributeReply()
-
-    def GetTrial(
-        self,
-        request: api_pb2.GetTrialRequest,
-        context: grpc.ServicerContext,
-    ) -> api_pb2.GetTrialReply:
-        trial_id = request.trial_id
-        try:
-            trial = self._backend.get_trial(trial_id)
-        except KeyError as e:
-            context.abort(code=grpc.StatusCode.NOT_FOUND, details=str(e))
-
-        return api_pb2.GetTrialReply(trial=_to_proto_trial(trial))
-
-    def GetTrials(
-        self,
-        request: api_pb2.GetTrialsRequest,
-        context: grpc.ServicerContext,
-    ) -> api_pb2.GetTrialsReply:
-        study_id = request.study_id
-        included_trial_ids = set(request.included_trial_ids)
-        trial_id_greater_than = request.trial_id_greater_than
-        try:
-            trials = self._backend.get_all_trials(study_id, deepcopy=False)
-        except KeyError as e:
-            context.abort(code=grpc.StatusCode.NOT_FOUND, details=str(e))
-
-        filtered_trials = [
-            _to_proto_trial(t)
-            for t in trials
-            if t._trial_id > trial_id_greater_than or t._trial_id in included_trial_ids
-        ]
-        return api_pb2.GetTrialsReply(trials=filtered_trials)
+    server = grpc.server(thread_pool or ThreadPoolExecutor(max_workers=10))
+    api_pb2_grpc.add_StorageServiceServicer_to_server(
+        OptunaStorageProxyService(storage), server
+    )  # type: ignore
+    server.add_insecure_port(f"{host}:{port}")
+    return server
 
 
 def _to_proto_trial_state(state: TrialState) -> api_pb2.TrialState.ValueType:
@@ -429,17 +443,6 @@ def _from_proto_trial(trial: api_pb2.Trial) -> FrozenTrial:
         system_attrs={key: json.loads(value) for key, value in trial.system_attributes.items()},
         intermediate_values={step: value for step, value in trial.intermediate_values.items()},
     )
-
-
-def make_server(
-    storage: BaseStorage, host: str, port: int, thread_pool: ThreadPoolExecutor | None = None
-) -> grpc.Server:
-    server = grpc.server(thread_pool or ThreadPoolExecutor(max_workers=10))
-    api_pb2_grpc.add_StorageServiceServicer_to_server(
-        OptunaStorageProxyService(storage), server
-    )  # type: ignore
-    server.add_insecure_port(f"{host}:{port}")
-    return server
 
 
 @experimental_func("4.2.0")
