@@ -15,7 +15,6 @@ from optuna.distributions import distribution_to_json
 from optuna.exceptions import DuplicatedStudyError
 from optuna.storages._base import BaseStorage
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
-from optuna.storages._grpc.grpc_imports import _imports
 from optuna.storages._grpc.server import _from_proto_trial
 from optuna.storages._grpc.server import _to_proto_trial
 from optuna.storages._grpc.server import _to_proto_trial_state
@@ -69,7 +68,6 @@ class GrpcStorageProxy(BaseStorage):
     """
 
     def __init__(self, *, host: str = "localhost", port: int = 13000) -> None:
-        _imports.check()
         self._stub = api_pb2_grpc.StorageServiceStub(
             grpc.insecure_channel(
                 f"{host}:{port}",

@@ -12,7 +12,6 @@ from optuna.distributions import distribution_to_json
 from optuna.distributions import json_to_distribution
 from optuna.exceptions import DuplicatedStudyError
 from optuna.storages import BaseStorage
-from optuna.storages._grpc.grpc_imports import _imports
 from optuna.study._study_direction import StudyDirection
 from optuna.trial._frozen import FrozenTrial
 from optuna.trial._state import TrialState
@@ -37,7 +36,6 @@ DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S.%f"
 
 class OptunaStorageProxyService(api_pb2_grpc.StorageServiceServicer):
     def __init__(self, storage: BaseStorage) -> None:
-        _imports.check()
         self._backend = storage
         self._lock = threading.Lock()
 
