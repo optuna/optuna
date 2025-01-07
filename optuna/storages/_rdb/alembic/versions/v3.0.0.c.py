@@ -6,6 +6,8 @@ Create Date: 2022-05-16 17:17:28.810792
 
 """
 
+from __future__ import annotations
+
 import enum
 
 import numpy as np
@@ -13,8 +15,6 @@ from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import orm
-from typing import Optional
-from typing import Tuple
 
 try:
     from sqlalchemy.orm import declarative_base
@@ -54,7 +54,7 @@ class IntermediateValueModel(BaseModel):
     def intermediate_value_to_stored_repr(
         cls,
         value: float,
-    ) -> Tuple[Optional[float], TrialIntermediateValueType]:
+    ) -> tuple[float | None, TrialIntermediateValueType]:
         if np.isnan(value):
             return (None, cls.TrialIntermediateValueType.NAN)
         elif value == float("inf"):

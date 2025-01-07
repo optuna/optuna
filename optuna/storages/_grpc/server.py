@@ -34,6 +34,7 @@ DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S.%f"
 
 class OptunaStorageProxyService(StorageServiceServicer):
     def __init__(self, storage: BaseStorage) -> None:
+        _imports.check()
         self._backend = storage
         self._lock = threading.Lock()
 
