@@ -458,9 +458,9 @@ def run_grpc_proxy_server(
         .. code::
 
             from optuna.storages import run_grpc_proxy_server
-            from optuna.storages import RDBStorage
+            from optuna.storages import get_storage
 
-            storage = RDBStorage("sqlite:///example.db")
+            storage = get_storage("mysql+pymysql://<user>:<pass>@<host>/<dbname>[?<options>]")
             run_grpc_proxy_server(storage, host="localhost", port=13000)
 
         Please refer to the client class :class:`~optuna.storages.GrpcStorageProxy` for
