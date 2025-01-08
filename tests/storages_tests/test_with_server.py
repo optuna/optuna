@@ -1,8 +1,10 @@
+from __future__ import annotations
+
+from collections.abc import Sequence
 from concurrent.futures import ProcessPoolExecutor
 from concurrent.futures import ThreadPoolExecutor
 import os
 import pickle
-from typing import Sequence
 
 import numpy as np
 import pytest

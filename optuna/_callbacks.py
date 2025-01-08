@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Container
+from collections.abc import Container
 
 import optuna
 from optuna.trial import FrozenTrial

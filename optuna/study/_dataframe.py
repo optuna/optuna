@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import collections
 from typing import Any
-from typing import DefaultDict
 
 import optuna
 from optuna._imports import try_import
@@ -35,7 +34,7 @@ def _create_records_and_aggregate_column(
     # column_agg is an aggregator of column names.
     # Keys of column agg are attributes of `FrozenTrial` such as 'trial_id' and 'params'.
     # Values are dataframe columns such as ('trial_id', '') and ('params', 'n_layers').
-    column_agg: DefaultDict[str, set] = collections.defaultdict(set)
+    column_agg: collections.defaultdict[str, set] = collections.defaultdict(set)
     non_nested_attr = ""
 
     metric_names = study.metric_names

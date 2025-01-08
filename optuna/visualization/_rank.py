@@ -1,9 +1,9 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 import math
 import typing
 from typing import Any
-from typing import Callable
 from typing import NamedTuple
 
 import numpy as np
