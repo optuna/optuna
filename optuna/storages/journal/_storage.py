@@ -266,13 +266,13 @@ class JournalStorage(BaseStorage):
             self._sync_with_backend()
             trial_id = self._replay_result._last_created_trial_id_by_this_process
 
-        # Dump snapshot here.
-        if (
-            isinstance(self._backend, BaseJournalSnapshot)
-            and trial_id != 0
-            and trial_id % SNAPSHOT_INTERVAL == 0
-        ):
-            self._backend.save_snapshot(pickle.dumps(self._replay_result))
+            # Dump snapshot here.
+            if (
+                isinstance(self._backend, BaseJournalSnapshot)
+                and trial_id != 0
+                and trial_id % SNAPSHOT_INTERVAL == 0
+            ):
+                self._backend.save_snapshot(pickle.dumps(self._replay_result))
         return trial_id
 
     def set_trial_param(
