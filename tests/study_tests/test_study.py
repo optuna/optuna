@@ -10,7 +10,7 @@ import platform
 import threading
 import time
 from typing import Any
-from typing import Callable as typing_Callable
+from typing import Callable as TypingCallable
 from unittest.mock import Mock
 from unittest.mock import patch
 import uuid
@@ -43,7 +43,7 @@ from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
 
-CallbackFuncType = typing_Callable[[Study, FrozenTrial], None]
+CallbackFuncType = TypingCallable[[Study, FrozenTrial], None]
 
 
 def func(trial: Trial) -> float:
