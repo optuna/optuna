@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from concurrent.futures import as_completed
 from concurrent.futures import ThreadPoolExecutor
 import copy
@@ -9,7 +10,7 @@ import platform
 import threading
 import time
 from typing import Any
-from typing import Callable
+from typing import Callable as typing_Callable
 from unittest.mock import Mock
 from unittest.mock import patch
 import uuid
@@ -43,7 +44,7 @@ from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
 
-CallbackFuncType = Callable[[Study, FrozenTrial], None]
+CallbackFuncType = typing_Callable[[Study, FrozenTrial], None]
 
 
 def func(trial: Trial) -> float:
