@@ -18,6 +18,7 @@ import warnings
 import _pytest.capture
 import pytest
 
+import optuna
 from optuna import copy_study
 from optuna import create_study
 from optuna import create_trial
@@ -402,6 +403,22 @@ def test_load_study_study_name_none(storage_mode: str) -> None:
         # Ambiguous study.
         with pytest.raises(ValueError):
             load_study(study_name=None, storage=storage)
+
+
+def test_load_study_default_sampler() -> None:
+    storage = optuna.storages.InMemoryStorage()
+
+    # Single-objective
+    study_name = str(uuid.uuid4())
+    create_study(storage=storage, study_name=study_name)
+    loaded_study = load_study(study_name=study_name, storage=storage)
+    assert isinstance(loaded_study.sampler, optuna.samplers.TPESampler)
+
+    # Multi-objective
+    study_name = str(uuid.uuid4())
+    create_study(storage=storage, study_name=study_name, directions=["minimize", "maximize"])
+    loaded_study = load_study(study_name=study_name, storage=storage)
+    assert isinstance(loaded_study.sampler, optuna.samplers.NSGAIISampler)
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
