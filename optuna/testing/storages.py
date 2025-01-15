@@ -124,4 +124,6 @@ def _find_free_port() -> int:
             return port
         except OSError:
             continue
+        except RuntimeError:
+            continue
     assert False, "must not reach here"
