@@ -314,8 +314,26 @@ def test_parallel_optimize_with_sleep() -> None:
     # See: https://github.com/optuna/optuna/issues/5780
     study = optuna.create_study(sampler=samplers.BruteForceSampler(seed=42))
     study.optimize(objective, n_jobs=2)
+    expected_suggested_values = [
+        {"x": 0, "y": 0},
+        {"x": 0, "y": 1},
+        {"x": 1, "y": 0},
+    ]
+    all_suggested_values = [t.params for t in study.trials]
+    assert len(all_suggested_values) == len(expected_suggested_values)
+    for expected_value in expected_suggested_values:
+        assert expected_value in all_suggested_values
 
-    expected_suggested_values = [{"x": i, "y": j} for i in range(2) for j in range(2)]
+    study = optuna.create_study(
+        sampler=samplers.BruteForceSampler(seed=42, avoid_premature_stop=True)
+    )
+    study.optimize(objective, n_jobs=2)
+    expected_suggested_values = [
+        {"x": 0, "y": 0},
+        {"x": 0, "y": 1},
+        {"x": 1, "y": 0},
+        {"x": 1, "y": 1},
+    ]
     all_suggested_values = [t.params for t in study.trials]
     for expected_value in expected_suggested_values:
         assert expected_value in all_suggested_values
