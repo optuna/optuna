@@ -87,10 +87,11 @@ def test_tree_node_count_unexpanded() -> None:
                     1.0: _TreeNode(),
                 },
             ),
-            2: _TreeNode(),
+            2: _TreeNode(is_running=True),
         },
     )
     assert tree.count_unexpanded(exclude_running=False) == 3
+    assert tree.count_unexpanded(exclude_running=True) == 2
 
 
 def test_study_optimize_with_single_search_space() -> None:
