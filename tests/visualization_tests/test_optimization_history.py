@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 from io import BytesIO
 import math
-from typing import Sequence
 
 import numpy as np
 import pytest

@@ -1,9 +1,9 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from io import BytesIO
 import math
 from typing import Any
-from typing import Callable
 
 import numpy as np
 import pytest

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from concurrent.futures import as_completed
 from concurrent.futures import ThreadPoolExecutor
 import copy
@@ -9,7 +10,7 @@ import platform
 import threading
 import time
 from typing import Any
-from typing import Callable
+from typing import Callable as TypingCallable
 from unittest.mock import Mock
 from unittest.mock import patch
 import uuid
@@ -18,6 +19,7 @@ import warnings
 import _pytest.capture
 import pytest
 
+import optuna
 from optuna import copy_study
 from optuna import create_study
 from optuna import create_trial
@@ -42,7 +44,7 @@ from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
 
-CallbackFuncType = Callable[[Study, FrozenTrial], None]
+CallbackFuncType = TypingCallable[[Study, FrozenTrial], None]
 
 
 def func(trial: Trial) -> float:
@@ -403,6 +405,22 @@ def test_load_study_study_name_none(storage_mode: str) -> None:
         # Ambiguous study.
         with pytest.raises(ValueError):
             load_study(study_name=None, storage=storage)
+
+
+def test_load_study_default_sampler() -> None:
+    storage = optuna.storages.InMemoryStorage()
+
+    # Single-objective
+    study_name = str(uuid.uuid4())
+    create_study(storage=storage, study_name=study_name)
+    loaded_study = load_study(study_name=study_name, storage=storage)
+    assert isinstance(loaded_study.sampler, optuna.samplers.TPESampler)
+
+    # Multi-objective
+    study_name = str(uuid.uuid4())
+    create_study(storage=storage, study_name=study_name, directions=["minimize", "maximize"])
+    loaded_study = load_study(study_name=study_name, storage=storage)
+    assert isinstance(loaded_study.sampler, optuna.samplers.NSGAIISampler)
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
