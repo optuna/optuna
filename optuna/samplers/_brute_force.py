@@ -149,14 +149,17 @@ class BruteForceSampler(BaseSampler):
             that it is not recommended using this option in distributed optimization settings since
             this option cannot ensure the order of trials and may increase the number of duplicate
             suggestions during distributed optimization.
-        enforce_unique_samples:
-            If this is :obj:`True`, the sampler strictly avoids duplicate samples. Please note that
-            the sampler may stop before trying the entire search space when this option is enabled.
+        avoid_premature_stop:
+            If this is :obj:`True`, the sampler performs a strictly exhaustive search. Please note
+            that enabling this option may increase the likelihood of duplicate sampling.
+            When this option is not enabled (default), the sampler applies a looser criterion for
+            determining when to stop the search, which may result in incomplete coverage of the
+            search space. For more information, see https://github.com/optuna/optuna/issues/5780.
     """
 
-    def __init__(self, seed: int | None = None, enforce_unique_samples: bool = False) -> None:
+    def __init__(self, seed: int | None = None, avoid_premature_stop: bool = False) -> None:
         self._rng = LazyRandomState(seed)
-        self._enforce_unique_samples = enforce_unique_samples
+        self._avoid_premature_stop = avoid_premature_stop
 
     def infer_relative_search_space(
         self, study: Study, trial: FrozenTrial
@@ -201,7 +204,7 @@ class BruteForceSampler(BaseSampler):
         param_name: str,
         param_distribution: BaseDistribution,
     ) -> Any:
-        exclude_running = self._enforce_unique_samples
+        exclude_running = not self._avoid_premature_stop
 
         trials = study.get_trials(
             deepcopy=False,
@@ -233,7 +236,7 @@ class BruteForceSampler(BaseSampler):
         state: TrialState,
         values: Sequence[float] | None,
     ) -> None:
-        exclude_running = self._enforce_unique_samples
+        exclude_running = not self._avoid_premature_stop
 
         trials = study.get_trials(
             deepcopy=False,
