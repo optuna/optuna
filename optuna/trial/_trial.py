@@ -158,8 +158,8 @@ class Trial(BaseTrial):
         """
 
         distribution = FloatDistribution(low, high, log=log, step=step)
-        suggested_value = self._suggest(name, distribution)
         self._check_distribution(name, distribution)
+        suggested_value = self._suggest(name, distribution)
         return suggested_value
 
     @deprecated_func("3.0.0", "6.0.0", text=_suggest_deprecated_msg.format(args=""))
@@ -321,8 +321,8 @@ class Trial(BaseTrial):
         """
 
         distribution = IntDistribution(low=low, high=high, log=log, step=step)
-        suggested_value = int(self._suggest(name, distribution))
         self._check_distribution(name, distribution)
+        suggested_value = int(self._suggest(name, distribution))
         return suggested_value
 
     @overload
@@ -396,10 +396,11 @@ class Trial(BaseTrial):
         .. seealso::
             :ref:`configurations` tutorial describes more details and flexible usages.
         """
-        # There is no need to call self._check_distribution because
-        # CategoricalDistribution does not support dynamic value space.
 
-        return self._suggest(name, CategoricalDistribution(choices=choices))
+        distribution = CategoricalDistribution(choices=choices)
+        self._check_distribution(name, distribution)
+        suggested_value = self._suggest(name, distribution)
+        return suggested_value
 
     def report(self, value: float, step: int) -> None:
         """Report an objective function value for a given step.
@@ -619,11 +620,6 @@ class Trial(BaseTrial):
             # No need to sample if already suggested.
             distributions.check_distribution_compatibility(trial.distributions[name], distribution)
             param_value = trial.params[name]
-            warnings.warn(
-                f'In the current trial, the parameter "{name}" has already been '
-                f"Use already suggested value, `{param_value}` instead of sampling again.",
-                RuntimeWarning,
-            )
         else:
             if self._is_fixed_param(name, distribution):
                 param_value = self._fixed_params[name]
@@ -678,7 +674,11 @@ class Trial(BaseTrial):
         return distribution._contains(param_value_in_internal_repr)
 
     def _check_distribution(self, name: str, distribution: BaseDistribution) -> None:
-        old_distribution = self._cached_frozen_trial.distributions.get(name, distribution)
+        old_distribution = self._cached_frozen_trial.distributions.get(name, None)
+
+        if old_distribution is None:
+            return
+
         if old_distribution != distribution:
             warnings.warn(
                 'Inconsistent parameter values for distribution with name "{}" in the same trial! '
@@ -688,6 +688,12 @@ class Trial(BaseTrial):
                 "When the parameter values are inconsistent among calls in the trial, optuna only "
                 "uses the values of the first call and ignores all following. "
                 "Using these values: {}".format(name, old_distribution._asdict()),
+                RuntimeWarning,
+            )
+        elif old_distribution == distribution and not self._is_fixed_param(name, distribution):
+            warnings.warn(
+                f'In the current trial, the parameter "{name}" has already been '
+                f"Use already suggested value instead of sampling again.",
                 RuntimeWarning,
             )
 
