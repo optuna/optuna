@@ -692,7 +692,7 @@ class Trial(BaseTrial):
             )
         elif old_distribution == distribution and not self._is_fixed_param(name, distribution):
             warnings.warn(
-                f'In the current trial, the parameter "{name}" has already been '
+                f'In the current trial, the parameter "{name}" has already been suggested. '
                 f"Use already suggested value instead of sampling again.",
                 RuntimeWarning,
             )
