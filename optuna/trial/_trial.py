@@ -619,6 +619,11 @@ class Trial(BaseTrial):
             # No need to sample if already suggested.
             distributions.check_distribution_compatibility(trial.distributions[name], distribution)
             param_value = trial.params[name]
+            warnings.warn(
+                f'In the current trial, the parameter "{name}" has already been '
+                f"Use already suggested value, `{param_value}` instead of sampling again.",
+                RuntimeWarning,
+            )
         else:
             if self._is_fixed_param(name, distribution):
                 param_value = self._fixed_params[name]
@@ -676,11 +681,11 @@ class Trial(BaseTrial):
         old_distribution = self._cached_frozen_trial.distributions.get(name, distribution)
         if old_distribution != distribution:
             warnings.warn(
-                'Inconsistent parameter values for distribution with name "{}"! '
+                'Inconsistent parameter values for distribution with name "{}" in the same trial! '
                 "This might be a configuration mistake. "
                 "Optuna allows to call the same distribution with the same "
                 "name more than once in a trial. "
-                "When the parameter values are inconsistent optuna only "
+                "When the parameter values are inconsistent among calls in the trial, optuna only "
                 "uses the values of the first call and ignores all following. "
                 "Using these values: {}".format(name, old_distribution._asdict()),
                 RuntimeWarning,
