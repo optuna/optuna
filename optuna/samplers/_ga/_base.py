@@ -46,11 +46,11 @@ class BaseGASampler(BaseSampler, abc.ABC):
     def _get_parent_cache_key_prefix(cls) -> str:
         return cls._PARENT_CACHE_KEY_PREFIX
 
-    def __init__(self, population_size: int):
+    def __init__(self, population_size: int | None):
         self._population_size = population_size
 
     @property
-    def population_size(self) -> int:
+    def population_size(self) -> int | None:
         return self._population_size
 
     @population_size.setter
@@ -86,8 +86,8 @@ class BaseGASampler(BaseSampler, abc.ABC):
         is not set in the trial's system attributes, it will calculate and set the generation
         number.
 
-        The current generation number is defined as the maximum generation number among all
-        completed trials.
+        The current generation number depends on the maximum generation number of all completed
+        trials.
 
         Args:
             study:
@@ -104,7 +104,7 @@ class BaseGASampler(BaseSampler, abc.ABC):
 
         trials = study._get_trials(deepcopy=False, states=[TrialState.COMPLETE], use_cache=True)
 
-        max_generation, max_generation_number = 0, 0
+        max_generation, max_generation_count = 0, 0
 
         for t in reversed(trials):
             generation = t.system_attrs.get(self._get_generation_key(), -1)
@@ -113,11 +113,12 @@ class BaseGASampler(BaseSampler, abc.ABC):
                 continue
             elif generation > max_generation:
                 max_generation = generation
-                max_generation_number = 1
+                max_generation_count = 1
             else:
-                max_generation_number += 1
+                max_generation_count += 1
 
-        if max_generation_number < self._population_size:
+        assert self._population_size is not None, "Population size must be set."
+        if max_generation_count < self._population_size:
             generation = max_generation
         else:
             generation = max_generation + 1
@@ -158,18 +159,20 @@ class BaseGASampler(BaseSampler, abc.ABC):
                 Target generation number.
 
         Returns:
-            List of parent frozen trials.
+            List of parent frozen trials. If `generation == 0`, returns an empty list.
         """
         if generation == 0:
             return []
 
         study_system_attrs = study._storage.get_study_system_attrs(study._study_id)
-        cached_parent_population = study_system_attrs.get(
+        cached_parent_population_ids = study_system_attrs.get(
             self._get_parent_cache_key_prefix() + str(generation), None
         )
 
-        if cached_parent_population is not None:
-            return [study._storage.get_trial(trial_id) for trial_id in cached_parent_population]
+        if cached_parent_population_ids is not None:
+            return [
+                study._storage.get_trial(trial_id) for trial_id in cached_parent_population_ids
+            ]
         else:
             parent_population = self.select_parent(study, generation)
             study._storage.set_study_system_attr(
