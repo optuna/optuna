@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import socket
 import threading
+import time
 from types import TracebackType
 from typing import Any
 from typing import IO
@@ -106,6 +107,7 @@ class StorageSupplier:
                     proxy.get_all_studies()
                     break
                 except grpc.RpcError:
+                    time.sleep(1)
                     continue
 
             return proxy
