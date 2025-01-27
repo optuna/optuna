@@ -105,12 +105,10 @@ class StorageSupplier:
             while True:
                 try:
                     proxy.get_all_studies()
-                    break
+                    return proxy
                 except grpc.RpcError:
                     time.sleep(1)
                     continue
-
-            return proxy
         else:
             assert False
 
