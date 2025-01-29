@@ -53,11 +53,15 @@ class GPSampler(BaseSampler):
     the acquisition function to suggest the next parameters.
 
     The current implementation uses:
-        - Matern kernel with nu=2.5 (twice differentiable),
-        - Automatic relevance determination (ARD) for the length scale of each parameter,
-        - Gamma prior for inverse squared lengthscales, kernel scale, and noise variance,
-        - Log Expected Improvement (logEI) as the acquisition function, and
-        - Quasi-Monte Carlo (QMC) sampling to optimize the acquisition function.
+        - Uses Quasi-Monte Carlo (QMC) sampling to generate initial values,
+        - Performs roulette selection to favor better acquisition function values,
+        - Conducts multiple local searches:
+            - L-BFGS-B for continuous variables.
+            - Linear search for discrete variables using interpolated values.
+            - Exhaustive search for categorical variables,
+        - Matern kernel (nu=2.5) with ARD for length scale.
+        - Gamma prior for inverse squared lengthscales, kernel scale, and noise variance. and
+        - Log Expected Improvement (logEI) as the acquisition function.
 
     .. note::
         This sampler requires ``scipy`` and ``torch``.
