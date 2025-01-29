@@ -17,7 +17,7 @@ from optuna.trial import FrozenTrial
 from optuna.trial._state import TrialState
 
 
-class BaseGASAmplerTestSampler(BaseGASampler):
+class BaseGASamplerTestSampler(BaseGASampler):
     def __init__(self, population_size: int):
         super().__init__(population_size=population_size)
         self._random_sampler = RandomSampler()
@@ -49,13 +49,13 @@ class BaseGASAmplerTestSampler(BaseGASampler):
 
 
 def test_systemattr_keys() -> None:
-    assert BaseGASAmplerTestSampler._get_generation_key() == "BaseGASAmplerTestSampler:generation"
+    assert BaseGASamplerTestSampler._get_generation_key() == "BaseGASamplerTestSampler:generation"
     assert (
-        BaseGASAmplerTestSampler._get_parent_cache_key_prefix()
-        == "BaseGASAmplerTestSampler:parent:"
+        BaseGASamplerTestSampler._get_parent_cache_key_prefix()
+        == "BaseGASamplerTestSampler:parent:"
     )
 
-    test_sampler = BaseGASAmplerTestSampler(population_size=42)
+    test_sampler = BaseGASamplerTestSampler(population_size=42)
 
     assert test_sampler.population_size == 42
 
@@ -86,11 +86,11 @@ def test_systemattr_keys() -> None:
     ],
 )
 def test_get_generation(args: dict[str, Any]) -> None:
-    test_sampler = BaseGASAmplerTestSampler(population_size=args["population_size"])
+    test_sampler = BaseGASamplerTestSampler(population_size=args["population_size"])
     mock_study = Mock(
         _get_trials=Mock(
             return_value=[
-                Mock(system_attrs={"BaseGASAmplerTestSampler:generation": i})
+                Mock(system_attrs={"BaseGASamplerTestSampler:generation": i})
                 for i in args["trials"]
             ]
         )
@@ -104,7 +104,7 @@ def test_get_generation(args: dict[str, Any]) -> None:
     )
     mock_study._storage.set_trial_system_attr.assert_called_once_with(
         mock_trial._trial_id,
-        "BaseGASAmplerTestSampler:generation",
+        "BaseGASamplerTestSampler:generation",
         args["generation"],
     )
     assert len(mock_study.mock_calls) == 2  # Check if only the two calls above were made
@@ -112,7 +112,7 @@ def test_get_generation(args: dict[str, Any]) -> None:
 
 
 def test_get_generation_already_set() -> None:
-    test_sampler = BaseGASAmplerTestSampler(population_size=42)
+    test_sampler = BaseGASamplerTestSampler(population_size=42)
 
     mock_study = MagicMock()
     mock_trial = MagicMock()
@@ -153,11 +153,11 @@ def test_get_generation_already_set() -> None:
     ],
 )
 def test_get_population(args: dict[str, Any]) -> None:
-    test_sampler = BaseGASAmplerTestSampler(population_size=args["population_size"])
+    test_sampler = BaseGASamplerTestSampler(population_size=args["population_size"])
     mock_study = Mock(
         _get_trials=Mock(
             return_value=[
-                Mock(system_attrs={"BaseGASAmplerTestSampler:generation": i})
+                Mock(system_attrs={"BaseGASamplerTestSampler:generation": i})
                 for i in args["trials"]
             ]
         )
@@ -168,7 +168,7 @@ def test_get_population(args: dict[str, Any]) -> None:
 
     assert all(
         [
-            trial.system_attrs["BaseGASAmplerTestSampler:generation"] == args["generation"]
+            trial.system_attrs["BaseGASamplerTestSampler:generation"] == args["generation"]
             for trial in population
         ]
     )
@@ -182,7 +182,7 @@ def test_get_population(args: dict[str, Any]) -> None:
     [
         {
             "study_system_attrs": {
-                BaseGASAmplerTestSampler._get_parent_cache_key_prefix() + "1": [0, 1, 2]
+                BaseGASamplerTestSampler._get_parent_cache_key_prefix() + "1": [0, 1, 2]
             },
             "parent_population": [0, 1, 2],
             "generation": 1,
@@ -190,7 +190,7 @@ def test_get_population(args: dict[str, Any]) -> None:
         },
         {
             "study_system_attrs": {
-                BaseGASAmplerTestSampler._get_parent_cache_key_prefix() + "1": [0, 1, 2]
+                BaseGASamplerTestSampler._get_parent_cache_key_prefix() + "1": [0, 1, 2]
             },
             "parent_population": [3, 4, 6],
             "generation": 2,
@@ -211,13 +211,13 @@ def test_get_population(args: dict[str, Any]) -> None:
     ],
 )
 def test_get_parent_population(args: dict[str, Any]) -> None:
-    test_sampler = BaseGASAmplerTestSampler(population_size=3)
+    test_sampler = BaseGASamplerTestSampler(population_size=3)
 
     mock_study = MagicMock()
     mock_study._storage.get_study_system_attrs.return_value = args["study_system_attrs"]
 
     with patch.object(
-        BaseGASAmplerTestSampler,
+        BaseGASamplerTestSampler,
         "select_parent",
         return_value=[Mock(_trial_id=i) for i in args["parent_population"]],
     ) as mock_select_parent:
@@ -240,6 +240,6 @@ def test_get_parent_population(args: dict[str, Any]) -> None:
         mock_select_parent.assert_called_once_with(mock_study, args["generation"])
         mock_study._storage.set_study_system_attr.assert_called_once_with(
             mock_study._study_id,
-            BaseGASAmplerTestSampler._get_parent_cache_key_prefix() + str(args["generation"]),
+            BaseGASamplerTestSampler._get_parent_cache_key_prefix() + str(args["generation"]),
             [i._trial_id for i in mock_select_parent.return_value],
         )
