@@ -97,7 +97,7 @@ def test_get_generation(args: dict[str, Any]) -> None:
     )
     mock_trial = Mock(system_attrs={})
 
-    assert test_sampler.get_generation(mock_study, mock_trial) == args["generation"]
+    assert test_sampler.get_trial_generation(mock_study, mock_trial) == args["generation"]
 
     mock_study._get_trials.assert_called_once_with(
         deepcopy=False, states=[TrialState.COMPLETE], use_cache=True
@@ -120,7 +120,7 @@ def test_get_generation_already_set() -> None:
 
     mock_trial.system_attrs = {test_sampler._get_generation_key(): generation_key}
 
-    assert test_sampler.get_generation(mock_study, mock_trial) == generation_key
+    assert test_sampler.get_trial_generation(mock_study, mock_trial) == generation_key
 
 
 @pytest.mark.parametrize(

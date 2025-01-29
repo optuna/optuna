@@ -79,8 +79,8 @@ class BaseGASampler(BaseSampler, abc.ABC):
         """
         raise NotImplementedError
 
-    def get_generation(self, study: optuna.Study, trial: FrozenTrial) -> int:
-        """Get the current generation number of the given trial.
+    def get_trial_generation(self, study: optuna.Study, trial: FrozenTrial) -> int:
+        """Get the generation number of the given trial.
 
         This method returns the generation number of the specified trial. If the generation number
         is not set in the trial's system attributes, it will calculate and set the generation

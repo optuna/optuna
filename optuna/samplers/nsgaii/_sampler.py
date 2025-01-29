@@ -265,7 +265,7 @@ class NSGAIISampler(BaseGASampler):
         trial: FrozenTrial,
         search_space: dict[str, BaseDistribution],
     ) -> dict[str, Any]:
-        generation = self.get_generation(study, trial)
+        generation = self.get_trial_generation(study, trial)
         parent_population = self.get_parent_population(study, generation)
         if len(parent_population) == 0:
             return {}
