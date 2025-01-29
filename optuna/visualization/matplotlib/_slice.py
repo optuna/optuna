@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from collections import defaultdict
+from collections.abc import Callable
 import math
 from typing import Any
-from typing import Callable
 
 from optuna._experimental import experimental_func
 from optuna.study import Study

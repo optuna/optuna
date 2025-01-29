@@ -11,14 +11,21 @@ Optuna users should not use distribution classes directly, but instead use utili
    :toctree: generated/
    :nosignatures:
 
-   optuna.distributions.FloatDistribution
-   optuna.distributions.IntDistribution
-   optuna.distributions.UniformDistribution
-   optuna.distributions.LogUniformDistribution
-   optuna.distributions.DiscreteUniformDistribution
-   optuna.distributions.IntUniformDistribution
-   optuna.distributions.IntLogUniformDistribution
-   optuna.distributions.CategoricalDistribution
-   optuna.distributions.distribution_to_json
-   optuna.distributions.json_to_distribution
-   optuna.distributions.check_distribution_compatibility
+   FloatDistribution
+   IntDistribution
+   CategoricalDistribution
+   distribution_to_json
+   json_to_distribution
+   check_distribution_compatibility
+
+The following classes are deprecated and will be removed in the future.
+
+.. autosummary::
+   :toctree: generated/
+   :nosignatures:
+
+   UniformDistribution
+   LogUniformDistribution
+   DiscreteUniformDistribution
+   IntUniformDistribution
+   IntLogUniformDistribution

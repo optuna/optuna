@@ -64,7 +64,7 @@ document = [
   "ase",
   "cmaes>=0.10.0",  # optuna/samplers/_cmaes.py.
   "fvcore",
-  "kaleido",
+  "kaleido<0.4",  # TODO(nzw0301): Remove the version constraint by installing browser separately.
   "lightgbm",
   "matplotlib!=3.6.0",
   "pandas",
@@ -74,6 +74,7 @@ document = [
   "sphinx",
   "sphinx-copybutton",
   "sphinx-gallery",
+  "sphinx-notfound-page",
   "sphinx_rtd_theme>=1.2.0",
   "torch",
   "torchvision",
@@ -90,15 +91,19 @@ optional = [
   # optuna/visualization/param_importances.py.
   "scipy",  # optuna/samplers/_gp
   "torch; python_version<='3.12'", # TODO(gen740): Remove this line when 'torch', a dependency of 'optuna/_gp', supports Python 3.13
+  "grpcio",  # optuna/storages/_grpc.
+  "protobuf>=5.28.1",  # optuna/storages/_grpc.
 ]
 test = [
   "coverage",
   "fakeredis[lua]",
-  "kaleido",
+  "kaleido<0.4",  # TODO(nzw0301): Remove the version constraint by installing browser separately.
   "moto",
   "pytest",
   "scipy>=1.9.2",
   "torch; python_version<='3.12'", # TODO(gen740): Remove this line when 'torch', a dependency of 'optuna/_gp', supports Python 3.13
+  "grpcio",  # optuna/storages/_grpc.
+  "protobuf>=5.28.1",  # optuna/storages/_grpc.
 ]
 
 [project.urls]
@@ -140,6 +145,7 @@ force-exclude = '''
   | build
   | dist
   | docs
+  | optuna/storages/_grpc/auto_generated
 )/
 '''
 
@@ -152,6 +158,7 @@ skip_glob = [
   'tutorial/**/*.py',
   'docs/visualization_examples/*.py',
   'docs/visualization_matplotlib_examples/*.py',
+  'optuna/storages/_grpc/auto_generated/*.py'
 ]
 line_length = 99
 lines_after_imports = 2
@@ -166,3 +173,23 @@ markers = [
   "skip_coverage: marks tests are skipped when calculating the coverage",
   "slow: marks tests as slow (deselect with '-m \"not slow\"')",
 ]
+
+[tool.mypy]
+# Options configure mypy's strict mode.
+warn_unused_configs = true
+disallow_untyped_calls = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+no_implicit_optional = true
+warn_redundant_casts = true
+strict_equality = true
+extra_checks = true
+no_implicit_reexport = true
+
+ignore_missing_imports = true
+exclude = [".venv", "venv", "build", "docs", "tutorial", "optuna/storages/_rdb/alembic", "optuna/storages/_grpc/auto_generated"]
+
+[[tool.mypy.overrides]]
+module = 'optuna.storages._grpc.auto_generated/*'
+follow_imports = "skip"

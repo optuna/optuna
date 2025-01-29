@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from collections.abc import Callable
+import copy
 import json
 import os
 import platform
@@ -6,9 +10,6 @@ import subprocess
 from subprocess import CalledProcessError
 import tempfile
 from typing import Any
-from typing import Callable
-from typing import Optional
-from typing import Tuple
 from unittest.mock import MagicMock
 from unittest.mock import patch
 
@@ -34,6 +35,9 @@ from optuna.trial import Trial
 from optuna.trial import TrialState
 
 
+output_formats = pytest.mark.parametrize("output_format", (None, "value", "table", "json", "yaml"))
+
+
 # An example of objective functions
 def objective_func(trial: Trial) -> float:
     x = trial.suggest_float("x", -10, 10)
@@ -52,7 +56,7 @@ def objective_func_branched_search_space(trial: Trial) -> float:
 
 
 # An example of objective functions for multi-objective optimization
-def objective_func_multi_objective(trial: Trial) -> Tuple[float, float]:
+def objective_func_multi_objective(trial: Trial) -> tuple[float, float]:
     x = trial.suggest_float("x", -10, 10)
     return (x + 5) ** 2, (x - 5) ** 2
 
@@ -71,9 +75,7 @@ def _parse_output(output: str, output_format: str) -> Any:
         For JSON or YAML format, a list or a dict corresponding to ``output``.
     """
     if output_format == "value":
-        # Currently, _parse_output with output_format="value" is used only for
-        # `study-names` command.
-        return [{"name": values} for values in output.split(os.linesep)]
+        return [values.split(" ") for values in output.split(os.linesep)]
     elif output_format == "table":
         rows = output.split(os.linesep)
         assert all(len(rows[0]) == len(row) for row in rows)
@@ -94,6 +96,26 @@ def _parse_output(output: str, output_format: str) -> Any:
         return yaml.safe_load(output)
     else:
         assert False
+
+
+def _get_output(command: list[str], output_format: str) -> Any:
+    output = str(subprocess.check_output(command).decode().strip())
+    ret = _parse_output(output, output_format)
+
+    # Since keys are not given in value format, it checks matching with the output in table format.
+    if output_format == "value":
+        # NOTE(nabenabe): We cannot use this function for `test_ask_XXX` because this part executes
+        # the provided command, creating another trial for `ask` and making the output different.
+        table_command = copy.copy(command)
+        table_command += ["--format", "table"]
+        table_output = str(subprocess.check_output(table_command).decode().strip())
+        table_ret = _parse_output(table_output, "table")
+        assert len(ret) == len(table_ret)
+        for record1, record2 in zip(ret, table_ret):
+            assert " ".join(record1).strip() == " ".join(record2.values()).strip()
+        return table_ret
+
+    return ret
 
 
 @pytest.mark.skip_coverage
@@ -300,8 +322,8 @@ def test_study_set_user_attr_command() -> None:
 
 
 @pytest.mark.skip_coverage
-@pytest.mark.parametrize("output_format", (None, "table", "json", "yaml"))
-def test_study_names_command(output_format: Optional[str]) -> None:
+@output_formats
+def test_study_names_command(output_format: str | None) -> None:
     with StorageSupplier("sqlite") as storage:
         assert isinstance(storage, RDBStorage)
         storage_url = str(storage.engine.url)
@@ -324,8 +346,7 @@ def test_study_names_command(output_format: Optional[str]) -> None:
         command = ["optuna", "study-names", "--storage", storage_url]
         if output_format is not None:
             command += ["--format", output_format]
-        output = str(subprocess.check_output(command).decode().strip())
-        study_names = _parse_output(output, output_format or "value")
+        study_names = _get_output(command, output_format or "value")
 
         # Check user_attrs are not printed.
         assert len(study_names) == 1
@@ -346,8 +367,7 @@ def test_study_names_command(output_format: Optional[str]) -> None:
         command = ["optuna", "study-names", "--storage", storage_url]
         if output_format is not None:
             command += ["--format", output_format]
-        output = str(subprocess.check_output(command).decode().strip())
-        study_names = _parse_output(output, output_format or "value")
+        study_names = _get_output(command, output_format or "value")
 
         assert len(study_names) == 2
         for i, study_name in enumerate(study_names):
@@ -365,8 +385,8 @@ def test_study_names_command_without_storage_url() -> None:
 
 
 @pytest.mark.skip_coverage
-@pytest.mark.parametrize("output_format", (None, "table", "json", "yaml"))
-def test_studies_command(output_format: Optional[str]) -> None:
+@output_formats
+def test_studies_command(output_format: str | None) -> None:
     with StorageSupplier("sqlite") as storage:
         assert isinstance(storage, RDBStorage)
         storage_url = str(storage.engine.url)
@@ -379,13 +399,12 @@ def test_studies_command(output_format: Optional[str]) -> None:
         if output_format is not None:
             command += ["--format", output_format]
 
-        output = str(subprocess.check_output(command).decode().strip())
-        studies = _parse_output(output, output_format or "table")
+        studies = _get_output(command, output_format or "table")
 
         expected_keys = ["name", "direction", "n_trials", "datetime_start"]
 
         # Check user_attrs are not printed.
-        if output_format is None or output_format == "table":
+        if output_format in (None, "table", "value"):
             assert list(studies[0].keys()) == expected_keys
         else:
             assert set(studies[0].keys()) == set(expected_keys)
@@ -399,21 +418,20 @@ def test_studies_command(output_format: Optional[str]) -> None:
         study_2.set_user_attr("key_2", "value_2")
 
         # Run command again to include second study.
-        output = str(subprocess.check_output(command).decode().strip())
-        studies = _parse_output(output, output_format or "table")
+        studies = _get_output(command, output_format or "table")
 
         expected_keys = ["name", "direction", "n_trials", "datetime_start", "user_attrs"]
 
         assert len(studies) == 2
         for study in studies:
-            if output_format is None or output_format == "table":
+            if output_format in (None, "table", "value"):
                 assert list(study.keys()) == expected_keys
             else:
                 assert set(study.keys()) == set(expected_keys)
 
         # Check study_name, direction, n_trials and user_attrs for the first study.
         assert studies[0]["name"] == study_1.study_name
-        if output_format is None or output_format == "table":
+        if output_format in (None, "table", "value"):
             assert studies[0]["n_trials"] == "0"
             assert eval(studies[0]["direction"]) == ("MINIMIZE",)
             assert eval(studies[0]["user_attrs"]) == {}
@@ -424,7 +442,7 @@ def test_studies_command(output_format: Optional[str]) -> None:
 
         # Check study_name, direction, n_trials and user_attrs for the second study.
         assert studies[1]["name"] == study_2.study_name
-        if output_format is None or output_format == "table":
+        if output_format in (None, "table", "value"):
             assert studies[1]["n_trials"] == "10"
             assert eval(studies[1]["direction"]) == ("MINIMIZE", "MAXIMIZE")
             assert eval(studies[1]["user_attrs"]) == {"key_1": "value_1", "key_2": "value_2"}
@@ -435,8 +453,8 @@ def test_studies_command(output_format: Optional[str]) -> None:
 
 
 @pytest.mark.skip_coverage
-@pytest.mark.parametrize("output_format", (None, "table", "json", "yaml"))
-def test_studies_command_flatten(output_format: Optional[str]) -> None:
+@output_formats
+def test_studies_command_flatten(output_format: str | None) -> None:
     with StorageSupplier("sqlite") as storage:
         assert isinstance(storage, RDBStorage)
         storage_url = str(storage.engine.url)
@@ -449,8 +467,7 @@ def test_studies_command_flatten(output_format: Optional[str]) -> None:
         if output_format is not None:
             command += ["--format", output_format]
 
-        output = str(subprocess.check_output(command).decode().strip())
-        studies = _parse_output(output, output_format or "table")
+        studies = _get_output(command, output_format or "table")
 
         expected_keys_1 = [
             "name",
@@ -460,7 +477,7 @@ def test_studies_command_flatten(output_format: Optional[str]) -> None:
         ]
 
         # Check user_attrs are not printed.
-        if output_format is None or output_format == "table":
+        if output_format in (None, "table", "value"):
             assert list(studies[0].keys()) == expected_keys_1
         else:
             assert set(studies[0].keys()) == set(expected_keys_1)
@@ -474,10 +491,9 @@ def test_studies_command_flatten(output_format: Optional[str]) -> None:
         study_2.set_user_attr("key_2", "value_2")
 
         # Run command again to include second study.
-        output = str(subprocess.check_output(command).decode().strip())
-        studies = _parse_output(output, output_format or "table")
+        studies = _get_output(command, output_format or "table")
 
-        if output_format is None or output_format == "table":
+        if output_format in (None, "table", "value"):
             expected_keys_1 = expected_keys_2 = [
                 "name",
                 "direction_0",
@@ -498,7 +514,7 @@ def test_studies_command_flatten(output_format: Optional[str]) -> None:
             ]
 
         assert len(studies) == 2
-        if output_format is None or output_format == "table":
+        if output_format in (None, "table", "value"):
             assert list(studies[0].keys()) == expected_keys_1
             assert list(studies[1].keys()) == expected_keys_2
         else:
@@ -507,7 +523,7 @@ def test_studies_command_flatten(output_format: Optional[str]) -> None:
 
         # Check study_name, direction, n_trials and user_attrs for the first study.
         assert studies[0]["name"] == study_1.study_name
-        if output_format is None or output_format == "table":
+        if output_format in (None, "table", "value"):
             assert studies[0]["n_trials"] == "0"
             assert studies[0]["user_attrs"] == "{}"
         else:
@@ -517,7 +533,7 @@ def test_studies_command_flatten(output_format: Optional[str]) -> None:
 
         # Check study_name, direction, n_trials and user_attrs for the second study.
         assert studies[1]["name"] == study_2.study_name
-        if output_format is None or output_format == "table":
+        if output_format in (None, "table", "value"):
             assert studies[1]["n_trials"] == "10"
             assert studies[1]["user_attrs"] == "{'key_1': 'value_1', 'key_2': 'value_2'}"
         else:
@@ -529,8 +545,8 @@ def test_studies_command_flatten(output_format: Optional[str]) -> None:
 
 @pytest.mark.skip_coverage
 @pytest.mark.parametrize("objective", (objective_func, objective_func_branched_search_space))
-@pytest.mark.parametrize("output_format", (None, "table", "json", "yaml"))
-def test_trials_command(objective: Callable[[Trial], float], output_format: Optional[str]) -> None:
+@output_formats
+def test_trials_command(objective: Callable[[Trial], float], output_format: str | None) -> None:
     with StorageSupplier("sqlite") as storage:
         assert isinstance(storage, RDBStorage)
         storage_url = str(storage.engine.url)
@@ -563,8 +579,7 @@ def test_trials_command(objective: Callable[[Trial], float], output_format: Opti
         if output_format is not None:
             command += ["--format", output_format]
 
-        output = str(subprocess.check_output(command).decode().strip())
-        trials = _parse_output(output, output_format or "table")
+        trials = _get_output(command, output_format or "table")
 
         assert len(trials) == n_trials
 
@@ -580,7 +595,7 @@ def test_trials_command(objective: Callable[[Trial], float], output_format: Opti
                     and isinstance(expected_value, float)
                     and np.isnan(expected_value)
                 ):
-                    if output_format is None or output_format == "table":
+                    if output_format in (None, "table", "value"):
                         assert key[1] not in eval(trial["params"])
                     else:
                         assert key[1] not in trial["params"]
@@ -589,7 +604,7 @@ def test_trials_command(objective: Callable[[Trial], float], output_format: Opti
                 if key[1] == "":
                     value = trial[key[0]]
                 else:
-                    if output_format is None or output_format == "table":
+                    if output_format in (None, "table", "value"):
                         value = eval(trial[key[0]])[key[1]]
                     else:
                         value = trial[key[0]][key[1]]
@@ -609,9 +624,9 @@ def test_trials_command(objective: Callable[[Trial], float], output_format: Opti
 
 @pytest.mark.skip_coverage
 @pytest.mark.parametrize("objective", (objective_func, objective_func_branched_search_space))
-@pytest.mark.parametrize("output_format", (None, "table", "json", "yaml"))
+@output_formats
 def test_trials_command_flatten(
-    objective: Callable[[Trial], float], output_format: Optional[str]
+    objective: Callable[[Trial], float], output_format: str | None
 ) -> None:
     with StorageSupplier("sqlite") as storage:
         assert isinstance(storage, RDBStorage)
@@ -646,8 +661,7 @@ def test_trials_command_flatten(
         if output_format is not None:
             command += ["--format", output_format]
 
-        output = str(subprocess.check_output(command).decode().strip())
-        trials = _parse_output(output, output_format or "table")
+        trials = _get_output(command, output_format or "table")
 
         assert len(trials) == n_trials
 
@@ -664,7 +678,7 @@ def test_trials_command_flatten(
                     and isinstance(expected_value, float)
                     and np.isnan(expected_value)
                 ):
-                    if output_format is None or output_format == "table":
+                    if output_format in (None, "table", "value"):
                         assert trial[key] == ""
                     else:
                         assert key not in trial
@@ -687,9 +701,9 @@ def test_trials_command_flatten(
 
 @pytest.mark.skip_coverage
 @pytest.mark.parametrize("objective", (objective_func, objective_func_branched_search_space))
-@pytest.mark.parametrize("output_format", (None, "table", "json", "yaml"))
+@output_formats
 def test_best_trial_command(
-    objective: Callable[[Trial], float], output_format: Optional[str]
+    objective: Callable[[Trial], float], output_format: str | None
 ) -> None:
     with StorageSupplier("sqlite") as storage:
         assert isinstance(storage, RDBStorage)
@@ -723,10 +737,9 @@ def test_best_trial_command(
         if output_format is not None:
             command += ["--format", output_format]
 
-        output = str(subprocess.check_output(command).decode().strip())
-        best_trial = _parse_output(output, output_format or "table")
+        best_trial = _get_output(command, output_format or "table")
 
-        if output_format is None or output_format == "table":
+        if output_format in (None, "table", "value"):
             assert len(best_trial) == 1
             best_trial = best_trial[0]
 
@@ -741,7 +754,7 @@ def test_best_trial_command(
                 and isinstance(expected_value, float)
                 and np.isnan(expected_value)
             ):
-                if output_format is None or output_format == "table":
+                if output_format in (None, "table", "value"):
                     assert key[1] not in eval(best_trial["params"])
                 else:
                     assert key[1] not in best_trial["params"]
@@ -750,7 +763,7 @@ def test_best_trial_command(
             if key[1] == "":
                 value = best_trial[key[0]]
             else:
-                if output_format is None or output_format == "table":
+                if output_format in (None, "table", "value"):
                     value = eval(best_trial[key[0]])[key[1]]
                 else:
                     value = best_trial[key[0]][key[1]]
@@ -770,9 +783,9 @@ def test_best_trial_command(
 
 @pytest.mark.skip_coverage
 @pytest.mark.parametrize("objective", (objective_func, objective_func_branched_search_space))
-@pytest.mark.parametrize("output_format", (None, "table", "json", "yaml"))
+@output_formats
 def test_best_trial_command_flatten(
-    objective: Callable[[Trial], float], output_format: Optional[str]
+    objective: Callable[[Trial], float], output_format: str | None
 ) -> None:
     with StorageSupplier("sqlite") as storage:
         assert isinstance(storage, RDBStorage)
@@ -807,10 +820,9 @@ def test_best_trial_command_flatten(
         if output_format is not None:
             command += ["--format", output_format]
 
-        output = str(subprocess.check_output(command).decode().strip())
-        best_trial = _parse_output(output, output_format or "table")
+        best_trial = _get_output(command, output_format or "table")
 
-        if output_format is None or output_format == "table":
+        if output_format in (None, "table", "value"):
             assert len(best_trial) == 1
             best_trial = best_trial[0]
 
@@ -826,7 +838,7 @@ def test_best_trial_command_flatten(
                 and isinstance(expected_value, float)
                 and np.isnan(expected_value)
             ):
-                if output_format is None or output_format == "table":
+                if output_format in (None, "table", "value"):
                     assert best_trial[key] == ""
                 else:
                     assert key not in best_trial
@@ -847,8 +859,8 @@ def test_best_trial_command_flatten(
 
 
 @pytest.mark.skip_coverage
-@pytest.mark.parametrize("output_format", (None, "table", "json", "yaml"))
-def test_best_trials_command(output_format: Optional[str]) -> None:
+@output_formats
+def test_best_trials_command(output_format: str | None) -> None:
     with StorageSupplier("sqlite") as storage:
         assert isinstance(storage, RDBStorage)
         storage_url = str(storage.engine.url)
@@ -883,8 +895,7 @@ def test_best_trials_command(output_format: Optional[str]) -> None:
         if output_format is not None:
             command += ["--format", output_format]
 
-        output = str(subprocess.check_output(command).decode().strip())
-        trials = _parse_output(output, output_format or "table")
+        trials = _get_output(command, output_format or "table")
         best_trials = [trial.number for trial in study.best_trials]
 
         assert len(trials) == len(best_trials)
@@ -892,7 +903,10 @@ def test_best_trials_command(output_format: Optional[str]) -> None:
         df = study.trials_dataframe(attrs, multi_index=True)
 
         for trial in trials:
-            number = int(trial["number"]) if output_format in (None, "table") else trial["number"]
+            if output_format in (None, "table", "value"):
+                number = int(trial["number"])
+            else:
+                number = trial["number"]
             assert number in best_trials
             for key in df.columns:
                 expected_value = df.loc[number][key]
@@ -903,7 +917,7 @@ def test_best_trials_command(output_format: Optional[str]) -> None:
                     and isinstance(expected_value, float)
                     and np.isnan(expected_value)
                 ):
-                    if output_format is None or output_format == "table":
+                    if output_format in (None, "table", "value"):
                         assert key[1] not in eval(trial["params"])
                     else:
                         assert key[1] not in trial["params"]
@@ -912,7 +926,7 @@ def test_best_trials_command(output_format: Optional[str]) -> None:
                 if key[1] == "":
                     value = trial[key[0]]
                 else:
-                    if output_format is None or output_format == "table":
+                    if output_format in (None, "table", "value"):
                         value = eval(trial[key[0]])[key[1]]
                     else:
                         value = trial[key[0]][key[1]]
@@ -931,8 +945,8 @@ def test_best_trials_command(output_format: Optional[str]) -> None:
 
 
 @pytest.mark.skip_coverage
-@pytest.mark.parametrize("output_format", (None, "table", "json", "yaml"))
-def test_best_trials_command_flatten(output_format: Optional[str]) -> None:
+@output_formats
+def test_best_trials_command_flatten(output_format: str | None) -> None:
     with StorageSupplier("sqlite") as storage:
         assert isinstance(storage, RDBStorage)
         storage_url = str(storage.engine.url)
@@ -968,8 +982,7 @@ def test_best_trials_command_flatten(output_format: Optional[str]) -> None:
         if output_format is not None:
             command += ["--format", output_format]
 
-        output = str(subprocess.check_output(command).decode().strip())
-        trials = _parse_output(output, output_format or "table")
+        trials = _get_output(command, output_format or "table")
         best_trials = [trial.number for trial in study.best_trials]
 
         assert len(trials) == len(best_trials)
@@ -978,7 +991,10 @@ def test_best_trials_command_flatten(output_format: Optional[str]) -> None:
 
         for trial in trials:
             assert set(trial.keys()) <= set(df.columns)
-            number = int(trial["number"]) if output_format in (None, "table") else trial["number"]
+            if output_format in (None, "table", "value"):
+                number = int(trial["number"])
+            else:
+                number = trial["number"]
             for key in df.columns:
                 expected_value = df.loc[number][key]
 
@@ -988,7 +1004,7 @@ def test_best_trials_command_flatten(output_format: Optional[str]) -> None:
                     and isinstance(expected_value, float)
                     and np.isnan(expected_value)
                 ):
-                    if output_format is None or output_format == "table":
+                    if output_format in (None, "table", "value"):
                         assert trial[key] == ""
                     else:
                         assert key not in trial
@@ -1144,6 +1160,8 @@ parametrize_for_ask = pytest.mark.parametrize(
         (None, None, None),
         ("RandomSampler", None, None),
         ("TPESampler", '{"multivariate": true}', None),
+        (None, None, "value"),
+        (None, None, "table"),
         (None, None, "json"),
         (None, None, "yaml"),
     ],
@@ -1153,9 +1171,9 @@ parametrize_for_ask = pytest.mark.parametrize(
 @pytest.mark.skip_coverage
 @parametrize_for_ask
 def test_ask(
-    sampler: Optional[str],
-    sampler_kwargs: Optional[str],
-    output_format: Optional[str],
+    sampler: str | None,
+    sampler_kwargs: str | None,
+    output_format: str | None,
 ) -> None:
     study_name = "test_study"
     search_space = (
@@ -1187,11 +1205,15 @@ def test_ask(
         if output_format is not None:
             args += ["--format", output_format]
 
-        result = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        output = str(result.stdout.decode().strip())
-        trial = _parse_output(output, output_format or "json")
+        if output_format != "value":
+            trial = _get_output(args, output_format or "json")
+        else:
+            output = str(subprocess.check_output(args).decode().strip())
+            ret = output.split(maxsplit=1)
+            assert len(ret) == 2
+            trial = [{"number": ret[0], "params": ret[1]}]
 
-        if output_format == "table":
+        if output_format in ("table", "value"):
             assert len(trial) == 1
             trial = trial[0]
             assert trial["number"] == "0"
@@ -1208,9 +1230,9 @@ def test_ask(
 @pytest.mark.skip_coverage
 @parametrize_for_ask
 def test_ask_flatten(
-    sampler: Optional[str],
-    sampler_kwargs: Optional[str],
-    output_format: Optional[str],
+    sampler: str | None,
+    sampler_kwargs: str | None,
+    output_format: str | None,
 ) -> None:
     study_name = "test_study"
     search_space = (
@@ -1243,11 +1265,15 @@ def test_ask_flatten(
         if output_format is not None:
             args += ["--format", output_format]
 
-        result = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        output = str(result.stdout.decode().strip())
-        trial = _parse_output(output, output_format or "json")
+        if output_format != "value":
+            trial = _get_output(args, output_format or "json")
+        else:
+            output = str(subprocess.check_output(args).decode().strip())
+            ret = output.split(maxsplit=2)
+            assert len(ret) == 3
+            trial = [{"number": ret[0], "params_x": ret[1], "params_y": ret[2]}]
 
-        if output_format == "table":
+        if output_format in ("table", "value"):
             assert len(trial) == 1
             trial = trial[0]
             assert trial["number"] == "0"
@@ -1260,7 +1286,7 @@ def test_ask_flatten(
 
 
 @pytest.mark.skip_coverage
-@pytest.mark.parametrize("output_format", (None, "table", "json", "yaml"))
+@output_formats
 def test_ask_empty_search_space(output_format: str) -> None:
     study_name = "test_study"
 
@@ -1282,10 +1308,15 @@ def test_ask_empty_search_space(output_format: str) -> None:
         if output_format is not None:
             args += ["--format", output_format]
 
-        output = str(subprocess.check_output(args).decode().strip())
-        trial = _parse_output(output, output_format or "json")
+        if output_format != "value":
+            trial = _get_output(args, output_format or "json")
+        else:
+            output = str(subprocess.check_output(args).decode().strip())
+            ret = output.split(maxsplit=1)
+            assert len(ret) == 2
+            trial = [{"number": ret[0], "params": ret[1]}]
 
-        if output_format == "table":
+        if output_format in ("table", "value"):
             assert len(trial) == 1
             trial = trial[0]
             assert trial["number"] == "0"
@@ -1296,7 +1327,7 @@ def test_ask_empty_search_space(output_format: str) -> None:
 
 
 @pytest.mark.skip_coverage
-@pytest.mark.parametrize("output_format", (None, "table", "json", "yaml"))
+@output_formats
 def test_ask_empty_search_space_flatten(output_format: str) -> None:
     study_name = "test_study"
 
@@ -1319,10 +1350,13 @@ def test_ask_empty_search_space_flatten(output_format: str) -> None:
         if output_format is not None:
             args += ["--format", output_format]
 
-        output = str(subprocess.check_output(args).decode().strip())
-        trial = _parse_output(output, output_format or "json")
+        if output_format != "value":
+            trial = _get_output(args, output_format or "json")
+        else:
+            output = str(subprocess.check_output(args).decode().strip())
+            trial = [{"number": output}]
 
-        if output_format == "table":
+        if output_format in ("table", "value"):
             assert len(trial) == 1
             trial = trial[0]
             assert trial["number"] == "0"
@@ -1406,10 +1440,10 @@ def test_ask_without_create_study_beforehand() -> None:
     ],
 )
 def test_create_study_and_ask(
-    direction: Optional[str],
-    directions: Optional[str],
-    sampler: Optional[str],
-    sampler_kwargs: Optional[str],
+    direction: str | None,
+    directions: str | None,
+    sampler: str | None,
+    sampler_kwargs: str | None,
 ) -> None:
     study_name = "test_study"
     search_space = (
@@ -1451,8 +1485,7 @@ def test_create_study_and_ask(
         if sampler_kwargs is not None:
             args += ["--sampler-kwargs", sampler_kwargs]
 
-        output = str(subprocess.check_output(args).decode().strip())
-        trial = _parse_output(output, "json")
+        trial = _get_output(args, "json")
 
         assert trial["number"] == 0
         assert 0 <= trial["params"]["x"] <= 1

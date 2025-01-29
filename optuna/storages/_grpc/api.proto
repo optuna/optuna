@@ -1,0 +1,441 @@
+/**
+ * Optuna GRPC API
+ * The following command generates the Python code from this file:
+ $ pip install mypy-protobuf==3.6.0 protobuf==5.28.1 grpcio==1.68.1 grpcio-tools==1.68.1
+ $ python -m grpc_tools.protoc \
+    --proto_path=optuna/storages/_grpc \
+    --grpc_python_out=optuna/storages/_grpc/auto_generated \
+    --python_out=optuna/storages/_grpc/auto_generated \
+    --mypy_out=optuna/storages/_grpc/auto_generated \
+    optuna/storages/_grpc/api.proto
+ $ sed -i -e \
+    "s/import api_pb2 as api__pb2/import optuna.storages._grpc.auto_generated.api_pb2 as api__pb2/g" \
+    optuna/storages/_grpc/auto_generated/api_pb2_grpc.py
+ */
+syntax = "proto3";
+
+package optuna;
+
+/**
+ * Optuna storage service defines APIs to interact with the storage.
+ */
+service StorageService {
+    /**
+     * Create a new study.
+     */
+    rpc CreateNewStudy(CreateNewStudyRequest) returns (CreateNewStudyReply);
+
+    /**
+     * Delete a study.
+     */
+    rpc DeleteStudy(DeleteStudyRequest) returns (DeleteStudyReply);
+
+    /**
+     * Set a study's user attribute.
+     */
+    rpc SetStudyUserAttribute(SetStudyUserAttributeRequest) returns (SetStudyUserAttributeReply);
+
+    /**
+     * Set a study's system attribute.
+     */
+    rpc SetStudySystemAttribute(SetStudySystemAttributeRequest) returns (SetStudySystemAttributeReply);
+
+    /**
+     * Get a study id by its name.
+     */
+    rpc GetStudyIdFromName(GetStudyIdFromNameRequest) returns (GetStudyIdFromNameReply);
+
+    /**
+     * Get a study name by its id.
+     */
+    rpc GetStudyNameFromId(GetStudyNameFromIdRequest) returns (GetStudyNameFromIdReply);
+
+    /**
+     * Get study directions.
+     */
+    rpc GetStudyDirections(GetStudyDirectionsRequest) returns (GetStudyDirectionsReply);
+
+    /**
+     * Get study user attributes.
+     */
+    rpc GetStudyUserAttributes(GetStudyUserAttributesRequest) returns (GetStudyUserAttributesReply);
+
+    /**
+     * Get study system attributes.
+     */
+    rpc GetStudySystemAttributes(GetStudySystemAttributesRequest) returns (GetStudySystemAttributesReply);
+
+    /**
+     * Get all studies.
+     */
+    rpc GetAllStudies(GetAllStudiesRequest) returns (GetAllStudiesReply);
+
+    /**
+     * Create a new trial.
+     */
+    rpc CreateNewTrial(CreateNewTrialRequest) returns (CreateNewTrialReply);
+
+    /**
+     * Set a trial parameter.
+     */
+    rpc SetTrialParameter(SetTrialParameterRequest) returns (SetTrialParameterReply);
+
+    /**
+     * Get a trial id from its study id and trial number.
+     */
+    rpc GetTrialIdFromStudyIdTrialNumber(GetTrialIdFromStudyIdTrialNumberRequest) returns (GetTrialIdFromStudyIdTrialNumberReply);
+
+    /**
+     * Set trial state and values. 
+     */
+    rpc SetTrialStateValues(SetTrialStateValuesRequest) returns (SetTrialStateValuesReply);
+
+    /**
+     * Set a trial intermediate value. 
+     */
+    rpc SetTrialIntermediateValue(SetTrialIntermediateValueRequest) returns (SetTrialIntermediateValueReply);
+
+    /**
+     * Set a trial user attribute.
+     */
+    rpc SetTrialUserAttribute(SetTrialUserAttributeRequest) returns (SetTrialUserAttributeReply);
+
+    /**
+     * Set a trial system attribute.
+     */
+    rpc SetTrialSystemAttribute(SetTrialSystemAttributeRequest) returns (SetTrialSystemAttributeReply);
+
+    /**
+     * Get a trial by its ID.
+     */
+    rpc GetTrial(GetTrialRequest) returns (GetTrialReply);
+
+    /**
+     * Get trials in a study.
+     */
+    rpc GetTrials(GetTrialsRequest) returns (GetTrialsReply);
+}
+
+/**
+ * ========================================
+ * Messages for Optuna storage service.
+ * ========================================
+ */
+
+/**
+ * Request to create a new study.
+ */
+message CreateNewStudyRequest {
+    repeated StudyDirection directions = 1;
+    string study_name = 2;
+}
+
+/**
+ * Reply to create a new study.
+ */
+message CreateNewStudyReply {
+    int64 study_id = 1;
+}
+
+/**
+ * Request to delete a study.
+ */
+message DeleteStudyRequest {
+    int64 study_id = 1;
+}
+
+/**
+ * Reply to delete a study.
+ */
+message DeleteStudyReply {}
+
+/**
+ * Request to set a study's user attribute.
+ */
+message SetStudyUserAttributeRequest {
+    int64 study_id = 1;
+    string key = 2;
+    string value = 3;
+}
+
+/**
+ * Reply to set a study's user attribute.
+ */
+message SetStudyUserAttributeReply {}
+
+/**
+ * Request to set a study's system attribute.
+ */
+message SetStudySystemAttributeRequest {
+    int64 study_id = 1;
+    string key = 2;
+    string value = 3;
+}
+
+/**
+ * Reply to set a study's system attribute.
+ */
+message SetStudySystemAttributeReply {}
+
+/**
+ * Request to get a study id by its name.
+ */
+message GetStudyIdFromNameRequest {
+    string study_name = 1;
+}
+
+/**
+ * Reply to get a study id by its name.
+ */
+message GetStudyIdFromNameReply {
+    int64 study_id = 1;
+}
+
+/**
+ * Request to get a study name by its id.
+ */
+message GetStudyNameFromIdRequest {
+    int64 study_id = 1;
+}
+
+/**
+ * Reply to get a study name by its id.
+ */
+message GetStudyNameFromIdReply {
+    string study_name = 1;
+}
+
+/**
+ * Request to get study directions.
+ */
+message GetStudyDirectionsRequest {
+    int64 study_id = 1;
+}
+
+/**
+ * Reply to get study directions.
+ */
+message GetStudyDirectionsReply {
+    repeated StudyDirection directions = 1;
+}
+
+/**
+ * Request to get study user attributes.
+ */
+message GetStudyUserAttributesRequest {
+    int64 study_id = 1;
+}
+
+/**
+ * Reply to get study user attributes.
+ */
+message GetStudyUserAttributesReply {
+    map<string, string> user_attributes = 1;
+}
+
+/**
+ * Request to get study system attributes.
+ */
+message GetStudySystemAttributesRequest {
+    int64 study_id = 1;
+}
+
+/**
+ * Reply to get study system attributes.
+ */
+message GetStudySystemAttributesReply {
+    map<string, string> system_attributes = 1;
+}
+
+/**
+ * Request to get all studies.
+ */
+message GetAllStudiesRequest {}
+
+/**
+ * Reply to get all studies.
+ */
+message GetAllStudiesReply {
+    repeated Study studies = 1;
+}
+
+/**
+ * Request to create a new trial.
+ */
+message CreateNewTrialRequest {
+    int64 study_id = 1;
+    Trial template_trial = 2;
+    bool template_trial_is_none = 3;
+}
+
+/**
+ * Reply to create a new trial.
+ */
+message CreateNewTrialReply {
+    int64 trial_id = 1;
+}
+
+/**
+ * Request to set a trial parameter.
+ */
+message SetTrialParameterRequest {
+    int64 trial_id = 1;
+    string param_name = 2;
+    double param_value_internal = 3;
+    string distribution = 4;
+}
+
+/**
+ * Reply to set a trial parameter.
+ */
+message SetTrialParameterReply {}
+
+/**
+ * Request to get a trial id from its study id and trial number.
+ */
+message GetTrialIdFromStudyIdTrialNumberRequest {
+    int64 study_id = 1;
+    int64 trial_number = 2;
+}
+
+/**
+ * Reply to get a trial id from its study id and trial number.
+ */
+message GetTrialIdFromStudyIdTrialNumberReply {
+    int64 trial_id = 1;
+}
+
+/**
+ * Request to set trial state and values.
+ */
+message SetTrialStateValuesRequest {
+    int64 trial_id = 1;
+    TrialState state = 2;
+    repeated double values = 3;
+}
+
+/**
+ * Reply to set trial state and values.
+ */
+message SetTrialStateValuesReply {
+    bool trial_updated = 1;
+}
+
+/**
+ * Request to set a trial intermediate value.
+ */
+message SetTrialIntermediateValueRequest {
+    int64 trial_id = 1;
+    int64 step = 2;
+    double intermediate_value = 3;
+}
+
+/**
+ * Reply to set a trial intermediate value.
+ */
+message SetTrialIntermediateValueReply {}
+
+/**
+ * Request to set a trial user attribute.
+ */
+message SetTrialUserAttributeRequest {
+    int64 trial_id = 1;
+    string key = 2;
+    string value = 3;
+}
+
+/**
+ * Reply to set a trial user attribute.
+ */
+message SetTrialUserAttributeReply {}
+
+/**
+ * Request to set a trial system attribute.
+ */
+message SetTrialSystemAttributeRequest {
+    int64 trial_id = 1;
+    string key = 2;
+    string value = 3;
+}
+
+/**
+ * Reply to set a trial system attribute.
+ */
+message SetTrialSystemAttributeReply {}
+
+/**
+ * Request to get a trial by its ID.
+ */
+message GetTrialRequest {
+    int64 trial_id = 1;
+}
+
+/**
+ * Reply to get a trial by its ID.
+ */
+message GetTrialReply {
+    Trial trial = 1;
+}
+
+/**
+ * Request to get trials in a study.
+ */
+message GetTrialsRequest {
+    int64 study_id = 1;
+    repeated int64 included_trial_ids = 2;
+    int64 trial_id_greater_than = 3;
+}
+
+/**
+ * Reply to get trials in a study.
+ */
+message GetTrialsReply {
+    repeated Trial trials = 1;
+}
+
+/**
+ * Study direction.
+ */
+enum StudyDirection {
+    MINIMIZE = 0;
+    MAXIMIZE = 1;
+}
+
+/**
+ * Trial state.
+ */
+enum TrialState {
+    RUNNING = 0;
+    COMPLETE = 1;
+    PRUNED = 2;
+    FAIL = 3;
+    WAITING = 4;
+}
+
+/**
+ * Study.
+ */
+message Study {
+    int64 study_id = 1;
+    string study_name = 2;
+    repeated StudyDirection directions = 3;
+    map<string, string> user_attributes = 4;
+    map<string, string> system_attributes = 5;
+}
+
+/**
+ * Trial.
+ */
+message Trial {
+    int64 trial_id = 1;
+    int64 number = 2;
+    TrialState state = 3;
+    repeated double values = 4;
+    string datetime_start = 5;
+    string datetime_complete = 6;
+    map<string, double> params = 7;
+    map<string, string> distributions = 8;
+    map<string, string> user_attributes = 9;
+    map<string, string> system_attributes = 10;
+    map<int64, double> intermediate_values = 11;
+}

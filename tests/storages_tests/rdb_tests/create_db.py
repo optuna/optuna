@@ -36,8 +36,9 @@ If you use `venv`, simply `deactivate` and re-activate your development environm
 
 """
 
+from __future__ import annotations
+
 from argparse import ArgumentParser
-from typing import Tuple
 
 from packaging import version
 
@@ -54,7 +55,7 @@ def objective_test_upgrade(trial: optuna.trial.Trial) -> float:
     return x**2 + y**2 + z**2
 
 
-def mo_objective_test_upgrade(trial: optuna.trial.Trial) -> Tuple[float, float]:
+def mo_objective_test_upgrade(trial: optuna.trial.Trial) -> tuple[float, float]:
     x = trial.suggest_float("x", -5, 5)
     y = trial.suggest_int("y", 0, 10)
     z = trial.suggest_categorical("z", [-5, 0, 5])

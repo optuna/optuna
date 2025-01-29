@@ -9,11 +9,13 @@ The :mod:`~optuna.storages` module defines a :class:`~optuna.storages.BaseStorag
    :toctree: generated/
    :nosignatures:
 
-   optuna.storages.RDBStorage
-   optuna.storages.RetryFailedTrialCallback
-   optuna.storages.fail_stale_trials
-   optuna.storages.JournalStorage
-   optuna.storages.InMemoryStorage
+   RDBStorage
+   RetryFailedTrialCallback
+   fail_stale_trials
+   JournalStorage
+   InMemoryStorage
+   run_grpc_proxy_server
+   GrpcStorageProxy
 
 optuna.storages.journal
 -----------------------
@@ -27,8 +29,8 @@ optuna.storages.journal
    :toctree: generated/
    :nosignatures:
 
-   optuna.storages.journal.JournalFileBackend
-   optuna.storages.journal.JournalRedisBackend
+   journal.JournalFileBackend
+   journal.JournalRedisBackend
 
 Users can flexibly choose a lock object for :class:`~optuna.storages.journal.JournalFileBackend` and here is the list of supported lock objects:
 
@@ -36,8 +38,8 @@ Users can flexibly choose a lock object for :class:`~optuna.storages.journal.Jou
    :toctree: generated/
    :nosignatures:
 
-   optuna.storages.journal.JournalFileSymlinkLock
-   optuna.storages.journal.JournalFileOpenLock
+   journal.JournalFileSymlinkLock
+   journal.JournalFileOpenLock
 
 Deprecated Modules
 ------------------
@@ -50,6 +52,6 @@ Deprecated Modules
    :toctree: generated/
    :nosignatures:
 
-   optuna.storages.BaseJournalLogStorage
-   optuna.storages.JournalFileStorage
-   optuna.storages.JournalRedisStorage
+   BaseJournalLogStorage
+   JournalFileStorage
+   JournalRedisStorage

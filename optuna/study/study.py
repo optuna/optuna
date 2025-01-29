@@ -1367,7 +1367,10 @@ def load_study(
             "study found in the storage."
         )
 
-    return Study(study_name=study_name, storage=storage, sampler=sampler, pruner=pruner)
+    study = Study(study_name=study_name, storage=storage, sampler=sampler, pruner=pruner)
+    if sampler is None and len(study.directions) > 1:
+        study.sampler = samplers.NSGAIISampler()
+    return study
 
 
 @convert_positional_args(

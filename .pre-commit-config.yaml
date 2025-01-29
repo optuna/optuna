@@ -8,14 +8,14 @@ default_language_version:
 repos:
   # Args are based on setup.cfg.
   - repo: https://github.com/psf/black
-    rev: 24.8.0
+    rev: 24.10.0
     hooks:
       - id: black
   - repo: https://github.com/pycqa/flake8
     rev: 7.1.1
     hooks:
       - id: flake8
-        exclude: tutorial|docs/visualization_examples|docs/visualization_matplotlib_examples
+        exclude: tutorial|docs/visualization_examples|docs/visualization_matplotlib_examples|optuna/storages/_grpc/auto_generated
         args: [
             "--max-line-length=99",
             "--ignore=E203,E704,W503",
@@ -26,7 +26,7 @@ repos:
     hooks:
       - id: isort
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.11.2
+    rev: v1.13.0
     hooks:
     - id: mypy
       additional_dependencies: [
@@ -43,8 +43,9 @@ repos:
         "types-setuptools",
         "types-tqdm",
         "typing_extensions>=3.10.0.0",
+        "types-protobuf",
       ]
-      exclude: docs|tutorial|optuna/storages/_rdb/alembic
+      exclude: docs|tutorial|optuna/storages/_rdb/alembic|optuna/storages/_grpc/auto_generated
       args: [
         --warn-unused-configs,
         --disallow-untyped-calls,

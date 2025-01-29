@@ -3,8 +3,6 @@ from __future__ import annotations
 import contextlib
 import io
 import os
-from typing import Dict
-from typing import Optional
 from typing import TYPE_CHECKING
 from unittest.mock import patch
 
@@ -19,11 +17,11 @@ if TYPE_CHECKING:
     from collections.abc import Iterator
 
 
-_MOCK_BUCKET_CONTENT: Dict[str, bytes] = dict()
+_MOCK_BUCKET_CONTENT: dict[str, bytes] = dict()
 
 
 class MockBucket:
-    def get_blob(self, blob_name: str) -> Optional["MockBlob"]:
+    def get_blob(self, blob_name: str) -> "MockBlob" | None:
         if blob_name in _MOCK_BUCKET_CONTENT:
             return MockBlob(blob_name)
         else:

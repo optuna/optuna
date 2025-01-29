@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 import abc
+from collections.abc import Iterator
 from contextlib import contextmanager
 import errno
 import json
 import os
 import time
 from typing import Any
-from typing import Iterator
 import uuid
 
 from optuna._deprecated import deprecated_class

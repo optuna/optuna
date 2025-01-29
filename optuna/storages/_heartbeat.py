@@ -6,7 +6,6 @@ import copy
 from threading import Event
 from threading import Thread
 from types import TracebackType
-from typing import Type
 
 import optuna
 from optuna._experimental import experimental_func
@@ -77,7 +76,7 @@ class BaseHeartbeatThread(metaclass=abc.ABCMeta):
 
     def __exit__(
         self,
-        exc_type: Type[Exception] | None,
+        exc_type: type[Exception] | None,
         exc_value: Exception | None,
         traceback: TracebackType | None,
     ) -> None:

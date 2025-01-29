@@ -1,8 +1,8 @@
+from __future__ import annotations
+
 import datetime
 import time
 from typing import Any
-from typing import Dict
-from typing import Optional
 
 import pytest
 
@@ -23,8 +23,8 @@ parametrize_trial_type = pytest.mark.parametrize("trial_type", [FixedTrial, Froz
 
 def _create_trial(
     trial_type: type,
-    params: Optional[Dict[str, Any]] = None,
-    distributions: Optional[Dict[str, BaseDistribution]] = None,
+    params: dict[str, Any] | None = None,
+    distributions: dict[str, BaseDistribution] | None = None,
 ) -> BaseTrial:
     if params is None:
         params = {"x": 10}

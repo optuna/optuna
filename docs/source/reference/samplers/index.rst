@@ -11,6 +11,9 @@ The :mod:`~optuna.samplers` module defines a base class for parameter sampling a
 .. seealso::
     :ref:`user_defined_sampler` tutorial could be helpful if you want to implement your own sampler classes.
 
+.. seealso::
+    If you are unsure about which sampler to use, please consider using `AutoSampler <https://hub.optuna.org/samplers/auto_sampler/>`__, which automatically selects a sampler during optimization. For more detail, see `the article on AutoSampler <https://medium.com/optuna/autosampler-automatic-selection-of-optimization-algorithms-in-optuna-1443875fd8f9>`__.
+
 +----------------------------------+-------------------------------+-------------------------------+-------------------------------+-------------------------------+-----------------------------------------------------------------------------+-------------------------------+-------------------------------+-------------------------------+-------------------------------------------------------------------------------+
 |                                  |         RandomSampler         |          GridSampler          |          TPESampler           |         CmaEsSampler          |                                NSGAIISampler                                |          QMCSampler           |           GPSampler           |       BoTorchSampler          |                               BruteForceSampler                               |
 +==================================+===============================+===============================+===============================+===============================+=============================================================================+===============================+===============================+===============================+===============================================================================+
@@ -82,17 +85,17 @@ The :mod:`~optuna.samplers` module defines a base class for parameter sampling a
     :toctree: generated/
     :nosignatures:
 
-    optuna.samplers.BaseSampler
-    optuna.samplers.GridSampler
-    optuna.samplers.RandomSampler
-    optuna.samplers.TPESampler
-    optuna.samplers.CmaEsSampler
-    optuna.samplers.GPSampler
-    optuna.samplers.PartialFixedSampler
-    optuna.samplers.NSGAIISampler
-    optuna.samplers.NSGAIIISampler
-    optuna.samplers.QMCSampler
-    optuna.samplers.BruteForceSampler
+    BaseSampler
+    GridSampler
+    RandomSampler
+    TPESampler
+    CmaEsSampler
+    GPSampler
+    PartialFixedSampler
+    NSGAIISampler
+    NSGAIIISampler
+    QMCSampler
+    BruteForceSampler
 
 .. note::
     The following :mod:`optuna.samplers.nsgaii` module defines crossover operations used by :class:`~optuna.samplers.NSGAIISampler`.

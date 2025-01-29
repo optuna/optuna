@@ -1,4 +1,4 @@
-from typing import Tuple
+from __future__ import annotations
 
 import pytest
 
@@ -6,7 +6,7 @@ import optuna
 
 
 @pytest.mark.parametrize("direction_value", [("minimize", 2), ("maximize", 0.5)])
-def test_successive_halving_pruner_intermediate_values(direction_value: Tuple[str, float]) -> None:
+def test_successive_halving_pruner_intermediate_values(direction_value: tuple[str, float]) -> None:
     direction, intermediate_value = direction_value
     pruner = optuna.pruners.SuccessiveHalvingPruner(
         min_resource=1, reduction_factor=2, min_early_stopping_rate=0
@@ -93,7 +93,7 @@ def test_successive_halving_pruner_with_nan() -> None:
         min_resource=2, reduction_factor=2, min_early_stopping_rate=0
     )
     study = optuna.study.create_study(pruner=pruner)
-    trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
+    trial = study.ask()
 
     # A pruner is not activated if the step is not a rung completion point.
     trial.report(float("nan"), step=1)

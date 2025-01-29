@@ -1,10 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 import random
-from typing import Callable
-from typing import Dict
-from typing import Optional
-from typing import Union
 from unittest.mock import Mock
 from unittest.mock import patch
 import warnings
@@ -869,9 +866,9 @@ def test_split_trials_for_multiobjective_constant_liar(directions: list[str]) ->
             study, trials, n_below, constraints_enabled=False
         )
         below_trial_numbers = [trial.number for trial in below_trials]
-        assert below_trial_numbers == np.sort(ground_truth[:n_below]).tolist()
+        assert below_trial_numbers == sorted(ground_truth[:n_below])
         above_trial_numbers = [trial.number for trial in above_trials]
-        assert above_trial_numbers == np.sort(ground_truth[n_below:]).tolist()
+        assert above_trial_numbers == sorted(ground_truth[n_below:])
 
 
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])
@@ -974,9 +971,9 @@ def frozen_trial_factory(
     state_fn: Callable[
         [int], optuna.trial.TrialState
     ] = lambda _: optuna.trial.TrialState.COMPLETE,
-    value_fn: Optional[Callable[[int], Union[int, float]]] = None,
+    value_fn: Callable[[int], int | float] | None = None,
     target_fn: Callable[[float], float] = lambda val: (val - 20.0) ** 2,
-    interm_val_fn: Callable[[int], Dict[int, float]] = lambda _: {},
+    interm_val_fn: Callable[[int], dict[int, float]] = lambda _: {},
 ) -> optuna.trial.FrozenTrial:
     if value_fn is None:
         random.seed(idx)

@@ -128,16 +128,17 @@ class WilcoxonPruner(BasePruner):
             Pruning starts only after you have ``n_startup_steps`` steps of
             available observations for comparison between the current trial
             and the best trial.
-            Defaults to 0 (pruning kicks in from the very first step).
+            Defaults to 2. Note that the trial is not pruned at the first and second steps even if
+            the `n_startup_steps` is set to 0 or 1 due to the lack of enough data for comparison.
     """  # NOQA: E501
 
     def __init__(
         self,
         *,
         p_threshold: float = 0.1,
-        n_startup_steps: int = 0,
+        n_startup_steps: int = 2,
     ) -> None:
-        if n_startup_steps < 0:
+        if n_startup_steps < 0:  # TODO: Consider changing the RHS to 2.
             raise ValueError(f"n_startup_steps must be nonnegative but got {n_startup_steps}.")
         if not 0.0 <= p_threshold <= 1.0:
             raise ValueError(f"p_threshold must be between 0 and 1 but got {p_threshold}.")
@@ -193,7 +194,7 @@ class WilcoxonPruner(BasePruner):
 
         diff_values = step_values[idx1] - best_step_values[idx2]
 
-        if len(diff_values) < self._n_startup_steps:
+        if len(diff_values) < max(2, self._n_startup_steps):
             return False
 
         if study.direction == StudyDirection.MAXIMIZE:
