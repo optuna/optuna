@@ -74,17 +74,10 @@ class _TreeNode:
 
     def count_unexpanded(self, exclude_running: bool) -> int:
         # Count the number of unexpanded nodes in the subtree.
-        return (
-            1
-            if self.children is None and (not exclude_running or not self.is_running)
-            else (
-                0
-                if self.children is None
-                else sum(
-                    child.count_unexpanded(exclude_running) for child in self.children.values()
-                )
-            )
-        )
+        if self.children is None:
+            return 0 if exclude_running and self.is_running else 1
+        else:
+            return sum(child.count_unexpanded(exclude_running) for child in self.children.values())
 
     def sample_child(self, rng: np.random.RandomState, exclude_running: bool) -> float:
         assert self.children is not None
@@ -150,7 +143,7 @@ class BruteForceSampler(BaseSampler):
             this option cannot ensure the order of trials and may increase the number of duplicate
             suggestions during distributed optimization.
         avoid_premature_stop:
-            If this is :obj:`True`, the sampler performs a strictly exhaustive search. Please note
+            If :obj:`True`, the sampler performs a strict exhaustive search. Please note
             that enabling this option may increase the likelihood of duplicate sampling.
             When this option is not enabled (default), the sampler applies a looser criterion for
             determining when to stop the search, which may result in incomplete coverage of the
