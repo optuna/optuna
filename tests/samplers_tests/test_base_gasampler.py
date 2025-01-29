@@ -226,15 +226,15 @@ def test_get_parent_population(args: dict[str, Any]) -> None:
     if args["generation"] == 0:
         assert mock_select_parent.call_count == 0
         assert mock_study._storage.get_study_system_attrs.call_count == 0
-        assert mock_study._storage.get_trial.call_count == 0
+        assert mock_study._get_trials.call_count == 0
         assert return_value == []
         return
 
     mock_study._storage.get_study_system_attrs.assert_called_once_with(mock_study._study_id)
 
     if args["cache"]:
-        mock_study._storage.get_trial.assert_has_calls(
-            [call(i) for i in args["parent_population"]]
+        mock_study._get_trials.assert_has_calls(
+            [call(deepcopy=False)] + [call().__getitem__(i) for i in args["parent_population"]]
         )
     else:
         mock_select_parent.assert_called_once_with(mock_study, args["generation"])
