@@ -80,7 +80,7 @@ def test_remove(init_mock_client: Annotated[tuple[str, S3Client], pytest.fixture
 
 
 def test_file_not_found_exception(
-    init_mock_client: Annotated[tuple[str, S3Client], pytest.fixture]
+    init_mock_client: Annotated[tuple[str, S3Client], pytest.fixture],
 ) -> None:
     bucket_name, _ = init_mock_client
     backend = Boto3ArtifactStore(bucket_name)

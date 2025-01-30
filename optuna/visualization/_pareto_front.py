@@ -259,7 +259,7 @@ def _get_pareto_front_info(
     infeasible_trials_with_values = _make_trials_with_values(infeasible_trials, _targets)
 
     def _infer_n_targets(
-        trials_with_values: Sequence[tuple[FrozenTrial, Sequence[float]]]
+        trials_with_values: Sequence[tuple[FrozenTrial, Sequence[float]]],
     ) -> int | None:
         if len(trials_with_values) > 0:
             return len(trials_with_values[0][1])

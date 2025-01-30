@@ -451,7 +451,7 @@ def test_validate_constraints() -> None:
     ],
 )
 def test_rank_population_missing_constraint_values(
-    values_and_constraints: list[tuple[list[float], list[float]]]
+    values_and_constraints: list[tuple[list[float], list[float]]],
 ) -> None:
     values_dim = len(values_and_constraints[0][0])
     for directions in itertools.product(

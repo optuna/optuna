@@ -43,7 +43,7 @@ def test_study_optimize_with_single_search_space() -> None:
     study.optimize(objective)
 
     def sorted_values(
-        d: Mapping[str, Sequence[GridValueType]]
+        d: Mapping[str, Sequence[GridValueType]],
     ) -> ValuesView[Sequence[GridValueType]]:
         return dict(sorted(d.items())).values()
 
