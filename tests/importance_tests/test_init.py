@@ -208,7 +208,7 @@ def test_get_param_importances_with_target(
 
 @parametrize_evaluator
 def test_get_param_importances_invalid_empty_study(
-    evaluator_init_func: Callable[[], BaseImportanceEvaluator]
+    evaluator_init_func: Callable[[], BaseImportanceEvaluator],
 ) -> None:
     study = create_study()
 
@@ -223,7 +223,7 @@ def test_get_param_importances_invalid_empty_study(
 
 @parametrize_evaluator
 def test_get_param_importances_invalid_single_trial(
-    evaluator_init_func: Callable[[], BaseImportanceEvaluator]
+    evaluator_init_func: Callable[[], BaseImportanceEvaluator],
 ) -> None:
     def objective(trial: Trial) -> float:
         x1 = trial.suggest_float("x1", 0.1, 3)
@@ -238,7 +238,7 @@ def test_get_param_importances_invalid_single_trial(
 
 @parametrize_evaluator
 def test_get_param_importances_invalid_no_completed_trials_params(
-    evaluator_init_func: Callable[[], BaseImportanceEvaluator]
+    evaluator_init_func: Callable[[], BaseImportanceEvaluator],
 ) -> None:
     def objective(trial: Trial) -> float:
         x1 = trial.suggest_float("x1", 0.1, 3)
@@ -265,7 +265,7 @@ def test_get_param_importances_invalid_no_completed_trials_params(
 
 @parametrize_evaluator
 def test_get_param_importances_invalid_dynamic_search_space_params(
-    evaluator_init_func: Callable[[], BaseImportanceEvaluator]
+    evaluator_init_func: Callable[[], BaseImportanceEvaluator],
 ) -> None:
     def objective(trial: Trial) -> float:
         x1 = trial.suggest_float("x1", 0.1, trial.number + 0.1)
@@ -280,7 +280,7 @@ def test_get_param_importances_invalid_dynamic_search_space_params(
 
 @parametrize_evaluator
 def test_get_param_importances_empty_search_space(
-    evaluator_init_func: Callable[[], BaseImportanceEvaluator]
+    evaluator_init_func: Callable[[], BaseImportanceEvaluator],
 ) -> None:
     def objective(trial: Trial) -> float:
         x = trial.suggest_float("x", 0, 5)

@@ -58,7 +58,7 @@ def test_target_is_none_and_study_is_multi_obj() -> None:
 
 @parametrize_plot_param_importances
 def test_plot_param_importances_customized_target_name(
-    plot_param_importances: Callable[..., Any]
+    plot_param_importances: Callable[..., Any],
 ) -> None:
     params = ["param_a", "param_b"]
     study = prepare_study_with_trials()
@@ -71,7 +71,7 @@ def test_plot_param_importances_customized_target_name(
 
 @parametrize_plot_param_importances
 def test_plot_param_importances_multiobjective_all_objectives_displayed(
-    plot_param_importances: Callable[..., Any]
+    plot_param_importances: Callable[..., Any],
 ) -> None:
     n_objectives = 2
     params = ["param_a"]

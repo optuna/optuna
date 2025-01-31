@@ -1,3 +1,5 @@
+import time
+
 import numpy as np
 import pytest
 
@@ -85,10 +87,11 @@ def test_tree_node_count_unexpanded() -> None:
                     1.0: _TreeNode(),
                 },
             ),
-            2: _TreeNode(),
+            2: _TreeNode(is_running=True),
         },
     )
-    assert tree.count_unexpanded() == 3
+    assert tree.count_unexpanded(exclude_running=False) == 3
+    assert tree.count_unexpanded(exclude_running=True) == 2
 
 
 def test_study_optimize_with_single_search_space() -> None:
@@ -299,3 +302,39 @@ def test_parallel_optimize() -> None:
     x1 = trial1.suggest_categorical("x", ["a", "b"])
     x2 = trial2.suggest_categorical("x", ["a", "b"])
     assert {x1, x2} == {"a", "b"}
+
+
+def test_parallel_optimize_with_sleep() -> None:
+    def objective(trial: Trial) -> float:
+        x = trial.suggest_int("x", 0, 1)
+        time.sleep(x)
+        y = trial.suggest_int("y", 0, 1)
+        return x + y
+
+    # Seed is fixed to reproduce the same result.
+    # See: https://github.com/optuna/optuna/issues/5780
+    study = optuna.create_study(sampler=samplers.BruteForceSampler(seed=42))
+    study.optimize(objective, n_jobs=2)
+    expected_suggested_values = [
+        {"x": 0, "y": 0},
+        {"x": 0, "y": 1},
+        {"x": 1, "y": 0},
+    ]
+    all_suggested_values = [t.params for t in study.trials]
+    assert len(all_suggested_values) == len(expected_suggested_values)
+    for expected_value in expected_suggested_values:
+        assert expected_value in all_suggested_values
+
+    study = optuna.create_study(
+        sampler=samplers.BruteForceSampler(seed=42, avoid_premature_stop=True)
+    )
+    study.optimize(objective, n_jobs=2)
+    expected_suggested_values = [
+        {"x": 0, "y": 0},
+        {"x": 0, "y": 1},
+        {"x": 1, "y": 0},
+        {"x": 1, "y": 1},
+    ]
+    all_suggested_values = [t.params for t in study.trials]
+    for expected_value in expected_suggested_values:
+        assert expected_value in all_suggested_values

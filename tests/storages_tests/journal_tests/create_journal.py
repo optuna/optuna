@@ -1,6 +1,4 @@
-"""This script generates assets for testing backward compatibility of `JournalStorage`.
-
-"""
+"""This script generates assets for testing backward compatibility of `JournalStorage`."""
 
 from argparse import ArgumentParser
 import os
