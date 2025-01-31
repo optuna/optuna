@@ -6,28 +6,33 @@ import copy
 import json
 import threading
 from typing import Any
+from typing import TYPE_CHECKING
 import uuid
 
 from optuna._experimental import experimental_class
+from optuna._imports import _LazyImport
 from optuna.distributions import BaseDistribution
 from optuna.distributions import distribution_to_json
 from optuna.exceptions import DuplicatedStudyError
 from optuna.storages._base import BaseStorage
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
-from optuna.storages._grpc.grpc_imports import _imports
-from optuna.storages._grpc.server import _from_proto_trial
-from optuna.storages._grpc.server import _to_proto_trial
-from optuna.storages._grpc.server import _to_proto_trial_state
 from optuna.study._frozen import FrozenStudy
 from optuna.study._study_direction import StudyDirection
 from optuna.trial._frozen import FrozenTrial
 from optuna.trial._state import TrialState
 
 
-if _imports.is_successful():
-    from optuna.storages._grpc.grpc_imports import api_pb2
-    from optuna.storages._grpc.grpc_imports import api_pb2_grpc
-    from optuna.storages._grpc.grpc_imports import grpc
+if TYPE_CHECKING:
+    import grpc
+
+    from optuna.storages._grpc import servicer as grpc_servicer
+    from optuna.storages._grpc.auto_generated import api_pb2
+    from optuna.storages._grpc.auto_generated import api_pb2_grpc
+else:
+    api_pb2 = _LazyImport("optuna.storages._grpc.auto_generated.api_pb2")
+    api_pb2_grpc = _LazyImport("optuna.storages._grpc.auto_generated.api_pb2_grpc")
+    grpc = _LazyImport("grpc")
+    grpc_servicer = _LazyImport("optuna.storages._grpc.servicer")
 
 
 @experimental_class("4.2.0")
@@ -61,7 +66,6 @@ class GrpcStorageProxy(BaseStorage):
     """
 
     def __init__(self, *, host: str = "localhost", port: int = 13000) -> None:
-        _imports.check()
         self._stub = api_pb2_grpc.StorageServiceStub(
             grpc.insecure_channel(
                 f"{host}:{port}",
@@ -218,7 +222,7 @@ class GrpcStorageProxy(BaseStorage):
         else:
             request = api_pb2.CreateNewTrialRequest(
                 study_id=study_id,
-                template_trial=_to_proto_trial(template_trial),
+                template_trial=grpc_servicer._to_proto_trial(template_trial),
                 template_trial_is_none=False,
             )
         try:
@@ -259,7 +263,7 @@ class GrpcStorageProxy(BaseStorage):
     ) -> bool:
         request = api_pb2.SetTrialStateValuesRequest(
             trial_id=trial_id,
-            state=_to_proto_trial_state(state),
+            state=grpc_servicer._to_proto_trial_state(state),
             values=values,
         )
         try:
@@ -338,7 +342,7 @@ class GrpcStorageProxy(BaseStorage):
             if e.code() == grpc.StatusCode.NOT_FOUND:
                 raise KeyError from e
             raise
-        return _from_proto_trial(response.trial)
+        return grpc_servicer._from_proto_trial(response.trial)
 
     def get_all_trials(
         self,
@@ -395,7 +399,7 @@ class GrpcClientCache:
             return
 
         for trial_proto in res.trials:
-            trial = _from_proto_trial(trial_proto)
+            trial = grpc_servicer._from_proto_trial(trial_proto)
             self._add_trial_to_cache(study_id, trial)
 
     def _add_trial_to_cache(self, study_id: int, trial: FrozenTrial) -> None:
