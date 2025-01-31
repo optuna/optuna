@@ -107,7 +107,7 @@ def test_hyperband_max_resource_value_error() -> None:
     ],
 )
 def test_hyperband_filter_study(
-    sampler_init_func: Callable[[], optuna.samplers.BaseSampler]
+    sampler_init_func: Callable[[], optuna.samplers.BaseSampler],
 ) -> None:
     def objective(trial: optuna.trial.Trial) -> float:
         return trial.suggest_float("value", 0.0, 1.0)
@@ -152,7 +152,7 @@ def test_hyperband_filter_study(
     ],
 )
 def test_hyperband_no_filter_study(
-    pruner_init_func: Callable[[], optuna.pruners.BasePruner]
+    pruner_init_func: Callable[[], optuna.pruners.BasePruner],
 ) -> None:
     def objective(trial: optuna.trial.Trial) -> float:
         return trial.suggest_float("value", 0.0, 1.0)
@@ -191,7 +191,7 @@ def test_hyperband_no_filter_study(
     ],
 )
 def test_hyperband_no_call_of_filter_study_in_should_prune(
-    sampler_init_func: Callable[[], optuna.samplers.BaseSampler]
+    sampler_init_func: Callable[[], optuna.samplers.BaseSampler],
 ) -> None:
     def objective(trial: optuna.trial.Trial) -> float:
         with mock.patch("optuna.pruners._filter_study") as method_mock:

@@ -65,7 +65,7 @@ def test_percentile_pruner_with_one_trial() -> None:
     "direction_value", [("minimize", [1, 2, 3, 4, 5], 2.1), ("maximize", [1, 2, 3, 4, 5], 3.9)]
 )
 def test_25_percentile_pruner_intermediate_values(
-    direction_value: tuple[str, list[float], float]
+    direction_value: tuple[str, list[float], float],
 ) -> None:
     direction, intermediate_values, latest_value = direction_value
     pruner = optuna.pruners.PercentilePruner(25.0, 0, 0)
@@ -112,7 +112,7 @@ def test_25_percentile_pruner_intermediate_values_nan() -> None:
     "direction_expected", [(StudyDirection.MINIMIZE, 0.1), (StudyDirection.MAXIMIZE, 0.2)]
 )
 def test_get_best_intermediate_result_over_steps(
-    direction_expected: tuple[StudyDirection, float]
+    direction_expected: tuple[StudyDirection, float],
 ) -> None:
     direction, expected = direction_expected
 

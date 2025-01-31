@@ -195,7 +195,7 @@ def parametrize_suggest_method(name: str) -> MarkDecorator:
     ],
 )
 def test_raise_error_for_samplers_during_multi_objectives(
-    sampler_class: Callable[[], BaseSampler]
+    sampler_class: Callable[[], BaseSampler],
 ) -> None:
     study = optuna.study.create_study(directions=["maximize", "maximize"], sampler=sampler_class())
 
