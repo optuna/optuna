@@ -3,6 +3,7 @@ from __future__ import annotations
 import abc
 from collections.abc import Iterator
 from contextlib import contextmanager
+import datetime
 import errno
 import json
 import os
@@ -128,20 +129,25 @@ class JournalFileSymlinkLock(BaseJournalFileLock):
     Args:
         filepath:
             The path of the file whose race condition must be protected.
+        grace_period:
+            Grace period before an existing lock is forcibly released.
     """
 
-    def __init__(self, filepath: str) -> None:
+    def __init__(self, filepath: str, grace_period: int = 30) -> None:
         self._lock_target_file = filepath
         self._lock_file = filepath + LOCK_FILE_SUFFIX
+        if grace_period is not None and grace_period <= 0:
+            raise ValueError("The value of `grace_period` should be a positive integer.")
+        self.grace_period = grace_period
 
     def acquire(self) -> bool:
         """Acquire a lock in a blocking way by creating a symbolic link of a file.
 
         Returns:
             :obj:`True` if it succeeded in creating a symbolic link of ``self._lock_target_file``.
-
         """
         sleep_secs = 0.001
+        start_datetime = datetime.datetime.now()
         while True:
             try:
                 os.symlink(self._lock_target_file, self._lock_file)
@@ -150,6 +156,10 @@ class JournalFileSymlinkLock(BaseJournalFileLock):
                 if err.errno == errno.EEXIST:
                     time.sleep(sleep_secs)
                     sleep_secs = min(sleep_secs * 2, 1)
+                    if datetime.datetime.now() - start_datetime > datetime.timedelta(
+                        seconds=self.grace_period
+                    ):
+                        self.release()
                     continue
                 raise err
             except BaseException:
@@ -181,10 +191,15 @@ class JournalFileOpenLock(BaseJournalFileLock):
     Args:
         filepath:
             The path of the file whose race condition must be protected.
+        grace_period:
+            Grace period before an existing lock is forcibly released.
     """
 
-    def __init__(self, filepath: str) -> None:
+    def __init__(self, filepath: str, grace_period: int = 30) -> None:
         self._lock_file = filepath + LOCK_FILE_SUFFIX
+        if grace_period is not None and grace_period <= 0:
+            raise ValueError("The value of `grace_period` should be a positive integer.")
+        self.grace_period = grace_period
 
     def acquire(self) -> bool:
         """Acquire a lock in a blocking way by creating a lock file.
@@ -194,6 +209,7 @@ class JournalFileOpenLock(BaseJournalFileLock):
 
         """
         sleep_secs = 0.001
+        start_datetime = datetime.datetime.now()
         while True:
             try:
                 open_flags = os.O_CREAT | os.O_EXCL | os.O_WRONLY
@@ -203,6 +219,10 @@ class JournalFileOpenLock(BaseJournalFileLock):
                 if err.errno == errno.EEXIST:
                     time.sleep(sleep_secs)
                     sleep_secs = min(sleep_secs * 2, 1)
+                    if datetime.datetime.now() - start_datetime > datetime.timedelta(
+                        seconds=self.grace_period
+                    ):
+                        self.release()
                     continue
                 raise err
             except BaseException:
