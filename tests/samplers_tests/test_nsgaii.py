@@ -41,7 +41,6 @@ from optuna.samplers.nsgaii._elite_population_selection_strategy import (
 from optuna.samplers.nsgaii._elite_population_selection_strategy import _calc_crowding_distance
 from optuna.samplers.nsgaii._elite_population_selection_strategy import _crowding_distance_sort
 from optuna.samplers.nsgaii._elite_population_selection_strategy import _rank_population
-from optuna.samplers.nsgaii._sampler import _GENERATION_KEY
 from optuna.study._multi_objective import _dominates
 from optuna.study._study_direction import StudyDirection
 from optuna.testing.trials import _create_frozen_trial
@@ -55,6 +54,10 @@ def _nan_equal(a: Any, b: Any) -> bool:
     return a == b
 
 
+def test_generation_key_name() -> None:
+    assert NSGAIISampler._GENERATION_KEY == "NSGAIISampler:generation"
+
+
 def test_population_size() -> None:
     # Set `population_size` to 10.
     sampler = NSGAIISampler(population_size=10)
@@ -62,9 +65,7 @@ def test_population_size() -> None:
     study = optuna.create_study(directions=["minimize"], sampler=sampler)
     study.optimize(lambda t: [t.suggest_float("x", 0, 9)], n_trials=40)
 
-    generations = Counter(
-        [t.system_attrs[optuna.samplers.nsgaii._sampler._GENERATION_KEY] for t in study.trials]
-    )
+    generations = Counter([t.system_attrs[NSGAIISampler._GENERATION_KEY] for t in study.trials])
     assert generations == {0: 10, 1: 10, 2: 10, 3: 10}
 
     # Set `population_size` to 2.
@@ -73,9 +74,7 @@ def test_population_size() -> None:
     study = optuna.create_study(directions=["minimize"], sampler=sampler)
     study.optimize(lambda t: [t.suggest_float("x", 0, 9)], n_trials=40)
 
-    generations = Counter(
-        [t.system_attrs[optuna.samplers.nsgaii._sampler._GENERATION_KEY] for t in study.trials]
-    )
+    generations = Counter([t.system_attrs[NSGAIISampler._GENERATION_KEY] for t in study.trials])
     assert generations == {i: 2 for i in range(20)}
 
     # Invalid population size.
@@ -532,37 +531,6 @@ def test_crowding_distance_sort(values: list[list[float]]) -> None:
     assert sorted_dist == sorted(sorted_dist, reverse=True)
 
 
-def test_study_system_attr_for_population_cache() -> None:
-    sampler = NSGAIISampler(population_size=10)
-    study = optuna.create_study(directions=["minimize"], sampler=sampler)
-
-    def get_cached_entries(
-        study: optuna.study.Study,
-    ) -> list[tuple[int, list[int]]]:
-        study_system_attrs = study._storage.get_study_system_attrs(study._study_id)
-        return [
-            v
-            for k, v in study_system_attrs.items()
-            if k.startswith(optuna.samplers.nsgaii._sampler._POPULATION_CACHE_KEY_PREFIX)
-        ]
-
-    study.optimize(lambda t: [t.suggest_float("x", 0, 9)], n_trials=10)
-    cached_entries = get_cached_entries(study)
-    assert len(cached_entries) == 0
-
-    study.optimize(lambda t: [t.suggest_float("x", 0, 9)], n_trials=1)
-    cached_entries = get_cached_entries(study)
-    assert len(cached_entries) == 1
-    assert cached_entries[0][0] == 0  # Cached generation.
-    assert len(cached_entries[0][1]) == 10  # Population size.
-
-    study.optimize(lambda t: [t.suggest_float("x", 0, 9)], n_trials=10)
-    cached_entries = get_cached_entries(study)
-    assert len(cached_entries) == 1
-    assert cached_entries[0][0] == 1  # Cached generation.
-    assert len(cached_entries[0][1]) == 10  # Population size.
-
-
 def test_constraints_func_experimental_warning() -> None:
     with pytest.warns(optuna.exceptions.ExperimentalWarning):
         NSGAIISampler(constraints_func=lambda _: [0])
@@ -699,9 +667,9 @@ def test_child_generation_strategy_generation_key() -> None:
     assert mock_func.call_count == 1
     for i, trial in enumerate(study.get_trials()):
         if i < 2:
-            assert trial.system_attrs[_GENERATION_KEY] == 0
+            assert trial.system_attrs[NSGAIISampler._GENERATION_KEY] == 0
         elif i == 2:
-            assert trial.system_attrs[_GENERATION_KEY] == 1
+            assert trial.system_attrs[NSGAIISampler._GENERATION_KEY] == 1
 
 
 @patch(

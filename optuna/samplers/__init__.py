@@ -2,6 +2,7 @@ from optuna.samplers import nsgaii
 from optuna.samplers._base import BaseSampler
 from optuna.samplers._brute_force import BruteForceSampler
 from optuna.samplers._cmaes import CmaEsSampler
+from optuna.samplers._ga import BaseGASampler
 from optuna.samplers._gp.sampler import GPSampler
 from optuna.samplers._grid import GridSampler
 from optuna.samplers._nsgaiii._sampler import NSGAIIISampler
@@ -14,6 +15,7 @@ from optuna.samplers.nsgaii._sampler import NSGAIISampler
 
 __all__ = [
     "BaseSampler",
+    "BaseGASampler",
     "BruteForceSampler",
     "CmaEsSampler",
     "GridSampler",

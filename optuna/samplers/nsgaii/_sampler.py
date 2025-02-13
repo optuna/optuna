@@ -1,16 +1,13 @@
 from __future__ import annotations
 
-from collections import defaultdict
 from collections.abc import Callable
 from collections.abc import Sequence
-import hashlib
 from typing import Any
 from typing import TYPE_CHECKING
 
-import optuna
 from optuna._experimental import warn_experimental_argument
 from optuna.distributions import BaseDistribution
-from optuna.samplers._base import BaseSampler
+from optuna.samplers._ga import BaseGASampler
 from optuna.samplers._lazy_random_state import LazyRandomState
 from optuna.samplers._random import RandomSampler
 from optuna.samplers.nsgaii._after_trial_strategy import NSGAIIAfterTrialStrategy
@@ -29,12 +26,7 @@ if TYPE_CHECKING:
     from optuna.study import Study
 
 
-# Define key names of `Trial.system_attrs`.
-_GENERATION_KEY = "nsga2:generation"
-_POPULATION_CACHE_KEY_PREFIX = "nsga2:population"
-
-
-class NSGAIISampler(BaseSampler):
+class NSGAIISampler(BaseGASampler):
     """Multi-objective sampler using the NSGA-II algorithm.
 
     NSGA-II stands for "Nondominated Sorting Genetic Algorithm II",
@@ -215,7 +207,7 @@ class NSGAIISampler(BaseSampler):
                 f" The specified `population_size` is {population_size}."
             )
 
-        self._population_size = population_size
+        super().__init__(population_size=population_size)
         self._random_sampler = RandomSampler(seed=seed)
         self._rng = LazyRandomState(seed)
         self._constraints_func = constraints_func
@@ -260,20 +252,23 @@ class NSGAIISampler(BaseSampler):
             search_space[name] = distribution
         return search_space
 
+    def select_parent(self, study: Study, generation: int) -> list[FrozenTrial]:
+        return self._elite_population_selection_strategy(
+            study,
+            self.get_population(study, generation - 1)
+            + self.get_parent_population(study, generation - 1),
+        )
+
     def sample_relative(
         self,
         study: Study,
         trial: FrozenTrial,
         search_space: dict[str, BaseDistribution],
     ) -> dict[str, Any]:
-        parent_generation, parent_population = self._collect_parent_population(study)
-
-        generation = parent_generation + 1
-        study._storage.set_trial_system_attr(trial._trial_id, _GENERATION_KEY, generation)
-
-        if parent_generation < 0:
+        generation = self.get_trial_generation(study, trial)
+        parent_population = self.get_parent_population(study, generation)
+        if len(parent_population) == 0:
             return {}
-
         return self._child_generation_strategy(study, search_space, parent_population)
 
     def sample_independent(
@@ -291,81 +286,6 @@ class NSGAIISampler(BaseSampler):
         return self._random_sampler.sample_independent(
             study, trial, param_name, param_distribution
         )
-
-    def _collect_parent_population(self, study: Study) -> tuple[int, list[FrozenTrial]]:
-        trials = study._get_trials(deepcopy=False, use_cache=True)
-
-        generation_to_runnings = defaultdict(list)
-        generation_to_population = defaultdict(list)
-        for trial in trials:
-            if _GENERATION_KEY not in trial.system_attrs:
-                continue
-
-            generation = trial.system_attrs[_GENERATION_KEY]
-            if trial.state != optuna.trial.TrialState.COMPLETE:
-                if trial.state == optuna.trial.TrialState.RUNNING:
-                    generation_to_runnings[generation].append(trial)
-                continue
-
-            # Do not use trials whose states are not COMPLETE, or `constraint` will be unavailable.
-            generation_to_population[generation].append(trial)
-
-        hasher = hashlib.sha256()
-        parent_population: list[FrozenTrial] = []
-        parent_generation = -1
-        while True:
-            generation = parent_generation + 1
-            population = generation_to_population[generation]
-
-            # Under multi-worker settings, the population size might become larger than
-            # `self._population_size`.
-            if len(population) < self._population_size:
-                break
-
-            # [NOTE]
-            # It's generally safe to assume that once the above condition is satisfied,
-            # there are no additional individuals added to the generation (i.e., the members of
-            # the generation have been fixed).
-            # If the number of parallel workers is huge, this assumption can be broken, but
-            # this is a very rare case and doesn't significantly impact optimization performance.
-            # So we can ignore the case.
-
-            # The cache key is calculated based on the key of the previous generation and
-            # the remaining running trials in the current population.
-            # If there are no running trials, the new cache key becomes exactly the same as
-            # the previous one, and the cached content will be overwritten. This allows us to
-            # skip redundant cache key calculations when this method is called for the subsequent
-            # trials.
-            for trial in generation_to_runnings[generation]:
-                hasher.update(bytes(str(trial.number), "utf-8"))
-
-            cache_key = "{}:{}".format(_POPULATION_CACHE_KEY_PREFIX, hasher.hexdigest())
-            study_system_attrs = study._storage.get_study_system_attrs(study._study_id)
-            cached_generation, cached_population_numbers = study_system_attrs.get(
-                cache_key, (-1, [])
-            )
-            if cached_generation >= generation:
-                generation = cached_generation
-                population = [trials[n] for n in cached_population_numbers]
-            else:
-                population.extend(parent_population)
-                population = self._elite_population_selection_strategy(study, population)
-
-                # To reduce the number of system attribute entries,
-                # we cache the population information only if there are no running trials
-                # (i.e., the information of the population has been fixed).
-                # Usually, if there are no too delayed running trials, the single entry
-                # will be used.
-                if len(generation_to_runnings[generation]) == 0:
-                    population_numbers = [t.number for t in population]
-                    study._storage.set_study_system_attr(
-                        study._study_id, cache_key, (generation, population_numbers)
-                    )
-
-            parent_generation = generation
-            parent_population = population
-
-        return parent_generation, parent_population
 
     def before_trial(self, study: Study, trial: FrozenTrial) -> None:
         self._random_sampler.before_trial(study, trial)
