@@ -10,6 +10,7 @@ import os
 import time
 from typing import Any
 import uuid
+import warnings
 
 from optuna._deprecated import deprecated_class
 from optuna.storages.journal._base import BaseJournalBackend
@@ -138,6 +139,8 @@ class JournalFileSymlinkLock(BaseJournalFileLock):
         self._lock_file = filepath + LOCK_FILE_SUFFIX
         if grace_period is not None and grace_period <= 0:
             raise ValueError("The value of `grace_period` should be a positive integer.")
+        if grace_period < 3:
+            warnings.warn("The value of `grace_period` might be too small. ")
         self.grace_period = grace_period
 
     def acquire(self) -> bool:
@@ -202,6 +205,8 @@ class JournalFileOpenLock(BaseJournalFileLock):
         self._lock_file = filepath + LOCK_FILE_SUFFIX
         if grace_period is not None and grace_period <= 0:
             raise ValueError("The value of `grace_period` should be a positive integer.")
+        if grace_period < 3:
+            warnings.warn("The value of `grace_period` might be too small. ")
         self.grace_period = grace_period
 
     def acquire(self) -> bool:
