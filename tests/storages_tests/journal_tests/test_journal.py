@@ -28,27 +28,20 @@ from optuna.testing.storages import StorageSupplier
 from optuna.testing.tempfile_pool import NamedTemporaryFilePool
 
 
-LOG_STORAGE_WITH_PARAETER = [
-    ("file_with_open_lock", 1),
-    ("file_with_open_lock", 30),
-    ("file_with_link_lock", 1),
-    ("file_with_link_lock", 30),
-    ("redis_default", -1),
-    ("redis_with_use_cluster", -1),
-]
-
-LOG_STORAGE = [
-    "file_with_open_lock",
-    "file_with_link_lock",
-    "redis_default",
-    "redis_with_use_cluster",
+LOG_STORAGE_WITH_PARAMETER = [
+    ("file_with_open_lock", 3),
+    ("file_with_open_lock", None),
+    ("file_with_link_lock", 3),
+    ("file_with_link_lock", None),
+    ("redis_default", None),
+    ("redis_with_use_cluster", None),
 ]
 
 JOURNAL_STORAGE_SUPPORTING_SNAPSHOT = ["journal_redis"]
 
 
 class JournalLogStorageSupplier:
-    def __init__(self, storage_type: str, grace_period: int) -> None:
+    def __init__(self, storage_type: str, grace_period: int | None) -> None:
         self.storage_type = storage_type
         self.tempfile: IO[Any] | None = None
         self.grace_period = grace_period
@@ -58,17 +51,25 @@ class JournalLogStorageSupplier:
             self.tempfile = NamedTemporaryFilePool().tempfile()
             lock: BaseJournalFileLock
             if self.storage_type == "file_with_open_lock":
-                lock = optuna.storages.journal.JournalFileOpenLock(
-                    self.tempfile.name, self.grace_period
-                )
+                if self.grace_period is not None:
+                    lock = optuna.storages.journal.JournalFileOpenLock(
+                        self.tempfile.name, self.grace_period
+                    )
+                else:
+                    lock = optuna.storages.journal.JournalFileOpenLock(self.tempfile.name)
             elif self.storage_type == "file_with_link_lock":
-                lock = optuna.storages.journal.JournalFileSymlinkLock(
-                    self.tempfile.name, self.grace_period
-                )
+                if self.grace_period is not None:
+                    lock = optuna.storages.journal.JournalFileSymlinkLock(
+                        self.tempfile.name, self.grace_period
+                    )
+                else:
+                    lock = optuna.storages.journal.JournalFileSymlinkLock(self.tempfile.name)
             else:
                 raise Exception("Must not reach here")
             return optuna.storages.journal.JournalFileBackend(self.tempfile.name, lock)
         elif self.storage_type.startswith("redis"):
+            if self.grace_period is not None:
+                raise RuntimeError("Grace period is not supported for Redis storage.")
             use_cluster = self.storage_type == "redis_with_use_cluster"
             journal_redis_storage = optuna.storages.journal.JournalRedisBackend(
                 "redis://localhost", use_cluster
@@ -85,9 +86,9 @@ class JournalLogStorageSupplier:
             self.tempfile.close()
 
 
-@pytest.mark.parametrize("log_storage_type,grace_period", LOG_STORAGE_WITH_PARAETER)
+@pytest.mark.parametrize("log_storage_type,grace_period", LOG_STORAGE_WITH_PARAMETER)
 def test_concurrent_append_logs_for_multi_processes(
-    log_storage_type: str, grace_period: int
+    log_storage_type: str, grace_period: int | None
 ) -> None:
     if log_storage_type.startswith("redis"):
         pytest.skip("The `fakeredis` does not support multi process environments.")
@@ -104,9 +105,9 @@ def test_concurrent_append_logs_for_multi_processes(
         assert all(record == r for r in storage.read_logs(0))
 
 
-@pytest.mark.parametrize("log_storage_type,grace_period", LOG_STORAGE_WITH_PARAETER)
+@pytest.mark.parametrize("log_storage_type,grace_period", LOG_STORAGE_WITH_PARAMETER)
 def test_concurrent_append_logs_for_multi_threads(
-    log_storage_type: str, grace_period: int
+    log_storage_type: str, grace_period: int | None
 ) -> None:
     num_executors = 10
     num_records = 200
