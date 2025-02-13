@@ -150,6 +150,7 @@ class JournalFileSymlinkLock(BaseJournalFileLock):
             :obj:`True` if it succeeded in creating a symbolic link of ``self._lock_target_file``.
         """
         sleep_secs = 0.001
+        start_time = time.monotonic()
         while True:
             try:
                 os.symlink(self._lock_target_file, self._lock_file)
@@ -158,8 +159,10 @@ class JournalFileSymlinkLock(BaseJournalFileLock):
                 if err.errno == errno.EEXIST:
                     try:
                         mtime = datetime.datetime.fromtimestamp(os.stat(self._lock_file).st_mtime)
-                        if datetime.datetime.now() - mtime > datetime.timedelta(
-                            seconds=self.grace_period
+                        if (
+                            datetime.datetime.now() - mtime
+                            > datetime.timedelta(seconds=self.grace_period)
+                            and time.monotonic() - start_time > self.grace_period
                         ):
                             self.release()
                     except Exception:
@@ -217,6 +220,7 @@ class JournalFileOpenLock(BaseJournalFileLock):
 
         """
         sleep_secs = 0.001
+        start_time = time.monotonic()
         while True:
             try:
                 open_flags = os.O_CREAT | os.O_EXCL | os.O_WRONLY
@@ -226,8 +230,10 @@ class JournalFileOpenLock(BaseJournalFileLock):
                 if err.errno == errno.EEXIST:
                     try:
                         mtime = datetime.datetime.fromtimestamp(os.stat(self._lock_file).st_mtime)
-                        if datetime.datetime.now() - mtime > datetime.timedelta(
-                            seconds=self.grace_period
+                        if (
+                            datetime.datetime.now() - mtime
+                            > datetime.timedelta(seconds=self.grace_period)
+                            and time.monotonic() - start_time > self.grace_period
                         ):
                             self.release()
                     except Exception:
