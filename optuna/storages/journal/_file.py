@@ -147,19 +147,22 @@ class JournalFileSymlinkLock(BaseJournalFileLock):
             :obj:`True` if it succeeded in creating a symbolic link of ``self._lock_target_file``.
         """
         sleep_secs = 0.001
-        start_datetime = datetime.datetime.now()
         while True:
             try:
                 os.symlink(self._lock_target_file, self._lock_file)
                 return True
             except OSError as err:
                 if err.errno == errno.EEXIST:
+                    try:
+                        mtime = datetime.datetime.fromtimestamp(os.stat(self._lock_file).st_mtime)
+                        if datetime.datetime.now() - mtime > datetime.timedelta(
+                            seconds=self.grace_period
+                        ):
+                            self.release()
+                    except Exception:
+                        pass
                     time.sleep(sleep_secs)
                     sleep_secs = min(sleep_secs * 2, 1)
-                    if datetime.datetime.now() - start_datetime > datetime.timedelta(
-                        seconds=self.grace_period
-                    ):
-                        self.release()
                     continue
                 raise err
             except BaseException:
@@ -209,7 +212,6 @@ class JournalFileOpenLock(BaseJournalFileLock):
 
         """
         sleep_secs = 0.001
-        start_datetime = datetime.datetime.now()
         while True:
             try:
                 open_flags = os.O_CREAT | os.O_EXCL | os.O_WRONLY
@@ -217,12 +219,16 @@ class JournalFileOpenLock(BaseJournalFileLock):
                 return True
             except OSError as err:
                 if err.errno == errno.EEXIST:
+                    try:
+                        mtime = datetime.datetime.fromtimestamp(os.stat(self._lock_file).st_mtime)
+                        if datetime.datetime.now() - mtime > datetime.timedelta(
+                            seconds=self.grace_period
+                        ):
+                            self.release()
+                    except Exception:
+                        pass
                     time.sleep(sleep_secs)
                     sleep_secs = min(sleep_secs * 2, 1)
-                    if datetime.datetime.now() - start_datetime > datetime.timedelta(
-                        seconds=self.grace_period
-                    ):
-                        self.release()
                     continue
                 raise err
             except BaseException:

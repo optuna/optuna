@@ -28,6 +28,15 @@ from optuna.testing.storages import StorageSupplier
 from optuna.testing.tempfile_pool import NamedTemporaryFilePool
 
 
+LOG_STORAGE_WITH_PARAETER = [
+    ("file_with_open_lock", 1),
+    ("file_with_open_lock", 30),
+    ("file_with_link_lock", 1),
+    ("file_with_link_lock", 30),
+    ("redis_default", -1),
+    ("redis_with_use_cluster", -1),
+]
+
 LOG_STORAGE = [
     "file_with_open_lock",
     "file_with_link_lock",
@@ -39,18 +48,23 @@ JOURNAL_STORAGE_SUPPORTING_SNAPSHOT = ["journal_redis"]
 
 
 class JournalLogStorageSupplier:
-    def __init__(self, storage_type: str) -> None:
+    def __init__(self, storage_type: str, grace_period: int) -> None:
         self.storage_type = storage_type
         self.tempfile: IO[Any] | None = None
+        self.grace_period = grace_period
 
     def __enter__(self) -> optuna.storages.journal.BaseJournalBackend:
         if self.storage_type.startswith("file"):
             self.tempfile = NamedTemporaryFilePool().tempfile()
             lock: BaseJournalFileLock
             if self.storage_type == "file_with_open_lock":
-                lock = optuna.storages.journal.JournalFileOpenLock(self.tempfile.name)
+                lock = optuna.storages.journal.JournalFileOpenLock(
+                    self.tempfile.name, self.grace_period
+                )
             elif self.storage_type == "file_with_link_lock":
-                lock = optuna.storages.journal.JournalFileSymlinkLock(self.tempfile.name)
+                lock = optuna.storages.journal.JournalFileSymlinkLock(
+                    self.tempfile.name, self.grace_period
+                )
             else:
                 raise Exception("Must not reach here")
             return optuna.storages.journal.JournalFileBackend(self.tempfile.name, lock)
@@ -71,8 +85,10 @@ class JournalLogStorageSupplier:
             self.tempfile.close()
 
 
-@pytest.mark.parametrize("log_storage_type", LOG_STORAGE)
-def test_concurrent_append_logs_for_multi_processes(log_storage_type: str) -> None:
+@pytest.mark.parametrize("log_storage_type,grace_period", LOG_STORAGE_WITH_PARAETER)
+def test_concurrent_append_logs_for_multi_processes(
+    log_storage_type: str, grace_period: int
+) -> None:
     if log_storage_type.startswith("redis"):
         pytest.skip("The `fakeredis` does not support multi process environments.")
 
@@ -80,7 +96,7 @@ def test_concurrent_append_logs_for_multi_processes(log_storage_type: str) -> No
     num_records = 200
     record = {"key": "value"}
 
-    with JournalLogStorageSupplier(log_storage_type) as storage:
+    with JournalLogStorageSupplier(log_storage_type, grace_period) as storage:
         with ProcessPoolExecutor(num_executors) as pool:
             pool.map(storage.append_logs, [[record] for _ in range(num_records)], timeout=20)
 
@@ -88,13 +104,15 @@ def test_concurrent_append_logs_for_multi_processes(log_storage_type: str) -> No
         assert all(record == r for r in storage.read_logs(0))
 
 
-@pytest.mark.parametrize("log_storage_type", LOG_STORAGE)
-def test_concurrent_append_logs_for_multi_threads(log_storage_type: str) -> None:
+@pytest.mark.parametrize("log_storage_type,grace_period", LOG_STORAGE_WITH_PARAETER)
+def test_concurrent_append_logs_for_multi_threads(
+    log_storage_type: str, grace_period: int
+) -> None:
     num_executors = 10
     num_records = 200
     record = {"key": "value"}
 
-    with JournalLogStorageSupplier(log_storage_type) as storage:
+    with JournalLogStorageSupplier(log_storage_type, grace_period) as storage:
         with ThreadPoolExecutor(num_executors) as pool:
             pool.map(storage.append_logs, [[record] for _ in range(num_records)], timeout=20)
 
