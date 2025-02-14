@@ -600,27 +600,6 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
 
         trial_param.check_and_add(session, trial.study_id)
 
-    def _check_and_set_param_distribution(
-        self,
-        study_id: int,
-        trial_id: int,
-        param_name: str,
-        param_value_internal: float,
-        distribution: distributions.BaseDistribution,
-    ) -> None:
-        with _create_scoped_session(self.scoped_session) as session:
-            # Acquire lock.
-            #
-            # Assume that study exists.
-            models.StudyModel.find_or_raise_by_id(study_id, session, for_update=True)
-
-            models.TrialParamModel(
-                trial_id=trial_id,
-                param_name=param_name,
-                param_value=param_value_internal,
-                distribution_json=distributions.distribution_to_json(distribution),
-            ).check_and_add(session, study_id)
-
     def get_trial_param(self, trial_id: int, param_name: str) -> float:
         with _create_scoped_session(self.scoped_session) as session:
             trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
