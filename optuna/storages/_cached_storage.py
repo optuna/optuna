@@ -28,7 +28,6 @@ class _StudyInfo:
         self.unfinished_trial_ids: set[int] = set()
         self.last_finished_trial_id: int = -1
         # Cache distributions to avoid storage access on distribution consistency check.
-        self.param_distribution: dict[str, distributions.BaseDistribution] = {}
         self.directions: list[StudyDirection] | None = None
         self.name: str | None = None
 
