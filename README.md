@@ -25,12 +25,12 @@ Optuna can dynamically construct the search spaces for the hyperparameters.
 
 ## :loudspeaker: News
 <!-- TODO: when you add a new line, please delete the oldest line -->
+* **Feb 17, 2025**: A new article [SMAC3 Registered on OptunaHub](https://medium.com/optuna/smac3-registered-on-optunahub-4fb9e90855cb) has been published.
 * **Jan 22, 2025**: A new article [OptunaHub Benchmarks: A New Feature to Use/Register Various Benchmark Problems](https://medium.com/optuna/optunahub-benchmarks-a-new-feature-to-use-register-various-benchmark-problems-694401524ce0) has been published.
 * **Jan 20, 2025**: Optuna 4.2.0 and OptunaHub 0.2.0 are out! Try the newest Optuna and OptunaHub! Check out [the release note](https://github.com/optuna/optuna/releases/tag/v4.2.0) for details.
 * **Jan 16, 2025**: A new article [Overview of Python Free Threading (v3.13t) Support in Optuna](https://medium.com/optuna/overview-of-python-free-threading-v3-13t-support-in-optuna-ad9ab62a11ba) has been published.
 * **Nov 12, 2024**: We released Optuna 4.1 with new features, Python 3.13 support and much more! Check out [the release note](https://github.com/optuna/optuna/releases/tag/v4.1.0) for details.
 * **Nov 6, 2024**: A new article [AutoSampler: Automatic Selection of Optimization Algorithms in Optuna](https://medium.com/optuna/autosampler-automatic-selection-of-optimization-algorithms-in-optuna-1443875fd8f9) has been published.
-* **Oct 21, 2024**: We posted [an article](https://medium.com/optuna/an-introduction-to-moea-d-and-examples-of-multi-objective-optimization-comparisons-8630565a4e89) introducing [MOEA/D](https://hub.optuna.org/samplers/moead/) and an example comparison with other optimization methods.
 
 ## :fire: Key Features
 
