@@ -26,18 +26,21 @@ def _calculate(
     if include_pruned:
         states_of_interest.append(optuna.trial.TrialState.PRUNED)
 
-    trials_of_interest = [trial for trial in trials if trial.state in states_of_interest]
+    next_cached_trial_number = -1
 
-    next_cached_trial_number = (
-        trials_of_interest[-1].number + 1 if len(trials_of_interest) > 0 else -1
-    )
-    for trial in reversed(trials_of_interest):
+    for trial in reversed(trials):
+
+        if trial.state not in states_of_interest:
+            continue
+
         if cached_trial_number > trial.number:
             break
 
         if not trial.state.is_finished():
             next_cached_trial_number = trial.number
             continue
+        else:
+            next_cached_trial_number = trials[-1].number + 1
 
         if search_space is None:
             search_space = copy.copy(trial.distributions)
