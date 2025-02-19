@@ -3,7 +3,6 @@ from __future__ import annotations
 import abc
 from collections.abc import Iterator
 from contextlib import contextmanager
-import datetime
 import errno
 import json
 import os
@@ -150,7 +149,8 @@ class JournalFileSymlinkLock(BaseJournalFileLock):
             :obj:`True` if it succeeded in creating a symbolic link of ``self._lock_target_file``.
         """
         sleep_secs = 0.001
-        start_time = time.monotonic()
+        last_update_time = time.monotonic()
+        mtime = None
         while True:
             try:
                 os.symlink(self._lock_target_file, self._lock_file)
@@ -158,12 +158,11 @@ class JournalFileSymlinkLock(BaseJournalFileLock):
             except OSError as err:
                 if err.errno == errno.EEXIST:
                     try:
-                        mtime = datetime.datetime.fromtimestamp(os.stat(self._lock_file).st_mtime)
-                        if (
-                            datetime.datetime.now() - mtime
-                            > datetime.timedelta(seconds=self.grace_period)
-                            and time.monotonic() - start_time > self.grace_period
-                        ):
+                        current_mtime = os.stat(self._lock_file).st_mtime
+                        if current_mtime != mtime:
+                            mtime = current_mtime
+                            last_update_time = time.monotonic()
+                        if time.monotonic() - last_update_time > self.grace_period:
                             self.release()
                     except Exception:
                         pass
@@ -220,7 +219,8 @@ class JournalFileOpenLock(BaseJournalFileLock):
 
         """
         sleep_secs = 0.001
-        start_time = time.monotonic()
+        last_update_time = time.monotonic()
+        mtime = None
         while True:
             try:
                 open_flags = os.O_CREAT | os.O_EXCL | os.O_WRONLY
@@ -229,12 +229,11 @@ class JournalFileOpenLock(BaseJournalFileLock):
             except OSError as err:
                 if err.errno == errno.EEXIST:
                     try:
-                        mtime = datetime.datetime.fromtimestamp(os.stat(self._lock_file).st_mtime)
-                        if (
-                            datetime.datetime.now() - mtime
-                            > datetime.timedelta(seconds=self.grace_period)
-                            and time.monotonic() - start_time > self.grace_period
-                        ):
+                        current_mtime = os.stat(self._lock_file).st_mtime
+                        if current_mtime != mtime:
+                            mtime = current_mtime
+                            last_update_time = time.monotonic()
+                        if time.monotonic() - last_update_time > self.grace_period:
                             self.release()
                     except Exception:
                         pass
