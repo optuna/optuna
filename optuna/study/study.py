@@ -94,6 +94,7 @@ class Study:
 
         self._thread_local = _ThreadLocalStudyAttribute()
         self._stop_flag = False
+        self._waiting_trials_cache: set[FrozenTrial] | None = None
 
     def __getstate__(self) -> dict[Any, Any]:
         state = self.__dict__.copy()
@@ -1056,15 +1057,35 @@ class Study:
         return len(self.directions) > 1
 
     def _pop_waiting_trial_id(self) -> int | None:
-        for trial in self._storage.get_all_trials(
+        if self._waiting_trials_cache is not None:
+            trials_to_be_removed = set()
+            for trial in self._waiting_trials_cache:
+                trials_to_be_removed.add(trial)
+                if not self._storage.set_trial_state_values(
+                    trial._trial_id, state=TrialState.RUNNING
+                ):
+                    continue
+
+                _logger.debug("Trial {} popped from the trial queue.".format(trial.number))
+                self._waiting_trials_cache -= trials_to_be_removed
+                return trial._trial_id
+
+        waiting_trials = self._storage.get_all_trials(
             self._study_id, deepcopy=False, states=(TrialState.WAITING,)
-        ):
+        )
+        trials_to_be_removed = set()
+        for trial in waiting_trials:
+            trials_to_be_removed.add(trial)
             if not self._storage.set_trial_state_values(trial._trial_id, state=TrialState.RUNNING):
                 continue
 
             _logger.debug("Trial {} popped from the trial queue.".format(trial.number))
+            self._waiting_trials_cache = set(
+                trial for trial in waiting_trials if trial not in trials_to_be_removed
+            )
             return trial._trial_id
 
+        self._waiting_trials_cache = None
         return None
 
     def _should_skip_enqueue(self, params: Mapping[str, JSONSerializable]) -> bool:
