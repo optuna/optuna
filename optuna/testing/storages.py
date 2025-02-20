@@ -85,7 +85,8 @@ class StorageSupplier:
             )
             return optuna.storages.JournalStorage(journal_redis_storage)
         elif "journal" in self.storage_specifier:
-            self.tempfile = NamedTemporaryFilePool().tempfile()
+            self.tempfile = self.extra_args.get("file", NamedTemporaryFilePool().tempfile())
+            assert self.tempfile is not None
             file_storage = JournalFileBackend(self.tempfile.name)
             return optuna.storages.JournalStorage(file_storage)
         elif self.storage_specifier == "grpc":

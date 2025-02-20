@@ -120,34 +120,29 @@ def _get_output(command: list[str], output_format: str) -> Any:
 
 @pytest.mark.skip_coverage
 def test_create_study_command() -> None:
-    tempfile = NamedTemporaryFilePool().tempfile()
-    file_storage = JournalFileBackend(tempfile.name)
-    storage = optuna.storages.JournalStorage(file_storage)
+    with tempfile.NamedTemporaryFile() as fp, StorageSupplier("journal", file=fp) as storage:
+        assert isinstance(storage, JournalStorage)
+        storage_url = fp.name
 
-    assert isinstance(storage, JournalStorage)
-    storage_url = tempfile.name
+        # Create study.
+        command = ["optuna", "create-study", "--storage", storage_url]
+        subprocess.check_call(command)
 
-    # Create study.
-    command = ["optuna", "create-study", "--storage", storage_url]
-    subprocess.check_call(command)
+        # Command output should be in name string format (no-name + UUID).
+        study_name = str(subprocess.check_output(command).decode().strip())
+        name_re = r"^no-name-[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$"
+        assert re.match(name_re, study_name) is not None
 
-    # Command output should be in name string format (no-name + UUID).
-    study_name = str(subprocess.check_output(command).decode().strip())
-    name_re = r"^no-name-[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$"
-    assert re.match(name_re, study_name) is not None
-
-    # study_name should be stored in storage.
-    study_id = storage.get_study_id_from_name(study_name)
-    assert study_id == 1
-
-    tempfile.close()
+        # study_name should be stored in storage.
+        study_id = storage.get_study_id_from_name(study_name)
+        assert study_id == 1
 
 
 @pytest.mark.skip_coverage
 def test_create_study_command_with_study_name() -> None:
-    with StorageSupplier("journal") as storage:
+    with tempfile.NamedTemporaryFile() as fp, StorageSupplier("journal", file=fp) as storage:
         assert isinstance(storage, JournalStorage)
-        storage_url = storage._backend._file_path
+        storage_url = fp.name
         study_name = "test_study"
 
         # Create study with name.
@@ -172,9 +167,9 @@ def test_create_study_command_without_storage_url() -> None:
 
 @pytest.mark.skip_coverage
 def test_create_study_command_with_storage_env() -> None:
-    with StorageSupplier("journal") as storage:
+    with tempfile.NamedTemporaryFile() as fp, StorageSupplier("journal", file=fp) as storage:
         assert isinstance(storage, JournalStorage)
-        storage_url = storage._backend._file_path
+        storage_url = fp.name
 
         # Create study.
         command = ["optuna", "create-study"]
@@ -193,9 +188,9 @@ def test_create_study_command_with_storage_env() -> None:
 
 @pytest.mark.skip_coverage
 def test_create_study_command_with_direction() -> None:
-    with StorageSupplier("journal") as storage:
+    with tempfile.NamedTemporaryFile() as fp, StorageSupplier("journal", file=fp) as storage:
         assert isinstance(storage, JournalStorage)
-        storage_url = storage._backend._file_path
+        storage_url = fp.name
 
         command = ["optuna", "create-study", "--storage", storage_url, "--direction", "minimize"]
         study_name = str(subprocess.check_output(command).decode().strip())
@@ -216,9 +211,9 @@ def test_create_study_command_with_direction() -> None:
 
 @pytest.mark.skip_coverage
 def test_create_study_command_with_multiple_directions() -> None:
-    with StorageSupplier("journal") as storage:
+    with tempfile.NamedTemporaryFile() as fp, StorageSupplier("journal", file=fp) as storage:
         assert isinstance(storage, JournalStorage)
-        storage_url = storage._backend._file_path
+        storage_url = fp.name
         command = [
             "optuna",
             "create-study",
@@ -269,9 +264,9 @@ def test_create_study_command_with_multiple_directions() -> None:
 
 @pytest.mark.skip_coverage
 def test_delete_study_command() -> None:
-    with StorageSupplier("journal") as storage:
+    with tempfile.NamedTemporaryFile() as fp, StorageSupplier("journal", file=fp) as storage:
         assert isinstance(storage, JournalStorage)
-        storage_url = storage._backend._file_path
+        storage_url = fp.name
         study_name = "delete-study-test"
 
         # Create study.
@@ -296,9 +291,9 @@ def test_delete_study_command_without_storage_url() -> None:
 
 @pytest.mark.skip_coverage
 def test_study_set_user_attr_command() -> None:
-    with StorageSupplier("journal") as storage:
+    with tempfile.NamedTemporaryFile() as fp, StorageSupplier("journal", file=fp) as storage:
         assert isinstance(storage, JournalStorage)
-        storage_url = storage._backend._file_path
+        storage_url = fp.name
 
         # Create study.
         study_name = storage.get_study_name_from_id(
@@ -329,9 +324,9 @@ def test_study_set_user_attr_command() -> None:
 @pytest.mark.skip_coverage
 @output_formats
 def test_study_names_command(output_format: str | None) -> None:
-    with StorageSupplier("journal") as storage:
+    with tempfile.NamedTemporaryFile() as fp, StorageSupplier("journal", file=fp) as storage:
         assert isinstance(storage, JournalStorage)
-        storage_url = storage._backend._file_path
+        storage_url = fp.name
 
         expected_study_names = ["study-names-test1", "study-names-test2"]
         expected_column_name = "name"
@@ -392,9 +387,9 @@ def test_study_names_command_without_storage_url() -> None:
 @pytest.mark.skip_coverage
 @output_formats
 def test_studies_command(output_format: str | None) -> None:
-    with StorageSupplier("journal") as storage:
+    with tempfile.NamedTemporaryFile() as fp, StorageSupplier("journal", file=fp) as storage:
         assert isinstance(storage, JournalStorage)
-        storage_url = storage._backend._file_path
+        storage_url = fp.name
 
         # First study.
         study_1 = optuna.create_study(storage=storage)
@@ -460,9 +455,9 @@ def test_studies_command(output_format: str | None) -> None:
 @pytest.mark.skip_coverage
 @output_formats
 def test_studies_command_flatten(output_format: str | None) -> None:
-    with StorageSupplier("journal") as storage:
+    with tempfile.NamedTemporaryFile() as fp, StorageSupplier("journal", file=fp) as storage:
         assert isinstance(storage, JournalStorage)
-        storage_url = storage._backend._file_path
+        storage_url = fp.name
 
         # First study.
         study_1 = optuna.create_study(storage=storage)
@@ -552,9 +547,9 @@ def test_studies_command_flatten(output_format: str | None) -> None:
 @pytest.mark.parametrize("objective", (objective_func, objective_func_branched_search_space))
 @output_formats
 def test_trials_command(objective: Callable[[Trial], float], output_format: str | None) -> None:
-    with StorageSupplier("journal") as storage:
+    with tempfile.NamedTemporaryFile() as fp, StorageSupplier("journal", file=fp) as storage:
         assert isinstance(storage, JournalStorage)
-        storage_url = storage._backend._file_path
+        storage_url = fp.name
         study_name = "test_study"
         n_trials = 10
 
@@ -633,9 +628,9 @@ def test_trials_command(objective: Callable[[Trial], float], output_format: str 
 def test_trials_command_flatten(
     objective: Callable[[Trial], float], output_format: str | None
 ) -> None:
-    with StorageSupplier("journal") as storage:
+    with tempfile.NamedTemporaryFile() as fp, StorageSupplier("journal", file=fp) as storage:
         assert isinstance(storage, JournalStorage)
-        storage_url = storage._backend._file_path
+        storage_url = fp.name
         study_name = "test_study"
         n_trials = 10
 
@@ -710,9 +705,9 @@ def test_trials_command_flatten(
 def test_best_trial_command(
     objective: Callable[[Trial], float], output_format: str | None
 ) -> None:
-    with StorageSupplier("journal") as storage:
+    with tempfile.NamedTemporaryFile() as fp, StorageSupplier("journal", file=fp) as storage:
         assert isinstance(storage, JournalStorage)
-        storage_url = storage._backend._file_path
+        storage_url = fp.name
         study_name = "test_study"
         n_trials = 10
 
@@ -792,9 +787,9 @@ def test_best_trial_command(
 def test_best_trial_command_flatten(
     objective: Callable[[Trial], float], output_format: str | None
 ) -> None:
-    with StorageSupplier("journal") as storage:
+    with tempfile.NamedTemporaryFile() as fp, StorageSupplier("journal", file=fp) as storage:
         assert isinstance(storage, JournalStorage)
-        storage_url = storage._backend._file_path
+        storage_url = fp.name
         study_name = "test_study"
         n_trials = 10
 
@@ -866,9 +861,9 @@ def test_best_trial_command_flatten(
 @pytest.mark.skip_coverage
 @output_formats
 def test_best_trials_command(output_format: str | None) -> None:
-    with StorageSupplier("journal") as storage:
+    with tempfile.NamedTemporaryFile() as fp, StorageSupplier("journal", file=fp) as storage:
         assert isinstance(storage, JournalStorage)
-        storage_url = storage._backend._file_path
+        storage_url = fp.name
         study_name = "test_study"
         n_trials = 10
 
@@ -952,9 +947,9 @@ def test_best_trials_command(output_format: str | None) -> None:
 @pytest.mark.skip_coverage
 @output_formats
 def test_best_trials_command_flatten(output_format: str | None) -> None:
-    with StorageSupplier("journal") as storage:
+    with tempfile.NamedTemporaryFile() as fp, StorageSupplier("journal", file=fp) as storage:
         assert isinstance(storage, JournalStorage)
-        storage_url = storage._backend._file_path
+        storage_url = fp.name
         study_name = "test_study"
         n_trials = 10
 
@@ -1031,9 +1026,9 @@ def test_best_trials_command_flatten(output_format: str | None) -> None:
 
 @pytest.mark.skip_coverage
 def test_create_study_command_with_skip_if_exists() -> None:
-    with StorageSupplier("journal") as storage:
+    with tempfile.NamedTemporaryFile() as fp, StorageSupplier("journal", file=fp) as storage:
         assert isinstance(storage, JournalStorage)
-        storage_url = storage._backend._file_path
+        storage_url = fp.name
         study_name = "test_study"
 
         # Create study with name.
@@ -1617,9 +1612,9 @@ def test_tell_with_nan() -> None:
     ],
 )
 def test_configure_logging_verbosity(verbosity: str, expected: bool) -> None:
-    with StorageSupplier("journal") as storage:
+    with tempfile.NamedTemporaryFile() as fp, StorageSupplier("journal", file=fp) as storage:
         assert isinstance(storage, JournalStorage)
-        storage_url = storage._backend._file_path
+        storage_url = fp.name
 
         # Create study.
         args = ["optuna", "create-study", "--storage", storage_url, verbosity]
