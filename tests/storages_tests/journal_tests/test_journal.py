@@ -51,25 +51,24 @@ class JournalLogStorageSupplier:
             self.tempfile = NamedTemporaryFilePool().tempfile()
             lock: BaseJournalFileLock
             if self.storage_type == "file_with_open_lock":
-                if self.grace_period is not None:
+                if self.grace_period is None:
+                    lock = optuna.storages.journal.JournalFileOpenLock(self.tempfile.name)
+                else:
                     lock = optuna.storages.journal.JournalFileOpenLock(
                         self.tempfile.name, self.grace_period
                     )
-                else:
-                    lock = optuna.storages.journal.JournalFileOpenLock(self.tempfile.name)
             elif self.storage_type == "file_with_link_lock":
-                if self.grace_period is not None:
-                    lock = optuna.storages.journal.JournalFileSymlinkLock(
+                if self.grace_period is None:
+                    lock = optuna.storages.journal.JournalFileOpenLock(self.tempfile.name)
+                else:
+                    lock = optuna.storages.journal.JournalFileOpenLock(
                         self.tempfile.name, self.grace_period
                     )
-                else:
-                    lock = optuna.storages.journal.JournalFileSymlinkLock(self.tempfile.name)
             else:
                 raise Exception("Must not reach here")
             return optuna.storages.journal.JournalFileBackend(self.tempfile.name, lock)
         elif self.storage_type.startswith("redis"):
-            if self.grace_period is not None:
-                raise RuntimeError("Grace period is not supported for Redis storage.")
+            assert self.grace_period is None
             use_cluster = self.storage_type == "redis_with_use_cluster"
             journal_redis_storage = optuna.storages.journal.JournalRedisBackend(
                 "redis://localhost", use_cluster

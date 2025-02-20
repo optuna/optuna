@@ -136,7 +136,7 @@ class JournalFileSymlinkLock(BaseJournalFileLock):
     def __init__(self, filepath: str, grace_period: int = 30) -> None:
         self._lock_target_file = filepath
         self._lock_file = filepath + LOCK_FILE_SUFFIX
-        if grace_period is not None and grace_period <= 0:
+        if grace_period <= 0:
             raise ValueError("The value of `grace_period` should be a positive integer.")
         if grace_period < 3:
             warnings.warn("The value of `grace_period` might be too small. ")
@@ -162,10 +162,14 @@ class JournalFileSymlinkLock(BaseJournalFileLock):
                         if current_mtime != mtime:
                             mtime = current_mtime
                             last_update_time = time.monotonic()
-                        if time.monotonic() - last_update_time > self.grace_period:
-                            self.release()
                     except Exception:
                         pass
+                    if time.monotonic() - last_update_time > self.grace_period:
+                        warnings.warn(
+                            "The existing lock file has not been released for an extended period. "
+                            "Forcibly releasing the lock file."
+                        )
+                        self.release()
                     time.sleep(sleep_secs)
                     sleep_secs = min(sleep_secs * 2, 1)
                     continue
@@ -205,7 +209,7 @@ class JournalFileOpenLock(BaseJournalFileLock):
 
     def __init__(self, filepath: str, grace_period: int = 30) -> None:
         self._lock_file = filepath + LOCK_FILE_SUFFIX
-        if grace_period is not None and grace_period <= 0:
+        if grace_period <= 0:
             raise ValueError("The value of `grace_period` should be a positive integer.")
         if grace_period < 3:
             warnings.warn("The value of `grace_period` might be too small. ")
@@ -233,10 +237,14 @@ class JournalFileOpenLock(BaseJournalFileLock):
                         if current_mtime != mtime:
                             mtime = current_mtime
                             last_update_time = time.monotonic()
-                        if time.monotonic() - last_update_time > self.grace_period:
-                            self.release()
                     except Exception:
                         pass
+                    if time.monotonic() - last_update_time > self.grace_period:
+                        warnings.warn(
+                            "The existing lock file has not been released for an extended period. "
+                            "Forcibly releasing the lock file."
+                        )
+                        self.release()
                     time.sleep(sleep_secs)
                     sleep_secs = min(sleep_secs * 2, 1)
                     continue
