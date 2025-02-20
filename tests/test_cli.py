@@ -120,7 +120,7 @@ def _get_output(command: list[str], output_format: str) -> Any:
 
 @pytest.mark.skip_coverage
 def test_create_study_command() -> None:
-    with tempfile.NamedTemporaryFile() as fp, StorageSupplier("journal", file=fp) as storage:
+    with NamedTemporaryFilePool() as fp, StorageSupplier("journal", file=fp) as storage:
         assert isinstance(storage, JournalStorage)
         storage_url = fp.name
 
@@ -140,7 +140,7 @@ def test_create_study_command() -> None:
 
 @pytest.mark.skip_coverage
 def test_create_study_command_with_study_name() -> None:
-    with tempfile.NamedTemporaryFile() as fp, StorageSupplier("journal", file=fp) as storage:
+    with NamedTemporaryFilePool() as fp, StorageSupplier("journal", file=fp) as storage:
         assert isinstance(storage, JournalStorage)
         storage_url = fp.name
         study_name = "test_study"
@@ -167,7 +167,7 @@ def test_create_study_command_without_storage_url() -> None:
 
 @pytest.mark.skip_coverage
 def test_create_study_command_with_storage_env() -> None:
-    with tempfile.NamedTemporaryFile() as fp, StorageSupplier("journal", file=fp) as storage:
+    with NamedTemporaryFilePool() as fp, StorageSupplier("journal", file=fp) as storage:
         assert isinstance(storage, JournalStorage)
         storage_url = fp.name
 
@@ -188,7 +188,7 @@ def test_create_study_command_with_storage_env() -> None:
 
 @pytest.mark.skip_coverage
 def test_create_study_command_with_direction() -> None:
-    with tempfile.NamedTemporaryFile() as fp, StorageSupplier("journal", file=fp) as storage:
+    with NamedTemporaryFilePool() as fp, StorageSupplier("journal", file=fp) as storage:
         assert isinstance(storage, JournalStorage)
         storage_url = fp.name
 
@@ -211,7 +211,7 @@ def test_create_study_command_with_direction() -> None:
 
 @pytest.mark.skip_coverage
 def test_create_study_command_with_multiple_directions() -> None:
-    with tempfile.NamedTemporaryFile() as fp, StorageSupplier("journal", file=fp) as storage:
+    with NamedTemporaryFilePool() as fp, StorageSupplier("journal", file=fp) as storage:
         assert isinstance(storage, JournalStorage)
         storage_url = fp.name
         command = [
@@ -264,7 +264,7 @@ def test_create_study_command_with_multiple_directions() -> None:
 
 @pytest.mark.skip_coverage
 def test_delete_study_command() -> None:
-    with tempfile.NamedTemporaryFile() as fp, StorageSupplier("journal", file=fp) as storage:
+    with NamedTemporaryFilePool() as fp, StorageSupplier("journal", file=fp) as storage:
         assert isinstance(storage, JournalStorage)
         storage_url = fp.name
         study_name = "delete-study-test"
@@ -291,7 +291,7 @@ def test_delete_study_command_without_storage_url() -> None:
 
 @pytest.mark.skip_coverage
 def test_study_set_user_attr_command() -> None:
-    with tempfile.NamedTemporaryFile() as fp, StorageSupplier("journal", file=fp) as storage:
+    with NamedTemporaryFilePool() as fp, StorageSupplier("journal", file=fp) as storage:
         assert isinstance(storage, JournalStorage)
         storage_url = fp.name
 
@@ -324,7 +324,7 @@ def test_study_set_user_attr_command() -> None:
 @pytest.mark.skip_coverage
 @output_formats
 def test_study_names_command(output_format: str | None) -> None:
-    with tempfile.NamedTemporaryFile() as fp, StorageSupplier("journal", file=fp) as storage:
+    with NamedTemporaryFilePool() as fp, StorageSupplier("journal", file=fp) as storage:
         assert isinstance(storage, JournalStorage)
         storage_url = fp.name
 
@@ -387,7 +387,7 @@ def test_study_names_command_without_storage_url() -> None:
 @pytest.mark.skip_coverage
 @output_formats
 def test_studies_command(output_format: str | None) -> None:
-    with tempfile.NamedTemporaryFile() as fp, StorageSupplier("journal", file=fp) as storage:
+    with NamedTemporaryFilePool() as fp, StorageSupplier("journal", file=fp) as storage:
         assert isinstance(storage, JournalStorage)
         storage_url = fp.name
 
@@ -455,7 +455,7 @@ def test_studies_command(output_format: str | None) -> None:
 @pytest.mark.skip_coverage
 @output_formats
 def test_studies_command_flatten(output_format: str | None) -> None:
-    with tempfile.NamedTemporaryFile() as fp, StorageSupplier("journal", file=fp) as storage:
+    with NamedTemporaryFilePool() as fp, StorageSupplier("journal", file=fp) as storage:
         assert isinstance(storage, JournalStorage)
         storage_url = fp.name
 
@@ -547,7 +547,7 @@ def test_studies_command_flatten(output_format: str | None) -> None:
 @pytest.mark.parametrize("objective", (objective_func, objective_func_branched_search_space))
 @output_formats
 def test_trials_command(objective: Callable[[Trial], float], output_format: str | None) -> None:
-    with tempfile.NamedTemporaryFile() as fp, StorageSupplier("journal", file=fp) as storage:
+    with NamedTemporaryFilePool() as fp, StorageSupplier("journal", file=fp) as storage:
         assert isinstance(storage, JournalStorage)
         storage_url = fp.name
         study_name = "test_study"
@@ -628,7 +628,7 @@ def test_trials_command(objective: Callable[[Trial], float], output_format: str 
 def test_trials_command_flatten(
     objective: Callable[[Trial], float], output_format: str | None
 ) -> None:
-    with tempfile.NamedTemporaryFile() as fp, StorageSupplier("journal", file=fp) as storage:
+    with NamedTemporaryFilePool() as fp, StorageSupplier("journal", file=fp) as storage:
         assert isinstance(storage, JournalStorage)
         storage_url = fp.name
         study_name = "test_study"
@@ -705,7 +705,7 @@ def test_trials_command_flatten(
 def test_best_trial_command(
     objective: Callable[[Trial], float], output_format: str | None
 ) -> None:
-    with tempfile.NamedTemporaryFile() as fp, StorageSupplier("journal", file=fp) as storage:
+    with NamedTemporaryFilePool() as fp, StorageSupplier("journal", file=fp) as storage:
         assert isinstance(storage, JournalStorage)
         storage_url = fp.name
         study_name = "test_study"
@@ -787,7 +787,7 @@ def test_best_trial_command(
 def test_best_trial_command_flatten(
     objective: Callable[[Trial], float], output_format: str | None
 ) -> None:
-    with tempfile.NamedTemporaryFile() as fp, StorageSupplier("journal", file=fp) as storage:
+    with NamedTemporaryFilePool() as fp, StorageSupplier("journal", file=fp) as storage:
         assert isinstance(storage, JournalStorage)
         storage_url = fp.name
         study_name = "test_study"
@@ -861,7 +861,7 @@ def test_best_trial_command_flatten(
 @pytest.mark.skip_coverage
 @output_formats
 def test_best_trials_command(output_format: str | None) -> None:
-    with tempfile.NamedTemporaryFile() as fp, StorageSupplier("journal", file=fp) as storage:
+    with NamedTemporaryFilePool() as fp, StorageSupplier("journal", file=fp) as storage:
         assert isinstance(storage, JournalStorage)
         storage_url = fp.name
         study_name = "test_study"
@@ -947,7 +947,7 @@ def test_best_trials_command(output_format: str | None) -> None:
 @pytest.mark.skip_coverage
 @output_formats
 def test_best_trials_command_flatten(output_format: str | None) -> None:
-    with tempfile.NamedTemporaryFile() as fp, StorageSupplier("journal", file=fp) as storage:
+    with NamedTemporaryFilePool() as fp, StorageSupplier("journal", file=fp) as storage:
         assert isinstance(storage, JournalStorage)
         storage_url = fp.name
         study_name = "test_study"
@@ -1026,7 +1026,7 @@ def test_best_trials_command_flatten(output_format: str | None) -> None:
 
 @pytest.mark.skip_coverage
 def test_create_study_command_with_skip_if_exists() -> None:
-    with tempfile.NamedTemporaryFile() as fp, StorageSupplier("journal", file=fp) as storage:
+    with NamedTemporaryFilePool() as fp, StorageSupplier("journal", file=fp) as storage:
         assert isinstance(storage, JournalStorage)
         storage_url = fp.name
         study_name = "test_study"
@@ -1181,7 +1181,7 @@ def test_ask(
         '"y": {"name": "CategoricalDistribution", "attributes": {"choices": ["foo"]}}}'
     )
 
-    with tempfile.NamedTemporaryFile(suffix=".log") as fp:
+    with NamedTemporaryFilePool() as fp:
         args = ["optuna", "create-study", "--storage", fp.name, "--study-name", study_name]
         subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
@@ -1238,7 +1238,7 @@ def test_ask_flatten(
         '"y": {"name": "CategoricalDistribution", "attributes": {"choices": ["foo"]}}}'
     )
 
-    with tempfile.NamedTemporaryFile(suffix=".log") as fp:
+    with NamedTemporaryFilePool() as fp:
         args = ["optuna", "create-study", "--storage", fp.name, "--study-name", study_name]
         subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
@@ -1286,7 +1286,7 @@ def test_ask_flatten(
 def test_ask_empty_search_space(output_format: str) -> None:
     study_name = "test_study"
 
-    with tempfile.NamedTemporaryFile(suffix=".log") as fp:
+    with NamedTemporaryFilePool() as fp:
         args = ["optuna", "create-study", "--storage", fp.name, "--study-name", study_name]
         subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
@@ -1325,7 +1325,7 @@ def test_ask_empty_search_space(output_format: str) -> None:
 def test_ask_empty_search_space_flatten(output_format: str) -> None:
     study_name = "test_study"
 
-    with tempfile.NamedTemporaryFile(suffix=".log") as fp:
+    with NamedTemporaryFilePool() as fp:
         args = ["optuna", "create-study", "--storage", fp.name, "--study-name", study_name]
         subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
@@ -1366,7 +1366,7 @@ def test_ask_sampler_kwargs_without_sampler() -> None:
         '"y": {"name": "CategoricalDistribution", "attributes": {"choices": ["foo"]}}}'
     )
 
-    with tempfile.NamedTemporaryFile(suffix=".log") as fp:
+    with NamedTemporaryFilePool() as fp:
         args = ["optuna", "create-study", "--storage", fp.name, "--study-name", study_name]
         subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
@@ -1396,7 +1396,7 @@ def test_ask_without_create_study_beforehand() -> None:
         '"y": {"name": "CategoricalDistribution", "attributes": {"choices": ["foo"]}}}'
     )
 
-    with tempfile.NamedTemporaryFile(suffix=".log") as fp:
+    with NamedTemporaryFilePool() as fp:
         args = [
             "optuna",
             "ask",
@@ -1439,7 +1439,7 @@ def test_create_study_and_ask(
         '"y": {"name": "CategoricalDistribution", "attributes": {"choices": ["foo"]}}}'
     )
 
-    with tempfile.NamedTemporaryFile(suffix=".log") as fp:
+    with NamedTemporaryFilePool() as fp:
         create_study_args = [
             "optuna",
             "create-study",
@@ -1612,7 +1612,7 @@ def test_tell_with_nan() -> None:
     ],
 )
 def test_configure_logging_verbosity(verbosity: str, expected: bool) -> None:
-    with tempfile.NamedTemporaryFile() as fp, StorageSupplier("journal", file=fp) as storage:
+    with NamedTemporaryFilePool() as fp, StorageSupplier("journal", file=fp) as storage:
         assert isinstance(storage, JournalStorage)
         storage_url = fp.name
 
