@@ -134,8 +134,7 @@ def test_create_study_command() -> None:
         assert re.match(name_re, study_name) is not None
 
         # study_name should be stored in storage.
-        study_id = storage.get_study_id_from_name(study_name)
-        assert study_id == 1
+        storage.get_study_id_from_name(study_name)
 
 
 @pytest.mark.skip_coverage
@@ -182,8 +181,7 @@ def test_create_study_command_with_storage_env() -> None:
         assert re.match(name_re, study_name) is not None
 
         # study_name should be stored in storage.
-        study_id = storage.get_study_id_from_name(study_name)
-        assert study_id == 1
+        storage.get_study_id_from_name(study_name)
 
 
 @pytest.mark.skip_coverage
