@@ -1480,10 +1480,8 @@ def test_create_study_and_ask(
 def test_tell() -> None:
     study_name = "test_study"
 
-    with NamedTemporaryFilePool() as tf:
-        db_url = "sqlite:///{}".format(tf.name)
-
-        args = ["optuna", "create-study", "--storage", db_url, "--study-name", study_name]
+    with NamedTemporaryFilePool() as fp:
+        args = ["optuna", "create-study", "--storage", fp.name, "--study-name", study_name]
         subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
         output: Any = subprocess.check_output(
@@ -1491,7 +1489,7 @@ def test_tell() -> None:
                 "optuna",
                 "ask",
                 "--storage",
-                db_url,
+                fp.name,
                 "--study-name",
                 study_name,
                 "--format",
@@ -1507,7 +1505,7 @@ def test_tell() -> None:
                 "optuna",
                 "tell",
                 "--storage",
-                db_url,
+                fp.name,
                 "--trial-number",
                 str(trial_number),
                 "--values",
@@ -1515,7 +1513,10 @@ def test_tell() -> None:
             ]
         )
 
-        study = optuna.load_study(storage=db_url, study_name=study_name)
+        storage = optuna.storages.JournalStorage(
+            optuna.storages.journal.JournalFileBackend(fp.name)
+        )
+        study = optuna.load_study(storage=storage, study_name=study_name)
         assert len(study.trials) == 1
         assert study.trials[0].state == TrialState.COMPLETE
         assert study.trials[0].values == [1.2]
@@ -1526,7 +1527,7 @@ def test_tell() -> None:
                 "optuna",
                 "tell",
                 "--storage",
-                db_url,
+                fp.name,
                 "--trial-number",
                 str(trial_number),
                 "--values",
@@ -1541,7 +1542,7 @@ def test_tell() -> None:
                 "optuna",
                 "tell",
                 "--storage",
-                db_url,
+                fp.name,
                 "--trial-number",
                 str(trial_number),
                 "--values",
@@ -1550,7 +1551,10 @@ def test_tell() -> None:
             ]
         )
 
-        study = optuna.load_study(storage=db_url, study_name=study_name)
+        storage = optuna.storages.JournalStorage(
+            optuna.storages.journal.JournalFileBackend(fp.name)
+        )
+        study = optuna.load_study(storage=storage, study_name=study_name)
         assert len(study.trials) == 1
         assert study.trials[0].state == TrialState.COMPLETE
         assert study.trials[0].values == [1.2]
@@ -1560,10 +1564,8 @@ def test_tell() -> None:
 def test_tell_with_nan() -> None:
     study_name = "test_study"
 
-    with NamedTemporaryFilePool() as tf:
-        db_url = "sqlite:///{}".format(tf.name)
-
-        args = ["optuna", "create-study", "--storage", db_url, "--study-name", study_name]
+    with NamedTemporaryFilePool() as fp:
+        args = ["optuna", "create-study", "--storage", fp.name, "--study-name", study_name]
         subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
         output: Any = subprocess.check_output(
@@ -1571,7 +1573,7 @@ def test_tell_with_nan() -> None:
                 "optuna",
                 "ask",
                 "--storage",
-                db_url,
+                fp.name,
                 "--study-name",
                 study_name,
                 "--format",
@@ -1587,7 +1589,7 @@ def test_tell_with_nan() -> None:
                 "optuna",
                 "tell",
                 "--storage",
-                db_url,
+                fp.name,
                 "--trial-number",
                 str(trial_number),
                 "--values",
@@ -1595,7 +1597,10 @@ def test_tell_with_nan() -> None:
             ]
         )
 
-        study = optuna.load_study(storage=db_url, study_name=study_name)
+        storage = optuna.storages.JournalStorage(
+            optuna.storages.journal.JournalFileBackend(fp.name)
+        )
+        study = optuna.load_study(storage=storage, study_name=study_name)
         assert len(study.trials) == 1
         assert study.trials[0].state == TrialState.FAIL
         assert study.trials[0].values is None
