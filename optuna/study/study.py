@@ -1058,16 +1058,17 @@ class Study:
 
     def _pop_waiting_trial_id(self) -> int | None:
         if self._waiting_trials_cache is not None:
-            trials_to_be_removed = set()
+            # trials_to_be_removed = set()
             for trial in self._waiting_trials_cache:
-                trials_to_be_removed.add(trial)
+                # trials_to_be_removed.add(trial)
+                self._waiting_trials_cache -= {trial}
                 if not self._storage.set_trial_state_values(
                     trial._trial_id, state=TrialState.RUNNING
                 ):
                     continue
 
                 _logger.debug("Trial {} popped from the trial queue.".format(trial.number))
-                self._waiting_trials_cache -= trials_to_be_removed
+                # self._waiting_trials_cache -= trials_to_be_removed
                 return trial._trial_id
 
         waiting_trials = self._storage.get_all_trials(
