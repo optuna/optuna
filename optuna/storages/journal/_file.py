@@ -162,14 +162,14 @@ class JournalFileSymlinkLock(BaseJournalFileLock):
                         if current_mtime != mtime:
                             mtime = current_mtime
                             last_update_time = time.monotonic()
-                    except Exception:
-                        pass
-                    if time.monotonic() - last_update_time > self.grace_period:
-                        warnings.warn(
-                            "The existing lock file has not been released for an extended period. "
-                            "Forcibly releasing the lock file."
-                        )
-                        self.release()
+                        if time.monotonic() - last_update_time > self.grace_period:
+                            warnings.warn(
+                                "The existing lock file has not been released "
+                                "for an extended period. Forcibly releasing the lock file."
+                            )
+                            self.release()
+                    except OSError:
+                        continue
                     time.sleep(sleep_secs)
                     sleep_secs = min(sleep_secs * 2, 1)
                     continue
@@ -237,14 +237,14 @@ class JournalFileOpenLock(BaseJournalFileLock):
                         if current_mtime != mtime:
                             mtime = current_mtime
                             last_update_time = time.monotonic()
-                    except Exception:
-                        pass
-                    if time.monotonic() - last_update_time > self.grace_period:
-                        warnings.warn(
-                            "The existing lock file has not been released for an extended period. "
-                            "Forcibly releasing the lock file."
-                        )
-                        self.release()
+                        if time.monotonic() - last_update_time > self.grace_period:
+                            warnings.warn(
+                                "The existing lock file has not been released "
+                                "for an extended period. Forcibly releasing the lock file."
+                            )
+                            self.release()
+                    except OSError:
+                        continue
                     time.sleep(sleep_secs)
                     sleep_secs = min(sleep_secs * 2, 1)
                     continue
