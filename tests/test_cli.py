@@ -120,9 +120,9 @@ def _get_output(command: list[str], output_format: str) -> Any:
 
 @pytest.mark.skip_coverage
 def test_create_study_command() -> None:
-    with StorageSupplier("sqlite") as storage:
-        assert isinstance(storage, RDBStorage)
-        storage_url = str(storage.engine.url)
+    with NamedTemporaryFilePool() as fp, StorageSupplier("journal", file=fp) as storage:
+        assert isinstance(storage, JournalStorage)
+        storage_url = fp.name
 
         # Create study.
         command = ["optuna", "create-study", "--storage", storage_url]
@@ -134,15 +134,14 @@ def test_create_study_command() -> None:
         assert re.match(name_re, study_name) is not None
 
         # study_name should be stored in storage.
-        study_id = storage.get_study_id_from_name(study_name)
-        assert study_id == 2
+        storage.get_study_id_from_name(study_name)
 
 
 @pytest.mark.skip_coverage
 def test_create_study_command_with_study_name() -> None:
-    with StorageSupplier("sqlite") as storage:
-        assert isinstance(storage, RDBStorage)
-        storage_url = str(storage.engine.url)
+    with NamedTemporaryFilePool() as fp, StorageSupplier("journal", file=fp) as storage:
+        assert isinstance(storage, JournalStorage)
+        storage_url = fp.name
         study_name = "test_study"
 
         # Create study with name.
@@ -167,9 +166,9 @@ def test_create_study_command_without_storage_url() -> None:
 
 @pytest.mark.skip_coverage
 def test_create_study_command_with_storage_env() -> None:
-    with StorageSupplier("sqlite") as storage:
-        assert isinstance(storage, RDBStorage)
-        storage_url = str(storage.engine.url)
+    with NamedTemporaryFilePool() as fp, StorageSupplier("journal", file=fp) as storage:
+        assert isinstance(storage, JournalStorage)
+        storage_url = fp.name
 
         # Create study.
         command = ["optuna", "create-study"]
@@ -182,15 +181,14 @@ def test_create_study_command_with_storage_env() -> None:
         assert re.match(name_re, study_name) is not None
 
         # study_name should be stored in storage.
-        study_id = storage.get_study_id_from_name(study_name)
-        assert study_id == 2
+        storage.get_study_id_from_name(study_name)
 
 
 @pytest.mark.skip_coverage
 def test_create_study_command_with_direction() -> None:
-    with StorageSupplier("sqlite") as storage:
-        assert isinstance(storage, RDBStorage)
-        storage_url = str(storage.engine.url)
+    with NamedTemporaryFilePool() as fp, StorageSupplier("journal", file=fp) as storage:
+        assert isinstance(storage, JournalStorage)
+        storage_url = fp.name
 
         command = ["optuna", "create-study", "--storage", storage_url, "--direction", "minimize"]
         study_name = str(subprocess.check_output(command).decode().strip())
@@ -211,9 +209,9 @@ def test_create_study_command_with_direction() -> None:
 
 @pytest.mark.skip_coverage
 def test_create_study_command_with_multiple_directions() -> None:
-    with StorageSupplier("sqlite") as storage:
-        assert isinstance(storage, RDBStorage)
-        storage_url = str(storage.engine.url)
+    with NamedTemporaryFilePool() as fp, StorageSupplier("journal", file=fp) as storage:
+        assert isinstance(storage, JournalStorage)
+        storage_url = fp.name
         command = [
             "optuna",
             "create-study",
@@ -264,9 +262,9 @@ def test_create_study_command_with_multiple_directions() -> None:
 
 @pytest.mark.skip_coverage
 def test_delete_study_command() -> None:
-    with StorageSupplier("sqlite") as storage:
-        assert isinstance(storage, RDBStorage)
-        storage_url = str(storage.engine.url)
+    with NamedTemporaryFilePool() as fp, StorageSupplier("journal", file=fp) as storage:
+        assert isinstance(storage, JournalStorage)
+        storage_url = fp.name
         study_name = "delete-study-test"
 
         # Create study.
@@ -291,9 +289,9 @@ def test_delete_study_command_without_storage_url() -> None:
 
 @pytest.mark.skip_coverage
 def test_study_set_user_attr_command() -> None:
-    with StorageSupplier("sqlite") as storage:
-        assert isinstance(storage, RDBStorage)
-        storage_url = str(storage.engine.url)
+    with NamedTemporaryFilePool() as fp, StorageSupplier("journal", file=fp) as storage:
+        assert isinstance(storage, JournalStorage)
+        storage_url = fp.name
 
         # Create study.
         study_name = storage.get_study_name_from_id(
@@ -324,9 +322,9 @@ def test_study_set_user_attr_command() -> None:
 @pytest.mark.skip_coverage
 @output_formats
 def test_study_names_command(output_format: str | None) -> None:
-    with StorageSupplier("sqlite") as storage:
-        assert isinstance(storage, RDBStorage)
-        storage_url = str(storage.engine.url)
+    with NamedTemporaryFilePool() as fp, StorageSupplier("journal", file=fp) as storage:
+        assert isinstance(storage, JournalStorage)
+        storage_url = fp.name
 
         expected_study_names = ["study-names-test1", "study-names-test2"]
         expected_column_name = "name"
@@ -387,9 +385,9 @@ def test_study_names_command_without_storage_url() -> None:
 @pytest.mark.skip_coverage
 @output_formats
 def test_studies_command(output_format: str | None) -> None:
-    with StorageSupplier("sqlite") as storage:
-        assert isinstance(storage, RDBStorage)
-        storage_url = str(storage.engine.url)
+    with NamedTemporaryFilePool() as fp, StorageSupplier("journal", file=fp) as storage:
+        assert isinstance(storage, JournalStorage)
+        storage_url = fp.name
 
         # First study.
         study_1 = optuna.create_study(storage=storage)
@@ -455,9 +453,9 @@ def test_studies_command(output_format: str | None) -> None:
 @pytest.mark.skip_coverage
 @output_formats
 def test_studies_command_flatten(output_format: str | None) -> None:
-    with StorageSupplier("sqlite") as storage:
-        assert isinstance(storage, RDBStorage)
-        storage_url = str(storage.engine.url)
+    with NamedTemporaryFilePool() as fp, StorageSupplier("journal", file=fp) as storage:
+        assert isinstance(storage, JournalStorage)
+        storage_url = fp.name
 
         # First study.
         study_1 = optuna.create_study(storage=storage)
@@ -547,9 +545,9 @@ def test_studies_command_flatten(output_format: str | None) -> None:
 @pytest.mark.parametrize("objective", (objective_func, objective_func_branched_search_space))
 @output_formats
 def test_trials_command(objective: Callable[[Trial], float], output_format: str | None) -> None:
-    with StorageSupplier("sqlite") as storage:
-        assert isinstance(storage, RDBStorage)
-        storage_url = str(storage.engine.url)
+    with NamedTemporaryFilePool() as fp, StorageSupplier("journal", file=fp) as storage:
+        assert isinstance(storage, JournalStorage)
+        storage_url = fp.name
         study_name = "test_study"
         n_trials = 10
 
@@ -628,9 +626,9 @@ def test_trials_command(objective: Callable[[Trial], float], output_format: str 
 def test_trials_command_flatten(
     objective: Callable[[Trial], float], output_format: str | None
 ) -> None:
-    with StorageSupplier("sqlite") as storage:
-        assert isinstance(storage, RDBStorage)
-        storage_url = str(storage.engine.url)
+    with NamedTemporaryFilePool() as fp, StorageSupplier("journal", file=fp) as storage:
+        assert isinstance(storage, JournalStorage)
+        storage_url = fp.name
         study_name = "test_study"
         n_trials = 10
 
@@ -705,9 +703,9 @@ def test_trials_command_flatten(
 def test_best_trial_command(
     objective: Callable[[Trial], float], output_format: str | None
 ) -> None:
-    with StorageSupplier("sqlite") as storage:
-        assert isinstance(storage, RDBStorage)
-        storage_url = str(storage.engine.url)
+    with NamedTemporaryFilePool() as fp, StorageSupplier("journal", file=fp) as storage:
+        assert isinstance(storage, JournalStorage)
+        storage_url = fp.name
         study_name = "test_study"
         n_trials = 10
 
@@ -787,9 +785,9 @@ def test_best_trial_command(
 def test_best_trial_command_flatten(
     objective: Callable[[Trial], float], output_format: str | None
 ) -> None:
-    with StorageSupplier("sqlite") as storage:
-        assert isinstance(storage, RDBStorage)
-        storage_url = str(storage.engine.url)
+    with NamedTemporaryFilePool() as fp, StorageSupplier("journal", file=fp) as storage:
+        assert isinstance(storage, JournalStorage)
+        storage_url = fp.name
         study_name = "test_study"
         n_trials = 10
 
@@ -861,9 +859,9 @@ def test_best_trial_command_flatten(
 @pytest.mark.skip_coverage
 @output_formats
 def test_best_trials_command(output_format: str | None) -> None:
-    with StorageSupplier("sqlite") as storage:
-        assert isinstance(storage, RDBStorage)
-        storage_url = str(storage.engine.url)
+    with NamedTemporaryFilePool() as fp, StorageSupplier("journal", file=fp) as storage:
+        assert isinstance(storage, JournalStorage)
+        storage_url = fp.name
         study_name = "test_study"
         n_trials = 10
 
@@ -947,9 +945,9 @@ def test_best_trials_command(output_format: str | None) -> None:
 @pytest.mark.skip_coverage
 @output_formats
 def test_best_trials_command_flatten(output_format: str | None) -> None:
-    with StorageSupplier("sqlite") as storage:
-        assert isinstance(storage, RDBStorage)
-        storage_url = str(storage.engine.url)
+    with NamedTemporaryFilePool() as fp, StorageSupplier("journal", file=fp) as storage:
+        assert isinstance(storage, JournalStorage)
+        storage_url = fp.name
         study_name = "test_study"
         n_trials = 10
 
@@ -1026,9 +1024,9 @@ def test_best_trials_command_flatten(output_format: str | None) -> None:
 
 @pytest.mark.skip_coverage
 def test_create_study_command_with_skip_if_exists() -> None:
-    with StorageSupplier("sqlite") as storage:
-        assert isinstance(storage, RDBStorage)
-        storage_url = str(storage.engine.url)
+    with NamedTemporaryFilePool() as fp, StorageSupplier("journal", file=fp) as storage:
+        assert isinstance(storage, JournalStorage)
+        storage_url = fp.name
         study_name = "test_study"
 
         # Create study with name.
@@ -1146,12 +1144,9 @@ def test_storage_upgrade_command() -> None:
 
 @pytest.mark.skip_coverage
 def test_storage_upgrade_command_with_invalid_url() -> None:
-    with StorageSupplier("sqlite") as storage:
-        assert isinstance(storage, RDBStorage)
-
-        command = ["optuna", "storage", "upgrade", "--storage", "invalid-storage-url"]
-        with pytest.raises(CalledProcessError):
-            subprocess.check_call(command)
+    command = ["optuna", "storage", "upgrade", "--storage", "invalid-storage-url"]
+    with pytest.raises(CalledProcessError):
+        subprocess.check_call(command)
 
 
 parametrize_for_ask = pytest.mark.parametrize(
@@ -1181,17 +1176,15 @@ def test_ask(
         '"y": {"name": "CategoricalDistribution", "attributes": {"choices": ["foo"]}}}'
     )
 
-    with NamedTemporaryFilePool() as tf:
-        db_url = "sqlite:///{}".format(tf.name)
-
-        args = ["optuna", "create-study", "--storage", db_url, "--study-name", study_name]
+    with NamedTemporaryFilePool() as fp:
+        args = ["optuna", "create-study", "--storage", fp.name, "--study-name", study_name]
         subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
         args = [
             "optuna",
             "ask",
             "--storage",
-            db_url,
+            fp.name,
             "--study-name",
             study_name,
             "--search-space",
@@ -1240,17 +1233,15 @@ def test_ask_flatten(
         '"y": {"name": "CategoricalDistribution", "attributes": {"choices": ["foo"]}}}'
     )
 
-    with NamedTemporaryFilePool() as tf:
-        db_url = "sqlite:///{}".format(tf.name)
-
-        args = ["optuna", "create-study", "--storage", db_url, "--study-name", study_name]
+    with NamedTemporaryFilePool() as fp:
+        args = ["optuna", "create-study", "--storage", fp.name, "--study-name", study_name]
         subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
         args = [
             "optuna",
             "ask",
             "--storage",
-            db_url,
+            fp.name,
             "--study-name",
             study_name,
             "--search-space",
@@ -1290,17 +1281,15 @@ def test_ask_flatten(
 def test_ask_empty_search_space(output_format: str) -> None:
     study_name = "test_study"
 
-    with NamedTemporaryFilePool() as tf:
-        db_url = "sqlite:///{}".format(tf.name)
-
-        args = ["optuna", "create-study", "--storage", db_url, "--study-name", study_name]
+    with NamedTemporaryFilePool() as fp:
+        args = ["optuna", "create-study", "--storage", fp.name, "--study-name", study_name]
         subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
         args = [
             "optuna",
             "ask",
             "--storage",
-            db_url,
+            fp.name,
             "--study-name",
             study_name,
         ]
@@ -1331,17 +1320,15 @@ def test_ask_empty_search_space(output_format: str) -> None:
 def test_ask_empty_search_space_flatten(output_format: str) -> None:
     study_name = "test_study"
 
-    with NamedTemporaryFilePool() as tf:
-        db_url = "sqlite:///{}".format(tf.name)
-
-        args = ["optuna", "create-study", "--storage", db_url, "--study-name", study_name]
+    with NamedTemporaryFilePool() as fp:
+        args = ["optuna", "create-study", "--storage", fp.name, "--study-name", study_name]
         subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
         args = [
             "optuna",
             "ask",
             "--storage",
-            db_url,
+            fp.name,
             "--study-name",
             study_name,
             "--flatten",
@@ -1374,17 +1361,15 @@ def test_ask_sampler_kwargs_without_sampler() -> None:
         '"y": {"name": "CategoricalDistribution", "attributes": {"choices": ["foo"]}}}'
     )
 
-    with NamedTemporaryFilePool() as tf:
-        db_url = "sqlite:///{}".format(tf.name)
-
-        args = ["optuna", "create-study", "--storage", db_url, "--study-name", study_name]
+    with NamedTemporaryFilePool() as fp:
+        args = ["optuna", "create-study", "--storage", fp.name, "--study-name", study_name]
         subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
         args = [
             "optuna",
             "ask",
             "--storage",
-            db_url,
+            fp.name,
             "--study-name",
             study_name,
             "--search-space",
@@ -1406,14 +1391,12 @@ def test_ask_without_create_study_beforehand() -> None:
         '"y": {"name": "CategoricalDistribution", "attributes": {"choices": ["foo"]}}}'
     )
 
-    with NamedTemporaryFilePool() as tf:
-        db_url = "sqlite:///{}".format(tf.name)
-
+    with NamedTemporaryFilePool() as fp:
         args = [
             "optuna",
             "ask",
             "--storage",
-            db_url,
+            fp.name,
             "--study-name",
             study_name,
             "--search-space",
@@ -1451,14 +1434,12 @@ def test_create_study_and_ask(
         '"y": {"name": "CategoricalDistribution", "attributes": {"choices": ["foo"]}}}'
     )
 
-    with NamedTemporaryFilePool() as tf:
-        db_url = "sqlite:///{}".format(tf.name)
-
+    with NamedTemporaryFilePool() as fp:
         create_study_args = [
             "optuna",
             "create-study",
             "--storage",
-            db_url,
+            fp.name,
             "--study-name",
             study_name,
         ]
@@ -1473,7 +1454,7 @@ def test_create_study_and_ask(
             "optuna",
             "ask",
             "--storage",
-            db_url,
+            fp.name,
             "--study-name",
             study_name,
             "--search-space",
@@ -1496,10 +1477,8 @@ def test_create_study_and_ask(
 def test_tell() -> None:
     study_name = "test_study"
 
-    with NamedTemporaryFilePool() as tf:
-        db_url = "sqlite:///{}".format(tf.name)
-
-        args = ["optuna", "create-study", "--storage", db_url, "--study-name", study_name]
+    with NamedTemporaryFilePool() as fp:
+        args = ["optuna", "create-study", "--storage", fp.name, "--study-name", study_name]
         subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
         output: Any = subprocess.check_output(
@@ -1507,7 +1486,7 @@ def test_tell() -> None:
                 "optuna",
                 "ask",
                 "--storage",
-                db_url,
+                fp.name,
                 "--study-name",
                 study_name,
                 "--format",
@@ -1523,7 +1502,7 @@ def test_tell() -> None:
                 "optuna",
                 "tell",
                 "--storage",
-                db_url,
+                fp.name,
                 "--trial-number",
                 str(trial_number),
                 "--values",
@@ -1531,7 +1510,10 @@ def test_tell() -> None:
             ]
         )
 
-        study = optuna.load_study(storage=db_url, study_name=study_name)
+        storage = optuna.storages.JournalStorage(
+            optuna.storages.journal.JournalFileBackend(fp.name)
+        )
+        study = optuna.load_study(storage=storage, study_name=study_name)
         assert len(study.trials) == 1
         assert study.trials[0].state == TrialState.COMPLETE
         assert study.trials[0].values == [1.2]
@@ -1542,7 +1524,7 @@ def test_tell() -> None:
                 "optuna",
                 "tell",
                 "--storage",
-                db_url,
+                fp.name,
                 "--trial-number",
                 str(trial_number),
                 "--values",
@@ -1557,7 +1539,7 @@ def test_tell() -> None:
                 "optuna",
                 "tell",
                 "--storage",
-                db_url,
+                fp.name,
                 "--trial-number",
                 str(trial_number),
                 "--values",
@@ -1566,7 +1548,10 @@ def test_tell() -> None:
             ]
         )
 
-        study = optuna.load_study(storage=db_url, study_name=study_name)
+        storage = optuna.storages.JournalStorage(
+            optuna.storages.journal.JournalFileBackend(fp.name)
+        )
+        study = optuna.load_study(storage=storage, study_name=study_name)
         assert len(study.trials) == 1
         assert study.trials[0].state == TrialState.COMPLETE
         assert study.trials[0].values == [1.2]
@@ -1576,10 +1561,8 @@ def test_tell() -> None:
 def test_tell_with_nan() -> None:
     study_name = "test_study"
 
-    with NamedTemporaryFilePool() as tf:
-        db_url = "sqlite:///{}".format(tf.name)
-
-        args = ["optuna", "create-study", "--storage", db_url, "--study-name", study_name]
+    with NamedTemporaryFilePool() as fp:
+        args = ["optuna", "create-study", "--storage", fp.name, "--study-name", study_name]
         subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
         output: Any = subprocess.check_output(
@@ -1587,7 +1570,7 @@ def test_tell_with_nan() -> None:
                 "optuna",
                 "ask",
                 "--storage",
-                db_url,
+                fp.name,
                 "--study-name",
                 study_name,
                 "--format",
@@ -1603,7 +1586,7 @@ def test_tell_with_nan() -> None:
                 "optuna",
                 "tell",
                 "--storage",
-                db_url,
+                fp.name,
                 "--trial-number",
                 str(trial_number),
                 "--values",
@@ -1611,7 +1594,10 @@ def test_tell_with_nan() -> None:
             ]
         )
 
-        study = optuna.load_study(storage=db_url, study_name=study_name)
+        storage = optuna.storages.JournalStorage(
+            optuna.storages.journal.JournalFileBackend(fp.name)
+        )
+        study = optuna.load_study(storage=storage, study_name=study_name)
         assert len(study.trials) == 1
         assert study.trials[0].state == TrialState.FAIL
         assert study.trials[0].values is None
@@ -1626,9 +1612,9 @@ def test_tell_with_nan() -> None:
     ],
 )
 def test_configure_logging_verbosity(verbosity: str, expected: bool) -> None:
-    with StorageSupplier("sqlite") as storage:
-        assert isinstance(storage, RDBStorage)
-        storage_url = str(storage.engine.url)
+    with NamedTemporaryFilePool() as fp, StorageSupplier("journal", file=fp) as storage:
+        assert isinstance(storage, JournalStorage)
+        storage_url = fp.name
 
         # Create study.
         args = ["optuna", "create-study", "--storage", storage_url, verbosity]
@@ -1636,4 +1622,4 @@ def test_configure_logging_verbosity(verbosity: str, expected: bool) -> None:
         # `--quiet` makes the log level WARNING.
         result = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         error_message = result.stderr.decode()
-        assert ("A new study created in RDB with name" in error_message) == expected
+        assert ("A new study created in Journal with name" in error_message) == expected
