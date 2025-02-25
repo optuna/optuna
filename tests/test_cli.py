@@ -1144,12 +1144,9 @@ def test_storage_upgrade_command() -> None:
 
 @pytest.mark.skip_coverage
 def test_storage_upgrade_command_with_invalid_url() -> None:
-    with StorageSupplier("journal") as storage:
-        assert isinstance(storage, JournalStorage)
-
-        command = ["optuna", "storage", "upgrade", "--storage", "invalid-storage-url"]
-        with pytest.raises(CalledProcessError):
-            subprocess.check_call(command)
+    command = ["optuna", "storage", "upgrade", "--storage", "invalid-storage-url"]
+    with pytest.raises(CalledProcessError):
+        subprocess.check_call(command)
 
 
 parametrize_for_ask = pytest.mark.parametrize(
