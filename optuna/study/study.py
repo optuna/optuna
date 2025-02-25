@@ -1252,8 +1252,8 @@ def create_study(
         for d in directions
     ):
         raise ValueError(
-            "Please set either 'minimize' or 'maximize' to direction. You can also set the "
-            "corresponding `StudyDirection` member."
+            "'direction' must be 'minimize' or 'maximize'."
+            " For multiple objectives, use 'directions'."
         )
 
     direction_objects = [
