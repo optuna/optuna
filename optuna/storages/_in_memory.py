@@ -55,6 +55,7 @@ class InMemoryStorage(BaseStorage):
         self._max_trial_id = -1
 
         self._lock = threading.RLock()
+        self._prev_waiting_trial_id = 0
 
     def __getstate__(self) -> dict[Any, Any]:
         state = self.__dict__.copy()
@@ -375,9 +376,24 @@ class InMemoryStorage(BaseStorage):
         with self._lock:
             self._check_study_id(study_id)
 
-            trials = self._studies[study_id].trials
-            if states is not None:
-                trials = [t for t in trials if t.state in states]
+            if states is (TrialState.WAITING,):
+                trials: list[FrozenTrial] = []
+                for i in range(self._prev_waiting_trial_id, self._max_trial_id + 1):
+                    try:
+                        trial = self._get_trial(i)
+                    except KeyError:
+                        continue
+                    if trial.state == TrialState.WAITING:
+                        if not trials:
+                            self._prev_waiting_trial_id = i
+                        trials.append(trial)
+                if not trials:
+                    self._prev_waiting_trial_id = self._max_trial_id + 1
+
+            else:
+                trials = self._studies[study_id].trials
+                if states is not None:
+                    trials = [t for t in trials if t.state in states]
 
             if deepcopy:
                 trials = copy.deepcopy(trials)
