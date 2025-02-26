@@ -380,15 +380,12 @@ class InMemoryStorage(BaseStorage):
 
             if states == (TrialState.WAITING,):
                 trials: list[FrozenTrial] = []
-                for i in range(
-                    self._prev_waiting_trial_number[study_id], len(self._studies[study_id].trials)
-                ):
-                    trial = self.get_trial(
-                        self.get_trial_id_from_study_id_trial_number(study_id, i)
-                    )
+                for trial in self._studies[study_id].trials[
+                    self._prev_waiting_trial_number[study_id] :
+                ]:
                     if trial.state == TrialState.WAITING:
                         if not trials:
-                            self._prev_waiting_trial_number[study_id] = i
+                            self._prev_waiting_trial_number[study_id] = trial.number
                         trials.append(trial)
                 if not trials:
                     self._prev_waiting_trial_number[study_id] = len(self._studies[study_id].trials)
