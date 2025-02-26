@@ -55,7 +55,7 @@ class InMemoryStorage(BaseStorage):
         self._max_trial_id = -1
 
         self._lock = threading.RLock()
-        self._prev_waiting_trial_id = 0
+        self._prev_waiting_trial_number: dict[int, int] = {}
 
     def __getstate__(self) -> dict[Any, Any]:
         state = self.__dict__.copy()
@@ -82,6 +82,7 @@ class InMemoryStorage(BaseStorage):
 
             self._studies[study_id] = _StudyInfo(study_name, list(directions))
             self._study_name_to_id[study_name] = study_id
+            self._prev_waiting_trial_number[study_id] = 0
 
             _logger.info("A new study created in memory with name: {}".format(study_name))
 
@@ -96,6 +97,7 @@ class InMemoryStorage(BaseStorage):
             study_name = self._studies[study_id].name
             del self._study_name_to_id[study_name]
             del self._studies[study_id]
+            del self._prev_waiting_trial_number[study_id]
 
     def set_study_user_attr(self, study_id: int, key: str, value: Any) -> None:
         with self._lock:
@@ -378,17 +380,18 @@ class InMemoryStorage(BaseStorage):
 
             if states == (TrialState.WAITING,):
                 trials: list[FrozenTrial] = []
-                for i in range(self._prev_waiting_trial_id, self._max_trial_id + 1):
-                    try:
-                        trial = self._get_trial(i)
-                    except KeyError:
-                        continue
+                for i in range(
+                    self._prev_waiting_trial_number[study_id], len(self._studies[study_id].trials)
+                ):
+                    trial = self.get_trial(
+                        self.get_trial_id_from_study_id_trial_number(study_id, i)
+                    )
                     if trial.state == TrialState.WAITING:
                         if not trials:
-                            self._prev_waiting_trial_id = i
+                            self._prev_waiting_trial_number[study_id] = i
                         trials.append(trial)
                 if not trials:
-                    self._prev_waiting_trial_id = self._max_trial_id + 1
+                    self._prev_waiting_trial_number[study_id] = len(self._studies[study_id].trials)
 
             else:
                 trials = self._studies[study_id].trials
