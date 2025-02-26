@@ -376,7 +376,7 @@ class InMemoryStorage(BaseStorage):
         with self._lock:
             self._check_study_id(study_id)
 
-            if states is (TrialState.WAITING,):
+            if states == (TrialState.WAITING,):
                 trials: list[FrozenTrial] = []
                 for i in range(self._prev_waiting_trial_id, self._max_trial_id + 1):
                     try:
