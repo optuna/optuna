@@ -152,11 +152,11 @@ class EMMREvaluator(BaseImprovementEvaluator):
                 "Those values are clamped to worst/best finite value."
             )
 
-            finite_score_vals = score_vals[np.isfinite(score_vals)]
-            best_finite_score = np.max(finite_score_vals, initial=0.0)
-            worst_finite_score = np.min(finite_score_vals, initial=0.0)
-
-            score_vals = np.clip(score_vals, worst_finite_score, best_finite_score)
+            finite_vals_with_nan = np.where(np.isfinite(score_vals), values, np.nan)
+            is_any_finite = np.any(np.isfinite(finite_vals_with_nan), axis=0)
+            best_finite_vals = np.where(is_any_finite, np.nanmax(finite_vals_with_nan, axis=0), 0)
+            worst_finite_vals = np.where(is_any_finite, np.nanmin(finite_vals_with_nan, axis=0), 0)
+            score_vals = np.clip(values, worst_finite_vals, best_finite_vals)
 
         standarized_score_vals = (score_vals - score_vals.mean()) / max(
             sys.float_info.min, score_vals.std()
