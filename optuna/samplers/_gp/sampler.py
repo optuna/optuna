@@ -319,11 +319,11 @@ def _warn_and_convert_inf(
             "GPSampler cannot handle +/-inf, so we clip them to the best/worst finite value."
         )
 
-        finite_vals = values[np.isfinite(values)]
-        best_finite_val = np.max(finite_vals, axis=0, initial=0.0)
-        worst_finite_val = np.min(finite_vals, axis=0, initial=0.0)
-
-        return np.clip(values, worst_finite_val, best_finite_val)
+        finite_vals_with_nan = np.where(np.isfinite(values), values, np.nan)
+        is_any_finite = np.any(np.isfinite(finite_vals_with_nan), axis=0)
+        best_finite_vals = np.where(is_any_finite, np.nanmax(finite_vals_with_nan, axis=0), 0.0)
+        worst_finite_vals = np.where(is_any_finite, np.nanmin(finite_vals_with_nan, axis=0), 0.0)
+        return np.clip(values, worst_finite_vals, best_finite_vals)
     return values
 
 
