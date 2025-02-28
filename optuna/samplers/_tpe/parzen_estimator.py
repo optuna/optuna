@@ -191,16 +191,16 @@ class _ParzenEstimator:
             )
 
         n_kernels = len(observations) + parameters.consider_prior
-        if parameters.consider_prior is False:
-            weights = np.full(
-                shape=(n_kernels, n_choices),
-                fill_value=0.0,
-            )
-        else:
+        if parameters.consider_prior:
             assert parameters.prior_weight is not None
             weights = np.full(
                 shape=(n_kernels, n_choices),
                 fill_value=parameters.prior_weight / n_kernels,
+            )
+        else:
+            weights = np.full(
+                shape=(n_kernels, n_choices),
+                fill_value=0.0,
             )
         observed_indices = observations.astype(int)
         if (
