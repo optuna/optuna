@@ -30,8 +30,10 @@ from optuna.testing.tempfile_pool import NamedTemporaryFilePool
 
 LOG_STORAGE_WITH_PARAMETER = [
     ("file_with_open_lock", 3),
+    ("file_with_open_lock", 30),
     ("file_with_open_lock", None),
     ("file_with_link_lock", 3),
+    ("file_with_link_lock", 30),
     ("file_with_link_lock", None),
     ("redis_default", None),
     ("redis_with_use_cluster", None),
@@ -51,19 +53,13 @@ class JournalLogStorageSupplier:
             self.tempfile = NamedTemporaryFilePool().tempfile()
             lock: BaseJournalFileLock
             if self.storage_type == "file_with_open_lock":
-                if self.grace_period is None:
-                    lock = optuna.storages.journal.JournalFileOpenLock(self.tempfile.name)
-                else:
-                    lock = optuna.storages.journal.JournalFileOpenLock(
-                        self.tempfile.name, self.grace_period
-                    )
+                lock = optuna.storages.journal.JournalFileOpenLock(
+                    self.tempfile.name, self.grace_period
+                )
             elif self.storage_type == "file_with_link_lock":
-                if self.grace_period is None:
-                    lock = optuna.storages.journal.JournalFileOpenLock(self.tempfile.name)
-                else:
-                    lock = optuna.storages.journal.JournalFileOpenLock(
-                        self.tempfile.name, self.grace_period
-                    )
+                lock = optuna.storages.journal.JournalFileOpenLock(
+                    self.tempfile.name, self.grace_period
+                )
             else:
                 raise Exception("Must not reach here")
             return optuna.storages.journal.JournalFileBackend(self.tempfile.name, lock)

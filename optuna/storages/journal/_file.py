@@ -133,13 +133,14 @@ class JournalFileSymlinkLock(BaseJournalFileLock):
             Grace period before an existing lock is forcibly released.
     """
 
-    def __init__(self, filepath: str, grace_period: int = 30) -> None:
+    def __init__(self, filepath: str, grace_period: int | None = 30) -> None:
         self._lock_target_file = filepath
         self._lock_file = filepath + LOCK_FILE_SUFFIX
-        if grace_period <= 0:
-            raise ValueError("The value of `grace_period` should be a positive integer.")
-        if grace_period < 3:
-            warnings.warn("The value of `grace_period` might be too small. ")
+        if grace_period is not None:
+            if grace_period <= 0:
+                raise ValueError("The value of `grace_period` should be a positive integer.")
+            if grace_period < 3:
+                warnings.warn("The value of `grace_period` might be too small. ")
         self.grace_period = grace_period
 
     def acquire(self) -> bool:
@@ -157,23 +158,25 @@ class JournalFileSymlinkLock(BaseJournalFileLock):
                 return True
             except OSError as err:
                 if err.errno == errno.EEXIST:
-                    try:
-                        current_mtime = os.stat(self._lock_file).st_mtime
-                    except OSError:
-                        continue
-                    if current_mtime != mtime:
-                        mtime = current_mtime
-                        last_update_time = time.monotonic()
-
-                    if time.monotonic() - last_update_time > self.grace_period:
-                        warnings.warn(
-                            "The existing lock file has not been released "
-                            "for an extended period. Forcibly releasing the lock file."
-                        )
+                    if self.grace_period is not None:
                         try:
-                            self.release()
+                            current_mtime = os.stat(self._lock_file).st_mtime
                         except OSError:
                             continue
+                        if current_mtime != mtime:
+                            mtime = current_mtime
+                            last_update_time = time.monotonic()
+
+                        if time.monotonic() - last_update_time > self.grace_period:
+                            warnings.warn(
+                                "The existing lock file has not been released "
+                                "for an extended period. Forcibly releasing the lock file."
+                            )
+                            try:
+                                self.release()
+                                sleep_secs = 0.001
+                            except OSError:
+                                continue
 
                     time.sleep(sleep_secs)
                     sleep_secs = min(sleep_secs * 2, 1)
@@ -212,12 +215,13 @@ class JournalFileOpenLock(BaseJournalFileLock):
             Grace period before an existing lock is forcibly released.
     """
 
-    def __init__(self, filepath: str, grace_period: int = 30) -> None:
+    def __init__(self, filepath: str, grace_period: int | None = 30) -> None:
         self._lock_file = filepath + LOCK_FILE_SUFFIX
-        if grace_period <= 0:
-            raise ValueError("The value of `grace_period` should be a positive integer.")
-        if grace_period < 3:
-            warnings.warn("The value of `grace_period` might be too small. ")
+        if grace_period is not None:
+            if grace_period <= 0:
+                raise ValueError("The value of `grace_period` should be a positive integer.")
+            if grace_period < 3:
+                warnings.warn("The value of `grace_period` might be too small. ")
         self.grace_period = grace_period
 
     def acquire(self) -> bool:
@@ -237,23 +241,26 @@ class JournalFileOpenLock(BaseJournalFileLock):
                 return True
             except OSError as err:
                 if err.errno == errno.EEXIST:
-                    try:
-                        current_mtime = os.stat(self._lock_file).st_mtime
-                    except OSError:
-                        continue
-                    if current_mtime != mtime:
-                        mtime = current_mtime
-                        last_update_time = time.monotonic()
-
-                    if time.monotonic() - last_update_time > self.grace_period:
-                        warnings.warn(
-                            "The existing lock file has not been released "
-                            "for an extended period. Forcibly releasing the lock file."
-                        )
+                    if self.grace_period is not None:
                         try:
-                            self.release()
+                            current_mtime = os.stat(self._lock_file).st_mtime
                         except OSError:
                             continue
+                        if current_mtime != mtime:
+                            mtime = current_mtime
+                            last_update_time = time.monotonic()
+
+                        if time.monotonic() - last_update_time > self.grace_period:
+                            warnings.warn(
+                                "The existing lock file has not been released "
+                                "for an extended period. Forcibly releasing the lock file."
+                            )
+                            try:
+                                self.release()
+                                sleep_secs = 0.001
+                            except OSError:
+                                continue
+
                     time.sleep(sleep_secs)
                     sleep_secs = min(sleep_secs * 2, 1)
                     continue
