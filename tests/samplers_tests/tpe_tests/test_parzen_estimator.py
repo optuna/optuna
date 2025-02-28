@@ -111,7 +111,7 @@ def test_init_parzen_estimator(consider_prior: bool, multivariate: bool) -> None
             _BatchedCategoricalDistributions(
                 np.array([[0.2, 0.6, 0.2], [1.0 / 3.0, 1.0 / 3.0, 1.0 / 3.0]])
                 if consider_prior
-                else np.array([[0.25, 0.5, 0.25]])
+                else np.array([[0.0, 1.0, 0.0]])
             ),
             _BatchedCategoricalDistributions(
                 np.array(
@@ -121,7 +121,7 @@ def test_init_parzen_estimator(consider_prior: bool, multivariate: bool) -> None
                     ]
                 )
                 if consider_prior
-                else np.array([[0.2, 0.4, 0.2, 0.2]])
+                else np.array([[0.0, 1.0, 0.0, 0.0]])
             ),
         ],
     )
@@ -169,7 +169,7 @@ def test_init_parzen_estimator(consider_prior: bool, multivariate: bool) -> None
             _BatchedCategoricalDistributions(
                 np.array([[0.2, 0.6, 0.2], [1.0 / 3.0, 1.0 / 3.0, 1.0 / 3.0]])
                 if consider_prior
-                else np.array([[0.25, 0.5, 0.25]])
+                else np.array([[0.0, 1.0, 0.0]])
             ),
             _BatchedCategoricalDistributions(
                 np.array(
@@ -178,7 +178,7 @@ def test_init_parzen_estimator(consider_prior: bool, multivariate: bool) -> None
                         [1.0 / 4.0, 1.0 / 4.0, 1.0 / 4.0, 1.0 / 4.0],
                     ]
                     if consider_prior
-                    else np.array([[0.2, 0.4, 0.2, 0.2]])
+                    else np.array([[0.0, 1.0, 0.0, 0.0]])
                 )
             ),
         ],

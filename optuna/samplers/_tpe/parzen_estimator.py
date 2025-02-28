@@ -191,13 +191,22 @@ class _ParzenEstimator:
             )
 
         n_kernels = len(observations) + parameters.consider_prior
-        assert parameters.prior_weight is not None
-        weights = np.full(
-            shape=(n_kernels, n_choices),
-            fill_value=parameters.prior_weight / n_kernels,
-        )
+        if parameters.consider_prior is False:
+            weights = np.full(
+                shape=(n_kernels, n_choices),
+                fill_value=0.0,
+            )
+        else:
+            assert parameters.prior_weight is not None
+            weights = np.full(
+                shape=(n_kernels, n_choices),
+                fill_value=parameters.prior_weight / n_kernels,
+            )
         observed_indices = observations.astype(int)
-        if param_name in parameters.categorical_distance_func:
+        if (
+            param_name in parameters.categorical_distance_func
+            and parameters.prior_weight is not None
+        ):
             # TODO(nabenabe0928): Think about how to handle combinatorial explosion.
             # The time complexity is O(n_choices * used_indices.size), so n_choices cannot be huge.
             used_indices, rev_indices = np.unique(observed_indices, return_inverse=True)
