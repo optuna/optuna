@@ -150,7 +150,7 @@ class JournalFileSymlinkLock(BaseJournalFileLock):
             :obj:`True` if it succeeded in creating a symbolic link of ``self._lock_target_file``.
         """
         sleep_secs = 0.001
-        last_update_time = time.monotonic()
+        last_update_monotonic_time = time.monotonic()
         mtime = None
         while True:
             try:
@@ -165,9 +165,9 @@ class JournalFileSymlinkLock(BaseJournalFileLock):
                             continue
                         if current_mtime != mtime:
                             mtime = current_mtime
-                            last_update_time = time.monotonic()
+                            last_update_monotonic_time = time.monotonic()
 
-                        if time.monotonic() - last_update_time > self.grace_period:
+                        if time.monotonic() - last_update_monotonic_time > self.grace_period:
                             warnings.warn(
                                 "The existing lock file has not been released "
                                 "for an extended period. Forcibly releasing the lock file."
@@ -232,7 +232,7 @@ class JournalFileOpenLock(BaseJournalFileLock):
 
         """
         sleep_secs = 0.001
-        last_update_time = time.monotonic()
+        last_update_monotonic_time = time.monotonic()
         mtime = None
         while True:
             try:
@@ -248,9 +248,9 @@ class JournalFileOpenLock(BaseJournalFileLock):
                             continue
                         if current_mtime != mtime:
                             mtime = current_mtime
-                            last_update_time = time.monotonic()
+                            last_update_monotonic_time = time.monotonic()
 
-                        if time.monotonic() - last_update_time > self.grace_period:
+                        if time.monotonic() - last_update_monotonic_time > self.grace_period:
                             warnings.warn(
                                 "The existing lock file has not been released "
                                 "for an extended period. Forcibly releasing the lock file."
