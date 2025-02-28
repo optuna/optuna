@@ -378,6 +378,8 @@ class InMemoryStorage(BaseStorage):
         with self._lock:
             self._check_study_id(study_id)
 
+            # Optimized retrieval of trials in the WAITING state to improve performance
+            # for the call, `get_all_trials(states=(TrialState.WAITING,))`.
             if states == (TrialState.WAITING,):
                 trials: list[FrozenTrial] = []
                 for trial in self._studies[study_id].trials[
