@@ -193,26 +193,25 @@ class _ParzenEstimator:
         n_kernels = len(observations) + parameters.consider_prior
         if parameters.consider_prior:
             assert parameters.prior_weight is not None
-            weights = np.full(
-                shape=(n_kernels, n_choices),
-                fill_value=parameters.prior_weight / n_kernels,
-            )
+            fill_value = parameters.prior_weight / n_kernels
         else:
-            weights = np.full(
-                shape=(n_kernels, n_choices),
-                fill_value=0.0,
-            )
+            fill_value = 0.0
+        weights = np.full(
+            shape=(n_kernels, n_choices),
+            fill_value=fill_value,
+        )
         observed_indices = observations.astype(int)
-        if (
-            param_name in parameters.categorical_distance_func
-            and parameters.prior_weight is not None
-        ):
+        if param_name in parameters.categorical_distance_func:
             # TODO(nabenabe0928): Think about how to handle combinatorial explosion.
             # The time complexity is O(n_choices * used_indices.size), so n_choices cannot be huge.
             used_indices, rev_indices = np.unique(observed_indices, return_inverse=True)
             dist_func = parameters.categorical_distance_func[param_name]
             dists = np.array([[dist_func(choices[i], c) for c in choices] for i in used_indices])
-            coef = np.log(n_kernels / parameters.prior_weight) * np.log(n_choices) / np.log(6)
+            if parameters.consider_prior:
+                assert parameters.prior_weight is not None
+                coef = np.log(n_kernels / parameters.prior_weight) * np.log(n_choices) / np.log(6)
+            else:
+                coef = 1.0
             cat_weights = np.exp(-((dists / np.max(dists, axis=1)[:, np.newaxis]) ** 2) * coef)
             weights[: len(observed_indices)] = cat_weights[rev_indices]
         else:
