@@ -8,6 +8,7 @@ from typing import cast
 
 from optuna._typing import JSONSerializable
 from optuna.distributions import BaseDistribution
+from optuna.exceptions import UpdateFinishedTrialError
 from optuna.study._frozen import FrozenStudy
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
@@ -271,7 +272,7 @@ class BaseStorage(abc.ABC):
         Raises:
             :exc:`KeyError`:
                 If no trial with the matching ``trial_id`` exists.
-            :exc:`RuntimeError`:
+            :exc:`optuna.exceptions.UpdateFinishedTrialError`:
                 If the trial is already finished.
         """
         raise NotImplementedError
@@ -368,7 +369,7 @@ class BaseStorage(abc.ABC):
         Raises:
             :exc:`KeyError`:
                 If no trial with the matching ``trial_id`` exists.
-            :exc:`RuntimeError`:
+            :exc:`optuna.exceptions.UpdateFinishedTrialError`:
                 If the trial is already finished.
         """
         raise NotImplementedError
@@ -392,7 +393,7 @@ class BaseStorage(abc.ABC):
         Raises:
             :exc:`KeyError`:
                 If no trial with the matching ``trial_id`` exists.
-            :exc:`RuntimeError`:
+            :exc:`optuna.exceptions.UpdateFinishedTrialError`:
                 If the trial is already finished.
         """
         raise NotImplementedError
@@ -414,7 +415,7 @@ class BaseStorage(abc.ABC):
         Raises:
             :exc:`KeyError`:
                 If no trial with the matching ``trial_id`` exists.
-            :exc:`RuntimeError`:
+            :exc:`optuna.exceptions.UpdateFinishedTrialError`:
                 If the trial is already finished.
         """
         raise NotImplementedError
@@ -436,7 +437,7 @@ class BaseStorage(abc.ABC):
         Raises:
             :exc:`KeyError`:
                 If no trial with the matching ``trial_id`` exists.
-            :exc:`RuntimeError`:
+            :exc:`optuna.exceptions.UpdateFinishedTrialError`:
                 If the trial is already finished.
         """
         raise NotImplementedError
@@ -614,11 +615,11 @@ class BaseStorage(abc.ABC):
                 Trial state to check.
 
         Raises:
-            :exc:`RuntimeError`:
+            :exc:`optuna.exceptions.UpdateFinishedTrialError`:
                 If the trial is already finished.
         """
         if trial_state.is_finished():
             trial = self.get_trial(trial_id)
-            raise RuntimeError(
+            raise UpdateFinishedTrialError(
                 "Trial#{} has already finished and can not be updated.".format(trial.number)
             )
