@@ -81,6 +81,15 @@ class DuplicatedStudyError(OptunaError):
     pass
 
 
+class UpdateFinishedTrialError(OptunaError, RuntimeError):
+    """Exception for updating a finished trial.
+
+    This error is raised when attempting to update a finished trial.
+    """
+
+    pass
+
+
 class ExperimentalWarning(Warning):
     """Experimental Warning class.
 
