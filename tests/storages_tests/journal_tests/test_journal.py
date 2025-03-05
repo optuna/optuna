@@ -3,15 +3,19 @@ from __future__ import annotations
 from concurrent.futures import as_completed
 from concurrent.futures import ProcessPoolExecutor
 from concurrent.futures import ThreadPoolExecutor
+import contextlib
 import pathlib
 import pickle
 from types import TracebackType
 from typing import Any
 from typing import IO
+from typing import Iterator
 from unittest import mock
 
 import _pytest.capture
+import boto3
 from fakeredis import FakeStrictRedis
+from moto import mock_aws
 import pytest
 
 import optuna
@@ -28,11 +32,39 @@ from optuna.testing.storages import StorageSupplier
 from optuna.testing.tempfile_pool import NamedTemporaryFilePool
 
 
+@contextlib.contextmanager
+def mock_s3() -> Iterator[str, None]:
+    with mock_aws():
+        with pytest.MonkeyPatch().context() as m:
+            m.setenv("AWS_ACCESS_KEY_ID", "foo")
+            m.setenv("AWS_SECRET_ACCESS_KEY", "bar")
+            m.setenv("AWS_DEFAULT_REGION", "us-east-1")
+
+            # Runs before each test
+            bucket_name = "moto-bucket"
+            s3_client = boto3.client("s3")
+            s3_client.create_bucket(
+                Bucket=bucket_name,
+            )
+
+            yield bucket_name
+
+            # Runs after each test
+            objects = s3_client.list_objects(Bucket=bucket_name).get("Contents", [])
+            if objects:
+                s3_client.delete_objects(
+                    Bucket=bucket_name,
+                    Delete={"Objects": [{"Key": obj["Key"] for obj in objects}], "Quiet": True},
+                )
+            s3_client.delete_bucket(Bucket=bucket_name)
+
+
 LOG_STORAGE = [
     "file_with_open_lock",
     "file_with_link_lock",
     "redis_default",
     "redis_with_use_cluster",
+    "s3",
 ]
 
 JOURNAL_STORAGE_SUPPORTING_SNAPSHOT = ["journal_redis"]
@@ -42,6 +74,7 @@ class JournalLogStorageSupplier:
     def __init__(self, storage_type: str) -> None:
         self.storage_type = storage_type
         self.tempfile: IO[Any] | None = None
+        self.exit_stack = contextlib.ExitStack()
 
     def __enter__(self) -> optuna.storages.journal.BaseJournalBackend:
         if self.storage_type.startswith("file"):
@@ -61,6 +94,9 @@ class JournalLogStorageSupplier:
             )
             journal_redis_storage._redis = FakeStrictRedis()  # type: ignore[no-untyped-call]
             return journal_redis_storage
+        elif self.storage_type == "s3":
+            bucket_name = self.exit_stack.enter_context(mock_s3())
+            return optuna.storages.journal.JournalS3Backend(f"s3://{bucket_name}/logs.json")
         else:
             raise RuntimeError("Unknown log storage type: {}".format(self.storage_type))
 
@@ -69,12 +105,28 @@ class JournalLogStorageSupplier:
     ) -> None:
         if self.tempfile:
             self.tempfile.close()
+        self.exit_stack.close()
+
+
+@pytest.mark.parametrize("log_storage_type", LOG_STORAGE)
+def test_append_logs(log_storage_type: str) -> None:
+    record = {"key": "value"}
+    num_records = 200
+
+    with JournalLogStorageSupplier(log_storage_type) as storage:
+        for _ in range(num_records):
+            storage.append_logs([record])
+
+        assert len(storage.read_logs(0)) == num_records
+        assert all(record == r for r in storage.read_logs(0))
 
 
 @pytest.mark.parametrize("log_storage_type", LOG_STORAGE)
 def test_concurrent_append_logs_for_multi_processes(log_storage_type: str) -> None:
     if log_storage_type.startswith("redis"):
         pytest.skip("The `fakeredis` does not support multi process environments.")
+    if log_storage_type.startswith("s3"):
+        pytest.skip("The `moto` does not support conditional writes.")
 
     num_executors = 10
     num_records = 200
@@ -90,6 +142,9 @@ def test_concurrent_append_logs_for_multi_processes(log_storage_type: str) -> No
 
 @pytest.mark.parametrize("log_storage_type", LOG_STORAGE)
 def test_concurrent_append_logs_for_multi_threads(log_storage_type: str) -> None:
+    if log_storage_type.startswith("s3"):
+        pytest.skip("The `moto` does not support conditional writes.")
+
     num_executors = 10
     num_records = 200
     record = {"key": "value"}
