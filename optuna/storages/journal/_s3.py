@@ -32,9 +32,9 @@ class JournalS3Backend(BaseJournalBackend):
     def __init__(self, s3_path: str) -> None:
         _imports.check()
 
-        if not s3_path.startswith("s3://") or "/" not in s3_path.removeprefix("s3://"):
+        if not s3_path.startswith("s3://") or "/" not in s3_path[len("s3://"):]:
             raise ValueError(f"Invalid S3 path: {s3_path}")
-        self._bucket, self._key = s3_path.removeprefix("s3://").split("/", 1)
+        self._bucket, self._key = s3_path[len("s3://"):].split("/", 1)
 
         self._s3 = boto3.client("s3")
 
