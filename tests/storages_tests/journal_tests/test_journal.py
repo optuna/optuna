@@ -33,7 +33,7 @@ from optuna.testing.tempfile_pool import NamedTemporaryFilePool
 
 
 @contextlib.contextmanager
-def mock_s3() -> Iterator[str, None]:
+def mock_s3() -> Iterator[str]:
     with mock_aws():
         with pytest.MonkeyPatch().context() as m:
             m.setenv("AWS_ACCESS_KEY_ID", "foo")
