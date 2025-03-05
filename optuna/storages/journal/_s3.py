@@ -68,7 +68,8 @@ class JournalS3Backend(BaseJournalBackend):
                 condition_kwargs = {"IfMatch": response["ETag"]}
             except self._s3.exceptions.NoSuchKey:
                 logger.debug(
-                    f"The object 's3://{self._bucket}/{self._key}' does not exist. Trying to create a new object."
+                    f"The object 's3://{self._bucket}/{self._key}' does not exist. "
+                    "Trying to create a new object."
                 )
                 existing_logs = []
                 condition_kwargs = {"IfNoneMatch": "*"}
@@ -80,7 +81,8 @@ class JournalS3Backend(BaseJournalBackend):
                     **condition_kwargs,
                 )
                 logger.debug(
-                    f"Previous log length {len(existing_logs)} -> Current log length {len(existing_logs + logs)}"
+                    f"Previous log length {len(existing_logs)} -> "
+                    f"Current log length {len(existing_logs + logs)}"
                 )
                 return
             except self._s3.exceptions.ClientError as e:
@@ -90,11 +92,13 @@ class JournalS3Backend(BaseJournalBackend):
                 ):
                     if existing_logs:
                         logger.info(
-                            f"Failed to append logs to S3 because the object was updated by another process. Waiting for {current_wait} before retrying..."
+                            "Failed to append logs to S3 because the object was updated. "
+                            f"Waiting for {current_wait} before retrying..."
                         )
                     else:
                         logger.info(
-                            f"Failed to create logs to S3 because the object was created by another process. Waiting for {current_wait} before retrying..."
+                            "Failed to create logs to S3 because the object was created. "
+                            f"Waiting for {current_wait} before retrying..."
                         )
                     # retry from reading.
                     time.sleep(current_wait)
