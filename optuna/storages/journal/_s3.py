@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Any
+from typing import Any, Optional
 
 from optuna._experimental import experimental_class
 from optuna._imports import try_import
@@ -11,7 +11,7 @@ from optuna.storages.journal._base import BaseJournalSnapshot
 with try_import() as _imports:
     import boto3
 
-logger = logging.Logger(__name__)
+logger = logging.getLogger(__name__)
 
 @experimental_class("3.1.0")
 class JournalS3Backend(BaseJournalBackend, BaseJournalSnapshot):
@@ -32,7 +32,7 @@ class JournalS3Backend(BaseJournalBackend, BaseJournalSnapshot):
 
         self._bucket = bucket
         if prefix and prefix.endswith("/"):
-            self.prefix = prefix[:-1]
+            self._prefix = prefix[:-1]
         else:
             self._prefix = prefix
         self._num_logs_per_object = num_logs_per_object
@@ -44,8 +44,10 @@ class JournalS3Backend(BaseJournalBackend, BaseJournalSnapshot):
         try:
             self._s3.put_object(
                 Bucket=self._bucket,
-                Key=num_logs_per_object_key, Body=str(num_logs_per_object).encode(),
-                            IfNoneMatch="*")
+                Key=num_logs_per_object_key,
+                Body=str(num_logs_per_object).encode(),
+                IfNoneMatch="*"
+            )
         except self._s3.exceptions.ClientError as e:
             if e.response['Error']['Code'] != 'PreconditionFailed':
                 logging.error(f"Error creating object '{num_logs_per_object_key}': {e}")
@@ -115,7 +117,7 @@ class JournalS3Backend(BaseJournalBackend, BaseJournalSnapshot):
                 return False
             raise
 
-    def append_logs(self, logs):
+    def append_logs(self, logs: list[dict[str, Any]]) -> None:
         while logs:
             log_objects = self._list_log_object_keys()
             if log_objects:
@@ -147,7 +149,7 @@ class JournalS3Backend(BaseJournalBackend, BaseJournalSnapshot):
         """Save snapshot to the backend."""
         self._s3.put_object(Bucket=self._bucket, Key=f"{self._prefix}/snapshot", Body=snapshot)
     
-    def load_snapshot(self) -> bytes | None:
+    def load_snapshot(self) -> Optional[bytes]:
         """Load snapshot from the backend."""
         try:
             response = self._s3.get_object(Bucket=self._bucket, Key=f"{self._prefix}/snapshot")
