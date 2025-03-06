@@ -5,6 +5,7 @@ from dataclasses import dataclass
 import math
 from typing import Any
 from typing import TYPE_CHECKING
+import warnings
 
 import numpy as np
 
@@ -34,6 +35,22 @@ logger = get_logger(__name__)
 # cov_Y_Y_inv_Y[len(trials)]: cov_Y_Y_inv @ Y
 # max_Y: maximum of Y (Note that we transform the objective values such that it is maximized.)
 # d2: squared distance between two points
+
+
+def warn_and_convert_inf(
+    values: np.ndarray,
+) -> np.ndarray:
+    if np.any(~np.isfinite(values)):
+        warnings.warn(
+            "GP cannot handle non finite values, so we clip them to the best/worst finite value."
+        )
+
+        finite_vals_with_nan = np.where(np.isfinite(values), values, np.nan)
+        is_any_finite = np.any(np.isfinite(finite_vals_with_nan), axis=0)
+        max_finite_vals = np.where(is_any_finite, np.nanmax(finite_vals_with_nan, axis=0), 0.0)
+        min_finite_vals = np.where(is_any_finite, np.nanmin(finite_vals_with_nan, axis=0), 0.0)
+        return np.clip(values, min_finite_vals, max_finite_vals)
+    return values
 
 
 class Matern52Kernel(torch.autograd.Function):
