@@ -43,11 +43,14 @@ def warn_and_convert_inf(values: np.ndarray) -> np.ndarray:
         return values
 
     warnings.warn("Clip non-finite values to the min/max finite values for GP fittings.")
-    finite_vals_with_nan = np.where(is_values_finite, values, np.nan)
     is_any_finite = np.any(is_values_finite, axis=0)
-    min_finite_vals = np.where(is_any_finite, np.nanmin(finite_vals_with_nan, axis=0), 0.0)
-    max_finite_vals = np.where(is_any_finite, np.nanmax(finite_vals_with_nan, axis=0), 0.0)
-    return np.clip(values, min_finite_vals, max_finite_vals)
+    # NOTE(nabenabe): values cannot include nan to apply np.clip properly, but Optuna anyways won't
+    # pass nan in values by design.
+    return np.clip(
+        values,
+        np.where(is_any_finite, np.min(np.where(is_values_finite, values, np.inf), axis=0), 0.0),
+        np.where(is_any_finite, np.max(np.where(is_values_finite, values, -np.inf), axis=0), 0.0),
+    )
 
 
 class Matern52Kernel(torch.autograd.Function):
