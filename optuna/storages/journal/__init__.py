@@ -3,6 +3,7 @@ from optuna.storages.journal._file import JournalFileBackend
 from optuna.storages.journal._file import JournalFileOpenLock
 from optuna.storages.journal._file import JournalFileSymlinkLock
 from optuna.storages.journal._redis import JournalRedisBackend
+from optuna.storages.journal._s3 import JournalS3Backend
 from optuna.storages.journal._storage import JournalStorage
 
 
@@ -15,5 +16,6 @@ __all__ = [
     "JournalFileOpenLock",
     "JournalFileSymlinkLock",
     "JournalRedisBackend",
+    "JournalS3Backend",
     "JournalStorage",
 ]

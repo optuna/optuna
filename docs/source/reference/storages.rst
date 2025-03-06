@@ -31,6 +31,7 @@ optuna.storages.journal
 
    journal.JournalFileBackend
    journal.JournalRedisBackend
+   journal.JournalS3Backend
 
 Users can flexibly choose a lock object for :class:`~optuna.storages.journal.JournalFileBackend` and here is the list of supported lock objects:
 
