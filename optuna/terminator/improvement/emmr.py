@@ -145,19 +145,7 @@ class EMMREvaluator(BaseImprovementEvaluator):
         # _gp module assumes that optimization direction is maximization
         sign = -1 if study_direction == StudyDirection.MINIMIZE else 1
         score_vals = np.array([cast(float, t.value) for t in complete_trials]) * sign
-
-        if np.any(~np.isfinite(score_vals)):
-            warnings.warn(
-                f"{self.__class__.__name__} cannot handle infinite values."
-                "Those values are clamped to worst/best finite value."
-            )
-
-            finite_vals_with_nan = np.where(np.isfinite(score_vals), score_vals, np.nan)
-            is_any_finite = np.any(np.isfinite(finite_vals_with_nan), axis=0)
-            best_finite_vals = np.where(is_any_finite, np.nanmax(finite_vals_with_nan, axis=0), 0)
-            worst_finite_vals = np.where(is_any_finite, np.nanmin(finite_vals_with_nan, axis=0), 0)
-            score_vals = np.clip(score_vals, worst_finite_vals, best_finite_vals)
-
+        score_vals = gp.warn_and_convert_inf(score_vals)
         standarized_score_vals = (score_vals - score_vals.mean()) / max(
             sys.float_info.min, score_vals.std()
         )
