@@ -37,20 +37,16 @@ logger = get_logger(__name__)
 # d2: squared distance between two points
 
 
-def warn_and_convert_inf(
-    values: np.ndarray,
-) -> np.ndarray:
-    if np.any(~np.isfinite(values)):
-        warnings.warn(
-            "GP cannot handle non finite values, so we clip them to the best/worst finite value."
-        )
+def warn_and_convert_inf(values: np.ndarray) -> np.ndarray:
+    if np.all(np.isfinite(values)):
+        return values
 
-        finite_vals_with_nan = np.where(np.isfinite(values), values, np.nan)
-        is_any_finite = np.any(np.isfinite(finite_vals_with_nan), axis=0)
-        max_finite_vals = np.where(is_any_finite, np.nanmax(finite_vals_with_nan, axis=0), 0.0)
-        min_finite_vals = np.where(is_any_finite, np.nanmin(finite_vals_with_nan, axis=0), 0.0)
-        return np.clip(values, min_finite_vals, max_finite_vals)
-    return values
+    warnings.warn("Clip non-finite values to the min/max finite values for the GP fittings.")
+    finite_vals_with_nan = np.where(np.isfinite(values), values, np.nan)
+    is_any_finite = np.any(np.isfinite(finite_vals_with_nan), axis=0)
+    max_finite_vals = np.where(is_any_finite, np.nanmax(finite_vals_with_nan, axis=0), 0.0)
+    min_finite_vals = np.where(is_any_finite, np.nanmin(finite_vals_with_nan, axis=0), 0.0)
+    return np.clip(values, min_finite_vals, max_finite_vals)
 
 
 class Matern52Kernel(torch.autograd.Function):
