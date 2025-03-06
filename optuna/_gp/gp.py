@@ -38,14 +38,15 @@ logger = get_logger(__name__)
 
 
 def warn_and_convert_inf(values: np.ndarray) -> np.ndarray:
-    if np.all(np.isfinite(values)):
+    is_values_finite = np.isfinite(values)
+    if np.all(is_values_finite):
         return values
 
-    warnings.warn("Clip non-finite values to the min/max finite values for the GP fittings.")
-    finite_vals_with_nan = np.where(np.isfinite(values), values, np.nan)
-    is_any_finite = np.any(np.isfinite(finite_vals_with_nan), axis=0)
-    max_finite_vals = np.where(is_any_finite, np.nanmax(finite_vals_with_nan, axis=0), 0.0)
+    warnings.warn("Clip non-finite values to the min/max finite values for GP fittings.")
+    finite_vals_with_nan = np.where(is_values_finite, values, np.nan)
+    is_any_finite = np.any(is_values_finite, axis=0)
     min_finite_vals = np.where(is_any_finite, np.nanmin(finite_vals_with_nan, axis=0), 0.0)
+    max_finite_vals = np.where(is_any_finite, np.nanmax(finite_vals_with_nan, axis=0), 0.0)
     return np.clip(values, min_finite_vals, max_finite_vals)
 
 
