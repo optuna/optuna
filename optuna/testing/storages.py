@@ -30,7 +30,8 @@ STORAGE_MODES: list[Any] = [
     "cached_sqlite",
     "journal",
     "journal_redis",
-    "grpc",
+    "grpc_rdb",
+    "grpc_journal_file",
 ]
 
 
@@ -84,12 +85,34 @@ class StorageSupplier:
                 "redis", fakeredis.FakeStrictRedis()  # type: ignore[no-untyped-call]
             )
             return optuna.storages.JournalStorage(journal_redis_storage)
+        elif self.storage_specifier == "grpc_journal_file":
+            self.tempfile = self.extra_args.get("file", NamedTemporaryFilePool().tempfile())
+            assert self.tempfile is not None
+            port = _find_free_port()
+            storage = optuna.storages.JournalStorage(
+                optuna.storages.journal.JournalFileBackend(self.tempfile.name)
+            )
+
+            self.server = optuna.storages._grpc.server.make_server(storage, "localhost", port)
+            self.thread = threading.Thread(target=self.server.start)
+            self.thread.start()
+
+            proxy = GrpcStorageProxy(host="localhost", port=port)
+
+            # Wait until the server is ready.
+            while True:
+                try:
+                    proxy.get_all_studies()
+                    return proxy
+                except grpc.RpcError:
+                    time.sleep(1)
+                    continue
         elif "journal" in self.storage_specifier:
             self.tempfile = self.extra_args.get("file", NamedTemporaryFilePool().tempfile())
             assert self.tempfile is not None
             file_storage = JournalFileBackend(self.tempfile.name)
             return optuna.storages.JournalStorage(file_storage)
-        elif self.storage_specifier == "grpc":
+        elif self.storage_specifier == "grpc_rdb":
             self.tempfile = NamedTemporaryFilePool().tempfile()
             url = "sqlite:///{}".format(self.tempfile.name)
             port = _find_free_port()
