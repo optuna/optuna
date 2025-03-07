@@ -272,7 +272,7 @@ class BaseStorage(abc.ABC):
         Raises:
             :exc:`KeyError`:
                 If no trial with the matching ``trial_id`` exists.
-            :exc:`optuna.exceptions.UpdateFinishedTrialError`:
+            :exc:`~optuna.exceptions.UpdateFinishedTrialError`:
                 If the trial is already finished.
         """
         raise NotImplementedError
@@ -369,7 +369,7 @@ class BaseStorage(abc.ABC):
         Raises:
             :exc:`KeyError`:
                 If no trial with the matching ``trial_id`` exists.
-            :exc:`optuna.exceptions.UpdateFinishedTrialError`:
+            :exc:`~optuna.exceptions.UpdateFinishedTrialError`:
                 If the trial is already finished.
         """
         raise NotImplementedError
@@ -393,7 +393,7 @@ class BaseStorage(abc.ABC):
         Raises:
             :exc:`KeyError`:
                 If no trial with the matching ``trial_id`` exists.
-            :exc:`optuna.exceptions.UpdateFinishedTrialError`:
+            :exc:`~optuna.exceptions.UpdateFinishedTrialError`:
                 If the trial is already finished.
         """
         raise NotImplementedError
@@ -415,7 +415,7 @@ class BaseStorage(abc.ABC):
         Raises:
             :exc:`KeyError`:
                 If no trial with the matching ``trial_id`` exists.
-            :exc:`optuna.exceptions.UpdateFinishedTrialError`:
+            :exc:`~optuna.exceptions.UpdateFinishedTrialError`:
                 If the trial is already finished.
         """
         raise NotImplementedError
@@ -437,7 +437,7 @@ class BaseStorage(abc.ABC):
         Raises:
             :exc:`KeyError`:
                 If no trial with the matching ``trial_id`` exists.
-            :exc:`optuna.exceptions.UpdateFinishedTrialError`:
+            :exc:`~optuna.exceptions.UpdateFinishedTrialError`:
                 If the trial is already finished.
         """
         raise NotImplementedError
@@ -615,7 +615,7 @@ class BaseStorage(abc.ABC):
                 Trial state to check.
 
         Raises:
-            :exc:`optuna.exceptions.UpdateFinishedTrialError`:
+            :exc:`~optuna.exceptions.UpdateFinishedTrialError`:
                 If the trial is already finished.
         """
         if trial_state.is_finished():
