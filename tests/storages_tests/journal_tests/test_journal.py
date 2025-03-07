@@ -258,3 +258,18 @@ def test_raise_error_for_deprecated_class_import_from_journal() -> None:
         journal.JournalRedisStorage  # type: ignore[attr-defined]
     with pytest.raises(AttributeError):
         journal.BaseJournalLogStorage  # type: ignore[attr-defined]
+
+
+@pytest.mark.parametrize(
+    "log_storage_type,grace_period",
+    [
+        ("file_with_open_lock", 0),
+        ("file_with_open_lock", -1),
+        ("file_with_link_lock", 0),
+        ("file_with_link_lock", -1),
+    ],
+)
+def test_invalid_grace_period(log_storage_type: str, grace_period: int) -> None:
+    with pytest.raises(ValueError):
+        with JournalLogStorageSupplier(log_storage_type, grace_period):
+            pass

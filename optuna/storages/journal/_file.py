@@ -175,7 +175,7 @@ class JournalFileSymlinkLock(BaseJournalFileLock):
                             try:
                                 self.release()
                                 sleep_secs = 0.001
-                            except OSError:
+                            except RuntimeError:
                                 continue
 
                     time.sleep(sleep_secs)
@@ -258,7 +258,7 @@ class JournalFileOpenLock(BaseJournalFileLock):
                             try:
                                 self.release()
                                 sleep_secs = 0.001
-                            except OSError:
+                            except RuntimeError:
                                 continue
 
                     time.sleep(sleep_secs)
