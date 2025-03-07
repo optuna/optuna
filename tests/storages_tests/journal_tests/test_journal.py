@@ -28,33 +28,41 @@ from optuna.testing.storages import StorageSupplier
 from optuna.testing.tempfile_pool import NamedTemporaryFilePool
 
 
-LOG_STORAGE = [
-    "file_with_open_lock",
-    "file_with_link_lock",
-    "redis_default",
-    "redis_with_use_cluster",
+LOG_STORAGE_WITH_PARAMETER = [
+    ("file_with_open_lock", 30),
+    ("file_with_open_lock", None),
+    ("file_with_link_lock", 30),
+    ("file_with_link_lock", None),
+    ("redis_default", None),
+    ("redis_with_use_cluster", None),
 ]
 
 JOURNAL_STORAGE_SUPPORTING_SNAPSHOT = ["journal_redis"]
 
 
 class JournalLogStorageSupplier:
-    def __init__(self, storage_type: str) -> None:
+    def __init__(self, storage_type: str, grace_period: int | None) -> None:
         self.storage_type = storage_type
         self.tempfile: IO[Any] | None = None
+        self.grace_period = grace_period
 
     def __enter__(self) -> optuna.storages.journal.BaseJournalBackend:
         if self.storage_type.startswith("file"):
             self.tempfile = NamedTemporaryFilePool().tempfile()
             lock: BaseJournalFileLock
             if self.storage_type == "file_with_open_lock":
-                lock = optuna.storages.journal.JournalFileOpenLock(self.tempfile.name)
+                lock = optuna.storages.journal.JournalFileOpenLock(
+                    self.tempfile.name, self.grace_period
+                )
             elif self.storage_type == "file_with_link_lock":
-                lock = optuna.storages.journal.JournalFileSymlinkLock(self.tempfile.name)
+                lock = optuna.storages.journal.JournalFileOpenLock(
+                    self.tempfile.name, self.grace_period
+                )
             else:
                 raise Exception("Must not reach here")
             return optuna.storages.journal.JournalFileBackend(self.tempfile.name, lock)
         elif self.storage_type.startswith("redis"):
+            assert self.grace_period is None
             use_cluster = self.storage_type == "redis_with_use_cluster"
             journal_redis_storage = optuna.storages.journal.JournalRedisBackend(
                 "redis://localhost", use_cluster
@@ -71,8 +79,10 @@ class JournalLogStorageSupplier:
             self.tempfile.close()
 
 
-@pytest.mark.parametrize("log_storage_type", LOG_STORAGE)
-def test_concurrent_append_logs_for_multi_processes(log_storage_type: str) -> None:
+@pytest.mark.parametrize("log_storage_type,grace_period", LOG_STORAGE_WITH_PARAMETER)
+def test_concurrent_append_logs_for_multi_processes(
+    log_storage_type: str, grace_period: int | None
+) -> None:
     if log_storage_type.startswith("redis"):
         pytest.skip("The `fakeredis` does not support multi process environments.")
 
@@ -80,7 +90,7 @@ def test_concurrent_append_logs_for_multi_processes(log_storage_type: str) -> No
     num_records = 200
     record = {"key": "value"}
 
-    with JournalLogStorageSupplier(log_storage_type) as storage:
+    with JournalLogStorageSupplier(log_storage_type, grace_period) as storage:
         with ProcessPoolExecutor(num_executors) as pool:
             pool.map(storage.append_logs, [[record] for _ in range(num_records)], timeout=20)
 
@@ -88,13 +98,15 @@ def test_concurrent_append_logs_for_multi_processes(log_storage_type: str) -> No
         assert all(record == r for r in storage.read_logs(0))
 
 
-@pytest.mark.parametrize("log_storage_type", LOG_STORAGE)
-def test_concurrent_append_logs_for_multi_threads(log_storage_type: str) -> None:
+@pytest.mark.parametrize("log_storage_type,grace_period", LOG_STORAGE_WITH_PARAMETER)
+def test_concurrent_append_logs_for_multi_threads(
+    log_storage_type: str, grace_period: int | None
+) -> None:
     num_executors = 10
     num_records = 200
     record = {"key": "value"}
 
-    with JournalLogStorageSupplier(log_storage_type) as storage:
+    with JournalLogStorageSupplier(log_storage_type, grace_period) as storage:
         with ThreadPoolExecutor(num_executors) as pool:
             pool.map(storage.append_logs, [[record] for _ in range(num_records)], timeout=20)
 
@@ -244,3 +256,11 @@ def test_raise_error_for_deprecated_class_import_from_journal() -> None:
         journal.JournalRedisStorage  # type: ignore[attr-defined]
     with pytest.raises(AttributeError):
         journal.BaseJournalLogStorage  # type: ignore[attr-defined]
+
+
+@pytest.mark.parametrize("log_storage_type", ("file_with_open_lock", "file_with_link_lock"))
+@pytest.mark.parametrize("grace_period", (0, -1))
+def test_invalid_grace_period(log_storage_type: str, grace_period: int) -> None:
+    with pytest.raises(ValueError):
+        with JournalLogStorageSupplier(log_storage_type, grace_period):
+            pass
