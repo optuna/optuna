@@ -10,6 +10,7 @@ from optuna._imports import _LazyImport
 from optuna.distributions import distribution_to_json
 from optuna.distributions import json_to_distribution
 from optuna.exceptions import DuplicatedStudyError
+from optuna.exceptions import UpdateFinishedTrialError
 from optuna.storages import BaseStorage
 from optuna.study._study_direction import StudyDirection
 from optuna.trial._frozen import FrozenTrial
@@ -219,7 +220,7 @@ class OptunaStorageProxyService(api_pb2_grpc.StorageServiceServicer):
             self._backend.set_trial_param(trial_id, param_name, param_value_internal, distribution)
         except KeyError as e:
             context.abort(code=grpc.StatusCode.NOT_FOUND, details=str(e))
-        except RuntimeError as e:
+        except UpdateFinishedTrialError as e:
             context.abort(code=grpc.StatusCode.FAILED_PRECONDITION, details=str(e))
         except ValueError as e:
             context.abort(code=grpc.StatusCode.INVALID_ARGUMENT, details=str(e))
@@ -255,7 +256,7 @@ class OptunaStorageProxyService(api_pb2_grpc.StorageServiceServicer):
             )
         except KeyError as e:
             context.abort(code=grpc.StatusCode.NOT_FOUND, details=str(e))
-        except RuntimeError as e:
+        except UpdateFinishedTrialError as e:
             context.abort(code=grpc.StatusCode.FAILED_PRECONDITION, details=str(e))
         return api_pb2.SetTrialStateValuesReply(trial_updated=trial_updated)
 
@@ -271,7 +272,7 @@ class OptunaStorageProxyService(api_pb2_grpc.StorageServiceServicer):
             self._backend.set_trial_intermediate_value(trial_id, step, intermediate_value)
         except KeyError as e:
             context.abort(code=grpc.StatusCode.NOT_FOUND, details=str(e))
-        except RuntimeError as e:
+        except UpdateFinishedTrialError as e:
             context.abort(code=grpc.StatusCode.FAILED_PRECONDITION, details=str(e))
         return api_pb2.SetTrialIntermediateValueReply()
 
@@ -287,7 +288,7 @@ class OptunaStorageProxyService(api_pb2_grpc.StorageServiceServicer):
             self._backend.set_trial_user_attr(trial_id, key, value)
         except KeyError as e:
             context.abort(code=grpc.StatusCode.NOT_FOUND, details=str(e))
-        except RuntimeError as e:
+        except UpdateFinishedTrialError as e:
             context.abort(code=grpc.StatusCode.FAILED_PRECONDITION, details=str(e))
         return api_pb2.SetTrialUserAttributeReply()
 
@@ -303,7 +304,7 @@ class OptunaStorageProxyService(api_pb2_grpc.StorageServiceServicer):
             self._backend.set_trial_system_attr(trial_id, key, value)
         except KeyError as e:
             context.abort(code=grpc.StatusCode.NOT_FOUND, details=str(e))
-        except RuntimeError as e:
+        except UpdateFinishedTrialError as e:
             context.abort(code=grpc.StatusCode.FAILED_PRECONDITION, details=str(e))
         return api_pb2.SetTrialSystemAttributeReply()
 

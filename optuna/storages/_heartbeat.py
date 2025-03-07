@@ -168,8 +168,9 @@ def fail_stale_trials(study: "optuna.Study") -> None:
         try:
             if storage.set_trial_state_values(trial_id, state=TrialState.FAIL):
                 failed_trial_ids.append(trial_id)
-        except RuntimeError:
-            # If another process fails the trial, the storage raises RuntimeError.
+        except optuna.exceptions.UpdateFinishedTrialError:
+            # If another process fails the trial, the storage raises
+            # optuna.exceptions.UpdateFinishedTrialError.
             pass
 
     failed_trial_callback = storage.get_failed_trial_callback()
