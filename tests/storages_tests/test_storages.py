@@ -14,6 +14,7 @@ import optuna
 from optuna._typing import JSONSerializable
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
+from optuna.exceptions import UpdateFinishedTrialError
 from optuna.storages import _CachedStorage
 from optuna.storages import BaseStorage
 from optuna.storages import GrpcStorageProxy
@@ -429,7 +430,7 @@ def test_set_trial_state_values_for_state(storage_mode: str) -> None:
             storage.set_trial_state_values(trial_id, state=state, values=(0.0,))
             for state2 in ALL_STATES:
                 # Cannot update states of finished trials.
-                with pytest.raises(RuntimeError):
+                with pytest.raises(UpdateFinishedTrialError):
                     storage.set_trial_state_values(trial_id, state=state2)
 
 
@@ -503,13 +504,13 @@ def test_set_trial_param(storage_mode: str) -> None:
 
         storage.set_trial_state_values(trial_id_2, state=TrialState.COMPLETE)
         # Cannot assign params to finished trial.
-        with pytest.raises(RuntimeError):
+        with pytest.raises(UpdateFinishedTrialError):
             storage.set_trial_param(trial_id_2, "y", 2, distribution_y_1)
         # Check the previous call does not change the params.
         with pytest.raises(KeyError):
             storage.get_trial_param(trial_id_2, "y")
         # State should be checked prior to distribution compatibility.
-        with pytest.raises(RuntimeError):
+        with pytest.raises(UpdateFinishedTrialError):
             storage.set_trial_param(trial_id_2, "y", 0.4, distribution_z)
 
         # Set params of trials in a different study.
@@ -562,7 +563,7 @@ def test_set_trial_state_values_for_values(storage_mode: str) -> None:
             )
 
         # Cannot change values of finished trials.
-        with pytest.raises(RuntimeError):
+        with pytest.raises(UpdateFinishedTrialError):
             storage.set_trial_state_values(trial_id_1, state=TrialState.COMPLETE, values=(1,))
 
 
@@ -607,7 +608,7 @@ def test_set_trial_intermediate_value(storage_mode: str) -> None:
 
         storage.set_trial_state_values(trial_id_1, state=TrialState.COMPLETE)
         # Cannot change values of finished trials.
-        with pytest.raises(RuntimeError):
+        with pytest.raises(UpdateFinishedTrialError):
             storage.set_trial_intermediate_value(trial_id_1, 0, 0.2)
 
 
@@ -660,7 +661,7 @@ def test_set_trial_user_attr(storage_mode: str) -> None:
 
         # Cannot set attributes of finished trials.
         storage.set_trial_state_values(trial_id_1, state=TrialState.COMPLETE)
-        with pytest.raises(RuntimeError):
+        with pytest.raises(UpdateFinishedTrialError):
             storage.set_trial_user_attr(trial_id_1, "key", "value")
 
 
@@ -711,7 +712,7 @@ def test_set_trial_system_attr(storage_mode: str) -> None:
 
         # Cannot set attributes of finished trials.
         storage.set_trial_state_values(trial_id_1, state=TrialState.COMPLETE)
-        with pytest.raises(RuntimeError):
+        with pytest.raises(UpdateFinishedTrialError):
             storage.set_trial_system_attr(trial_id_1, "key", "value")
 
 
@@ -1158,11 +1159,11 @@ def test_check_trial_is_updatable(storage_mode: str) -> None:
         storage.check_trial_is_updatable(trial_id, TrialState.RUNNING)
         storage.check_trial_is_updatable(trial_id, TrialState.WAITING)
 
-        with pytest.raises(RuntimeError):
+        with pytest.raises(UpdateFinishedTrialError):
             storage.check_trial_is_updatable(trial_id, TrialState.FAIL)
 
-        with pytest.raises(RuntimeError):
+        with pytest.raises(UpdateFinishedTrialError):
             storage.check_trial_is_updatable(trial_id, TrialState.PRUNED)
 
-        with pytest.raises(RuntimeError):
+        with pytest.raises(UpdateFinishedTrialError):
             storage.check_trial_is_updatable(trial_id, TrialState.COMPLETE)

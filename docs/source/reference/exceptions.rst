@@ -14,3 +14,4 @@ The :mod:`~optuna.exceptions` module defines Optuna-specific exceptions deriving
    CLIUsageError
    StorageInternalError
    DuplicatedStudyError
+   UpdateFinishedTrialError

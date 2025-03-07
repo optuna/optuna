@@ -17,6 +17,7 @@ from optuna.distributions import check_distribution_compatibility
 from optuna.distributions import distribution_to_json
 from optuna.distributions import json_to_distribution
 from optuna.exceptions import DuplicatedStudyError
+from optuna.exceptions import UpdateFinishedTrialError
 from optuna.storages import BaseStorage
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.storages.journal._base import BaseJournalBackend
@@ -650,7 +651,7 @@ class JournalStorageReplayResult:
             return False
         elif self._trials[trial_id].state.is_finished():
             if self._is_issued_by_this_worker(log):
-                raise RuntimeError(
+                raise UpdateFinishedTrialError(
                     "Trial#{} has already finished and can not be updated.".format(
                         self._trials[trial_id].number
                     )

@@ -14,6 +14,7 @@ from optuna._imports import _LazyImport
 from optuna.distributions import BaseDistribution
 from optuna.distributions import distribution_to_json
 from optuna.exceptions import DuplicatedStudyError
+from optuna.exceptions import UpdateFinishedTrialError
 from optuna.storages._base import BaseStorage
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.study._frozen import FrozenStudy
@@ -252,7 +253,7 @@ class GrpcStorageProxy(BaseStorage):
             if e.code() == grpc.StatusCode.NOT_FOUND:
                 raise KeyError from e
             elif e.code() == grpc.StatusCode.FAILED_PRECONDITION:
-                raise RuntimeError from e
+                raise UpdateFinishedTrialError from e
             elif e.code() == grpc.StatusCode.INVALID_ARGUMENT:
                 raise ValueError from e
             else:
@@ -272,7 +273,7 @@ class GrpcStorageProxy(BaseStorage):
             if e.code() == grpc.StatusCode.NOT_FOUND:
                 raise KeyError from e
             elif e.code() == grpc.StatusCode.FAILED_PRECONDITION:
-                raise RuntimeError from e
+                raise UpdateFinishedTrialError from e
             else:
                 raise
 
@@ -290,7 +291,7 @@ class GrpcStorageProxy(BaseStorage):
             if e.code() == grpc.StatusCode.NOT_FOUND:
                 raise KeyError from e
             elif e.code() == grpc.StatusCode.FAILED_PRECONDITION:
-                raise RuntimeError from e
+                raise UpdateFinishedTrialError from e
             else:
                 raise
 
@@ -304,7 +305,7 @@ class GrpcStorageProxy(BaseStorage):
             if e.code() == grpc.StatusCode.NOT_FOUND:
                 raise KeyError from e
             elif e.code() == grpc.StatusCode.FAILED_PRECONDITION:
-                raise RuntimeError from e
+                raise UpdateFinishedTrialError from e
             else:
                 raise
 
@@ -318,7 +319,7 @@ class GrpcStorageProxy(BaseStorage):
             if e.code() == grpc.StatusCode.NOT_FOUND:
                 raise KeyError from e
             elif e.code() == grpc.StatusCode.FAILED_PRECONDITION:
-                raise RuntimeError from e
+                raise UpdateFinishedTrialError from e
             else:
                 raise
 
