@@ -5,6 +5,7 @@ from dataclasses import dataclass
 import math
 from typing import Any
 from typing import TYPE_CHECKING
+import warnings
 
 import numpy as np
 
@@ -34,6 +35,22 @@ logger = get_logger(__name__)
 # cov_Y_Y_inv_Y[len(trials)]: cov_Y_Y_inv @ Y
 # max_Y: maximum of Y (Note that we transform the objective values such that it is maximized.)
 # d2: squared distance between two points
+
+
+def warn_and_convert_inf(values: np.ndarray) -> np.ndarray:
+    is_values_finite = np.isfinite(values)
+    if np.all(is_values_finite):
+        return values
+
+    warnings.warn("Clip non-finite values to the min/max finite values for GP fittings.")
+    is_any_finite = np.any(is_values_finite, axis=0)
+    # NOTE(nabenabe): values cannot include nan to apply np.clip properly, but Optuna anyways won't
+    # pass nan in values by design.
+    return np.clip(
+        values,
+        np.where(is_any_finite, np.min(np.where(is_values_finite, values, np.inf), axis=0), 0.0),
+        np.where(is_any_finite, np.max(np.where(is_values_finite, values, -np.inf), axis=0), 0.0),
+    )
 
 
 class Matern52Kernel(torch.autograd.Function):

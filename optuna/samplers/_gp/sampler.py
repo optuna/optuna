@@ -5,7 +5,6 @@ from collections.abc import Sequence
 from typing import Any
 from typing import cast
 from typing import TYPE_CHECKING
-import warnings
 
 import numpy as np
 
@@ -151,7 +150,7 @@ class GPSampler(BaseSampler):
         internal_search_space: gp_search_space.SearchSpace,
         normalized_params: np.ndarray,
     ) -> list[acqf.AcquisitionFunctionParams]:
-        constraint_vals = _warn_and_convert_inf(constraint_vals)
+        constraint_vals = gp.warn_and_convert_inf(constraint_vals)
         means = np.mean(constraint_vals, axis=0)
         stds = np.std(constraint_vals, axis=0)
         standardized_constraint_vals = (constraint_vals - means) / np.maximum(EPS, stds)
@@ -219,7 +218,7 @@ class GPSampler(BaseSampler):
         _sign = -1.0 if study.direction == StudyDirection.MINIMIZE else 1.0
         score_vals = np.array([_sign * cast(float, trial.value) for trial in trials])
 
-        score_vals = _warn_and_convert_inf(score_vals)
+        score_vals = gp.warn_and_convert_inf(score_vals)
         standardized_score_vals = (score_vals - np.mean(score_vals)) / max(EPS, np.std(score_vals))
 
         if self._kernel_params_cache is not None and len(
@@ -309,22 +308,6 @@ class GPSampler(BaseSampler):
         if self._constraints_func is not None:
             _process_constraints_after_trial(self._constraints_func, study, trial, state)
         self._independent_sampler.after_trial(study, trial, state, values)
-
-
-def _warn_and_convert_inf(
-    values: np.ndarray,
-) -> np.ndarray:
-    if np.any(~np.isfinite(values)):
-        warnings.warn(
-            "GPSampler cannot handle +/-inf, so we clip them to the best/worst finite value."
-        )
-
-        finite_vals = values[np.isfinite(values)]
-        best_finite_val = np.max(finite_vals, axis=0, initial=0.0)
-        worst_finite_val = np.min(finite_vals, axis=0, initial=0.0)
-
-        return np.clip(values, worst_finite_val, best_finite_val)
-    return values
 
 
 def _get_constraint_vals_and_feasibility(
