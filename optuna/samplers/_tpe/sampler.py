@@ -10,6 +10,7 @@ import warnings
 
 import numpy as np
 
+from optuna import _deprecated
 from optuna._experimental import warn_experimental_argument
 from optuna._hypervolume import compute_hypervolume
 from optuna._hypervolume.hssp import _solve_hssp
@@ -122,6 +123,12 @@ class TPESampler(BaseSampler):
             :obj:`True`. The prior is only effective if the sampling distribution is
             either :class:`~optuna.distributions.FloatDistribution`,
             or :class:`~optuna.distributions.IntDistribution`.
+
+            .. warning::
+                Deprecated in v4.3.0. ``consider_prior`` argument will be removed in the future.
+                The removal of this feature is currently scheduled for v6.0.0,
+                but this schedule is subject to change.
+                See https://github.com/optuna/optuna/releases/tag/v4.3.0.
         prior_weight:
             The weight of the prior. This argument is used in
             :class:`~optuna.distributions.FloatDistribution`,
@@ -286,6 +293,12 @@ class TPESampler(BaseSampler):
             dict[str, Callable[[CategoricalChoiceType, CategoricalChoiceType], float]] | None
         ) = None,
     ) -> None:
+        if consider_prior is False:
+            msg = _deprecated._DEPRECATION_WARNING_TEMPLATE.format(
+                name="`consider_prior`", d_ver="4.3.0", r_ver="6.0.0"
+            )
+            warnings.warn(msg, FutureWarning)
+
         self._parzen_estimator_parameters = _ParzenEstimatorParameters(
             consider_prior,
             prior_weight,
