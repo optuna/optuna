@@ -128,6 +128,7 @@ class TPESampler(BaseSampler):
                 Deprecated in v4.3.0. ``consider_prior`` argument will be removed in the future.
                 The removal of this feature is currently scheduled for v6.0.0,
                 but this schedule is subject to change.
+                From v4.3.0 onward, ``consider_prior`` is always ``True``.
                 See https://github.com/optuna/optuna/releases/tag/v4.3.0.
         prior_weight:
             The weight of the prior. This argument is used in
@@ -296,7 +297,7 @@ class TPESampler(BaseSampler):
         if consider_prior is False:
             msg = _deprecated._DEPRECATION_WARNING_TEMPLATE.format(
                 name="`consider_prior`", d_ver="4.3.0", r_ver="6.0.0"
-            )
+            ) + ("From v4.3.0 onward, `consider_prior` is always `True`.")
             warnings.warn(msg, FutureWarning)
 
         self._parzen_estimator_parameters = _ParzenEstimatorParameters(
