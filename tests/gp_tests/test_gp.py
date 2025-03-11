@@ -16,7 +16,7 @@ import optuna._gp.prior as prior
         (np.array([-1, 0, 1])[:, np.newaxis], np.array([-1, 0, 1])[:, np.newaxis]),
         (
             np.array([-1, -np.inf, 0, np.inf, 1])[:, np.newaxis],
-            np.array([-1, -1, 0, 1, 1])[:, np.newaxis]
+            np.array([-1, -1, 0, 1, 1])[:, np.newaxis],
         ),
         (np.array([[-1, 2], [0, -2], [1, 0]]), np.array([[-1, 2], [0, -2], [1, 0]])),
         (
