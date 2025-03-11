@@ -13,8 +13,11 @@ import optuna._gp.prior as prior
 @pytest.mark.parametrize(
     "values,ans",
     [
-        (np.array([-1, 0, 1]), np.array([-1, 0, 1])),
-        (np.array([-1, -np.inf, 0, np.inf, 1]), np.array([-1, -1, 0, 1, 1])),
+        (np.array([-1, 0, 1])[:, np.newaxis], np.array([-1, 0, 1])[:, np.newaxis]),
+        (
+            np.array([-1, -np.inf, 0, np.inf, 1])[:, np.newaxis],
+            np.array([-1, -1, 0, 1, 1])[:, np.newaxis]
+        ),
         (np.array([[-1, 2], [0, -2], [1, 0]]), np.array([[-1, 2], [0, -2], [1, 0]])),
         (
             np.array([[-1, 2], [-np.inf, np.inf], [0, -np.inf], [np.inf, -2], [1, 0]]),
@@ -31,15 +34,25 @@ import optuna._gp.prior as prior
             ),
             np.array([[-100, 0, 10], [-100, 0, 100], [-10, 0, 100], [-10, 0, 10]]),
         ),
+        (np.array([-np.inf, np.inf])[:, np.newaxis], np.array([0, 0])[:, np.newaxis]),
+        (np.array([])[:, np.newaxis], np.array([])[:, np.newaxis]),
+    ],
+)
+def test_warn_and_convert_inf_for_2d_array(values: np.ndarray, ans: np.ndarray) -> None:
+    assert np.allclose(warn_and_convert_inf(values), ans)
+
+
+@pytest.mark.parametrize(
+    "values,ans",
+    [
+        (np.array([-1, 0, 1]), np.array([-1, 0, 1])),
+        (np.array([-1, -np.inf, 0, np.inf, 1]), np.array([-1, -1, 0, 1, 1])),
         (np.array([-np.inf, np.inf]), np.array([0, 0])),
         (np.array([]), np.array([])),
     ],
 )
-def test_warn_and_convert_inf(values: np.ndarray, ans: np.ndarray) -> None:
+def test_warn_and_convert_inf_for_1d_array(values: np.ndarray, ans: np.ndarray) -> None:
     assert np.allclose(warn_and_convert_inf(values), ans)
-    if len(values.shape) == 1:
-        # Test also with the shape of (n, 1) to ensure the batched version.
-        assert np.allclose(warn_and_convert_inf(values[:, np.newaxis]), ans[:, np.newaxis])
 
 
 @pytest.mark.parametrize(
