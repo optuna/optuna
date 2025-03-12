@@ -128,7 +128,7 @@ class TPESampler(BaseSampler):
                 Deprecated in v4.3.0. ``consider_prior`` argument will be removed in the future.
                 The removal of this feature is currently scheduled for v6.0.0,
                 but this schedule is subject to change.
-                From v4.3.0 onward, ``consider_prior`` is always ``True``.
+                From v4.3.0 onward, ``consider_prior`` automatically falls back to ``True``.
                 See https://github.com/optuna/optuna/releases/tag/v4.3.0.
         prior_weight:
             The weight of the prior. This argument is used in

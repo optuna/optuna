@@ -61,47 +61,41 @@ def test_init_parzen_estimator(multivariate: bool) -> None:
 
     mpe = _ParzenEstimator(MULTIVARIATE_SAMPLES, SEARCH_SPACE, parameters)
 
-    consider_prior = True
-    weights = np.array([1] + consider_prior * [1], dtype=float)
+    weights = np.array([1, 1], dtype=float)
     weights /= weights.sum()
 
     expected_univariate = _MixtureOfProductDistribution(
         weights=weights,
         distributions=[
             _BatchedTruncNormDistributions(
-                mu=np.array([1.0] + consider_prior * [50.5]),
-                sigma=np.array([49.5 if consider_prior else 99.0] + consider_prior * [99.0]),
+                mu=np.array([1.0, 50.5]),
+                sigma=np.array([49.5, 99.0]),
                 low=1.0,
                 high=100.0,
             ),
             _BatchedTruncNormDistributions(
-                mu=np.array([np.log(1.0)] + consider_prior * [np.log(100) / 2.0]),
-                sigma=np.array([np.log(100) / 2] + consider_prior * [np.log(100)]),
+                mu=np.array([np.log(1.0), np.log(100) / 2.0]),
+                sigma=np.array([np.log(100) / 2, np.log(100)]),
                 low=np.log(1.0),
                 high=np.log(100.0),
             ),
             _BatchedDiscreteTruncNormDistributions(
-                mu=np.array([1.0] + consider_prior * [50.5]),
-                sigma=np.array([49.5] + consider_prior * [102.0]),
+                mu=np.array([1.0, 50.5]),
+                sigma=np.array([49.5, 102.0]),
                 low=1.0,
                 high=100.0,
                 step=3.0,
             ),
             _BatchedDiscreteTruncNormDistributions(
-                mu=np.array([1.0] + consider_prior * [50.5]),
-                sigma=np.array([49.5] + consider_prior * [100.0]),
+                mu=np.array([1.0, 50.5]),
+                sigma=np.array([49.5, 100.0]),
                 low=1,
                 high=100,
                 step=1,
             ),
             _BatchedTruncNormDistributions(
-                mu=np.array(
-                    [np.log(1.0)] + consider_prior * [(np.log(100.5) + np.log(0.5)) / 2.0]
-                ),
-                sigma=np.array(
-                    [(np.log(100.5) + np.log(0.5)) / 2]
-                    + consider_prior * [np.log(100.5) - np.log(0.5)]
-                ),
+                mu=np.array([np.log(1.0), (np.log(100.5) + np.log(0.5)) / 2.0]),
+                sigma=np.array([(np.log(100.5) + np.log(0.5)) / 2, np.log(100.5) - np.log(0.5)]),
                 low=np.log(0.5),
                 high=np.log(100.5),
             ),
@@ -123,38 +117,35 @@ def test_init_parzen_estimator(multivariate: bool) -> None:
         weights=weights,
         distributions=[
             _BatchedTruncNormDistributions(
-                mu=np.array([1.0] + consider_prior * [50.5]),
-                sigma=np.array([SIGMA0 * 99.0] + consider_prior * [99.0]),
+                mu=np.array([1.0, 50.5]),
+                sigma=np.array([SIGMA0 * 99.0, 99.0]),
                 low=1.0,
                 high=100.0,
             ),
             _BatchedTruncNormDistributions(
-                mu=np.array([np.log(1.0)] + consider_prior * [np.log(100) / 2.0]),
-                sigma=np.array([SIGMA0 * np.log(100)] + consider_prior * [np.log(100)]),
+                mu=np.array([np.log(1.0), np.log(100) / 2.0]),
+                sigma=np.array([SIGMA0 * np.log(100), np.log(100)]),
                 low=np.log(1.0),
                 high=np.log(100.0),
             ),
             _BatchedDiscreteTruncNormDistributions(
-                mu=np.array([1.0] + consider_prior * [50.5]),
-                sigma=np.array([SIGMA0 * 102.0] + consider_prior * [102.0]),
+                mu=np.array([1.0, 50.5]),
+                sigma=np.array([SIGMA0 * 102.0, 102.0]),
                 low=1.0,
                 high=100.0,
                 step=3.0,
             ),
             _BatchedDiscreteTruncNormDistributions(
-                mu=np.array([1.0] + consider_prior * [50.5]),
-                sigma=np.array([SIGMA0 * 100.0] + consider_prior * [100.0]),
+                mu=np.array([1.0, 50.5]),
+                sigma=np.array([SIGMA0 * 100.0, 100.0]),
                 low=1,
                 high=100,
                 step=1,
             ),
             _BatchedTruncNormDistributions(
-                mu=np.array(
-                    [np.log(1.0)] + consider_prior * [(np.log(100.5) + np.log(0.5)) / 2.0]
-                ),
+                mu=np.array([np.log(1.0), (np.log(100.5) + np.log(0.5)) / 2.0]),
                 sigma=np.array(
-                    [SIGMA0 * (np.log(100.5) - np.log(0.5))]
-                    + consider_prior * [np.log(100.5) - np.log(0.5)]
+                    [SIGMA0 * (np.log(100.5) - np.log(0.5)), np.log(100.5) - np.log(0.5)]
                 ),
                 low=np.log(0.5),
                 high=np.log(100.5),
@@ -209,8 +200,9 @@ def test_calculate_shape_check(
     mpe = _ParzenEstimator(
         {"a": mus}, {"a": distributions.FloatDistribution(-1.0, 1.0)}, parameters
     )
-    consider_prior = True
-    assert len(mpe._mixture_distribution.weights) == max(len(mus) + int(consider_prior), 1)
+    assert len(mpe._mixture_distribution.weights) == max(
+        len(mus) + 1, 1
+    )  # NOTE(sawa3030): +1 for prior.
 
 
 @pytest.mark.parametrize("mus", (np.asarray([]), np.asarray([0.4]), np.asarray([-0.4, 0.4])))
@@ -236,8 +228,9 @@ def test_calculate_shape_check_categorical(
     mpe = _ParzenEstimator(
         {"c": mus}, {"c": distributions.CategoricalDistribution([0.0, 1.0, 2.0])}, parameters
     )
-    consider_prior = True
-    assert len(mpe._mixture_distribution.weights) == max(len(mus) + int(consider_prior), 1)
+    assert len(mpe._mixture_distribution.weights) == max(
+        len(mus) + 1, 1
+    )  # NOTE(sawa3030): +1 for prior
 
 
 @pytest.mark.parametrize("prior_weight", [None, -1.0, 0.0])

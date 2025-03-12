@@ -36,7 +36,7 @@ class _ScottParzenEstimator(_ParzenEstimator):
             observations={param_name: np.arange(self._n_steps)[counts > 0.0]},
             search_space={param_name: dist},
             parameters=_ParzenEstimatorParameters(
-                consider_prior=True,
+                consider_prior=consider_prior,
                 prior_weight=prior_weight,
                 consider_magic_clip=False,
                 consider_endpoints=False,
