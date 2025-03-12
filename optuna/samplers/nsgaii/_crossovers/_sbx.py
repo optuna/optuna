@@ -33,8 +33,12 @@ class SBXCrossover(BaseCrossover):
 
     n_parents = 2
 
-    def __init__(self, eta: float | None = None) -> None:
+    def __init__(
+        self, eta: float | None = None, establishment: float = 0.5, probability: float = 0.5
+    ) -> None:
         self._eta = eta
+        self._establishment = establishment
+        self._probability = probability
 
     def crossover(
         self,
@@ -76,25 +80,25 @@ class SBXCrossover(BaseCrossover):
         c1 = 0.5 * ((xs_min + xs_max) - betaq1 * xs_diff)  # Equation (4).
         c2 = 0.5 * ((xs_min + xs_max) + betaq2 * xs_diff)  # Equation (5).
 
-        # SBX applies crossover with establishment 0.5, and with probability 0.5,
+        # SBX applies crossover with establishment, and with probability,
         # the gene of the parent individual is the gene of the child individual.
         # The original SBX creates two child individuals,
         # but optuna's implementation creates only one child individual.
         # Therefore, when there is no crossover,
         # the gene is selected with equal probability from the parent individuals x1 and x2.
 
+        index_prob = rng.rand()
         child_params_list = []
+
+        def select_parameter(a: np.ndarray, b: np.ndarray, index_prob: float) -> np.ndarray:
+            return a if index_prob < 0.5 else b
+
         for c1_i, c2_i, x1_i, x2_i in zip(c1, c2, parents_params[0], parents_params[1]):
-            if rng.rand() < 0.5:
-                if rng.rand() < 0.5:
-                    child_params_list.append(c1_i)
-                else:
-                    child_params_list.append(c2_i)
+            if rng.rand() < self._establishment:
+                options = (c1_i, c2_i) if rng.rand() < self._probability else (c2_i, c1_i)
             else:
-                if rng.rand() < 0.5:
-                    child_params_list.append(x1_i)
-                else:
-                    child_params_list.append(x2_i)
+                options = (x1_i, x2_i) if rng.rand() < self._probability else (x2_i, x1_i)
+            child_params_list.append(select_parameter(*options, index_prob))
         child_params = np.array(child_params_list)
 
         return child_params
