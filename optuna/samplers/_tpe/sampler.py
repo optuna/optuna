@@ -294,7 +294,7 @@ class TPESampler(BaseSampler):
             dict[str, Callable[[CategoricalChoiceType, CategoricalChoiceType], float]] | None
         ) = None,
     ) -> None:
-        if consider_prior is False:
+        if not consider_prior:
             msg = _deprecated._DEPRECATION_WARNING_TEMPLATE.format(
                 name="`consider_prior`", d_ver="4.3.0", r_ver="6.0.0"
             ) + ("From v4.3.0 onward, `consider_prior` is always `True`.")
