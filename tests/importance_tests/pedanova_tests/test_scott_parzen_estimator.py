@@ -35,8 +35,8 @@ def test_init_scott_parzen_estimator(dist_type: str) -> None:
             else CategoricalDistribution(choices=["a" * i for i in range(counts.size)])
         ),
         counts=counts,
-        consider_prior=False,
-        prior_weight=0.0,
+        consider_prior=True,
+        prior_weight=1.0,
     )
     assert len(pe._mixture_distribution.distributions) == 1
     assert pe.n_steps == counts.size
@@ -51,16 +51,31 @@ def test_init_scott_parzen_estimator(dist_type: str) -> None:
     "counts,mu,sigma,weights",
     [
         # NOTE: sigma could change depending on sigma_min picked by heuristic.
-        (np.array([0, 0, 0, 1]), np.array([3]), np.array([0.304878]), np.array([1.0])),
-        (np.array([0, 0, 100, 0]), np.array([2]), np.array([0.304878]), np.array([1.0])),
-        (np.array([1, 2, 3, 4]), np.arange(4), np.array([0.7043276] * 4), (np.arange(4) + 1) / 10),
+        (np.array([0, 0, 0, 1]), np.array([3, 1.5]), np.array([0.304878, 4]), np.array([0.5] * 2)),
+        (
+            np.array([0, 0, 100, 0]),
+            np.array([2, 1.5]),
+            np.array([0.304878, 4]),
+            np.array([0.990099, 0.009901]),
+        ),
+        (
+            np.array([1, 2, 3, 4]),
+            np.array([0, 1, 2, 3, 1.5]),
+            np.array([0.7043276] * 4 + [4]),
+            [0.0909091, 0.1818182, 0.2727273, 0.3636364, 0.0909091],
+        ),
         (
             np.array([90, 0, 0, 90]),
-            np.array([0, 3]),
-            np.array([0.5638226] * 2),
-            np.array([0.5] * 2),
+            np.array([0, 3.0, 1.5]),
+            np.array([0.5638226] * 2 + [4]),
+            np.array([0.4972376, 0.4972376, 0.0055249]),
         ),
-        (np.array([1, 0, 0, 1]), np.array([0, 3]), np.array([1.9556729] * 2), np.array([0.5] * 2)),
+        (
+            np.array([1, 0, 0, 1]),
+            np.array([0, 3, 1.5]),
+            np.array([1.9556729] * 2 + [4]),
+            np.array([1.0 / 3] * 3),
+        ),
     ],
 )
 def test_build_int_scott_parzen_estimator(
@@ -71,8 +86,8 @@ def test_build_int_scott_parzen_estimator(
         param_name="a",
         dist=IntDistribution(low=0, high=_counts.size - 1),
         counts=_counts,
-        consider_prior=False,
-        prior_weight=0.0,
+        consider_prior=True,
+        prior_weight=1.0,
     )
     dist = _BatchedDiscreteTruncNormDistributions(
         mu=mu, sigma=sigma, low=0, high=_counts.size - 1, step=1

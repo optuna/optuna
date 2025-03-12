@@ -301,7 +301,7 @@ class TPESampler(BaseSampler):
             warnings.warn(msg, FutureWarning)
 
         self._parzen_estimator_parameters = _ParzenEstimatorParameters(
-            consider_prior,
+            True,
             prior_weight,
             consider_magic_clip,
             consider_endpoints,
