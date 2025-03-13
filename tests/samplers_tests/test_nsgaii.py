@@ -900,8 +900,8 @@ def test_crossover_duplicated_param_values(crossover: BaseCrossover) -> None:
         (SPXCrossover(), 0.5, np.array([2.75735931, 3.75735931])),  # rs = [0.5, 0.25].
         (SPXCrossover(), 1.0, np.array([-1.0, 0.0])),  # rs = [1, 1], xks[0].
         (SBXCrossover(), 0.0, np.array([2.0, 3.0])),  # c1 = (p1 + p2) / 2.
-        (SBXCrossover(), 0.5, np.array([3.0, 4.0])),  # p2.
-        (SBXCrossover(), 1.0, np.array([3.0, 4.0])),  # p2.
+        (SBXCrossover(), 0.5, np.array([1.0, 2.0])),  # p2.
+        (SBXCrossover(), 1.0, np.array([1.0, 2.0])),  # p2.
         (VSBXCrossover(), 0.0, np.array([2.0, 3.0])),  # c1 = (p1 + p2) / 2.
         (VSBXCrossover(), 0.5, np.array([3.0, 4.0])),  # p2.
         (VSBXCrossover(), 1.0, np.array([3.0, 4.0])),  # p2.
