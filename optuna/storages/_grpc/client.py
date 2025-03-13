@@ -59,6 +59,7 @@ class GrpcStorageProxy(BaseStorage):
     Args:
         host: The hostname of the gRPC server.
         port: The port of the gRPC server.
+        timeout: The timeout for the gRPC connection in seconds.
 
     .. warning::
 
@@ -66,7 +67,17 @@ class GrpcStorageProxy(BaseStorage):
         behaviors when calling :func:`optuna.delete_study` due to non-invalidated cache.
     """
 
-    def __init__(self, *, host: str = "localhost", port: int = 13000) -> None:
+    def __init__(self, *, host: str = "localhost", port: int = 13000, timeout: int = 900) -> None:
+        def wait_server(host: str, port: int, timeout: int) -> None:
+            try:
+                with grpc.insecure_channel(
+                    f"{host}:{port}", options=[("grpc.max_receive_message_length", -1)]
+                ) as channel:
+                    grpc.channel_ready_future(channel).result(timeout=timeout)
+            except grpc.FutureTimeoutError as e:
+                raise ConnectionError("GRPC connection timeout") from e
+
+        wait_server(host, port, timeout)
         self._stub = api_pb2_grpc.StorageServiceStub(
             grpc.insecure_channel(
                 f"{host}:{port}",
