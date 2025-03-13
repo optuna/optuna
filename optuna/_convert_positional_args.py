@@ -11,7 +11,6 @@ from typing import TYPE_CHECKING
 from typing import TypeVar
 import warnings
 
-from optuna._deprecated import _get_docstring_indent
 from optuna._deprecated import _validate_two_version
 from optuna._experimental import _validate_version
 
@@ -37,6 +36,10 @@ _DEPRECATION_WARNING_TEMPLATE = (
     "Please use keyword arguments instead. "
     "See https://github.com/optuna/optuna/releases/tag/v{d_ver} for details."
 )
+
+
+def _get_docstring_indent(docstring: str) -> str:
+    return docstring.split("\n")[-1] if "\n" in docstring else ""
 
 
 def _get_positional_arg_names(func: "Callable[_P, _T]") -> list[str]:
@@ -74,7 +77,18 @@ def convert_positional_args(
             Version number in which the use of positional arguments was completely removed.
     """
 
-    if deprecated_version is not None or removed_version is not None:
+    if deprecated_version is None and removed_version is None:
+        pass
+    else:
+        if deprecated_version is None:
+            raise ValueError(
+                "deprecated_version must not be None when removed_version is specified"
+            )
+        if removed_version is None:
+            raise ValueError(
+                "removed_version must not be None when deprecated_version is specified"
+            )
+
         _validate_version(deprecated_version)
         _validate_version(removed_version)
         _validate_two_version(deprecated_version, removed_version)
