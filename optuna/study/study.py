@@ -1059,7 +1059,15 @@ class Study:
         for trial in self._storage.get_all_trials(
             self._study_id, deepcopy=False, states=(TrialState.WAITING,)
         ):
-            if not self._storage.set_trial_state_values(trial._trial_id, state=TrialState.RUNNING):
+            try:
+                if not self._storage.set_trial_state_values(
+                    trial._trial_id,
+                    state=TrialState.RUNNING,
+                ):
+                    # The trial is already running.
+                    continue
+            except exceptions.UpdateFinishedTrialError:
+                # The trial is already finished.
                 continue
 
             _logger.debug("Trial {} popped from the trial queue.".format(trial.number))
