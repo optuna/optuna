@@ -10,7 +10,6 @@ import warnings
 import _pytest.capture
 from cmaes import CMA
 from cmaes import CMAwM
-from cmaes import SepCMA
 import numpy as np
 import pytest
 
@@ -38,23 +37,18 @@ def test_lr_adapt_experimental_warning() -> None:
 
 
 @pytest.mark.filterwarnings("ignore::optuna.exceptions.ExperimentalWarning")
-@pytest.mark.parametrize(
-    "use_separable_cma, cma_class_str",
-    [(False, "optuna.samplers._cmaes.cmaes.CMA"), (True, "optuna.samplers._cmaes.cmaes.SepCMA")],
-)
 @pytest.mark.parametrize("popsize", [None, 8])
-def test_init_cmaes_opts(use_separable_cma: bool, cma_class_str: str, popsize: int | None) -> None:
+def test_init_cmaes_opts(popsize: int | None) -> None:
     sampler = optuna.samplers.CmaEsSampler(
         x0={"x": 0, "y": 0},
         sigma0=0.1,
         seed=1,
         n_startup_trials=1,
-        use_separable_cma=use_separable_cma,
         popsize=popsize,
     )
     study = optuna.create_study(sampler=sampler)
 
-    with patch(cma_class_str) as cma_class:
+    with patch("optuna.samplers._cmaes.cmaes.CMA") as cma_class:
         cma_obj = MagicMock()
         cma_obj.ask.return_value = np.array((-1, -1))
         cma_obj.generation = 0
@@ -205,17 +199,8 @@ def test_should_raise_exception() -> None:
 
     with pytest.raises(ValueError):
         optuna.samplers.CmaEsSampler(
-            use_separable_cma=True,
-            source_trials=dummy_source_trials,
-        )
-
-    with pytest.raises(ValueError):
-        optuna.samplers.CmaEsSampler(
             restart_strategy="invalid-restart-strategy",
         )
-
-    with pytest.raises(ValueError):
-        optuna.samplers.CmaEsSampler(use_separable_cma=True, with_margin=True)
 
 
 @pytest.mark.filterwarnings("ignore::optuna.exceptions.ExperimentalWarning")
@@ -354,16 +339,13 @@ def _create_trials() -> list[FrozenTrial]:
 @pytest.mark.parametrize(
     "options, key",
     [
-        ({"with_margin": False, "use_separable_cma": False}, "cma:"),
-        ({"with_margin": True, "use_separable_cma": False}, "cmawm:"),
-        ({"with_margin": False, "use_separable_cma": True}, "sepcma:"),
+        ({"with_margin": False}, "cma:"),
+        ({"with_margin": True}, "cmawm:"),
     ],
 )
 def test_sampler_attr_key(options: dict[str, bool], key: str) -> None:
     # Test sampler attr_key property.
-    sampler = optuna.samplers.CmaEsSampler(
-        with_margin=options["with_margin"], use_separable_cma=options["use_separable_cma"]
-    )
+    sampler = optuna.samplers.CmaEsSampler(with_margin=options["with_margin"])
     assert sampler._attr_keys.optimizer(0).startswith(key)
     assert sampler._attr_keys.popsize().startswith(key)
     assert sampler._attr_keys.n_restarts().startswith(key)
@@ -425,7 +407,7 @@ def test_population_size_is_multiplied_when_enable_ipop(popsize: int | None) -> 
         assert actual_kwargs["population_size"] == inc_popsize * initial_popsize
 
 
-@pytest.mark.parametrize("sampler_opts", [{}, {"use_separable_cma": True}, {"with_margin": True}])
+@pytest.mark.parametrize("sampler_opts", [{}, {"with_margin": True}])
 def test_restore_optimizer_from_substrings(sampler_opts: dict[str, Any]) -> None:
     popsize = 8
     sampler = optuna.samplers.CmaEsSampler(popsize=popsize, **sampler_opts)
@@ -445,8 +427,6 @@ def test_restore_optimizer_from_substrings(sampler_opts: dict[str, Any]) -> None
     assert optimizer.generation == 1
     if sampler._with_margin:
         assert isinstance(optimizer, CMAwM)
-    elif sampler._use_separable_cma:
-        assert isinstance(optimizer, SepCMA)
     else:
         assert isinstance(optimizer, CMA)
 
@@ -456,8 +436,6 @@ def test_restore_optimizer_from_substrings(sampler_opts: dict[str, Any]) -> None
     [
         {"restart_strategy": "ipop"},
         {"restart_strategy": "bipop"},
-        {"restart_strategy": "ipop", "use_separable_cma": True},
-        {"restart_strategy": "bipop", "use_separable_cma": True},
         {"restart_strategy": "ipop", "with_margin": True},
         {"restart_strategy": "bipop", "with_margin": True},
     ],
@@ -470,8 +448,6 @@ def test_restore_optimizer_after_restart(sampler_opts: dict[str, Any]) -> None:
 
     if sampler_opts.get("with_margin"):
         cma_class = CMAwM
-    elif sampler_opts.get("use_separable_cma"):
-        cma_class = SepCMA
     else:
         cma_class = CMA
     with patch.object(cma_class, "should_stop") as mock_method:
@@ -488,8 +464,6 @@ def test_restore_optimizer_after_restart(sampler_opts: dict[str, Any]) -> None:
 @pytest.mark.parametrize(
     "sampler_opts, restart_strategy",
     [
-        ({"use_separable_cma": True}, "ipop"),
-        ({"use_separable_cma": True}, "bipop"),
         ({"with_margin": True}, "ipop"),
         ({"with_margin": True}, "bipop"),
     ],
@@ -519,8 +493,6 @@ def test_restore_optimizer_with_other_option(
     [
         {"restart_strategy": "ipop"},
         {"restart_strategy": "bipop"},
-        {"restart_strategy": "ipop", "use_separable_cma": True},
-        {"restart_strategy": "bipop", "use_separable_cma": True},
         {"restart_strategy": "ipop", "with_margin": True},
         {"restart_strategy": "bipop", "with_margin": True},
     ],
@@ -546,8 +518,6 @@ def test_get_solution_trials(sampler_opts: dict[str, Any]) -> None:
 @pytest.mark.parametrize(
     "sampler_opts, restart_strategy",
     [
-        ({"use_separable_cma": True}, "ipop"),
-        ({"use_separable_cma": True}, "bipop"),
         ({"with_margin": True}, "ipop"),
         ({"with_margin": True}, "bipop"),
     ],
@@ -574,8 +544,6 @@ def test_get_solution_trials_with_other_options(
     [
         {"restart_strategy": "ipop"},
         {"restart_strategy": "bipop"},
-        {"restart_strategy": "ipop", "use_separable_cma": True},
-        {"restart_strategy": "bipop", "use_separable_cma": True},
         {"restart_strategy": "ipop", "with_margin": True},
         {"restart_strategy": "bipop", "with_margin": True},
     ],
@@ -588,8 +556,6 @@ def test_get_solution_trials_after_restart(sampler_opts: dict[str, Any]) -> None
 
     if sampler_opts.get("with_margin"):
         cma_class = CMAwM
-    elif sampler_opts.get("use_separable_cma"):
-        cma_class = SepCMA
     else:
         cma_class = CMA
 
