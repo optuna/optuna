@@ -3,7 +3,6 @@ from __future__ import annotations
 from collections.abc import Callable
 
 from optuna._experimental import experimental_func
-from optuna.logging import get_logger
 from optuna.study import Study
 from optuna.trial import FrozenTrial
 from optuna.visualization._rank import _get_rank_info
@@ -17,9 +16,6 @@ if _imports.is_successful():
     from optuna.visualization.matplotlib._matplotlib_imports import Axes
     from optuna.visualization.matplotlib._matplotlib_imports import PathCollection
     from optuna.visualization.matplotlib._matplotlib_imports import plt
-
-
-_logger = get_logger(__name__)
 
 
 @experimental_func("3.2.0")
@@ -36,11 +32,6 @@ def plot_rank(
 
     .. seealso::
         Please refer to :func:`optuna.visualization.plot_rank` for an example.
-
-    Warnings:
-        Output figures of this Matplotlib-based
-        :func:`~optuna.visualization.matplotlib.plot_rank` function would be different from
-        those of the Plotly-based :func:`~optuna.visualization.plot_rank`.
 
     Args:
         study:
@@ -61,10 +52,6 @@ def plot_rank(
     """
 
     _imports.check()
-    _logger.warning(
-        "Output figures of this Matplotlib-based `plot_rank` function would be different from "
-        "those of the Plotly-based `plot_rank`."
-    )
     info = _get_rank_info(study, params, target, target_name)
     return _get_rank_plot(info)
 
