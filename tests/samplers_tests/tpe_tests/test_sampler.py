@@ -146,12 +146,6 @@ def test_sample_relative_prior() -> None:
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
-        sampler = TPESampler(consider_prior=False, n_startup_trials=5, seed=0, multivariate=True)
-    with patch.object(study._storage, "get_all_trials", return_value=past_trials):
-        assert sampler.sample_relative(study, trial, {"param-a": dist}) != suggestion
-
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
         sampler = TPESampler(prior_weight=0.2, n_startup_trials=5, seed=0, multivariate=True)
     with patch.object(study._storage, "get_all_trials", return_value=past_trials):
         assert sampler.sample_relative(study, trial, {"param-a": dist}) != suggestion
@@ -449,10 +443,6 @@ def test_sample_independent_prior() -> None:
     sampler = TPESampler(n_startup_trials=5, seed=0)
     with patch.object(study._storage, "get_all_trials", return_value=past_trials):
         suggestion = sampler.sample_independent(study, trial, "param-a", dist)
-
-    sampler = TPESampler(consider_prior=False, n_startup_trials=5, seed=0)
-    with patch.object(study._storage, "get_all_trials", return_value=past_trials):
-        assert sampler.sample_independent(study, trial, "param-a", dist) != suggestion
 
     sampler = TPESampler(prior_weight=0.1, n_startup_trials=5, seed=0)
     with patch.object(study._storage, "get_all_trials", return_value=past_trials):
