@@ -11,12 +11,12 @@ from typing import NamedTuple
 from typing import TYPE_CHECKING
 from typing import Union
 
+import cmaes
 import numpy as np
 
 import optuna
 from optuna import logging
 from optuna._experimental import warn_experimental_argument
-from optuna._imports import _LazyImport
 from optuna._transform import _SearchSpaceTransform
 from optuna.distributions import BaseDistribution
 from optuna.distributions import FloatDistribution
@@ -30,11 +30,7 @@ from optuna.trial import TrialState
 
 
 if TYPE_CHECKING:
-    import cmaes
-
-    CmaClass = Union[cmaes.CMA, cmaes.SepCMA, cmaes.CMAwM]
-else:
-    cmaes = _LazyImport("cmaes")
+    CmaClass = Union[cmaes.CMA, cmaes.CMAwM]
 
 _logger = logging.get_logger(__name__)
 
@@ -275,7 +271,6 @@ class CmaEsSampler(BaseSampler):
         self._restart_strategy = restart_strategy
         self._initial_popsize = popsize
         self._inc_popsize = inc_popsize
-        self._use_separable_cma = use_separable_cma
         self._with_margin = with_margin
         self._lr_adapt = lr_adapt
         self._source_trials = source_trials
@@ -285,9 +280,6 @@ class CmaEsSampler(BaseSampler):
 
         if self._consider_pruned_trials:
             warn_experimental_argument("consider_pruned_trials")
-
-        if self._use_separable_cma:
-            warn_experimental_argument("use_separable_cma")
 
         if self._source_trials is not None:
             warn_experimental_argument("source_trials")
@@ -304,18 +296,6 @@ class CmaEsSampler(BaseSampler):
                 "x0 or sigma0 is specified."
             )
 
-        # TODO(c-bata): Support WS-sep-CMA-ES.
-        if source_trials is not None and use_separable_cma:
-            raise ValueError(
-                "It is prohibited to pass `source_trials` argument when using separable CMA-ES."
-            )
-
-        if lr_adapt and (use_separable_cma or with_margin):
-            raise ValueError(
-                "It is prohibited to pass `use_separable_cma` or `with_margin` argument when "
-                "using `lr_adapt`."
-            )
-
         if restart_strategy not in (
             "ipop",
             "bipop",
@@ -324,12 +304,6 @@ class CmaEsSampler(BaseSampler):
             raise ValueError(
                 "restart_strategy={} is unsupported. "
                 "Please specify: 'ipop', 'bipop', or None.".format(restart_strategy)
-            )
-
-        # TODO(knshnb): Support sep-CMA-ES with margin.
-        if self._use_separable_cma and self._with_margin:
-            raise ValueError(
-                "Currently, we do not support `use_separable_cma=True` and `with_margin=True`."
             )
 
     def reseed_rng(self) -> None:
@@ -520,14 +494,15 @@ class CmaEsSampler(BaseSampler):
 
         return external_values
 
+    def _attr_prefix(self) -> str:
+        if self._with_margin:
+            return "cmawm:"
+        else:
+            return "cma:"
+
     @property
     def _attr_keys(self) -> _CmaEsAttrKeys:
-        if self._use_separable_cma:
-            attr_prefix = "sepcma:"
-        elif self._with_margin:
-            attr_prefix = "cmawm:"
-        else:
-            attr_prefix = "cma:"
+        attr_prefix = self._attr_prefix()
 
         def optimizer_key_template(restart: int) -> str:
             if self._restart_strategy is None:
@@ -604,16 +579,19 @@ class CmaEsSampler(BaseSampler):
             return pickle.loads(bytes.fromhex(optimizer_str))
         return None
 
-    def _init_optimizer(
+    def _get_cmaes_params(
         self,
         trans: _SearchSpaceTransform,
         direction: StudyDirection,
         population_size: int | None = None,
         randomize_start_point: bool = False,
-    ) -> "CmaClass":
+    ) -> tuple[np.ndarray, float, np.ndarray | None, np.ndarray, int, int | None]:
         lower_bounds = trans.bounds[:, 0]
         upper_bounds = trans.bounds[:, 1]
         n_dimension = len(trans.bounds)
+
+        mean: np.ndarray
+        cov: np.ndarray | None
 
         if self._source_trials is None:
             if randomize_start_point:
@@ -654,15 +632,25 @@ class CmaEsSampler(BaseSampler):
         # Avoid ZeroDivisionError in cmaes.
         sigma0 = max(sigma0, _EPS)
 
-        if self._use_separable_cma:
-            return cmaes.SepCMA(
-                mean=mean,
-                sigma=sigma0,
-                bounds=trans.bounds,
-                seed=self._cma_rng.rng.randint(1, 2**31 - 2),
-                n_max_resampling=10 * n_dimension,
-                population_size=population_size,
-            )
+        return (
+            mean,
+            sigma0,
+            cov,
+            trans.bounds,
+            n_dimension,
+            population_size,
+        )
+
+    def _init_optimizer(
+        self,
+        trans: _SearchSpaceTransform,
+        direction: StudyDirection,
+        population_size: int | None = None,
+        randomize_start_point: bool = False,
+    ) -> "CmaClass":
+        mean, sigma0, cov, bounds, n_dimension, population_size = self._get_cmaes_params(
+            trans, direction, population_size, randomize_start_point
+        )
 
         if self._with_margin:
             steps = np.empty(len(trans._search_space), dtype=float)
