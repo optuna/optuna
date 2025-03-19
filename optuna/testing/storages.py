@@ -121,7 +121,7 @@ class StorageSupplier:
 
         if self.server:
             assert self.thread is not None
-            self.server.stop(None)
+            self.server.stop(5).wait()
             self.thread.join()
             self.server = None
             self.thread = None
