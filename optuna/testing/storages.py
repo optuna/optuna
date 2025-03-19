@@ -95,12 +95,12 @@ class StorageSupplier:
             port = _find_free_port()
 
             self.server = optuna.storages._grpc.server.make_server(
-                optuna.storages.RDBStorage(url), "127.0.0.1", port
+                optuna.storages.RDBStorage(url), "localhost", port
             )
             self.thread = threading.Thread(target=self.server.start)
             self.thread.start()
 
-            proxy = GrpcStorageProxy(host="127.0.0.1", port=port)
+            proxy = GrpcStorageProxy(host="localhost", port=port)
 
             # Wait until the server is ready.
             while True:
