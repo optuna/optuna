@@ -394,6 +394,10 @@ def test_load_study_study_name_none(storage_mode: str) -> None:
 
         _ = create_study(study_name=study_name, storage=storage)
 
+        loaded_study = load_study(storage=storage)
+
+        assert loaded_study.study_name == study_name
+
         loaded_study = load_study(study_name=None, storage=storage)
 
         assert loaded_study.study_name == study_name
@@ -403,6 +407,9 @@ def test_load_study_study_name_none(storage_mode: str) -> None:
         _ = create_study(study_name=study_name, storage=storage)
 
         # Ambiguous study.
+        with pytest.raises(ValueError):
+            load_study(storage=storage)
+
         with pytest.raises(ValueError):
             load_study(study_name=None, storage=storage)
 
