@@ -41,11 +41,6 @@ def create_insecure_channel(host: str, port: int) -> grpc.Channel:
         f"{host}:{port}", options=[("grpc.max_receive_message_length", -1)]
     )
 
-
-def create_stub(channel: grpc.Channel) -> api_pb2_grpc.StorageServiceStub:
-    return api_pb2_grpc.StorageServiceStub(channel)
-
-
 @experimental_class("4.2.0")
 class GrpcStorageProxy(BaseStorage):
     """gRPC client for :func:`~optuna.storages.run_grpc_proxy_server`.
@@ -111,7 +106,7 @@ class GrpcStorageProxy(BaseStorage):
             study_name=study_name or DEFAULT_STUDY_NAME_PREFIX + str(uuid.uuid4()),
         )
         with create_insecure_channel(self._host, self._port) as channel:
-            stub = create_stub(channel)
+            stub = api_pb2_grpc.StorageServiceStub(channel)
             try:
                 response = stub.CreateNewStudy(request)
             except grpc.RpcError as e:
@@ -123,7 +118,7 @@ class GrpcStorageProxy(BaseStorage):
     def delete_study(self, study_id: int) -> None:
         request = api_pb2.DeleteStudyRequest(study_id=study_id)
         with create_insecure_channel(self._host, self._port) as channel:
-            stub = create_stub(channel)
+            stub = api_pb2_grpc.StorageServiceStub(channel)
             try:
                 stub.DeleteStudy(request)
             except grpc.RpcError as e:
@@ -139,7 +134,7 @@ class GrpcStorageProxy(BaseStorage):
             study_id=study_id, key=key, value=json.dumps(value)
         )
         with create_insecure_channel(self._host, self._port) as channel:
-            stub = create_stub(channel)
+            stub = api_pb2_grpc.StorageServiceStub(channel)
             try:
                 stub.SetStudyUserAttribute(request)
             except grpc.RpcError as e:
@@ -152,7 +147,7 @@ class GrpcStorageProxy(BaseStorage):
             study_id=study_id, key=key, value=json.dumps(value)
         )
         with create_insecure_channel(self._host, self._port) as channel:
-            stub = create_stub(channel)
+            stub = api_pb2_grpc.StorageServiceStub(channel)
             try:
                 stub.SetStudySystemAttribute(request)
             except grpc.RpcError as e:
@@ -163,7 +158,7 @@ class GrpcStorageProxy(BaseStorage):
     def get_study_id_from_name(self, study_name: str) -> int:
         request = api_pb2.GetStudyIdFromNameRequest(study_name=study_name)
         with create_insecure_channel(self._host, self._port) as channel:
-            stub = create_stub(channel)
+            stub = api_pb2_grpc.StorageServiceStub(channel)
             try:
                 response = stub.GetStudyIdFromName(request)
             except grpc.RpcError as e:
@@ -175,7 +170,7 @@ class GrpcStorageProxy(BaseStorage):
     def get_study_name_from_id(self, study_id: int) -> str:
         request = api_pb2.GetStudyNameFromIdRequest(study_id=study_id)
         with create_insecure_channel(self._host, self._port) as channel:
-            stub = create_stub(channel)
+            stub = api_pb2_grpc.StorageServiceStub(channel)
             try:
                 response = stub.GetStudyNameFromId(request)
             except grpc.RpcError as e:
@@ -187,7 +182,7 @@ class GrpcStorageProxy(BaseStorage):
     def get_study_directions(self, study_id: int) -> list[StudyDirection]:
         request = api_pb2.GetStudyDirectionsRequest(study_id=study_id)
         with create_insecure_channel(self._host, self._port) as channel:
-            stub = create_stub(channel)
+            stub = api_pb2_grpc.StorageServiceStub(channel)
             try:
                 response = stub.GetStudyDirections(request)
             except grpc.RpcError as e:
@@ -202,7 +197,7 @@ class GrpcStorageProxy(BaseStorage):
     def get_study_user_attrs(self, study_id: int) -> dict[str, Any]:
         request = api_pb2.GetStudyUserAttributesRequest(study_id=study_id)
         with create_insecure_channel(self._host, self._port) as channel:
-            stub = create_stub(channel)
+            stub = api_pb2_grpc.StorageServiceStub(channel)
             try:
                 response = stub.GetStudyUserAttributes(request)
             except grpc.RpcError as e:
@@ -214,7 +209,7 @@ class GrpcStorageProxy(BaseStorage):
     def get_study_system_attrs(self, study_id: int) -> dict[str, Any]:
         request = api_pb2.GetStudySystemAttributesRequest(study_id=study_id)
         with create_insecure_channel(self._host, self._port) as channel:
-            stub = create_stub(channel)
+            stub = api_pb2_grpc.StorageServiceStub(channel)
             try:
                 response = stub.GetStudySystemAttributes(request)
             except grpc.RpcError as e:
@@ -226,7 +221,7 @@ class GrpcStorageProxy(BaseStorage):
     def get_all_studies(self) -> list[FrozenStudy]:
         request = api_pb2.GetAllStudiesRequest()
         with create_insecure_channel(self._host, self._port) as channel:
-            stub = create_stub(channel)
+            stub = api_pb2_grpc.StorageServiceStub(channel)
             response = stub.GetAllStudies(request)
         return [
             FrozenStudy(
@@ -257,7 +252,7 @@ class GrpcStorageProxy(BaseStorage):
                 template_trial_is_none=False,
             )
         with create_insecure_channel(self._host, self._port) as channel:
-            stub = create_stub(channel)
+            stub = api_pb2_grpc.StorageServiceStub(channel)
             try:
                 response = stub.CreateNewTrial(request)
             except grpc.RpcError as e:
@@ -280,7 +275,7 @@ class GrpcStorageProxy(BaseStorage):
             distribution=distribution_to_json(distribution),
         )
         with create_insecure_channel(self._host, self._port) as channel:
-            stub = create_stub(channel)
+            stub = api_pb2_grpc.StorageServiceStub(channel)
             try:
                 stub.SetTrialParameter(request)
             except grpc.RpcError as e:
@@ -302,7 +297,7 @@ class GrpcStorageProxy(BaseStorage):
             values=values,
         )
         with create_insecure_channel(self._host, self._port) as channel:
-            stub = create_stub(channel)
+            stub = api_pb2_grpc.StorageServiceStub(channel)
             try:
                 response = stub.SetTrialStateValues(request)
             except grpc.RpcError as e:
@@ -321,7 +316,7 @@ class GrpcStorageProxy(BaseStorage):
             trial_id=trial_id, step=step, intermediate_value=intermediate_value
         )
         with create_insecure_channel(self._host, self._port) as channel:
-            stub = create_stub(channel)
+            stub = api_pb2_grpc.StorageServiceStub(channel)
             try:
                 stub.SetTrialIntermediateValue(request)
             except grpc.RpcError as e:
@@ -337,7 +332,7 @@ class GrpcStorageProxy(BaseStorage):
             trial_id=trial_id, key=key, value=json.dumps(value)
         )
         with create_insecure_channel(self._host, self._port) as channel:
-            stub = create_stub(channel)
+            stub = api_pb2_grpc.StorageServiceStub(channel)
             try:
                 stub.SetTrialUserAttribute(request)
             except grpc.RpcError as e:
@@ -353,7 +348,7 @@ class GrpcStorageProxy(BaseStorage):
             trial_id=trial_id, key=key, value=json.dumps(value)
         )
         with create_insecure_channel(self._host, self._port) as channel:
-            stub = create_stub(channel)
+            stub = api_pb2_grpc.StorageServiceStub(channel)
             try:
                 stub.SetTrialSystemAttribute(request)
             except grpc.RpcError as e:
@@ -369,7 +364,7 @@ class GrpcStorageProxy(BaseStorage):
             study_id=study_id, trial_number=trial_number
         )
         with create_insecure_channel(self._host, self._port) as channel:
-            stub = create_stub(channel)
+            stub = api_pb2_grpc.StorageServiceStub(channel)
             try:
                 response = stub.GetTrialIdFromStudyIdTrialNumber(request)
             except grpc.RpcError as e:
@@ -381,7 +376,7 @@ class GrpcStorageProxy(BaseStorage):
     def get_trial(self, trial_id: int) -> FrozenTrial:
         request = api_pb2.GetTrialRequest(trial_id=trial_id)
         with create_insecure_channel(self._host, self._port) as channel:
-            stub = create_stub(channel)
+            stub = api_pb2_grpc.StorageServiceStub(channel)
             try:
                 response = stub.GetTrial(request)
             except grpc.RpcError as e:
@@ -436,7 +431,7 @@ class GrpcClientCache:
             trial_id_greater_than=study.last_finished_trial_id,
         )
         with create_insecure_channel(self.host, self.port) as channel:
-            stub = create_stub(channel)
+            stub = api_pb2_grpc.StorageServiceStub(channel)
             try:
                 res = stub.GetTrials(req)
             except grpc.RpcError as e:
