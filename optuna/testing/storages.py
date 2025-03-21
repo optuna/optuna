@@ -119,9 +119,9 @@ class StorageSupplier:
 
 
 def _find_free_port() -> int:
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     for port in range(13000, 13100):
         try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.bind(("localhost", port))
             return port
         except OSError:
