@@ -48,7 +48,6 @@ class StorageSupplier:
         self.tempfile: IO[Any] | None = None
         self.server: grpc.Server | None = None
         self.thread: threading.Thread | None = None
-        self.storage: optuna.storages.BaseStorage | None = None
 
     def __enter__(
         self,
@@ -109,10 +108,6 @@ class StorageSupplier:
     ) -> None:
         if self.tempfile:
             self.tempfile.close()
-
-        if self.storage:
-            del self.storage
-            self.storage = None
 
         if self.server:
             assert self.thread is not None
