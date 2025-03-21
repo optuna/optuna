@@ -41,6 +41,7 @@ def create_insecure_channel(host: str, port: int) -> grpc.Channel:
         f"{host}:{port}", options=[("grpc.max_receive_message_length", -1)]
     )
 
+
 @experimental_class("4.2.0")
 class GrpcStorageProxy(BaseStorage):
     """gRPC client for :func:`~optuna.storages.run_grpc_proxy_server`.
