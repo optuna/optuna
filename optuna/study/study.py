@@ -1294,7 +1294,7 @@ def create_study(
 )
 def load_study(
     *,
-    study_name: str | None,
+    study_name: str | None = None,
     storage: str | storages.BaseStorage,
     sampler: "samplers.BaseSampler" | None = None,
     pruner: pruners.BasePruner | None = None,
