@@ -45,6 +45,7 @@ def create_insecure_channel(host: str, port: int) -> grpc.Channel:
 def create_stub(channel: grpc.Channel) -> api_pb2_grpc.StorageServiceStub:
     return api_pb2_grpc.StorageServiceStub(channel)
 
+
 @experimental_class("4.2.0")
 class GrpcStorageProxy(BaseStorage):
     """gRPC client for :func:`~optuna.storages.run_grpc_proxy_server`.
