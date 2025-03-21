@@ -53,13 +53,7 @@ class StorageSupplier:
 
     def __enter__(
         self,
-    ) -> (
-        optuna.storages.InMemoryStorage
-        | optuna.storages._CachedStorage
-        | optuna.storages.RDBStorage
-        | optuna.storages.JournalStorage
-        | optuna.storages.GrpcStorageProxy
-    ):
+    ) -> optuna.storages.BaseStorage:
         if self.storage_specifier == "inmemory":
             if len(self.extra_args) > 0:
                 raise ValueError("InMemoryStorage does not accept any arguments!")
@@ -113,6 +107,7 @@ class StorageSupplier:
                     continue
         else:
             assert False
+        assert self.storage is not None
         return self.storage
 
     def __exit__(
@@ -123,6 +118,7 @@ class StorageSupplier:
 
         if self.storage:
             del self.storage
+            self.storage = None
 
         if self.server:
             assert self.thread is not None
