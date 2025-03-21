@@ -95,16 +95,7 @@ class StorageSupplier:
             self.thread = threading.Thread(target=self.server.start)
             self.thread.start()
 
-            self.storage = GrpcStorageProxy(host="localhost", port=port)
-
-            # Wait until the server is ready.
-            while True:
-                try:
-                    self.storage.get_all_studies()
-                    break
-                except grpc.RpcError:
-                    time.sleep(1)
-                    continue
+            self.storage = GrpcStorageProxy(host="localhost", port=port, timeout=60)
         else:
             assert False
         assert self.storage is not None
