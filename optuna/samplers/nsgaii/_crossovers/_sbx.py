@@ -37,6 +37,11 @@ class SBXCrossover(BaseCrossover):
         self, eta: float | None = None, establishment: float = 0.5, probability: float = 0.5
     ) -> None:
         self._eta = eta
+
+        if establishment < 0.0 or establishment > 1.0:
+            raise ValueError("The value of `establishment` must be in the range [0.0, 1.0].")
+        if probability < 0.0 or probability > 1.0:
+            raise ValueError("The value of `probability` must be in the range [0.0, 1.0].")
         self._establishment = establishment
         self._probability = probability
 
@@ -90,15 +95,17 @@ class SBXCrossover(BaseCrossover):
         index_prob = rng.rand()
         child_params_list = []
 
-        def select_parameter(a: np.ndarray, b: np.ndarray, index_prob: float) -> np.ndarray:
-            return a if index_prob < 0.5 else b
-
         for c1_i, c2_i, x1_i, x2_i in zip(c1, c2, parents_params[0], parents_params[1]):
             if rng.rand() < self._establishment:
-                options = (c1_i, c2_i) if rng.rand() < self._probability else (c2_i, c1_i)
+                if index_prob < self._probability:
+                    child_params_list.append(c1_i)
+                else:
+                    child_params_list.append(c2_i)
             else:
-                options = (x1_i, x2_i) if rng.rand() < self._probability else (x2_i, x1_i)
-            child_params_list.append(select_parameter(*options, index_prob))
+                if index_prob < self._probability:
+                    child_params_list.append(x1_i)
+                else:
+                    child_params_list.append(x2_i)
         child_params = np.array(child_params_list)
 
         return child_params
