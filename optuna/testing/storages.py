@@ -52,11 +52,17 @@ class StorageSupplier:
 
     def __enter__(
         self,
-    ) -> optuna.storages.BaseStorage:
+    ) -> (
+        optuna.storages.InMemoryStorage
+        | optuna.storages._CachedStorage
+        | optuna.storages.RDBStorage
+        | optuna.storages.JournalStorage
+        | optuna.storages.GrpcStorageProxy
+    ):
         if self.storage_specifier == "inmemory":
             if len(self.extra_args) > 0:
                 raise ValueError("InMemoryStorage does not accept any arguments!")
-            self.storage = optuna.storages.InMemoryStorage()
+            return optuna.storages.InMemoryStorage()
         elif "sqlite" in self.storage_specifier:
             self.tempfile = NamedTemporaryFilePool().tempfile()
             url = "sqlite:///{}".format(self.tempfile.name)
@@ -65,7 +71,7 @@ class StorageSupplier:
                 engine_kwargs={"connect_args": {"timeout": SQLITE3_TIMEOUT}},
                 **self.extra_args,
             )
-            self.storage = (
+            return (
                 optuna.storages._CachedStorage(rdb_storage)
                 if "cached" in self.storage_specifier
                 else rdb_storage
@@ -77,12 +83,12 @@ class StorageSupplier:
             journal_redis_storage._redis = self.extra_args.get(
                 "redis", fakeredis.FakeStrictRedis()  # type: ignore[no-untyped-call]
             )
-            self.storage = optuna.storages.JournalStorage(journal_redis_storage)
+            return optuna.storages.JournalStorage(journal_redis_storage)
         elif "journal" in self.storage_specifier:
             self.tempfile = self.extra_args.get("file", NamedTemporaryFilePool().tempfile())
             assert self.tempfile is not None
             file_storage = JournalFileBackend(self.tempfile.name)
-            self.storage = optuna.storages.JournalStorage(file_storage)
+            return optuna.storages.JournalStorage(file_storage)
         elif self.storage_specifier == "grpc":
             self.tempfile = NamedTemporaryFilePool().tempfile()
             url = "sqlite:///{}".format(self.tempfile.name)
@@ -94,11 +100,9 @@ class StorageSupplier:
             self.thread = threading.Thread(target=self.server.start)
             self.thread.start()
 
-            self.storage = GrpcStorageProxy(host="localhost", port=port, timeout=60)
+            return GrpcStorageProxy(host="localhost", port=port)
         else:
             assert False
-        assert self.storage is not None
-        return self.storage
 
     def __exit__(
         self, exc_type: type[BaseException], exc_val: BaseException, exc_tb: TracebackType
@@ -119,9 +123,9 @@ class StorageSupplier:
 
 
 def _find_free_port() -> int:
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     for port in range(13000, 13100):
         try:
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.bind(("localhost", port))
             return port
         except OSError:
