@@ -88,6 +88,10 @@ class GrpcStorageProxy(BaseStorage):
         self._host = host
         self._port = port
 
+    def __del__(self) -> None:
+        del self._stub
+        del self._cache
+
     def __getstate__(self) -> dict[Any, Any]:
         state = self.__dict__.copy()
         del state["_stub"]
