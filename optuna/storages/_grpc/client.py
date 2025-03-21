@@ -36,6 +36,15 @@ else:
     grpc_servicer = _LazyImport("optuna.storages._grpc.servicer")
 
 
+def create_insecure_channel(host: str, port: int) -> grpc.Channel:
+    return grpc.insecure_channel(
+        f"{host}:{port}", options=[("grpc.max_receive_message_length", -1)]
+    )
+
+
+def create_stub(channel: grpc.Channel) -> api_pb2_grpc.StorageServiceStub:
+    return api_pb2_grpc.StorageServiceStub(channel)
+
 @experimental_class("4.2.0")
 class GrpcStorageProxy(BaseStorage):
     """gRPC client for :func:`~optuna.storages.run_grpc_proxy_server`.
@@ -68,42 +77,30 @@ class GrpcStorageProxy(BaseStorage):
     """
 
     def __init__(self, *, host: str = "localhost", port: int = 13000, timeout: int = 900) -> None:
+        self._host = host
+        self._port = port
+        self._timeout = timeout
+        self.setup()
+
+    def setup(self) -> None:
         def wait_server(host: str, port: int, timeout: int) -> None:
             try:
-                with grpc.insecure_channel(
-                    f"{host}:{port}", options=[("grpc.max_receive_message_length", -1)]
-                ) as channel:
+                with self.create_insecure_channel(host, port) as channel:
                     grpc.channel_ready_future(channel).result(timeout=timeout)
             except grpc.FutureTimeoutError as e:
                 raise ConnectionError("GRPC connection timeout") from e
 
-        wait_server(host, port, timeout)
-        self._stub = api_pb2_grpc.StorageServiceStub(
-            grpc.insecure_channel(
-                f"{host}:{port}",
-                options=[("grpc.max_receive_message_length", -1)],
-            )
-        )  # type: ignore
-        self._cache = GrpcClientCache(self._stub)
-        self._host = host
-        self._port = port
-
-    def __del__(self) -> None:
-        del self._stub
-        del self._cache
+        wait_server(self._host, self._port, self._timeout)
+        self._cache = GrpcClientCache(self._host, self._port)
 
     def __getstate__(self) -> dict[Any, Any]:
         state = self.__dict__.copy()
-        del state["_stub"]
         del state["_cache"]
         return state
 
     def __setstate__(self, state: dict[Any, Any]) -> None:
         self.__dict__.update(state)
-        self._stub = api_pb2_grpc.StorageServiceStub(
-            grpc.insecure_channel(f"{self._host}:{self._port}")
-        )  # type: ignore
-        self._cache = GrpcClientCache(self._stub)
+        self.setup()
 
     def create_new_study(
         self, directions: Sequence[StudyDirection], study_name: str | None = None
@@ -115,22 +112,26 @@ class GrpcStorageProxy(BaseStorage):
             ],
             study_name=study_name or DEFAULT_STUDY_NAME_PREFIX + str(uuid.uuid4()),
         )
-        try:
-            response = self._stub.CreateNewStudy(request)
-        except grpc.RpcError as e:
-            if e.code() == grpc.StatusCode.ALREADY_EXISTS:
-                raise DuplicatedStudyError from e
-            raise
+        with create_insecure_channel(self._host, self._port) as channel:
+            stub = create_stub(channel)
+            try:
+                response = stub.CreateNewStudy(request)
+            except grpc.RpcError as e:
+                if e.code() == grpc.StatusCode.ALREADY_EXISTS:
+                    raise DuplicatedStudyError from e
+                raise
         return response.study_id
 
     def delete_study(self, study_id: int) -> None:
         request = api_pb2.DeleteStudyRequest(study_id=study_id)
-        try:
-            self._stub.DeleteStudy(request)
-        except grpc.RpcError as e:
-            if e.code() == grpc.StatusCode.NOT_FOUND:
-                raise KeyError from e
-            raise
+        with create_insecure_channel(self._host, self._port) as channel:
+            stub = create_stub(channel)
+            try:
+                stub.DeleteStudy(request)
+            except grpc.RpcError as e:
+                if e.code() == grpc.StatusCode.NOT_FOUND:
+                    raise KeyError from e
+                raise
         # TODO(c-bata): Fix a cache invalidation issue when using SQLite3
         # Please see https://github.com/optuna/optuna/pull/5872/files#r1893708995 for details.
         self._cache.delete_study_cache(study_id)
@@ -139,52 +140,62 @@ class GrpcStorageProxy(BaseStorage):
         request = api_pb2.SetStudyUserAttributeRequest(
             study_id=study_id, key=key, value=json.dumps(value)
         )
-        try:
-            self._stub.SetStudyUserAttribute(request)
-        except grpc.RpcError as e:
-            if e.code() == grpc.StatusCode.NOT_FOUND:
-                raise KeyError from e
-            raise
+        with create_insecure_channel(self._host, self._port) as channel:
+            stub = create_stub(channel)
+            try:
+                stub.SetStudyUserAttribute(request)
+            except grpc.RpcError as e:
+                if e.code() == grpc.StatusCode.NOT_FOUND:
+                    raise KeyError from e
+                raise
 
     def set_study_system_attr(self, study_id: int, key: str, value: Any) -> None:
         request = api_pb2.SetStudySystemAttributeRequest(
             study_id=study_id, key=key, value=json.dumps(value)
         )
-        try:
-            self._stub.SetStudySystemAttribute(request)
-        except grpc.RpcError as e:
-            if e.code() == grpc.StatusCode.NOT_FOUND:
-                raise KeyError from e
-            raise
+        with create_insecure_channel(self._host, self._port) as channel:
+            stub = create_stub(channel)
+            try:
+                stub.SetStudySystemAttribute(request)
+            except grpc.RpcError as e:
+                if e.code() == grpc.StatusCode.NOT_FOUND:
+                    raise KeyError from e
+                raise
 
     def get_study_id_from_name(self, study_name: str) -> int:
         request = api_pb2.GetStudyIdFromNameRequest(study_name=study_name)
-        try:
-            response = self._stub.GetStudyIdFromName(request)
-        except grpc.RpcError as e:
-            if e.code() == grpc.StatusCode.NOT_FOUND:
-                raise KeyError from e
-            raise
+        with create_insecure_channel(self._host, self._port) as channel:
+            stub = create_stub(channel)
+            try:
+                response = stub.GetStudyIdFromName(request)
+            except grpc.RpcError as e:
+                if e.code() == grpc.StatusCode.NOT_FOUND:
+                    raise KeyError from e
+                raise
         return response.study_id
 
     def get_study_name_from_id(self, study_id: int) -> str:
         request = api_pb2.GetStudyNameFromIdRequest(study_id=study_id)
-        try:
-            response = self._stub.GetStudyNameFromId(request)
-        except grpc.RpcError as e:
-            if e.code() == grpc.StatusCode.NOT_FOUND:
-                raise KeyError from e
-            raise
+        with create_insecure_channel(self._host, self._port) as channel:
+            stub = create_stub(channel)
+            try:
+                response = stub.GetStudyNameFromId(request)
+            except grpc.RpcError as e:
+                if e.code() == grpc.StatusCode.NOT_FOUND:
+                    raise KeyError from e
+                raise
         return response.study_name
 
     def get_study_directions(self, study_id: int) -> list[StudyDirection]:
         request = api_pb2.GetStudyDirectionsRequest(study_id=study_id)
-        try:
-            response = self._stub.GetStudyDirections(request)
-        except grpc.RpcError as e:
-            if e.code() == grpc.StatusCode.NOT_FOUND:
-                raise KeyError from e
-            raise
+        with create_insecure_channel(self._host, self._port) as channel:
+            stub = create_stub(channel)
+            try:
+                response = stub.GetStudyDirections(request)
+            except grpc.RpcError as e:
+                if e.code() == grpc.StatusCode.NOT_FOUND:
+                    raise KeyError from e
+                raise
         return [
             StudyDirection.MINIMIZE if d == api_pb2.MINIMIZE else StudyDirection.MAXIMIZE
             for d in response.directions
@@ -192,27 +203,33 @@ class GrpcStorageProxy(BaseStorage):
 
     def get_study_user_attrs(self, study_id: int) -> dict[str, Any]:
         request = api_pb2.GetStudyUserAttributesRequest(study_id=study_id)
-        try:
-            response = self._stub.GetStudyUserAttributes(request)
-        except grpc.RpcError as e:
-            if e.code() == grpc.StatusCode.NOT_FOUND:
-                raise KeyError from e
-            raise
+        with create_insecure_channel(self._host, self._port) as channel:
+            stub = create_stub(channel)
+            try:
+                response = stub.GetStudyUserAttributes(request)
+            except grpc.RpcError as e:
+                if e.code() == grpc.StatusCode.NOT_FOUND:
+                    raise KeyError from e
+                raise
         return {key: json.loads(value) for key, value in response.user_attributes.items()}
 
     def get_study_system_attrs(self, study_id: int) -> dict[str, Any]:
         request = api_pb2.GetStudySystemAttributesRequest(study_id=study_id)
-        try:
-            response = self._stub.GetStudySystemAttributes(request)
-        except grpc.RpcError as e:
-            if e.code() == grpc.StatusCode.NOT_FOUND:
-                raise KeyError from e
-            raise
+        with create_insecure_channel(self._host, self._port) as channel:
+            stub = create_stub(channel)
+            try:
+                response = stub.GetStudySystemAttributes(request)
+            except grpc.RpcError as e:
+                if e.code() == grpc.StatusCode.NOT_FOUND:
+                    raise KeyError from e
+                raise
         return {key: json.loads(value) for key, value in response.system_attributes.items()}
 
     def get_all_studies(self) -> list[FrozenStudy]:
         request = api_pb2.GetAllStudiesRequest()
-        response = self._stub.GetAllStudies(request)
+        with create_insecure_channel(self._host, self._port) as channel:
+            stub = create_stub(channel)
+            response = stub.GetAllStudies(request)
         return [
             FrozenStudy(
                 study_id=study.study_id,
@@ -241,12 +258,14 @@ class GrpcStorageProxy(BaseStorage):
                 template_trial=grpc_servicer._to_proto_trial(template_trial),
                 template_trial_is_none=False,
             )
-        try:
-            response = self._stub.CreateNewTrial(request)
-        except grpc.RpcError as e:
-            if e.code() == grpc.StatusCode.NOT_FOUND:
-                raise KeyError from e
-            raise
+        with create_insecure_channel(self._host, self._port) as channel:
+            stub = create_stub(channel)
+            try:
+                response = stub.CreateNewTrial(request)
+            except grpc.RpcError as e:
+                if e.code() == grpc.StatusCode.NOT_FOUND:
+                    raise KeyError from e
+                raise
         return response.trial_id
 
     def set_trial_param(
@@ -262,17 +281,19 @@ class GrpcStorageProxy(BaseStorage):
             param_value_internal=param_value_internal,
             distribution=distribution_to_json(distribution),
         )
-        try:
-            self._stub.SetTrialParameter(request)
-        except grpc.RpcError as e:
-            if e.code() == grpc.StatusCode.NOT_FOUND:
-                raise KeyError from e
-            elif e.code() == grpc.StatusCode.FAILED_PRECONDITION:
-                raise UpdateFinishedTrialError from e
-            elif e.code() == grpc.StatusCode.INVALID_ARGUMENT:
-                raise ValueError from e
-            else:
-                raise
+        with create_insecure_channel(self._host, self._port) as channel:
+            stub = create_stub(channel)
+            try:
+                stub.SetTrialParameter(request)
+            except grpc.RpcError as e:
+                if e.code() == grpc.StatusCode.NOT_FOUND:
+                    raise KeyError from e
+                elif e.code() == grpc.StatusCode.FAILED_PRECONDITION:
+                    raise UpdateFinishedTrialError from e
+                elif e.code() == grpc.StatusCode.INVALID_ARGUMENT:
+                    raise ValueError from e
+                else:
+                    raise
 
     def set_trial_state_values(
         self, trial_id: int, state: TrialState, values: Sequence[float] | None = None
@@ -282,16 +303,17 @@ class GrpcStorageProxy(BaseStorage):
             state=grpc_servicer._to_proto_trial_state(state),
             values=values,
         )
-        try:
-            response = self._stub.SetTrialStateValues(request)
-        except grpc.RpcError as e:
-            if e.code() == grpc.StatusCode.NOT_FOUND:
-                raise KeyError from e
-            elif e.code() == grpc.StatusCode.FAILED_PRECONDITION:
-                raise UpdateFinishedTrialError from e
-            else:
-                raise
-
+        with create_insecure_channel(self._host, self._port) as channel:
+            stub = create_stub(channel)
+            try:
+                response = stub.SetTrialStateValues(request)
+            except grpc.RpcError as e:
+                if e.code() == grpc.StatusCode.NOT_FOUND:
+                    raise KeyError from e
+                elif e.code() == grpc.StatusCode.FAILED_PRECONDITION:
+                    raise UpdateFinishedTrialError from e
+                else:
+                    raise
         return response.trial_updated
 
     def set_trial_intermediate_value(
@@ -300,64 +322,74 @@ class GrpcStorageProxy(BaseStorage):
         request = api_pb2.SetTrialIntermediateValueRequest(
             trial_id=trial_id, step=step, intermediate_value=intermediate_value
         )
-        try:
-            self._stub.SetTrialIntermediateValue(request)
-        except grpc.RpcError as e:
-            if e.code() == grpc.StatusCode.NOT_FOUND:
-                raise KeyError from e
-            elif e.code() == grpc.StatusCode.FAILED_PRECONDITION:
-                raise UpdateFinishedTrialError from e
-            else:
-                raise
+        with create_insecure_channel(self._host, self._port) as channel:
+            stub = create_stub(channel)
+            try:
+                stub.SetTrialIntermediateValue(request)
+            except grpc.RpcError as e:
+                if e.code() == grpc.StatusCode.NOT_FOUND:
+                    raise KeyError from e
+                elif e.code() == grpc.StatusCode.FAILED_PRECONDITION:
+                    raise UpdateFinishedTrialError from e
+                else:
+                    raise
 
     def set_trial_user_attr(self, trial_id: int, key: str, value: Any) -> None:
         request = api_pb2.SetTrialUserAttributeRequest(
             trial_id=trial_id, key=key, value=json.dumps(value)
         )
-        try:
-            self._stub.SetTrialUserAttribute(request)
-        except grpc.RpcError as e:
-            if e.code() == grpc.StatusCode.NOT_FOUND:
-                raise KeyError from e
-            elif e.code() == grpc.StatusCode.FAILED_PRECONDITION:
-                raise UpdateFinishedTrialError from e
-            else:
-                raise
+        with create_insecure_channel(self._host, self._port) as channel:
+            stub = create_stub(channel)
+            try:
+                stub.SetTrialUserAttribute(request)
+            except grpc.RpcError as e:
+                if e.code() == grpc.StatusCode.NOT_FOUND:
+                    raise KeyError from e
+                elif e.code() == grpc.StatusCode.FAILED_PRECONDITION:
+                    raise UpdateFinishedTrialError from e
+                else:
+                    raise
 
     def set_trial_system_attr(self, trial_id: int, key: str, value: Any) -> None:
         request = api_pb2.SetTrialSystemAttributeRequest(
             trial_id=trial_id, key=key, value=json.dumps(value)
         )
-        try:
-            self._stub.SetTrialSystemAttribute(request)
-        except grpc.RpcError as e:
-            if e.code() == grpc.StatusCode.NOT_FOUND:
-                raise KeyError from e
-            elif e.code() == grpc.StatusCode.FAILED_PRECONDITION:
-                raise UpdateFinishedTrialError from e
-            else:
-                raise
+        with create_insecure_channel(self._host, self._port) as channel:
+            stub = create_stub(channel)
+            try:
+                stub.SetTrialSystemAttribute(request)
+            except grpc.RpcError as e:
+                if e.code() == grpc.StatusCode.NOT_FOUND:
+                    raise KeyError from e
+                elif e.code() == grpc.StatusCode.FAILED_PRECONDITION:
+                    raise UpdateFinishedTrialError from e
+                else:
+                    raise
 
     def get_trial_id_from_study_id_trial_number(self, study_id: int, trial_number: int) -> int:
         request = api_pb2.GetTrialIdFromStudyIdTrialNumberRequest(
             study_id=study_id, trial_number=trial_number
         )
-        try:
-            response = self._stub.GetTrialIdFromStudyIdTrialNumber(request)
-        except grpc.RpcError as e:
-            if e.code() == grpc.StatusCode.NOT_FOUND:
-                raise KeyError from e
-            raise
+        with create_insecure_channel(self._host, self._port) as channel:
+            stub = create_stub(channel)
+            try:
+                response = stub.GetTrialIdFromStudyIdTrialNumber(request)
+            except grpc.RpcError as e:
+                if e.code() == grpc.StatusCode.NOT_FOUND:
+                    raise KeyError from e
+                raise
         return response.trial_id
 
     def get_trial(self, trial_id: int) -> FrozenTrial:
         request = api_pb2.GetTrialRequest(trial_id=trial_id)
-        try:
-            response = self._stub.GetTrial(request)
-        except grpc.RpcError as e:
-            if e.code() == grpc.StatusCode.NOT_FOUND:
-                raise KeyError from e
-            raise
+        with create_insecure_channel(self._host, self._port) as channel:
+            stub = create_stub(channel)
+            try:
+                response = stub.GetTrial(request)
+            except grpc.RpcError as e:
+                if e.code() == grpc.StatusCode.NOT_FOUND:
+                    raise KeyError from e
+                raise
         return grpc_servicer._from_proto_trial(response.trial)
 
     def get_all_trials(
@@ -371,9 +403,10 @@ class GrpcStorageProxy(BaseStorage):
 
 
 class GrpcClientCache:
-    def __init__(self, grpc_client: api_pb2_grpc.StorageServiceStub) -> None:
+    def __init__(self, host: str, port: int) -> None:
         self.studies: dict[int, GrpcClientCacheEntry] = {}
-        self.grpc_client = grpc_client
+        self.host = host
+        self.port = port
         self.lock = threading.Lock()
 
     def delete_study_cache(self, study_id: int) -> None:
@@ -404,13 +437,15 @@ class GrpcClientCache:
             included_trial_ids=study.unfinished_trial_ids,
             trial_id_greater_than=study.last_finished_trial_id,
         )
-        try:
-            res = self.grpc_client.GetTrials(req)
-        except grpc.RpcError as e:
-            if e.code() == grpc.StatusCode.NOT_FOUND:
-                self.studies.pop(study_id, None)
-                raise KeyError from e
-            raise
+        with create_insecure_channel(self.host, self.port) as channel:
+            stub = create_stub(channel)
+            try:
+                res = stub.GetTrials(req)
+            except grpc.RpcError as e:
+                if e.code() == grpc.StatusCode.NOT_FOUND:
+                    self.studies.pop(study_id, None)
+                    raise KeyError from e
+                raise
         if not res.trials:
             return
 
