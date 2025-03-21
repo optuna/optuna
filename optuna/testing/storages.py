@@ -99,7 +99,7 @@ class StorageSupplier:
             self.thread = threading.Thread(target=self.server.start)
             self.thread.start()
 
-            return GrpcStorageProxy(host="localhost", port=port)
+            return GrpcStorageProxy(host="localhost", port=port, timeout=60)
         else:
             assert False
 
