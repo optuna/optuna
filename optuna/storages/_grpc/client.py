@@ -86,7 +86,7 @@ class GrpcStorageProxy(BaseStorage):
     def setup(self) -> None:
         def wait_server(host: str, port: int, timeout: int) -> None:
             try:
-                with self.create_insecure_channel(host, port) as channel:
+                with create_insecure_channel(host, port) as channel:
                     grpc.channel_ready_future(channel).result(timeout=timeout)
             except grpc.FutureTimeoutError as e:
                 raise ConnectionError("GRPC connection timeout") from e
