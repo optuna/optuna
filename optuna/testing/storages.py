@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import socket
 import threading
-import time
 from types import TracebackType
 from typing import Any
 from typing import IO
@@ -100,16 +99,7 @@ class StorageSupplier:
             self.thread = threading.Thread(target=self.server.start)
             self.thread.start()
 
-            proxy = GrpcStorageProxy(host="localhost", port=port)
-
-            # Wait until the server is ready.
-            while True:
-                try:
-                    proxy.get_all_studies()
-                    return proxy
-                except grpc.RpcError:
-                    time.sleep(1)
-                    continue
+            return GrpcStorageProxy(host="localhost", port=port, timeout=60)
         else:
             assert False
 
@@ -121,7 +111,7 @@ class StorageSupplier:
 
         if self.server:
             assert self.thread is not None
-            self.server.stop(None)
+            self.server.stop(5).wait()
             self.thread.join()
             self.server = None
             self.thread = None
