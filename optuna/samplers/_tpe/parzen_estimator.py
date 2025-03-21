@@ -40,11 +40,16 @@ class _ParzenEstimator:
         parameters: _ParzenEstimatorParameters,
         predetermined_weights: np.ndarray | None = None,
     ) -> None:
-        if parameters.consider_prior:
-            if parameters.prior_weight is None:
-                raise ValueError("Prior weight must be specified when consider_prior==True.")
-            elif parameters.prior_weight <= 0:
-                raise ValueError("Prior weight must be positive.")
+        if not parameters.consider_prior:
+            raise ValueError(
+                "The implementation for `consider_prior=False` has been removed at v4.3.0."
+            )
+
+        if parameters.prior_weight is None or parameters.prior_weight <= 0:
+            raise ValueError(
+                "A positive value must be specified for prior_weight,"
+                f" but got {parameters.prior_weight}."
+            )
 
         self._search_space = search_space
 
@@ -61,8 +66,7 @@ class _ParzenEstimator:
 
         if len(transformed_observations) == 0:
             weights = np.array([1.0])
-        elif parameters.consider_prior:
-            assert parameters.prior_weight is not None
+        else:
             weights = np.append(weights, [parameters.prior_weight])
         weights /= weights.sum()
         self._mixture_distribution = _MixtureOfProductDistribution(
@@ -190,7 +194,7 @@ class _ParzenEstimator:
                 weights=np.full((1, n_choices), fill_value=1.0 / n_choices)
             )
 
-        n_kernels = len(observations) + parameters.consider_prior
+        n_kernels = len(observations) + 1  # NOTE(sawa3030): +1 for prior.
         assert parameters.prior_weight is not None
         weights = np.full(
             shape=(n_kernels, n_choices),
@@ -223,7 +227,6 @@ class _ParzenEstimator:
         step_or_0 = step or 0
 
         mus = observations
-        consider_prior = parameters.consider_prior or len(observations) == 0
 
         def compute_sigmas() -> np.ndarray:
             if parameters.multivariate:
@@ -237,7 +240,7 @@ class _ParzenEstimator:
             else:
                 # TODO(contramundum53): Remove dependency on prior_mu
                 prior_mu = 0.5 * (low + high)
-                mus_with_prior = np.append(mus, prior_mu) if consider_prior else mus
+                mus_with_prior = np.append(mus, prior_mu)
 
                 sorted_indices = np.argsort(mus_with_prior)
                 sorted_mus = mus_with_prior[sorted_indices]
@@ -263,22 +266,16 @@ class _ParzenEstimator:
             maxsigma = 1.0 * (high - low + step_or_0)
             if parameters.consider_magic_clip:
                 # TODO(contramundum53): Remove dependency of minsigma on consider_prior.
-                minsigma = (
-                    1.0
-                    * (high - low + step_or_0)
-                    / min(100.0, (1.0 + len(observations) + consider_prior))
-                )
+                n_kernels = len(observations) + 1  # NOTE(sawa3030): +1 for prior.
+                minsigma = 1.0 * (high - low + step_or_0) / min(100.0, (1.0 + n_kernels))
             else:
                 minsigma = EPS
             return np.asarray(np.clip(sigmas, minsigma, maxsigma))
 
         sigmas = compute_sigmas()
 
-        if consider_prior:
-            prior_mu = 0.5 * (low + high)
-            prior_sigma = 1.0 * (high - low + step_or_0)
-            mus = np.append(mus, [prior_mu])
-            sigmas = np.append(sigmas, [prior_sigma])
+        mus = np.append(mus, [0.5 * (low + high)])
+        sigmas = np.append(sigmas, [1.0 * (high - low + step_or_0)])
 
         if step is None:
             return _BatchedTruncNormDistributions(mus, sigmas, low, high)
