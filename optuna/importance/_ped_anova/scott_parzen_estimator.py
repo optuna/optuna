@@ -158,5 +158,9 @@ def _build_parzen_estimator(
 
     # counts.astype(float) is necessary for weight calculation in ParzenEstimator.
     return _ScottParzenEstimator(
-        param_name, rounded_dist, counts.astype(np.float64), True, prior_weight
+        param_name=param_name,
+        dist=rounded_dist,
+        counts=counts.astype(np.float64),
+        consider_prior=True,
+        prior_weight=prior_weight,
     )

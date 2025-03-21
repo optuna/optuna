@@ -200,9 +200,7 @@ def test_calculate_shape_check(
     mpe = _ParzenEstimator(
         {"a": mus}, {"a": distributions.FloatDistribution(-1.0, 1.0)}, parameters
     )
-    assert len(mpe._mixture_distribution.weights) == max(
-        len(mus) + 1, 1
-    )  # NOTE(sawa3030): +1 for prior.
+    assert len(mpe._mixture_distribution.weights) == len(mus) + 1  # NOTE(sawa3030): +1 for prior.
 
 
 @pytest.mark.parametrize("mus", (np.asarray([]), np.asarray([0.4]), np.asarray([-0.4, 0.4])))
@@ -228,9 +226,7 @@ def test_calculate_shape_check_categorical(
     mpe = _ParzenEstimator(
         {"c": mus}, {"c": distributions.CategoricalDistribution([0.0, 1.0, 2.0])}, parameters
     )
-    assert len(mpe._mixture_distribution.weights) == max(
-        len(mus) + 1, 1
-    )  # NOTE(sawa3030): +1 for prior
+    assert len(mpe._mixture_distribution.weights) == len(mus) + 1  # NOTE(sawa3030): +1 for prior
 
 
 @pytest.mark.parametrize("prior_weight", [None, -1.0, 0.0])
