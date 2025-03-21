@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import socket
 import threading
-import time
 from types import TracebackType
 from typing import Any
 from typing import IO
