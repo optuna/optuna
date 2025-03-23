@@ -56,19 +56,19 @@ def test_init_scott_parzen_estimator(dist_type: str) -> None:
             np.array([0, 0, 100, 0]),
             np.array([2, 1.5]),
             np.array([0.304878, 4]),
-            np.array([0.990099, 0.009901]),
+            np.array([100.0 / 101, 1.0 / 101]),
         ),
         (
             np.array([1, 2, 3, 4]),
             np.array([0, 1, 2, 3, 1.5]),
             np.array([0.7043276] * 4 + [4]),
-            [0.0909091, 0.1818182, 0.2727273, 0.3636364, 0.0909091],
+            np.array([1.0 / 11, 2.0 / 11, 3.0 / 11, 4.0 / 11, 1.0 / 11]),
         ),
         (
             np.array([90, 0, 0, 90]),
             np.array([0, 3.0, 1.5]),
             np.array([0.5638226] * 2 + [4]),
-            np.array([0.4972376, 0.4972376, 0.0055249]),
+            np.array([90.0 / 181, 90.0 / 181, 1.0 / 181]),
         ),
         (
             np.array([1, 0, 0, 1]),
@@ -97,7 +97,7 @@ def test_build_int_scott_parzen_estimator(
 
 
 @pytest.mark.parametrize(
-    "counts,dist_weights,weights",
+    "counts,categorical_weights,weights",
     [
         (
             np.array([0, 0, 0, 1]),
@@ -147,7 +147,7 @@ def test_build_int_scott_parzen_estimator(
     ],
 )
 def test_build_cat_scott_parzen_estimator(
-    counts: np.ndarray, dist_weights: np.ndarray, weights: np.ndarray
+    counts: np.ndarray, categorical_weights: np.ndarray, weights: np.ndarray
 ) -> None:
     _counts = counts.astype(float)
     pe = _ScottParzenEstimator(
@@ -157,7 +157,7 @@ def test_build_cat_scott_parzen_estimator(
         consider_prior=True,
         prior_weight=1.0,
     )
-    dist = _BatchedCategoricalDistributions(weights=dist_weights)
+    dist = _BatchedCategoricalDistributions(weights=categorical_weights)
     expected_dist = _MixtureOfProductDistribution(weights=weights, distributions=[dist])
     assert_distribution_almost_equal(pe._mixture_distribution, expected_dist)
 
