@@ -38,6 +38,7 @@ dependencies = [
   "sqlalchemy>=1.4.2",
   "tqdm",
   "PyYAML",  # Only used in `optuna/cli.py`.
+  "cmaes>=0.10.0",  # optuna/samplers/_cmaes.py.
 ]
 dynamic = ["version"]
 
