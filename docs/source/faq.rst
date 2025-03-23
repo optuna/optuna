@@ -142,7 +142,7 @@ Please refer to :class:`optuna.logging` for further details.
 How to save machine learning models trained in objective functions?
 -------------------------------------------------------------------
 
-Optuna saves hyperparameter values with their corresponding objective values to storage, 
+Optuna saves hyperparameter values with their corresponding objective values to storage,
 but it discards intermediate objects such as machine learning models and neural network weights.
 
 To save models or weights, we recommend utilizing Optuna's built-in ``ArtifactStore``.
@@ -153,7 +153,7 @@ For example, you can use the :func:`~optuna.artifacts.upload_artifact` as follow
     base_path = "./artifacts"
     os.makedirs(base_path, exist_ok=True)
     artifact_store = optuna.artifacts.FileSystemArtifactStore(base_path=base_path)
-    
+
     def objective(trial):
         svc_c = trial.suggest_float("svc_c", 1e-10, 1e10, log=True)
         clf = sklearn.svm.SVC(C=svc_c)
@@ -176,7 +176,7 @@ For example, you can use the :func:`~optuna.artifacts.upload_artifact` as follow
 To retrieve models or weights, you can list and download them using :func:`~optuna.artifacts.get_all_artifact_meta` and :func:`~optuna.artifacts.download_artifact` as shown below:
 
 .. code-block:: python
-    
+
     # List all models
     for artifact_meta in optuna.artifacts.get_all_artifact_meta(study_or_trial=study):
         print(artifact_meta)
@@ -201,6 +201,9 @@ To make the parameters suggested by Optuna reproducible, you can specify a fixed
     sampler = TPESampler(seed=10)  # Make the sampler behave in a deterministic way.
     study = optuna.create_study(sampler=sampler)
     study.optimize(objective)
+
+To make the pruning by :class:`~optuna.pruners.HyperbandPruner` reproducible, you can specify ``study_name`` of :class:`~optuna.study.Study`.
+
 
 However, there are two caveats.
 
@@ -754,7 +757,7 @@ However, if it is necessary to remove artifacts from a Python script, users can 
     :func:`~optuna.study.Study.add_trial` and :meth:`~optuna.study.copy_study` do not copy artifact files linked to :class:`~optuna.study.Study` or :class:`~optuna.trial.Trial`.
     Please make sure **NOT** to delete the artifacts from the source study or trial.
     Failing to do so may lead to unexpected behaviors as Optuna does not guarantee expected behaviors when users call :meth:`remove` externally.
-    Due to the Optuna software design, it is hard to officially support the delete feature and we are not planning to support this feature in the future either. 
+    Due to the Optuna software design, it is hard to officially support the delete feature and we are not planning to support this feature in the future either.
 
 .. code-block:: python
 
