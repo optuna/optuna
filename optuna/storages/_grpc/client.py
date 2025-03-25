@@ -90,6 +90,7 @@ class GrpcStorageProxy(BaseStorage):
         self._cache = GrpcClientCache(self._stub)
 
     def __del__(self) -> None:
+        del self._cache
         self._channel.close()
 
     def __getstate__(self) -> dict[Any, Any]:
