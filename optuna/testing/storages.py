@@ -120,7 +120,7 @@ class StorageSupplier:
             self.tempfile.close()
 
         if self.proxy:
-            del self.proxy
+            self.proxy.close()
             self.proxy = None
 
         if self.server:
