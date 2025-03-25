@@ -7,7 +7,6 @@ import numpy as np
 
 from optuna._experimental import experimental_func
 from optuna._imports import try_import
-from optuna.logging import get_logger
 from optuna.study import Study
 from optuna.trial import FrozenTrial
 from optuna.visualization._contour import _AxisInfo
@@ -27,8 +26,6 @@ if _imports.is_successful():
     from optuna.visualization.matplotlib._matplotlib_imports import ContourSet
     from optuna.visualization.matplotlib._matplotlib_imports import plt
 
-_logger = get_logger(__name__)
-
 
 CONTOUR_POINT_NUM = 100
 
@@ -47,11 +44,6 @@ def plot_contour(
 
     .. seealso::
         Please refer to :func:`optuna.visualization.plot_contour` for an example.
-
-    Warnings:
-        Output figures of this Matplotlib-based
-        :func:`~optuna.visualization.matplotlib.plot_contour` function would be different from
-        those of the Plotly-based :func:`~optuna.visualization.plot_contour`.
 
     Args:
         study:
@@ -76,10 +68,6 @@ def plot_contour(
     """
 
     _imports.check()
-    _logger.warning(
-        "Output figures of this Matplotlib-based `plot_contour` function would be different from "
-        "those of the Plotly-based `plot_contour`."
-    )
     info = _get_contour_info(study, params, target, target_name)
     return _get_contour_plot(info)
 

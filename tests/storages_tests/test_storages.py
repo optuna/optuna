@@ -773,7 +773,7 @@ def test_get_all_trials(storage_mode: str) -> None:
 def test_get_all_trials_params_order(storage_mode: str, param_names: list[str]) -> None:
     # We don't actually require that all storages to preserve the order of parameters,
     # but all current implementations except for GrpcStorageProxy do, so we test this property.
-    if storage_mode == "grpc":
+    if storage_mode in ("grpc_rdb", "grpc_journal_file"):
         pytest.skip("GrpcStorageProxy does not preserve the order of parameters.")
 
     with StorageSupplier(storage_mode) as storage:
