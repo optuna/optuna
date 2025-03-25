@@ -48,6 +48,7 @@ class StorageSupplier:
         self.tempfile: IO[Any] | None = None
         self.server: grpc.Server | None = None
         self.thread: threading.Thread | None = None
+        self.proxy: GrpcStorageProxy | None = None
 
     def __enter__(
         self,
@@ -99,7 +100,8 @@ class StorageSupplier:
             self.thread = threading.Thread(target=self.server.start)
             self.thread.start()
 
-            return GrpcStorageProxy(host="localhost", port=port, timeout=60)
+            self.proxy = GrpcStorageProxy(host="localhost", port=port, timeout=60)
+            return self.proxy
         else:
             assert False
 
@@ -108,6 +110,10 @@ class StorageSupplier:
     ) -> None:
         if self.tempfile:
             self.tempfile.close()
+
+        if self.proxy:
+            del self.proxy
+            self.proxy = None
 
         if self.server:
             assert self.thread is not None
