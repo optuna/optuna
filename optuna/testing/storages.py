@@ -110,7 +110,8 @@ class StorageSupplier:
         self.server = optuna.storages._grpc.server.make_server(storage, "localhost", port)
         self.thread = threading.Thread(target=self.server.start)
         self.thread.start()
-        self.proxy = GrpcStorageProxy(host="localhost", port=port, timeout=60)
+        self.proxy = GrpcStorageProxy(host="localhost", port=port)
+        self.proxy.wait_server_ready(timeout=60)
         return self.proxy
 
     def __exit__(
