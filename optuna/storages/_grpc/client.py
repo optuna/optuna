@@ -75,7 +75,7 @@ class GrpcStorageProxy(BaseStorage):
     def __init__(self, *, host: str = "localhost", port: int = 13000) -> None:
         self._host = host
         self._port = port
-        self.setup()
+        self._setup()
 
     def _setup(self) -> None:
         self._channel = create_insecure_channel(self._host, self._port)
@@ -101,7 +101,7 @@ class GrpcStorageProxy(BaseStorage):
 
     def __setstate__(self, state: dict[Any, Any]) -> None:
         self.__dict__.update(state)
-        self.setup()
+        self._setup()
 
     def create_new_study(
         self, directions: Sequence[StudyDirection], study_name: str | None = None
