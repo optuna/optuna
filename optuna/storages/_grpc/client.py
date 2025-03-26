@@ -77,7 +77,7 @@ class GrpcStorageProxy(BaseStorage):
         self._port = port
         self.setup()
 
-    def setup(self) -> None:
+    def _setup(self) -> None:
         self._channel = create_insecure_channel(self._host, self._port)
         self._stub = api_pb2_grpc.StorageServiceStub(self._channel)
         self._cache = GrpcClientCache(self._stub)
