@@ -82,7 +82,7 @@ class GrpcStorageProxy(BaseStorage):
         self._stub = api_pb2_grpc.StorageServiceStub(self._channel)
         self._cache = GrpcClientCache(self._stub)
 
-    def wait_server_ready(self, timeout: float) -> None:
+    def wait_server_ready(self, timeout: float | None = None) -> None:
         try:
             with create_insecure_channel(self._host, self._port) as channel:
                 grpc.channel_ready_future(channel).result(timeout=timeout)
