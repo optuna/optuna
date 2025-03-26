@@ -78,11 +78,17 @@ class GrpcStorageProxy(BaseStorage):
         self._setup()
 
     def _setup(self) -> None:
+        """Set up the gRPC channel and stub."""
         self._channel = create_insecure_channel(self._host, self._port)
         self._stub = api_pb2_grpc.StorageServiceStub(self._channel)
         self._cache = GrpcClientCache(self._stub)
 
     def wait_server_ready(self, timeout: float | None = None) -> None:
+        """Wait until the gRPC server is ready.
+
+        Args:
+            timeout: The maximum time to wait in seconds. If :obj:`None`, wait indefinitely.
+        """
         try:
             with create_insecure_channel(self._host, self._port) as channel:
                 grpc.channel_ready_future(channel).result(timeout=timeout)
@@ -90,6 +96,7 @@ class GrpcStorageProxy(BaseStorage):
             raise ConnectionError("GRPC connection timeout") from e
 
     def close(self) -> None:
+        """Close the gRPC channel."""
         self._channel.close()
 
     def __getstate__(self) -> dict[Any, Any]:
