@@ -42,7 +42,7 @@ class CachedTrials:
 
 
 class OptunaStorageProxyService(api_pb2_grpc.StorageServiceServicer):
-    def __init__(self, storage: BaseStorage, ttl_seconds: float = 0.0) -> None:
+    def __init__(self, storage: BaseStorage, ttl_seconds: float = 10.0) -> None:
         self._backend = storage
         self._lock = threading.Lock()
         self._ttl_seconds = ttl_seconds
