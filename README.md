@@ -31,6 +31,7 @@ Optuna can dynamically construct the search spaces for the hyperparameters.
 * **Jan 22, 2025**: A new article [OptunaHub Benchmarks: A New Feature to Use/Register Various Benchmark Problems](https://medium.com/optuna/optunahub-benchmarks-a-new-feature-to-use-register-various-benchmark-problems-694401524ce0) has been published.
 * **Jan 20, 2025**: Optuna 4.2.0 and OptunaHub 0.2.0 are out! Try the newest Optuna and OptunaHub! Check out [the release note](https://github.com/optuna/optuna/releases/tag/v4.2.0) for details.
 * **Jan 16, 2025**: A new article [Overview of Python Free Threading (v3.13t) Support in Optuna](https://medium.com/optuna/overview-of-python-free-threading-v3-13t-support-in-optuna-ad9ab62a11ba) has been published.
+
 ## :fire: Key Features
 
 Optuna has modern functionalities as follows:
