@@ -341,6 +341,7 @@ class OptunaStorageProxyService(api_pb2_grpc.StorageServiceServicer):
         included_trial_ids = set(request.included_trial_ids)
         trial_id_greater_than = request.trial_id_greater_than
         if time.time() - self._cached_trials[study_id].last_sync_time >= self._ttl_seconds:
+            _logger.info("Syncing trials for study_id=%d", study_id)
             try:
                 self._cached_trials[study_id].trials = self._backend.get_all_trials(
                     study_id, deepcopy=False
