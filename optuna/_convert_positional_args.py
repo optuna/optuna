@@ -93,7 +93,7 @@ def convert_positional_args(
             positional_arg_names = _get_positional_arg_names(func)
             inferred_kwargs = _infer_kwargs(previous_positional_arg_names, *args)
 
-            if args and (deprecated_version or removed_version):
+            if inferred_kwargs and (deprecated_version or removed_version):
                 warning_messages.append(
                     _DEPRECATION_WARNING_TEMPLATE.format(
                         positional_arg=previous_positional_arg_names,
