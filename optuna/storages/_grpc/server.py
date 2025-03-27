@@ -25,11 +25,15 @@ DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S.%f"
 
 
 def make_server(
-    storage: BaseStorage, host: str, port: int, thread_pool: ThreadPoolExecutor | None = None
+    storage: BaseStorage,
+    host: str,
+    port: int,
+    thread_pool: ThreadPoolExecutor | None = None,
+    ttl_cache_seconds: float | None = None,
 ) -> grpc.Server:
     server = grpc.server(thread_pool or ThreadPoolExecutor(max_workers=10))
     api_pb2_grpc.add_StorageServiceServicer_to_server(
-        grpc_servicer.OptunaStorageProxyService(storage), server
+        grpc_servicer.OptunaStorageProxyService(storage, ttl_cache_seconds), server
     )  # type: ignore
     server.add_insecure_port(f"{host}:{port}")
     return server
@@ -42,6 +46,7 @@ def run_grpc_proxy_server(
     host: str = "localhost",
     port: int = 13000,
     thread_pool: ThreadPoolExecutor | None = None,
+    ttl_cache_seconds: float | None = None,
 ) -> None:
     """Run a gRPC server for the given storage URL, host, and port.
 
@@ -69,8 +74,13 @@ def run_grpc_proxy_server(
         thread_pool:
             Thread pool to use for the server. If :obj:`None`, a default thread pool
             with 10 workers will be used.
+        ttl_cache_seconds:
+            Time-to-live for the cache in seconds.
+            If :obj:`None`, the cache will be disabled.
+            The cache is available only for the
+            :func:`~optuna.storages.GrpcStorageProxy.get_all_trials` method.
     """
-    server = make_server(storage, host, port, thread_pool)
+    server = make_server(storage, host, port, thread_pool, ttl_cache_seconds)
     server.start()
     _logger.info(f"Server started at {host}:{port}")
     _logger.info("Listening...")

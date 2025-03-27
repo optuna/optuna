@@ -42,10 +42,10 @@ class CachedTrials:
 
 
 class OptunaStorageProxyService(api_pb2_grpc.StorageServiceServicer):
-    def __init__(self, storage: BaseStorage, ttl_seconds: float = 10.0) -> None:
+    def __init__(self, storage: BaseStorage, ttl_cache_seconds: float | None = None) -> None:
         self._backend = storage
         self._lock = threading.Lock()
-        self._ttl_seconds = ttl_seconds
+        self._ttl_cache_seconds = ttl_cache_seconds
         self._cached_trials: defaultdict[int, CachedTrials] = defaultdict(CachedTrials)
 
     def CreateNewStudy(
@@ -332,6 +332,13 @@ class OptunaStorageProxyService(api_pb2_grpc.StorageServiceServicer):
 
         return api_pb2.GetTrialReply(trial=_to_proto_trial(trial))
 
+    def _get_all_trials(self, study_id: int, context: grpc.ServicerContext) -> list[FrozenTrial]:
+        try:
+            trials = self._backend.get_all_trials(study_id, deepcopy=False)
+        except KeyError as e:
+            context.abort(code=grpc.StatusCode.NOT_FOUND, details=str(e))
+        return trials
+
     def GetTrials(
         self,
         request: api_pb2.GetTrialsRequest,
@@ -340,18 +347,18 @@ class OptunaStorageProxyService(api_pb2_grpc.StorageServiceServicer):
         study_id = request.study_id
         included_trial_ids = set(request.included_trial_ids)
         trial_id_greater_than = request.trial_id_greater_than
-        if time.time() - self._cached_trials[study_id].last_sync_time >= self._ttl_seconds:
-            _logger.info("Syncing trials for study_id=%d", study_id)
-            try:
-                self._cached_trials[study_id].trials = self._backend.get_all_trials(
-                    study_id, deepcopy=False
-                )
-            except KeyError as e:
-                context.abort(code=grpc.StatusCode.NOT_FOUND, details=str(e))
-            self._cached_trials[study_id].last_sync_time = time.time()
+        if self._ttl_cache_seconds is None:
+            trials = self._get_all_trials(study_id, context)
+        else:
+            now = time.time()
+            if now >= self._cached_trials[study_id].last_sync_time + self._ttl_cache_seconds:
+                _logger.info("Syncing trials for study_id=%d", study_id)
+                self._cached_trials[study_id].trials = self._get_all_trials(study_id, context)
+                self._cached_trials[study_id].last_sync_time = now
+            trials = self._cached_trials[study_id].trials
         filtered_trials = [
             _to_proto_trial(t)
-            for t in self._cached_trials[study_id].trials
+            for t in trials
             if t._trial_id > trial_id_greater_than or t._trial_id in included_trial_ids
         ]
         return api_pb2.GetTrialsReply(trials=filtered_trials)
