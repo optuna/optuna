@@ -5,7 +5,6 @@ from collections.abc import Sequence
 from functools import wraps
 from inspect import Parameter
 from inspect import signature
-import textwrap
 from typing import Any
 from typing import TYPE_CHECKING
 from typing import TypeVar
@@ -21,25 +20,13 @@ if TYPE_CHECKING:
     _P = ParamSpec("_P")
     _T = TypeVar("_T")
 
-_DEPRECATION_NOTE_TEMPLATE = """
-
-.. warning::
-    Using positional arguments is deprecated since v{d_ver}. Support for positional arguments
-    will be removed in the future. The removal is currently scheduled for v{r_ver}, but this
-    schedule is subject to change. Please use keyword arguments instead.
-    See https://github.com/optuna/optuna/releases/tag/v{d_ver}.
-"""
 
 _DEPRECATION_WARNING_TEMPLATE = (
-    "Positional arguments in {name} have been deprecated since v{d_ver}. "
+    "Positional arguments {positional_arg} in {func_name}() have been deprecated since v{d_ver}. "
     "They will be removed in v{r_ver}. "
     "Please use keyword arguments instead. "
     "See https://github.com/optuna/optuna/releases/tag/v{d_ver} for details."
 )
-
-
-def _get_docstring_indent(docstring: str) -> str:
-    return docstring.split("\n")[-1] if "\n" in docstring else ""
 
 
 def _get_positional_arg_names(func: "Callable[_P, _T]") -> list[str]:
@@ -72,9 +59,9 @@ def convert_positional_args(
         warning_stacklevel:
             Level of the stack trace where decorated function locates.
         deprecated_version:
-            Version number in which the use of positional arguments is deprecated.
+            The version in which the use of positional arguments is deprecated.
         removed_version:
-            Version number in which the use of positional arguments was completely removed.
+            The version in which the use of positional arguments will be removed.
     """
 
     if deprecated_version is None and removed_version is None:
@@ -82,11 +69,11 @@ def convert_positional_args(
     else:
         if deprecated_version is None:
             raise ValueError(
-                "deprecated_version must not be None when removed_version is specified"
+                "deprecated_version must not be None when removed_version is specified."
             )
         if removed_version is None:
             raise ValueError(
-                "removed_version must not be None when deprecated_version is specified"
+                "removed_version must not be None when deprecated_version is specified."
             )
 
         _validate_version(deprecated_version)
@@ -94,15 +81,6 @@ def convert_positional_args(
         _validate_two_version(deprecated_version, removed_version)
 
     def converter_decorator(func: "Callable[_P, _T]") -> "Callable[_P, _T]":
-        if deprecated_version or removed_version:
-            if func.__doc__ is None:
-                func.__doc__ = ""
-
-            note = _DEPRECATION_NOTE_TEMPLATE.format(
-                d_ver=deprecated_version, r_ver=removed_version
-            )
-            indent = _get_docstring_indent(func.__doc__)
-            func.__doc__ = func.__doc__.strip() + textwrap.indent(note, indent) + indent
 
         assert set(previous_positional_arg_names).issubset(set(signature(func).parameters)), (
             f"{set(previous_positional_arg_names)} is not a subset of"
@@ -111,26 +89,32 @@ def convert_positional_args(
 
         @wraps(func)
         def converter_wrapper(*args: Any, **kwargs: Any) -> "_T":
-            if deprecated_version or removed_version:
-                warnings.warn(
-                    _DEPRECATION_WARNING_TEMPLATE.format(
-                        name=func.__name__,
-                        d_ver=deprecated_version,
-                        r_ver=removed_version,
-                    ),
-                    FutureWarning,
-                    stacklevel=warning_stacklevel,
-                )
+            warning_messages = []
             positional_arg_names = _get_positional_arg_names(func)
             inferred_kwargs = _infer_kwargs(previous_positional_arg_names, *args)
+
+            if args and (deprecated_version or removed_version):
+                warning_messages.append(
+                    _DEPRECATION_WARNING_TEMPLATE.format(
+                        positional_arg=previous_positional_arg_names,
+                        func_name=func.__name__,
+                        d_ver=deprecated_version,
+                        r_ver=removed_version,
+                    )
+                )
+
             if len(inferred_kwargs) > len(positional_arg_names):
                 expected_kwds = set(inferred_kwargs) - set(positional_arg_names)
-                warnings.warn(
+                warning_messages.append(
                     f"{func.__name__}() got {expected_kwds} as positional arguments "
-                    "but they were expected to be given as keyword arguments.",
-                    FutureWarning,
-                    stacklevel=warning_stacklevel,
+                    "but they were expected to be given as keyword arguments."
                 )
+
+            if warning_messages:
+                warnings.warn(
+                    "\n".join(warning_messages), FutureWarning, stacklevel=warning_stacklevel
+                )
+
             if len(args) > len(previous_positional_arg_names):
                 raise TypeError(
                     f"{func.__name__}() takes {len(previous_positional_arg_names)} positional"
