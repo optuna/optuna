@@ -154,9 +154,4 @@ def _build_parzen_estimator(
         assert False, f"Got an unknown dist with the type {type(dist)}."
 
     # counts.astype(float) is necessary for weight calculation in ParzenEstimator.
-    return _ScottParzenEstimator(
-        param_name=param_name,
-        dist=rounded_dist,
-        counts=counts.astype(np.float64),
-        prior_weight=prior_weight,
-    )
+    return _ScottParzenEstimator(param_name, rounded_dist, counts.astype(np.float64), prior_weight)
