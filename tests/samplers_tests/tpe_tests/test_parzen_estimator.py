@@ -50,7 +50,6 @@ MULTIVARIATE_SAMPLES = {
 @pytest.mark.parametrize("multivariate", [True, False])
 def test_init_parzen_estimator(multivariate: bool) -> None:
     parameters = _ParzenEstimatorParameters(
-        consider_prior=True,
         prior_weight=1.0,
         consider_magic_clip=False,
         consider_endpoints=False,
@@ -190,7 +189,6 @@ def test_calculate_shape_check(
 ) -> None:
     parameters = _ParzenEstimatorParameters(
         prior_weight=prior_weight,
-        consider_prior=True,
         consider_magic_clip=magic_clip,
         consider_endpoints=endpoints,
         weights=default_weights,
@@ -216,7 +214,6 @@ def test_calculate_shape_check_categorical(
 ) -> None:
     parameters = _ParzenEstimatorParameters(
         prior_weight=prior_weight,
-        consider_prior=True,
         consider_magic_clip=True,
         consider_endpoints=False,
         weights=default_weights,
@@ -234,7 +231,6 @@ def test_calculate_shape_check_categorical(
 def test_invalid_prior_weight(prior_weight: float, mus: np.ndarray) -> None:
     parameters = _ParzenEstimatorParameters(
         prior_weight=prior_weight,
-        consider_prior=True,
         consider_magic_clip=False,
         consider_endpoints=False,
         weights=default_weights,
@@ -299,7 +295,6 @@ def test_calculate(
 ) -> None:
     parameters = _ParzenEstimatorParameters(
         prior_weight=1.0,
-        consider_prior=True,
         consider_magic_clip=flags["magic_clip"],
         consider_endpoints=flags["endpoints"],
         weights=default_weights,
@@ -336,7 +331,6 @@ def test_calculate(
 def test_invalid_weights(weights: Callable[[int], np.ndarray]) -> None:
     parameters = _ParzenEstimatorParameters(
         prior_weight=1.0,
-        consider_prior=True,
         consider_magic_clip=False,
         consider_endpoints=False,
         weights=weights,

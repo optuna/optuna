@@ -21,7 +21,6 @@ EPS = 1e-12
 
 
 class _ParzenEstimatorParameters(NamedTuple):
-    consider_prior: bool
     prior_weight: float | None
     consider_magic_clip: bool
     consider_endpoints: bool
@@ -40,11 +39,6 @@ class _ParzenEstimator:
         parameters: _ParzenEstimatorParameters,
         predetermined_weights: np.ndarray | None = None,
     ) -> None:
-        if not parameters.consider_prior:
-            raise ValueError(
-                "The implementation for `consider_prior=False` has been removed at v4.3.0."
-            )
-
         if parameters.prior_weight is None or parameters.prior_weight <= 0:
             raise ValueError(
                 "A positive value must be specified for prior_weight,"

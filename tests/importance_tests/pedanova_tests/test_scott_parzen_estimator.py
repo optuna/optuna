@@ -35,7 +35,6 @@ def test_init_scott_parzen_estimator(dist_type: str) -> None:
             else CategoricalDistribution(choices=["a" * i for i in range(counts.size)])
         ),
         counts=counts,
-        consider_prior=True,
         prior_weight=1.0,
     )
     assert len(pe._mixture_distribution.distributions) == 1
@@ -86,7 +85,6 @@ def test_build_int_scott_parzen_estimator(
         param_name="a",
         dist=IntDistribution(low=0, high=_counts.size - 1),
         counts=_counts,
-        consider_prior=True,
         prior_weight=1.0,
     )
     dist = _BatchedDiscreteTruncNormDistributions(
@@ -154,7 +152,6 @@ def test_build_cat_scott_parzen_estimator(
         param_name="a",
         dist=CategoricalDistribution(choices=["a" * i for i in range(counts.size)]),
         counts=_counts,
-        consider_prior=True,
         prior_weight=1.0,
     )
     dist = _BatchedCategoricalDistributions(weights=categorical_weights)
@@ -216,7 +213,6 @@ def test_build_parzen_estimator(
         dist=dist,
         trials=trials,
         n_steps=50,
-        consider_prior=True,
         prior_weight=1.0,
     )
     if isinstance(dist, (IntDistribution, FloatDistribution)):
@@ -248,6 +244,5 @@ def test_assert_in_build_parzen_estimator() -> None:
             dist=UnknownDistribution(),
             trials=[],
             n_steps=50,
-            consider_prior=True,
             prior_weight=1.0,
         )

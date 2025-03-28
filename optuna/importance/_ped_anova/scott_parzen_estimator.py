@@ -21,7 +21,6 @@ class _ScottParzenEstimator(_ParzenEstimator):
         param_name: str,
         dist: IntDistribution | CategoricalDistribution,
         counts: np.ndarray,
-        consider_prior: bool,
         prior_weight: float,
     ):
         assert isinstance(dist, (CategoricalDistribution, IntDistribution))
@@ -36,7 +35,6 @@ class _ScottParzenEstimator(_ParzenEstimator):
             observations={param_name: np.arange(self._n_steps)[counts > 0.0]},
             search_space={param_name: dist},
             parameters=_ParzenEstimatorParameters(
-                consider_prior=consider_prior,
                 prior_weight=prior_weight,
                 consider_magic_clip=False,
                 consider_endpoints=False,
@@ -143,7 +141,6 @@ def _build_parzen_estimator(
     dist: BaseDistribution,
     trials: list[FrozenTrial],
     n_steps: int,
-    consider_prior: bool,
     prior_weight: float,
 ) -> _ScottParzenEstimator:
     rounded_dist: IntDistribution | CategoricalDistribution
@@ -161,6 +158,5 @@ def _build_parzen_estimator(
         param_name=param_name,
         dist=rounded_dist,
         counts=counts.astype(np.float64),
-        consider_prior=True,
         prior_weight=prior_weight,
     )
