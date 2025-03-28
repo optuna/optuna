@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import socket
 import threading
-import time
 from types import TracebackType
 from typing import Any
 from typing import IO
@@ -11,6 +10,7 @@ from typing import TYPE_CHECKING
 import fakeredis
 
 import optuna
+from optuna.storages import BaseStorage
 from optuna.storages import GrpcStorageProxy
 from optuna.storages.journal import JournalFileBackend
 from optuna.testing.tempfile_pool import NamedTemporaryFilePool
@@ -50,6 +50,7 @@ class StorageSupplier:
         self.tempfile: IO[Any] | None = None
         self.server: grpc.Server | None = None
         self.thread: threading.Thread | None = None
+        self.proxy: GrpcStorageProxy | None = None
 
     def __enter__(
         self,
@@ -88,25 +89,10 @@ class StorageSupplier:
         elif self.storage_specifier == "grpc_journal_file":
             self.tempfile = self.extra_args.get("file", NamedTemporaryFilePool().tempfile())
             assert self.tempfile is not None
-            port = _find_free_port()
             storage = optuna.storages.JournalStorage(
                 optuna.storages.journal.JournalFileBackend(self.tempfile.name)
             )
-
-            self.server = optuna.storages._grpc.server.make_server(storage, "localhost", port)
-            self.thread = threading.Thread(target=self.server.start)
-            self.thread.start()
-
-            proxy = GrpcStorageProxy(host="localhost", port=port)
-
-            # Wait until the server is ready.
-            while True:
-                try:
-                    proxy.get_all_studies()
-                    return proxy
-                except grpc.RpcError:
-                    time.sleep(1)
-                    continue
+            return self._create_proxy(storage)
         elif "journal" in self.storage_specifier:
             self.tempfile = self.extra_args.get("file", NamedTemporaryFilePool().tempfile())
             assert self.tempfile is not None
@@ -115,26 +101,18 @@ class StorageSupplier:
         elif self.storage_specifier == "grpc_rdb":
             self.tempfile = NamedTemporaryFilePool().tempfile()
             url = "sqlite:///{}".format(self.tempfile.name)
-            port = _find_free_port()
-
-            self.server = optuna.storages._grpc.server.make_server(
-                optuna.storages.RDBStorage(url), "localhost", port
-            )
-            self.thread = threading.Thread(target=self.server.start)
-            self.thread.start()
-
-            proxy = GrpcStorageProxy(host="localhost", port=port)
-
-            # Wait until the server is ready.
-            while True:
-                try:
-                    proxy.get_all_studies()
-                    return proxy
-                except grpc.RpcError:
-                    time.sleep(1)
-                    continue
+            return self._create_proxy(optuna.storages.RDBStorage(url))
         else:
             assert False
+
+    def _create_proxy(self, storage: BaseStorage) -> GrpcStorageProxy:
+        port = _find_free_port()
+        self.server = optuna.storages._grpc.server.make_server(storage, "localhost", port)
+        self.thread = threading.Thread(target=self.server.start)
+        self.thread.start()
+        self.proxy = GrpcStorageProxy(host="localhost", port=port)
+        self.proxy.wait_server_ready(timeout=60)
+        return self.proxy
 
     def __exit__(
         self, exc_type: type[BaseException], exc_val: BaseException, exc_tb: TracebackType
@@ -142,9 +120,13 @@ class StorageSupplier:
         if self.tempfile:
             self.tempfile.close()
 
+        if self.proxy:
+            self.proxy.close()
+            self.proxy = None
+
         if self.server:
             assert self.thread is not None
-            self.server.stop(None)
+            self.server.stop(5).wait()
             self.thread.join()
             self.server = None
             self.thread = None

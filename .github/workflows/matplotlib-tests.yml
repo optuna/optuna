@@ -6,6 +6,7 @@ on:
       - .github/workflows/matplotlib-tests.yml
       - optuna/visualization/**.py
       - tests/visualization_tests/**
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/master' && github.run_number || github.ref }}
