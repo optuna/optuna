@@ -93,22 +93,22 @@ def convert_positional_args(
             positional_arg_names = _get_positional_arg_names(func)
             inferred_kwargs = _infer_kwargs(previous_positional_arg_names, *args)
 
-            if inferred_kwargs and (deprecated_version or removed_version):
-                warning_messages.append(
-                    _DEPRECATION_WARNING_TEMPLATE.format(
-                        positional_arg=previous_positional_arg_names,
-                        func_name=func.__name__,
-                        d_ver=deprecated_version,
-                        r_ver=removed_version,
-                    )
-                )
-
             if len(inferred_kwargs) > len(positional_arg_names):
                 expected_kwds = set(inferred_kwargs) - set(positional_arg_names)
                 warning_messages.append(
                     f"{func.__name__}() got {expected_kwds} as positional arguments "
                     "but they were expected to be given as keyword arguments."
                 )
+
+                if deprecated_version or removed_version:
+                    warning_messages.append(
+                        _DEPRECATION_WARNING_TEMPLATE.format(
+                            positional_arg=previous_positional_arg_names,
+                            func_name=func.__name__,
+                            d_ver=deprecated_version,
+                            r_ver=removed_version,
+                        )
+                    )
 
             if warning_messages:
                 warnings.warn(
