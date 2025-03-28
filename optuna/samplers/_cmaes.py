@@ -153,11 +153,6 @@ class CmaEsSampler(BaseSampler):
             Note that the parameters of the first trial in a study are always sampled
             via an independent sampler, so no warning messages are emitted in this case.
 
-            .. note::
-                Added in v2.1.0 as an experimental feature. The interface may change in newer
-                versions without prior notice. See
-                https://github.com/optuna/optuna/releases/tag/v2.1.0.
-
         popsize:
             A population size of CMA-ES. When ``restart_strategy = 'ipop'``
             or ``restart_strategy = 'bipop'`` is specified,
