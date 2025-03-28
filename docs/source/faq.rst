@@ -202,7 +202,7 @@ To make the parameters suggested by Optuna reproducible, you can specify a fixed
     study = optuna.create_study(sampler=sampler)
     study.optimize(objective)
 
-To make the pruning by :class:`~optuna.pruners.HyperbandPruner` reproducible, you can specify ``study_name`` of :class:`~optuna.study.Study`.
+To make the pruning by :class:`~optuna.pruners.HyperbandPruner` reproducible, please specify a fixed ``study_name`` of :class:`~optuna.study.Study` in addition to the ``seed`` argument.
 
 
 However, there are two caveats.
