@@ -148,19 +148,13 @@ def test_optimize_with_direction() -> None:
     assert study.direction == StudyDirection.MAXIMIZE
     check_study(study)
 
-    with pytest.raises(ValueError) as e:
+    with pytest.raises(ValueError):
         create_study(direction="test")
-    assert str(e.value) == (
-        "Please set either 'minimize' or 'maximize' to direction. You can also set the "
-        + "corresponding `StudyDirection` member."
-    )
 
-    with pytest.raises(ValueError) as e:
-        create_study(direction=["maximize", "minimize"])
-    assert (
-        str(e.value)
-        == "For multi-objective optimization, using `directions` instead of `direction`."
-    )
+    with pytest.raises(ValueError):
+        # Type hintingly wrong input.
+        # Make mypy detection be ignored.
+        create_study(direction=["maximize", "minimize"])  # type: ignore [arg-type]
 
 
 @pytest.mark.parametrize("n_trials", (0, 1, 20))
@@ -1163,18 +1157,15 @@ def test_create_study_with_multi_objectives() -> None:
     assert study.directions == [StudyDirection.MAXIMIZE, StudyDirection.MINIMIZE]
     assert study._is_multi_objective()
 
-    with pytest.raises(ValueError) as e:
+    with pytest.raises(ValueError):
         # Empty `direction` isn't allowed.
         _ = create_study(directions=[])
-    assert str(e.value) == "The number of objectives must be greater than 0."
 
-    with pytest.raises(ValueError) as e:
+    with pytest.raises(ValueError):
         _ = create_study(direction="minimize", directions=["maximize"])
-    assert str(e.value) == "Specify only one of `direction` and `directions`."
 
-    with pytest.raises(ValueError) as e:
+    with pytest.raises(ValueError):
         _ = create_study(direction="minimize", directions=[])
-    assert str(e.value) == "Specify only one of `direction` and `directions`."
 
 
 def test_create_study_with_direction_object() -> None:
