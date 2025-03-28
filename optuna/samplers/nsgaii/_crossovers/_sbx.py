@@ -33,8 +33,17 @@ class SBXCrossover(BaseCrossover):
 
     n_parents = 2
 
-    def __init__(self, eta: float | None = None) -> None:
+    def __init__(
+        self, eta: float | None = None, establishment: float = 0.5, probability: float = 0.5
+    ) -> None:
         self._eta = eta
+
+        if establishment < 0.0 or establishment > 1.0:
+            raise ValueError("The value of `establishment` must be in the range [0.0, 1.0].")
+        if probability < 0.0 or probability > 1.0:
+            raise ValueError("The value of `probability` must be in the range [0.0, 1.0].")
+        self._establishment = establishment
+        self._probability = probability
 
     def crossover(
         self,
@@ -76,22 +85,24 @@ class SBXCrossover(BaseCrossover):
         c1 = 0.5 * ((xs_min + xs_max) - betaq1 * xs_diff)  # Equation (4).
         c2 = 0.5 * ((xs_min + xs_max) + betaq2 * xs_diff)  # Equation (5).
 
-        # SBX applies crossover with establishment 0.5, and with probability 0.5,
+        # SBX applies crossover with establishment, and with probability,
         # the gene of the parent individual is the gene of the child individual.
         # The original SBX creates two child individuals,
         # but optuna's implementation creates only one child individual.
         # Therefore, when there is no crossover,
         # the gene is selected with equal probability from the parent individuals x1 and x2.
 
+        index_prob = rng.rand()
         child_params_list = []
+
         for c1_i, c2_i, x1_i, x2_i in zip(c1, c2, parents_params[0], parents_params[1]):
-            if rng.rand() < 0.5:
-                if rng.rand() < 0.5:
+            if rng.rand() < self._establishment:
+                if index_prob < self._probability:
                     child_params_list.append(c1_i)
                 else:
                     child_params_list.append(c2_i)
             else:
-                if rng.rand() < 0.5:
+                if index_prob < self._probability:
                     child_params_list.append(x1_i)
                 else:
                     child_params_list.append(x2_i)
