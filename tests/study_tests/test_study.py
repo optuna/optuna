@@ -152,8 +152,6 @@ def test_optimize_with_direction() -> None:
         create_study(direction="test")
 
     with pytest.raises(ValueError):
-        # Type hintingly wrong input.
-        # Make mypy detection be ignored.
         create_study(direction=["maximize", "minimize"])  # type: ignore [arg-type]
 
 
