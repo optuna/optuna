@@ -1239,6 +1239,10 @@ def create_study(
     elif direction is not None and directions is not None:
         raise ValueError("Specify only one of `direction` and `directions`.")
     elif direction is not None:
+        if isinstance(direction, Sequence) and not isinstance(direction, str):
+            raise ValueError(
+                "For multi-objective optimization, using `directions` instead of `direction`."
+            )
         directions = [direction]
     elif directions is not None:
         directions = list(directions)
