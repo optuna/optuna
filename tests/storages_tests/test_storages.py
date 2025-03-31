@@ -772,12 +772,35 @@ def test_get_all_trials(storage_mode: str) -> None:
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES_GRPC)
-@pytest.mark.parametrize("ttl_cache_seconds", [None, 1.0])
-def test_get_all_trials_grpc_proxy_server_ttl_cache(
-    storage_mode: str, ttl_cache_seconds: float | None
-) -> None:
+def test_get_all_trials_grpc_proxy_server_ttl_cache_is_none(storage_mode: str) -> None:
     n_trials_init = 1
     n_trials_add = 2
+    with StorageSupplier(storage_mode) as storage:
+        study_id = storage.create_new_study(directions=[StudyDirection.MAXIMIZE])
+        generator = random.Random(51)
+
+        for _ in range(n_trials_init):
+            t = _generate_trial(generator)
+            storage.create_new_trial(study_id, template_trial=t)
+
+        # Synchronize the storage cache.
+        trials = storage.get_all_trials(study_id)
+        assert len(trials) == n_trials_init
+
+        for _ in range(n_trials_add):
+            t = _generate_trial(generator)
+            storage.create_new_trial(study_id, template_trial=t)
+
+        # Synchronize the storage cache always if ttl_cache_seconds is None.
+        trials = storage.get_all_trials(study_id)
+        assert len(trials) == n_trials_init + n_trials_add
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES_GRPC)
+def test_get_all_trials_grpc_proxy_server_ttl_cache(storage_mode: str) -> None:
+    n_trials_init = 1
+    n_trials_add = 2
+    ttl_cache_seconds = 10
     with StorageSupplier(storage_mode, ttl_cache_seconds=ttl_cache_seconds) as storage:
         with freeze_time() as frozen_datetime:
             study_id = storage.create_new_study(directions=[StudyDirection.MAXIMIZE])
@@ -795,18 +818,14 @@ def test_get_all_trials_grpc_proxy_server_ttl_cache(
                 t = _generate_trial(generator)
                 storage.create_new_trial(study_id, template_trial=t)
 
-            # Synchronize the storage cache if ttl_cache_seconds is None.
+            # not synchronized yet.
             trials = storage.get_all_trials(study_id)
-            if ttl_cache_seconds is None:
-                assert len(trials) == n_trials_init + n_trials_add
-            else:
-                assert len(trials) == n_trials_init
+            assert len(trials) == n_trials_init
 
-            if ttl_cache_seconds is not None:
-                frozen_datetime.tick(delta=timedelta(seconds=ttl_cache_seconds))
-                # Synchronize the storage cache.
-                trials = storage.get_all_trials(study_id)
-                assert len(trials) == n_trials_init + n_trials_add
+            frozen_datetime.tick(delta=timedelta(seconds=ttl_cache_seconds))
+            # Synchronize the storage cache after the ttl_cache_seconds.
+            trials = storage.get_all_trials(study_id)
+            assert len(trials) == n_trials_init + n_trials_add
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
