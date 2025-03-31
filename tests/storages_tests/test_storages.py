@@ -784,14 +784,16 @@ def test_get_all_trials_grpc_proxy_server_ttl_cache(
             generator = random.Random(51)
 
             for _ in range(n_trials_init):
-                _generate_trial(generator)
+                t = _generate_trial(generator)
+                storage.create_new_trial(study_id, template_trial=t)
 
             # Synchronize the storage cache.
             trials = storage.get_all_trials(study_id)
             assert len(trials) == n_trials_init
 
             for _ in range(n_trials_add):
-                _generate_trial(generator)
+                t = _generate_trial(generator)
+                storage.create_new_trial(study_id, template_trial=t)
 
             # Synchronize the storage cache if ttl_cache_seconds is None.
             trials = storage.get_all_trials(study_id)
