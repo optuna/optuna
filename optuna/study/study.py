@@ -1059,7 +1059,18 @@ class Study:
         for trial in self._storage.get_all_trials(
             self._study_id, deepcopy=False, states=(TrialState.WAITING,)
         ):
-            if not self._storage.set_trial_state_values(trial._trial_id, state=TrialState.RUNNING):
+            # Attempt to set the state to RUNNING.
+            # - If another process or thread has already changed the state to RUNNING,
+            #   set_trial_state_values returns False.
+            # - If another process or thread has already finished the trial,
+            #   an UpdateFinishedTrialError is raised.
+            try:
+                if not self._storage.set_trial_state_values(
+                    trial._trial_id,
+                    state=TrialState.RUNNING,
+                ):
+                    continue
+            except exceptions.UpdateFinishedTrialError:
                 continue
 
             _logger.debug("Trial {} popped from the trial queue.".format(trial.number))

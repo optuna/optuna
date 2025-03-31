@@ -11,6 +11,7 @@ import threading
 import time
 from typing import Any
 from typing import Callable as TypingCallable
+from unittest.mock import MagicMock
 from unittest.mock import Mock
 from unittest.mock import patch
 import uuid
@@ -1670,6 +1671,20 @@ def test_pop_waiting_trial_thread_safe(storage_mode: str) -> None:
             for future in as_completed(futures):
                 trial_id_set.add(future.result())
         assert len(trial_id_set) == num_enqueued
+
+
+def test_pop_waiting_trial_id_race_condition() -> None:
+    study = create_study()
+    study.add_trial(create_trial(state=TrialState.COMPLETE, value=0))
+    study.add_trial(create_trial(state=TrialState.RUNNING))
+    study.add_trial(create_trial(state=TrialState.WAITING))
+    trials = study.get_trials(deepcopy=False)
+
+    # Return all trials as waiting to emulate the race condition.
+    study._storage.get_all_trials = MagicMock(return_value=trials)  # type: ignore[method-assign]
+
+    trial_id = study._pop_waiting_trial_id()
+    assert trial_id == study.trials[2]._trial_id
 
 
 def test_set_metric_names() -> None:
