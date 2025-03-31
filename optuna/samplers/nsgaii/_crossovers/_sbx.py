@@ -29,6 +29,20 @@ class SBXCrossover(BaseCrossover):
             Distribution index. A small value of ``eta`` allows distant solutions
             to be selected as children solutions. If not specified, takes default
             value of ``2`` for single objective functions and ``20`` for multi objective.
+        establishment:
+            ``establishment`` is the probability of uniform crossover
+            between two individuals selected as candidate child individuals.
+            Optuna returns only one child individual at a time, while SBX crossover generates two.
+            This argument is whether or not two individual are
+            crossover to make one child individual.
+            If not specified, takes default value of ``0.5``.
+            The range of values is ``[0.0, 1.0]``.
+        probability:
+            ``probability`` is the probability of using the value of the generated
+            child variable rather than the value of the parent.
+            where ``1-probability`` is the probability of using the parent's values as it is.
+            If not specified, takes default value of ``0.5``.
+            The range of values is ``[0.0, 1.0]``.
     """
 
     n_parents = 2
@@ -96,16 +110,28 @@ class SBXCrossover(BaseCrossover):
         child_params_list = []
 
         for c1_i, c2_i, x1_i, x2_i in zip(c1, c2, parents_params[0], parents_params[1]):
-            if rng.rand() < self._establishment:
-                if index_prob < self._probability:
-                    child_params_list.append(c1_i)
+            if rng.rand() < self._probability:
+                if rng.rand() < self._establishment:
+                    if index_prob >= 0.5:
+                        child_params_list.append(c1_i)
+                    else:
+                        child_params_list.append(c2_i)
                 else:
-                    child_params_list.append(c2_i)
+                    if index_prob >= 0.5:
+                        child_params_list.append(c2_i)
+                    else:
+                        child_params_list.append(c1_i)
             else:
-                if index_prob < self._probability:
-                    child_params_list.append(x1_i)
+                if rng.rand() < self._establishment:
+                    if index_prob >= 0.5:
+                        child_params_list.append(x1_i)
+                    else:
+                        child_params_list.append(x2_i)
                 else:
-                    child_params_list.append(x2_i)
+                    if index_prob >= 0.5:
+                        child_params_list.append(x2_i)
+                    else:
+                        child_params_list.append(x1_i)
         child_params = np.array(child_params_list)
 
         return child_params
