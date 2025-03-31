@@ -31,7 +31,6 @@ class MockBucket:
         return MockBlob(blob_name)
 
     def delete_blob(self, blob_name: str) -> None:
-        global _MOCK_BUCKET_CONTENT
         del _MOCK_BUCKET_CONTENT[blob_name]
 
     def list_blobs(self) -> Iterator["MockBlob"]:
@@ -47,7 +46,6 @@ class MockBlob:
         return _MOCK_BUCKET_CONTENT[self.blob_name]
 
     def upload_from_string(self, data: bytes) -> None:
-        global _MOCK_BUCKET_CONTENT
         _MOCK_BUCKET_CONTENT[self.blob_name] = data
 
 
