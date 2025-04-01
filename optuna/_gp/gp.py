@@ -192,7 +192,7 @@ def _fit_kernel_params(
     def loss_func(raw_params: np.ndarray) -> tuple[float, np.ndarray]:
         raw_params_tensor = torch.from_numpy(raw_params)
         raw_params_tensor.requires_grad_(True)
-        with torch.enable_grad():
+        with torch.enable_grad():  # type: ignore[no-untyped-call]
             params = KernelParamsTensor(
                 inverse_squared_lengthscales=torch.exp(raw_params_tensor[:n_params]),
                 kernel_scale=torch.exp(raw_params_tensor[n_params]),
