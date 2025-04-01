@@ -1250,6 +1250,10 @@ def create_study(
     elif direction is not None and directions is not None:
         raise ValueError("Specify only one of `direction` and `directions`.")
     elif direction is not None:
+        if isinstance(direction, Sequence) and not isinstance(direction, str):
+            raise ValueError(
+                "Use `directions` instead of `direction` for multi-objective optimization."
+            )
         directions = [direction]
     elif directions is not None:
         directions = list(directions)
@@ -1263,8 +1267,8 @@ def create_study(
         for d in directions
     ):
         raise ValueError(
-            "Please set either 'minimize' or 'maximize' to direction. You can also set the "
-            "corresponding `StudyDirection` member."
+            f"`directions` must be a list of `minimize` or `maximize`, but got {directions}. "
+            "For single-objective optimization, please use `direction` instead of `directions`."
         )
 
     direction_objects = [
