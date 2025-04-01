@@ -13,6 +13,7 @@ with try_import() as _imports:
     from matplotlib.collections import PathCollection
     from matplotlib.colors import Colormap
     from matplotlib.contour import ContourSet
+    from matplotlib.dates import DateFormatter
     from matplotlib.figure import Figure
 
     # TODO(ytknzw): Set precise version.
@@ -35,5 +36,6 @@ __all__ = [
     "PathCollection",
     "Colormap",
     "ContourSet",
+    "DateFormatter",
     "Figure",
 ]
