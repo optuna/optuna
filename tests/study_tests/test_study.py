@@ -154,6 +154,9 @@ def test_optimize_with_direction() -> None:
     with pytest.raises(ValueError):
         create_study(direction=["maximize", "minimize"])  # type: ignore [arg-type]
 
+    with pytest.raises(ValueError):
+        create_study(directions="minimize")
+
 
 @pytest.mark.parametrize("n_trials", (0, 1, 20))
 @pytest.mark.parametrize("n_jobs", (1, 2, -1))
