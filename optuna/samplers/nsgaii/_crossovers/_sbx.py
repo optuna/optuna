@@ -33,7 +33,7 @@ class SBXCrossover(BaseCrossover):
             ``establishment`` is the probability of uniform crossover
             between two individuals selected as candidate child individuals.
             Optuna returns only one child individual at a time, while SBX crossover generates two.
-            This argument is whether or not two individual are
+            This argument is whether or not two individuals are
             crossover to make one child individual.
             If not specified, takes default value of ``0.5``.
             The range of values is ``[0.0, 1.0]``.
@@ -42,7 +42,7 @@ class SBXCrossover(BaseCrossover):
             child variable rather than the value of the parent.
             where ``1-probability`` is the probability of using the parent's values as it is.
             If not specified, takes default value of ``0.5``.
-            The range of values is ``[0.0, 1.0]``.
+            The range of values is ``(0.0, 1.0]``.
     """
 
     n_parents = 2
@@ -54,8 +54,8 @@ class SBXCrossover(BaseCrossover):
 
         if establishment < 0.0 or establishment > 1.0:
             raise ValueError("The value of `establishment` must be in the range [0.0, 1.0].")
-        if probability < 0.0 or probability > 1.0:
-            raise ValueError("The value of `probability` must be in the range [0.0, 1.0].")
+        if probability <= 0.0 or probability > 1.0:
+            raise ValueError("The value of `probability` must be in the range (0.0, 1.0].")
         self._establishment = establishment
         self._probability = probability
 
