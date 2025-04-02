@@ -91,7 +91,7 @@ def _get_slice_plot(info: _SlicePlotInfo) -> "Axes":
 
         # Draw scatter plots.
         for i, subplot in enumerate(info.subplots):
-            ax = axs[i]
+            ax = axs[i]  # type: ignore[index]
             sc = _generate_slice_subplot(subplot, ax, cmap, padding_ratio, info.target_name)
 
     axcb = fig.colorbar(sc, ax=axs)
