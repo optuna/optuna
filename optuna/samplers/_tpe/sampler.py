@@ -304,12 +304,12 @@ class TPESampler(BaseSampler):
             )
 
         self._parzen_estimator_parameters = _ParzenEstimatorParameters(
-            prior_weight,
-            consider_magic_clip,
-            consider_endpoints,
-            weights,
-            multivariate,
-            categorical_distance_func or {},
+            prior_weight=prior_weight,
+            consider_magic_clip=consider_magic_clip,
+            consider_endpoints=consider_endpoints,
+            weights=weights,
+            multivariate=multivariate,
+            categorical_distance_func=categorical_distance_func or {},
         )
         self._n_startup_trials = n_startup_trials
         self._n_ei_candidates = n_ei_candidates

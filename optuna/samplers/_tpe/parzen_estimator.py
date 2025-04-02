@@ -21,7 +21,7 @@ EPS = 1e-12
 
 
 class _ParzenEstimatorParameters(NamedTuple):
-    prior_weight: float | None
+    prior_weight: float
     consider_magic_clip: bool
     consider_endpoints: bool
     weights: Callable[[int], np.ndarray]
