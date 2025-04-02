@@ -1,4 +1,4 @@
-name: Checks(Optioinal)
+name: Checks (with optional dependencies)
 
 on:
   schedule:
