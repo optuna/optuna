@@ -111,7 +111,7 @@ class SBXCrossover(BaseCrossover):
         c1 = 0.5 * ((xs_min + xs_max) - betaq1 * xs_diff)  # Equation (4).
         c2 = 0.5 * ((xs_min + xs_max) + betaq2 * xs_diff)  # Equation (5).
 
-        # SBX applies crossover with use_chile_gene_probability and uniform_crossover_probability.,
+        # SBX applies crossover with use_child_gene_prob and uniform_crossover_prob.
         # the gene of the parent individual is the gene of the child individual.
         # The original SBX creates two child individuals,
         # but optuna's implementation creates only one child individual.
