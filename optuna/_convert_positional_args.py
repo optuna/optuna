@@ -6,6 +6,7 @@ from functools import wraps
 from inspect import Parameter
 from inspect import signature
 from typing import Any
+from typing import Optional
 from typing import TYPE_CHECKING
 from typing import TypeVar
 import warnings
@@ -22,9 +23,10 @@ if TYPE_CHECKING:
 
 
 _DEPRECATION_WARNING_TEMPLATE = (
-    "Positional arguments {positional_arg} in {func_name}() have been deprecated since v{d_ver}. "
-    "They will be removed in v{r_ver}. "
-    "Please use keyword arguments instead. "
+    "Positional arguments {deprecated_positional_arg_names} in {func_name}() "
+    "have been deprecated since v{d_ver}. "
+    "They will be replaced with the corresponding keyword arguments in v{r_ver}, "
+    "so please use keyword specification instead. "
     "See https://github.com/optuna/optuna/releases/tag/v{d_ver} for details."
 )
 
@@ -48,8 +50,8 @@ def convert_positional_args(
     *,
     previous_positional_arg_names: Sequence[str],
     warning_stacklevel: int = 2,
-    deprecated_version: str | None = None,
-    removed_version: str | None = None,
+    deprecated_version: Optional[str] = None,
+    removed_version: Optional[str] = None,
 ) -> "Callable[[Callable[_P, _T]], Callable[_P, _T]]":
     """Convert positional arguments to keyword arguments.
 
@@ -64,9 +66,7 @@ def convert_positional_args(
             The version in which the use of positional arguments will be removed.
     """
 
-    if deprecated_version is None and removed_version is None:
-        pass
-    else:
+    if deprecated_version is not None or removed_version is not None:
         if deprecated_version is None:
             raise ValueError(
                 "deprecated_version must not be None when removed_version is specified."
@@ -103,7 +103,7 @@ def convert_positional_args(
                 if deprecated_version or removed_version:
                     warning_messages.append(
                         _DEPRECATION_WARNING_TEMPLATE.format(
-                            positional_arg=previous_positional_arg_names,
+                            deprecated_positional_arg_names=previous_positional_arg_names,
                             func_name=func.__name__,
                             d_ver=deprecated_version,
                             r_ver=removed_version,
