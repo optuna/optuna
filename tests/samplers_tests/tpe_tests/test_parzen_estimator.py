@@ -226,7 +226,7 @@ def test_calculate_shape_check_categorical(
     assert len(mpe._mixture_distribution.weights) == len(mus) + 1  # NOTE(sawa3030): +1 for prior
 
 
-@pytest.mark.parametrize("prior_weight", [None, -1.0, 0.0])
+@pytest.mark.parametrize("prior_weight", [-1.0, 0.0])
 @pytest.mark.parametrize("mus", (np.asarray([]), np.asarray([0.4]), np.asarray([-0.4, 0.4])))
 def test_invalid_prior_weight(prior_weight: float, mus: np.ndarray) -> None:
     parameters = _ParzenEstimatorParameters(

@@ -39,7 +39,7 @@ class _ParzenEstimator:
         parameters: _ParzenEstimatorParameters,
         predetermined_weights: np.ndarray | None = None,
     ) -> None:
-        if parameters.prior_weight is None or parameters.prior_weight <= 0:
+        if parameters.prior_weight <= 0:
             raise ValueError(
                 "A positive value must be specified for prior_weight,"
                 f" but got {parameters.prior_weight}."
@@ -189,7 +189,6 @@ class _ParzenEstimator:
             )
 
         n_kernels = len(observations) + 1  # NOTE(sawa3030): +1 for prior.
-        assert parameters.prior_weight is not None
         weights = np.full(
             shape=(n_kernels, n_choices),
             fill_value=parameters.prior_weight / n_kernels,
