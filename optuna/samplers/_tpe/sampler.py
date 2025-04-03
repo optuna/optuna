@@ -128,6 +128,7 @@ class TPESampler(BaseSampler):
                 Deprecated in v4.3.0. ``consider_prior`` argument will be removed in the future.
                 The removal of this feature is currently scheduled for v6.0.0,
                 but this schedule is subject to change.
+                From v4.3.0 onward, ``consider_prior`` automatically falls back to ``True``.
                 See https://github.com/optuna/optuna/releases/tag/v4.3.0.
         prior_weight:
             The weight of the prior. This argument is used in
@@ -297,16 +298,18 @@ class TPESampler(BaseSampler):
             msg = _deprecated._DEPRECATION_WARNING_TEMPLATE.format(
                 name="`consider_prior`", d_ver="4.3.0", r_ver="6.0.0"
             )
-            warnings.warn(msg, FutureWarning)
+            warnings.warn(
+                f"{msg} From v4.3.0 onward, `consider_prior` automatically falls back to `True`.",
+                FutureWarning,
+            )
 
         self._parzen_estimator_parameters = _ParzenEstimatorParameters(
-            consider_prior,
-            prior_weight,
-            consider_magic_clip,
-            consider_endpoints,
-            weights,
-            multivariate,
-            categorical_distance_func or {},
+            prior_weight=prior_weight,
+            consider_magic_clip=consider_magic_clip,
+            consider_endpoints=consider_endpoints,
+            weights=weights,
+            multivariate=multivariate,
+            categorical_distance_func=categorical_distance_func or {},
         )
         self._n_startup_trials = n_startup_trials
         self._n_ei_candidates = n_ei_candidates

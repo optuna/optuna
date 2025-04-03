@@ -131,9 +131,7 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
         # Advanced Setups.
         # Discretize a domain [low, high] as `np.linspace(low, high, n_steps)`.
         self._n_steps: int = 50
-        # Prior is used for regularization.
-        self._consider_prior = True
-        # Control the regularization effect.
+        # Control the regularization effect by prior.
         self._prior_weight = 1.0
         # How many `trials` must be included in `top_trials`.
         self._min_n_top_trials = 2
@@ -171,17 +169,15 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
         all_trials: list[FrozenTrial],
     ) -> float:
         # When pdf_all == pdf_top, i.e. all_trials == top_trials, this method will give 0.0.
-        consider_prior, prior_weight = self._consider_prior, self._prior_weight
-        pe_top = _build_parzen_estimator(
-            param_name, dist, top_trials, self._n_steps, consider_prior, prior_weight
-        )
+        prior_weight = self._prior_weight
+        pe_top = _build_parzen_estimator(param_name, dist, top_trials, self._n_steps, prior_weight)
         # NOTE: pe_top.n_steps could be different from self._n_steps.
         grids = np.arange(pe_top.n_steps)
         pdf_top = pe_top.pdf(grids) + 1e-12
 
         if self._evaluate_on_local:  # The importance of param during the study.
             pe_local = _build_parzen_estimator(
-                param_name, dist, all_trials, self._n_steps, consider_prior, prior_weight
+                param_name, dist, all_trials, self._n_steps, prior_weight
             )
             pdf_local = pe_local.pdf(grids) + 1e-12
         else:  # The importance of param in the search space.
