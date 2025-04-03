@@ -19,6 +19,12 @@ class SBXCrossover(BaseCrossover):
     Generates a child from two parent individuals
     according to the polynomial probability distribution.
 
+    In the paper, SBX has only one argument, ``eta``,
+    and generate two child individuals.
+    However, Optuna can only return one child individual in one crossover operation,
+    so it uses the ``uniform_crossover_prob`` and ``use_child_gene_prob`` arguments
+    to make two individuals into one.
+
     - `Deb, K. and R. Agrawal.
       “Simulated Binary Crossover for Continuous Search Space.”
       Complex Syst. 9 (1995): n. pag.
@@ -29,18 +35,19 @@ class SBXCrossover(BaseCrossover):
             Distribution index. A small value of ``eta`` allows distant solutions
             to be selected as children solutions. If not specified, takes default
             value of ``2`` for single objective functions and ``20`` for multi objective.
-        establishment:
-            ``establishment`` is the probability of uniform crossover
+        uniform_crossover_prob:
+            ``uniform_crossover_prob`` is the probability of uniform crossover
             between two individuals selected as candidate child individuals.
-            Optuna returns only one child individual at a time, while SBX crossover generates two.
             This argument is whether or not two individuals are
             crossover to make one child individual.
             If not specified, takes default value of ``0.5``.
             The range of values is ``[0.0, 1.0]``.
-        probability:
-            ``probability`` is the probability of using the value of the generated
+        use_child_gene_prob:
+            ``use_child_gene_prob`` is the probability of using the value of the generated
             child variable rather than the value of the parent.
-            where ``1-probability`` is the probability of using the parent's values as it is.
+            This probability is applied to each variable individually.
+            where ``1-use_chile_gene_prob`` is the probability of
+            using the parent's values as it is.
             If not specified, takes default value of ``0.5``.
             The range of values is ``(0.0, 1.0]``.
     """
@@ -48,16 +55,21 @@ class SBXCrossover(BaseCrossover):
     n_parents = 2
 
     def __init__(
-        self, eta: float | None = None, establishment: float = 0.5, probability: float = 0.5
+        self,
+        eta: float | None = None,
+        uniform_crossover_prob: float = 0.5,
+        use_child_gene_prob: float = 0.5,
     ) -> None:
         self._eta = eta
 
-        if establishment < 0.0 or establishment > 1.0:
-            raise ValueError("The value of `establishment` must be in the range [0.0, 1.0].")
-        if probability <= 0.0 or probability > 1.0:
-            raise ValueError("The value of `probability` must be in the range (0.0, 1.0].")
-        self._establishment = establishment
-        self._probability = probability
+        if uniform_crossover_prob < 0.0 or uniform_crossover_prob > 1.0:
+            raise ValueError(
+                "The value of `uniform_crossover_prob` must be in the range [0.0, 1.0]."
+            )
+        if use_child_gene_prob <= 0.0 or use_child_gene_prob > 1.0:
+            raise ValueError("The value of `use_child_gene_prob` must be in the range (0.0, 1.0].")
+        self._uniform_crossover_prob = uniform_crossover_prob
+        self._use_child_gene_prob = use_child_gene_prob
 
     def crossover(
         self,
@@ -99,39 +111,33 @@ class SBXCrossover(BaseCrossover):
         c1 = 0.5 * ((xs_min + xs_max) - betaq1 * xs_diff)  # Equation (4).
         c2 = 0.5 * ((xs_min + xs_max) + betaq2 * xs_diff)  # Equation (5).
 
-        # SBX applies crossover with establishment, and with probability,
+        # SBX applies crossover with use_chile_gene_probability and uniform_crossover_probability.,
         # the gene of the parent individual is the gene of the child individual.
         # The original SBX creates two child individuals,
         # but optuna's implementation creates only one child individual.
         # Therefore, when there is no crossover,
         # the gene is selected with equal probability from the parent individuals x1 and x2.
 
-        index_prob = rng.rand()
-        child_params_list = []
+        child1_params_list = []
+        child2_params_list = []
 
         for c1_i, c2_i, x1_i, x2_i in zip(c1, c2, parents_params[0], parents_params[1]):
-            if rng.rand() < self._probability:
-                if rng.rand() < self._establishment:
-                    if index_prob >= 0.5:
-                        child_params_list.append(c1_i)
-                    else:
-                        child_params_list.append(c2_i)
+            if rng.rand() < self._use_child_gene_prob:
+                if rng.rand() >= self._uniform_crossover_prob:
+                    child1_params_list.append(c1_i)
+                    child2_params_list.append(c2_i)
                 else:
-                    if index_prob >= 0.5:
-                        child_params_list.append(c2_i)
-                    else:
-                        child_params_list.append(c1_i)
+                    child1_params_list.append(c2_i)
+                    child2_params_list.append(c1_i)
             else:
-                if rng.rand() < self._establishment:
-                    if index_prob >= 0.5:
-                        child_params_list.append(x1_i)
-                    else:
-                        child_params_list.append(x2_i)
+                if rng.rand() >= self._uniform_crossover_prob:
+                    child1_params_list.append(x1_i)
+                    child2_params_list.append(x2_i)
                 else:
-                    if index_prob >= 0.5:
-                        child_params_list.append(x2_i)
-                    else:
-                        child_params_list.append(x1_i)
+                    child1_params_list.append(x2_i)
+                    child2_params_list.append(x1_i)
+
+        child_params_list = child1_params_list if rng.rand() < 0.5 else child2_params_list
         child_params = np.array(child_params_list)
 
         return child_params
