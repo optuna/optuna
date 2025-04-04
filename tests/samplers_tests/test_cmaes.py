@@ -410,8 +410,8 @@ def test_get_solution_trials() -> None:
 @pytest.mark.parametrize(
     "sampler_opts",
     [
-        ({"use_separable_cma": True}),
-        ({"with_margin": True}),
+        {"use_separable_cma": True},
+        {"with_margin": True},
     ],
 )
 def test_get_solution_trials_with_other_options(sampler_opts: dict[str, Any]) -> None:
