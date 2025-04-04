@@ -168,6 +168,7 @@ class CmaEsSampler(BaseSampler):
                 The removal of this feature is currently scheduled for v6.0.0,
                 but this schedule is subject to change.
                 See https://github.com/optuna/optuna/releases/tag/v4.3.0.
+                `restart_strategy` will be supported in OptunaHub.
 
         popsize:
             A population size of CMA-ES. When ``restart_strategy = 'ipop'``
@@ -266,7 +267,7 @@ class CmaEsSampler(BaseSampler):
             )
             warnings.warn(
                 f"{msg} From v4.3.0 onward, `restart_strategy` automatically falls back to "
-                "`None`.",
+                "`None`. `restart_strategy` will be supported in OptunaHub.",
                 FutureWarning,
             )
 
