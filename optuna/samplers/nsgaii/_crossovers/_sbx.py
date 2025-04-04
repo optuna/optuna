@@ -40,6 +40,9 @@ class SBXCrossover(BaseCrossover):
             between two individuals selected as candidate child individuals.
             This argument is whether or not two individuals are
             crossover to make one child individual.
+            If the ``uniform_crossover_prob`` exceeds 0.5,
+            the result is equivalent to ``1-uniform_crossover_prob``,
+            because it returns one of the two individuals of the crossover result.
             If not specified, takes default value of ``0.5``.
             The range of values is ``[0.0, 1.0]``.
         use_child_gene_prob:
