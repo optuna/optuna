@@ -9,10 +9,12 @@ from typing import cast
 from typing import NamedTuple
 from typing import TYPE_CHECKING
 from typing import Union
+import warnings
 
 import numpy as np
 
 import optuna
+from optuna import _deprecated
 from optuna import logging
 from optuna._experimental import warn_experimental_argument
 from optuna._imports import _LazyImport
@@ -153,10 +155,29 @@ class CmaEsSampler(BaseSampler):
             Note that the parameters of the first trial in a study are always sampled
             via an independent sampler, so no warning messages are emitted in this case.
 
+        restart_strategy:
+            Strategy for restarting CMA-ES optimization when converges to a local minimum.
+            If :obj:`None` is given, CMA-ES will not restart (default).
+            If 'ipop' is given, CMA-ES will restart with increasing population size.
+            if 'bipop' is given, CMA-ES will restart with the population size
+            increased or decreased.
+            Please see also ``inc_popsize`` parameter.
+
+            .. warning::
+                Deprecated in v4.3.0. ``consider_prior`` argument will be removed in the future.
+                The removal of this feature is currently scheduled for v6.0.0,
+                but this schedule is subject to change.
+                See https://github.com/optuna/optuna/releases/tag/v4.3.0.
+
         popsize:
             A population size of CMA-ES. When ``restart_strategy = 'ipop'``
             or ``restart_strategy = 'bipop'`` is specified,
             this is used as the initial population size.
+
+        inc_popsize:
+            Multiplier for increasing population size before each restart.
+            This argument will be used when ``restart_strategy = 'ipop'``
+            or ``restart_strategy = 'bipop'`` is specified.
 
         consider_pruned_trials:
             If this is :obj:`True`, the PRUNED trials are considered for sampling.
@@ -231,12 +252,24 @@ class CmaEsSampler(BaseSampler):
         seed: int | None = None,
         *,
         consider_pruned_trials: bool = False,
+        restart_strategy: str | None = None,
         popsize: int | None = None,
+        inc_popsize: int = 2,
         use_separable_cma: bool = False,
         with_margin: bool = False,
         lr_adapt: bool = False,
         source_trials: list[FrozenTrial] | None = None,
     ) -> None:
+        if restart_strategy is not None:
+            msg = _deprecated._DEPRECATION_WARNING_TEMPLATE.format(
+                name="`restart_strategy`", d_ver="4.3.0", r_ver="6.0.0"
+            )
+            warnings.warn(
+                f"{msg} From v4.3.0 onward, `restart_strategy` automatically falls back to "
+                "`None`.",
+                FutureWarning,
+            )
+
         self._x0 = x0
         self._sigma0 = sigma0
         self._independent_sampler = independent_sampler or optuna.samplers.RandomSampler(seed=seed)
