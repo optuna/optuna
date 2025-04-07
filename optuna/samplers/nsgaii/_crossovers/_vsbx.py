@@ -104,9 +104,9 @@ class VSBXCrossover(BaseCrossover):
         else:
             c2 = 0.5 * (-(1 - beta_1) * parents_params[0] + (3 - beta_2) * parents_params[1])
 
-        # vSBX applies crossover with establishment 0.5, and with probability 0.5,
+        # vSBX applies crossover with use_child_gene_prob and uniform_crossover_prob.
         # the gene of the parent individual is the gene of the child individual.
-        # The original SBX creates two child individuals,
+        # The original vSBX creates two child individuals,
         # but optuna's implementation creates only one child individual.
         # Therefore, when there is no crossover,
         # the gene is selected with equal probability from the parent individuals x1 and x2.
