@@ -63,8 +63,10 @@ def _get_timeline_plot(info: _TimelineInfo) -> "Axes":
     if len(info.bars) == 0:
         return ax
 
-    # According to the `ax.barh` docstring, using list[timedelta] as width and
-    # list[datetime] as left is supported, but mypy does not recognize it.
+    # According to the `ax.barh` docstring, using list[timedelta] as width and list[datetime] as
+    # left is supported, but mypy does not recognize it. Please refer to the following link for
+    # more details:
+    # https://github.com/matplotlib/matplotlib/blob/v3.10.1/lib/matplotlib/axes/_axes.py#L2701-L2836
     ax.barh(
         y=[b.number for b in info.bars],
         width=[b.complete - b.start for b in info.bars],  # type: ignore[arg-type]
