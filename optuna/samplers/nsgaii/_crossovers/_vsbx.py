@@ -64,6 +64,8 @@ class VSBXCrossover(BaseCrossover):
         uniform_crossover_prob: float = 0.5,
         use_child_gene_prob: float = 0.5,
     ) -> None:
+        if (eta is not None) and (eta < 0.0):
+            raise ValueError("The value of `eta` must be greater than or equal to 0.0.")
         self._eta = eta
 
         if uniform_crossover_prob < 0.0 or uniform_crossover_prob > 1.0:
@@ -89,9 +91,10 @@ class VSBXCrossover(BaseCrossover):
         else:
             eta = self._eta
 
+        eps = 1e-10
         us = rng.rand(len(search_space_bounds))
-        beta_1 = np.power(1 / (2 * us), 1 / (eta + 1))
-        beta_2 = np.power(1 / (2 * (1 - us)), 1 / (eta + 1))
+        beta_1 = np.power(1 / np.maximum((2 * us), eps), 1 / (eta + 1))
+        beta_2 = np.power(1 / np.maximum((2 * (1 - us)), eps), 1 / (eta + 1))
 
         u_1 = rng.rand()
         if u_1 <= 0.5:
