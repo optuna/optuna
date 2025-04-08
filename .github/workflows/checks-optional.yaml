@@ -29,6 +29,6 @@ jobs:
         pip install pipdeptree
         pipdeptree
     - name: mypy
-      run: mypy .
+      run: mypy . --warn-unused-ignores
     - name: blackdoc
       run: blackdoc . --check --diff
