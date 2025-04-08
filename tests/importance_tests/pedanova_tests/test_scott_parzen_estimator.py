@@ -35,7 +35,7 @@ def test_init_scott_parzen_estimator(dist_type: str) -> None:
             else CategoricalDistribution(choices=["a" * i for i in range(counts.size)])
         ),
         counts=counts,
-        prior_weight=1.0,
+        prior_weight=0.0,
     )
     assert len(pe._mixture_distribution.distributions) == 1
     assert pe.n_steps == counts.size
@@ -50,30 +50,35 @@ def test_init_scott_parzen_estimator(dist_type: str) -> None:
     "counts,mu,sigma,weights",
     [
         # NOTE: sigma could change depending on sigma_min picked by heuristic.
-        (np.array([0, 0, 0, 1]), np.array([3, 1.5]), np.array([0.304878, 4]), np.array([0.5] * 2)),
+        (
+            np.array([0, 0, 0, 1]),
+            np.array([3, 1.5]),
+            np.array([0.304878, 4]),
+            np.array([1.0, 0.0]),
+        ),
         (
             np.array([0, 0, 100, 0]),
             np.array([2, 1.5]),
             np.array([0.304878, 4]),
-            np.array([100.0 / 101, 1.0 / 101]),
+            np.array([1.0, 0.0]),
         ),
         (
             np.array([1, 2, 3, 4]),
-            np.array([0, 1, 2, 3, 1.5]),
+            np.array([0.0, 1.0, 2.0, 3.0, 1.5]),
             np.array([0.7043276] * 4 + [4]),
-            np.array([1.0 / 11, 2.0 / 11, 3.0 / 11, 4.0 / 11, 1.0 / 11]),
+            np.array([0.1, 0.2, 0.3, 0.4, 0.0]),
         ),
         (
             np.array([90, 0, 0, 90]),
-            np.array([0, 3.0, 1.5]),
+            np.array([0, 3, 1.5]),
             np.array([0.5638226] * 2 + [4]),
-            np.array([90.0 / 181, 90.0 / 181, 1.0 / 181]),
+            np.array([0.5] * 2 + [0.0]),
         ),
         (
             np.array([1, 0, 0, 1]),
             np.array([0, 3, 1.5]),
             np.array([1.9556729] * 2 + [4]),
-            np.array([1.0 / 3] * 3),
+            np.array([0.5] * 2 + [0.0]),
         ),
     ],
 )
@@ -85,7 +90,7 @@ def test_build_int_scott_parzen_estimator(
         param_name="a",
         dist=IntDistribution(low=0, high=_counts.size - 1),
         counts=_counts,
-        prior_weight=1.0,
+        prior_weight=0.0,
     )
     dist = _BatchedDiscreteTruncNormDistributions(
         mu=mu, sigma=sigma, low=0, high=_counts.size - 1, step=1
@@ -95,66 +100,28 @@ def test_build_int_scott_parzen_estimator(
 
 
 @pytest.mark.parametrize(
-    "counts,categorical_weights,weights",
+    "counts,weights",
     [
-        (
-            np.array([0, 0, 0, 1]),
-            np.array([[1.0 / 6, 1.0 / 6, 1.0 / 6, 0.5], [0.25, 0.25, 0.25, 0.25]]),
-            np.array([0.5] * 2),
-        ),
-        (
-            np.array([0, 0, 100, 0]),
-            np.array([[1.0 / 6, 1.0 / 6, 0.5, 1.0 / 6], [0.25, 0.25, 0.25, 0.25]]),
-            np.array([0.990099, 0.009901]),
-        ),
-        (
-            np.array([1, 2, 3, 4]),
-            np.array(
-                [
-                    [2.0 / 3, 1.0 / 9, 1.0 / 9, 1.0 / 9],
-                    [1.0 / 9, 2.0 / 3, 1.0 / 9, 1.0 / 9],
-                    [1.0 / 9, 1.0 / 9, 2.0 / 3, 1.0 / 9],
-                    [1.0 / 9, 1.0 / 9, 1.0 / 9, 2.0 / 3],
-                    [0.25, 0.25, 0.25, 0.25],
-                ]
-            ),
-            np.array([1.0 / 11, 2.0 / 11, 3.0 / 11, 4.0 / 11, 1.0 / 11]),
-        ),
-        (
-            np.array([90, 0, 0, 90]),
-            np.array(
-                [
-                    [4.0 / 7, 1.0 / 7, 1.0 / 7, 1.0 / 7],
-                    [1.0 / 7, 1.0 / 7, 1.0 / 7, 4.0 / 7],
-                    [0.25, 0.25, 0.25, 0.25],
-                ]
-            ),
-            np.array([90.0 / 181, 90.0 / 181, 1.0 / 181]),
-        ),
-        (
-            np.array([1, 0, 0, 1]),
-            np.array(
-                [
-                    [4.0 / 7, 1.0 / 7, 1.0 / 7, 1.0 / 7],
-                    [1.0 / 7, 1.0 / 7, 1.0 / 7, 4.0 / 7],
-                    [0.25, 0.25, 0.25, 0.25],
-                ]
-            ),
-            np.array([1.0 / 3] * 3),
-        ),
+        (np.array([0, 0, 0, 1]), np.array([1.0, 0.0])),
+        (np.array([0, 0, 100, 0]), np.array([1.0, 0.0])),
+        (np.array([1, 2, 3, 4]), np.array([0.1, 0.2, 0.3, 0.4, 0.0])),
+        (np.array([90, 0, 0, 90]), np.array([0.5] * 2 + [0.0])),
+        (np.array([1, 0, 0, 1]), np.array([0.5] * 2 + [0.0])),
     ],
 )
-def test_build_cat_scott_parzen_estimator(
-    counts: np.ndarray, categorical_weights: np.ndarray, weights: np.ndarray
-) -> None:
+def test_build_cat_scott_parzen_estimator(counts: np.ndarray, weights: np.ndarray) -> None:
     _counts = counts.astype(float)
     pe = _ScottParzenEstimator(
         param_name="a",
         dist=CategoricalDistribution(choices=["a" * i for i in range(counts.size)]),
         counts=_counts,
-        prior_weight=1.0,
+        prior_weight=0.0,
     )
-    dist = _BatchedCategoricalDistributions(weights=categorical_weights)
+    dist = _BatchedCategoricalDistributions(
+        weights=np.concatenate(
+            [np.identity(counts.size)[counts > 0.0], np.zeros((1, counts.size))], axis=0
+        )
+    )
     expected_dist = _MixtureOfProductDistribution(weights=weights, distributions=[dist])
     assert_distribution_almost_equal(pe._mixture_distribution, expected_dist)
 
@@ -213,7 +180,7 @@ def test_build_parzen_estimator(
         dist=dist,
         trials=trials,
         n_steps=50,
-        prior_weight=1.0,
+        prior_weight=0.0,
     )
     if isinstance(dist, (IntDistribution, FloatDistribution)):
         assert isinstance(
@@ -244,5 +211,5 @@ def test_assert_in_build_parzen_estimator() -> None:
             dist=UnknownDistribution(),
             trials=[],
             n_steps=50,
-            prior_weight=1.0,
+            prior_weight=0.0,
         )

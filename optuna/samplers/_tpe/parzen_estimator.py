@@ -39,7 +39,7 @@ class _ParzenEstimator:
         parameters: _ParzenEstimatorParameters,
         predetermined_weights: np.ndarray | None = None,
     ) -> None:
-        if parameters.prior_weight <= 0:
+        if parameters.prior_weight < 0:
             raise ValueError(
                 "A positive value must be specified for prior_weight,"
                 f" but got {parameters.prior_weight}."
@@ -206,7 +206,8 @@ class _ParzenEstimator:
         else:
             weights[np.arange(len(observed_indices)), observed_indices] += 1
 
-        weights /= weights.sum(axis=1, keepdims=True)
+        row_sums = weights.sum(axis=1, keepdims=True)
+        weights /= np.where(row_sums == 0, 1, row_sums)
         return _BatchedCategoricalDistributions(weights)
 
     def _calculate_numerical_distributions(
