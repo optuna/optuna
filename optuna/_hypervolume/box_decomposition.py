@@ -1,3 +1,24 @@
+"""
+The functions in this file are mostly based on BoTorch v0.13.0,
+but they are refactored significantly from the original version.
+
+For ``_get_upper_bound_set``, look at:
+- https://github.com/pytorch/botorch/blob/v0.13.0/botorch/utils/multi_objective/box_decompositions/utils.py#L101-L160
+
+For ``_get_hyper_rectangle_bounds``, look at:
+- https://github.com/pytorch/botorch/blob/v0.13.0/botorch/utils/multi_objective/box_decompositions/utils.py#L163-L193
+
+For ``_get_non_dominated_hyper_rectangle_bounds``, look at:
+- https://github.com/pytorch/botorch/blob/v0.13.0/botorch/utils/multi_objective/box_decompositions/non_dominated.py#L395-L430  # NOQA: E501
+
+The preprocessing for four or fewer objectives, we use the algorithm proposed by:
+    Title: A Box Decomposition Algorithm to Compute the Hypervolume Indicator
+    Authors: Renaud Lacour, Kathrin Klamroth, and Carlos M. Fonseca
+    URL: https://arxiv.org/abs/1510.01963
+We refer this paper as Lacour17 in this file.
+
+"""  # NOQA: E501
+
 from __future__ import annotations
 
 import numpy as np
@@ -9,10 +30,7 @@ def _get_upper_bound_set(
     sorted_pareto_sols: np.ndarray, ref_point: np.ndarray
 ) -> tuple[np.ndarray, np.ndarray]:
     """
-    This function follows Algorithm 2 of the paper ([Lacour17]) below:
-        Title: A Box Decomposition Algorithm to Compute the Hypervolume Indicator
-        Authors: Renaud Lacour, Kathrin Klamroth, and Carlos M. Fonseca
-        URL: https://arxiv.org/abs/1510.01963
+    This function follows Algorithm 2 of Lacour17.
 
     Args:
         sorted_pareto_sols: Pareto solutions sorted with respect to the first objective.
@@ -36,8 +54,7 @@ def _get_upper_bound_set(
     target_filter[:, 0] = False
 
     def update(sol: np.ndarray, ubs: np.ndarray, dps: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-        # The update rule is written in Section 2.2 of [Lacour17].
-        # Ref.: https://github.com/pytorch/botorch/blob/a0a2c0509dbbeec547a65f16cb0cb8d5b19fd7f1/botorch/utils/multi_objective/box_decompositions/utils.py#L102-L161  # NOQA: E501
+        # The update rule is written in Section 2.2 of Lacour17.
         is_dominated = np.all(sol < ubs, axis=-1)
         if not np.any(is_dominated):
             return ubs, dps
@@ -71,8 +88,7 @@ def _get_upper_bound_set(
 def _get_hyper_rectangle_bounds(
     def_points: np.ndarray, upper_bound_set: np.ndarray, ref_point: np.ndarray
 ) -> np.ndarray:
-    # Eq. (2) of [Lacour17].
-    # Ref.: https://github.com/pytorch/botorch/blob/a0a2c0509dbbeec547a65f16cb0cb8d5b19fd7f1/botorch/utils/multi_objective/box_decompositions/utils.py#L164-L194  # NOQA: E501
+    # Eq. (2) of Lacour17.
     n_objectives = upper_bound_set.shape[-1]
     bounds = np.empty((2, *upper_bound_set.shape))
     bounds[0, :, 0] = def_points[:, 0, 0]
@@ -87,9 +103,7 @@ def _get_hyper_rectangle_bounds(
 def _get_non_dominated_hyper_rectangle_bounds(
     sorted_pareto_sols: np.ndarray, ref_point: np.ndarray
 ) -> tuple[np.ndarray, np.ndarray]:  # (n_bounds, n_objectives) and (n_bounds, n_objectives)
-    # The calculation of u[k] and l[k] in the paper below:
-    # [Daulton20]: https://arxiv.org/abs/2006.05078
-    # Ref.: https://github.com/pytorch/botorch/blob/a0a2c0509dbbeec547a65f16cb0cb8d5b19fd7f1/botorch/utils/multi_objective/box_decompositions/non_dominated.py#L395-L430  # NOQA: E501
+    # The calculation of u[k] and l[k] in the paper: https://arxiv.org/abs/2006.05078
     # NOTE(nabenabe): The paper handles maximization problems, but we do minimization here.
     _upper_bound_set = _get_upper_bound_set(sorted_pareto_sols, ref_point)[0]
     upper_bound_set = _upper_bound_set[np.argsort(_upper_bound_set[:, 0])[::-1]]
@@ -165,7 +179,7 @@ def get_non_dominated_hyper_rectangle_bounds(
     sorted_pareto_sols = _get_sorted_pareto_sols(loss_vals)
     n_objectives = loss_vals.shape[-1]
     # The condition here follows BoTorch.
-    # https://github.com/pytorch/botorch/blob/0d5e13102ed0ddd89d767ddf89659fb2563d1d50/botorch/acquisition/multi_objective/utils.py#L55-L63
+    # https://github.com/pytorch/botorch/blob/v0.13.0/botorch/acquisition/multi_objective/utils.py#L55-L63
     if n_objectives <= 4:
         return _get_non_dominated_hyper_rectangle_bounds(sorted_pareto_sols, ref_point)
     else:
