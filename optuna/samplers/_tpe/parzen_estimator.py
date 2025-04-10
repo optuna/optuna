@@ -41,7 +41,7 @@ class _ParzenEstimator:
     ) -> None:
         if parameters.prior_weight < 0:
             raise ValueError(
-                "None negative value must be specified for prior_weight,"
+                "A non-negative value must be specified for prior_weight,"
                 f" but got {parameters.prior_weight}."
             )
 
