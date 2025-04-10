@@ -147,9 +147,14 @@ def _get_accepted_bound_indices(
         if not lb_non_dom or np.prod(bs[1] - bs[0]) <= threshold or max_idx_diff <= 1:
             continue
 
-        new_bs = np.stack([bound_indices, bound_indices])
-        new_bs[*np.diag_indices(2), max_idx] += [max_idx_diff // 2, -((max_idx_diff + 1) // 2)]
-        stack.extend([new_bs[1], new_bs[0]])
+        # Halve the hyperrectangle defined by the bound_indices in two parts.
+        bound_indices_above = bound_indices.copy()
+        bound_indices_below = bound_indices.copy()
+        # Increase the lower bound.
+        bound_indices_above[0, max_idx] += max_idx_diff // 2
+        # Decrease the upper bound.
+        bound_indices_below[1, max_idx] -= (max_idx_diff + 1) // 2
+        stack.extend([bound_indices_below, bound_indices_above])
 
     return np.concat(np.asarray(accepted_bound_indices)[..., np.newaxis, :], axis=1)
 
