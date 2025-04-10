@@ -25,7 +25,7 @@ _DEPRECATION_WARNING_TEMPLATE = (
     "Positional arguments {deprecated_positional_arg_names} in {func_name}() "
     "have been deprecated since v{d_ver}. "
     "They will be replaced with the corresponding keyword arguments in v{r_ver}, "
-    "so please use keyword specification instead. "
+    "so please use the keyword specification instead. "
     "See https://github.com/optuna/optuna/releases/tag/v{d_ver} for details."
 )
 
