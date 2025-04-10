@@ -400,9 +400,9 @@ class CmaEsSampler(BaseSampler):
         # See https://github.com/optuna/optuna/pull/920#discussion_r385114002 for details.
         solution_trials = self._get_solution_trials(completed_trials, optimizer.generation)
 
-        if len(solution_trials) >= optimizer.population_size:
+        if len(solution_trials) >= self._popsize:
             solutions: list[tuple[np.ndarray, float]] = []
-            for t in solution_trials[: optimizer.population_size]:
+            for t in solution_trials[: self._popsize]:
                 assert t.value is not None, "completed trials must have a value"
                 if isinstance(optimizer, cmaes.CMAwM):
                     x = np.array(t.system_attrs["x_for_tell"])
