@@ -211,5 +211,5 @@ def test_assert_in_build_parzen_estimator() -> None:
             dist=UnknownDistribution(),
             trials=[],
             n_steps=50,
-            prior_weight=0.0,
+            prior_weight=1.0,
         )
