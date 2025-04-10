@@ -6,7 +6,6 @@ from functools import wraps
 from inspect import Parameter
 from inspect import signature
 from typing import Any
-from typing import Optional
 from typing import TYPE_CHECKING
 from typing import TypeVar
 import warnings
@@ -50,8 +49,8 @@ def convert_positional_args(
     *,
     previous_positional_arg_names: Sequence[str],
     warning_stacklevel: int = 2,
-    deprecated_version: Optional[str] = None,
-    removed_version: Optional[str] = None,
+    deprecated_version: str | None = None,
+    removed_version: str | None = None,
 ) -> "Callable[[Callable[_P, _T]], Callable[_P, _T]]":
     """Convert positional arguments to keyword arguments.
 
