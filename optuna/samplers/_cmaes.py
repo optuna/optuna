@@ -164,21 +164,22 @@ class CmaEsSampler(BaseSampler):
             Please see also ``inc_popsize`` parameter.
 
             .. warning::
-                Deprecated in v4.3.0. ``consider_prior`` argument will be removed in the future.
+                Deprecated in v4.4.0. ``restart_strategy`` argument will be removed in the future.
                 The removal of this feature is currently scheduled for v6.0.0,
                 but this schedule is subject to change.
-                See https://github.com/optuna/optuna/releases/tag/v4.3.0.
+                See https://github.com/optuna/optuna/releases/tag/v4.4.0.
                 `restart_strategy` will be supported in OptunaHub.
 
         popsize:
-            A population size of CMA-ES. When ``restart_strategy = 'ipop'``
-            or ``restart_strategy = 'bipop'`` is specified,
-            this is used as the initial population size.
+            A population size of CMA-ES.
 
         inc_popsize:
             Multiplier for increasing population size before each restart.
             This argument will be used when ``restart_strategy = 'ipop'``
             or ``restart_strategy = 'bipop'`` is specified.
+
+            .. warning::
+                Deprecated along with ``restart_strategy``.
 
         consider_pruned_trials:
             If this is :obj:`True`, the PRUNED trials are considered for sampling.
@@ -263,10 +264,10 @@ class CmaEsSampler(BaseSampler):
     ) -> None:
         if restart_strategy is not None:
             msg = _deprecated._DEPRECATION_WARNING_TEMPLATE.format(
-                name="`restart_strategy`", d_ver="4.3.0", r_ver="6.0.0"
+                name="`restart_strategy`", d_ver="4.4.0", r_ver="6.0.0"
             )
             warnings.warn(
-                f"{msg} From v4.3.0 onward, `restart_strategy` automatically falls back to "
+                f"{msg} From v4.4.0 onward, `restart_strategy` automatically falls back to "
                 "`None`. `restart_strategy` will be supported in OptunaHub.",
                 FutureWarning,
             )
@@ -279,7 +280,7 @@ class CmaEsSampler(BaseSampler):
         self._cma_rng = LazyRandomState(seed)
         self._search_space = IntersectionSearchSpace()
         self._consider_pruned_trials = consider_pruned_trials
-        self._initial_popsize = popsize
+        self._popsize = popsize
         self._use_separable_cma = use_separable_cma
         self._with_margin = with_margin
         self._lr_adapt = lr_adapt
@@ -377,14 +378,12 @@ class CmaEsSampler(BaseSampler):
             search_space, transform_step=not self._with_margin, transform_0_1=True
         )
 
-        if self._initial_popsize is None:
-            self._initial_popsize = 4 + math.floor(3 * math.log(len(trans.bounds)))
+        if self._popsize is None:
+            self._popsize = 4 + math.floor(3 * math.log(len(trans.bounds)))
 
         optimizer = self._restore_optimizer(completed_trials)
         if optimizer is None:
-            optimizer = self._init_optimizer(
-                trans, study.direction, population_size=self._initial_popsize
-            )
+            optimizer = self._init_optimizer(trans, study.direction, population_size=self._popsize)
 
         if optimizer.dim != len(trans.bounds):
             if self._warn_independent_sampling:
