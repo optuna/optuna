@@ -3,13 +3,13 @@ The functions in this file are mostly based on BoTorch v0.13.0,
 but they are refactored significantly from the original version.
 
 For ``_get_upper_bound_set``, look at:
-- https://github.com/pytorch/botorch/blob/v0.13.0/botorch/utils/multi_objective/box_decompositions/utils.py#L101-L160
+    * https://github.com/pytorch/botorch/blob/v0.13.0/botorch/utils/multi_objective/box_decompositions/utils.py#L101-L160
 
 For ``_get_hyper_rectangle_bounds``, look at:
-- https://github.com/pytorch/botorch/blob/v0.13.0/botorch/utils/multi_objective/box_decompositions/utils.py#L163-L193
+    * https://github.com/pytorch/botorch/blob/v0.13.0/botorch/utils/multi_objective/box_decompositions/utils.py#L163-L193
 
 For ``_get_non_dominated_hyper_rectangle_bounds``, look at:
-- https://github.com/pytorch/botorch/blob/v0.13.0/botorch/utils/multi_objective/box_decompositions/non_dominated.py#L395-L430  # NOQA: E501
+    * https://github.com/pytorch/botorch/blob/v0.13.0/botorch/utils/multi_objective/box_decompositions/non_dominated.py#L395-L430
 
 The preprocessing for four or fewer objectives, we use the algorithm proposed by:
     Title: A Box Decomposition Algorithm to Compute the Hypervolume Indicator
