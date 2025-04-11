@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import copy
 from datetime import datetime
+import math
 import pickle
 import random
+import sys
 from time import sleep
 from typing import Any
 
@@ -36,6 +38,47 @@ EXAMPLE_ATTRS: dict[str, JSONSerializable] = {
     "none": None,
     "json_serializable": {"baseline_score": 0.001, "tags": ["image", "classification"]},
 }
+
+FLOAT_VALUES = (
+    0,
+    math.pi,
+    sys.float_info.max,
+    -sys.float_info.max,
+    sys.float_info.min,
+    -sys.float_info.min,
+    float("inf"),
+    -float("inf"),
+    float("nan"),
+)
+
+FLOAT_ATTRS = {
+    "zero": 0,
+    "pi": math.pi,
+    "max": sys.float_info.max,
+    "negative max": -sys.float_info.max,
+    "min": sys.float_info.min,
+    "negative min": -sys.float_info.min,
+    "inf": float("inf"),
+    "negative inf": -float("inf"),
+    "nan": float("nan"),
+}
+
+
+def is_equal_floats(a: float, b: float) -> bool:
+    if math.isnan(a):
+        return math.isnan(b)
+    if math.isnan(b):
+        return False
+    return a == b
+
+
+def is_equal_float_dicts(a: dict[str, float], b: dict[str, float]) -> bool:
+    if a.keys() != b.keys():
+        return False
+    for key, value in a.items():
+        if not is_equal_floats(value, b[key]):
+            False
+    return True
 
 
 def test_get_storage() -> None:
@@ -212,6 +255,21 @@ def test_set_and_get_study_user_attrs(storage_mode: str) -> None:
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_set_and_get_study_user_attrs_for_floats(storage_mode: str) -> None:
+    with StorageSupplier(storage_mode) as storage:
+        study_id = storage.create_new_study(directions=[StudyDirection.MINIMIZE])
+
+        def check_set_and_get(key: str, value: Any) -> None:
+            storage.set_study_user_attr(study_id, key, value)
+            assert is_equal_floats(storage.get_study_user_attrs(study_id)[key], value)
+
+        # Test setting value.
+        for key, value in FLOAT_ATTRS.items():
+            check_set_and_get(key, value)
+        assert is_equal_float_dicts(storage.get_study_user_attrs(study_id), FLOAT_ATTRS)
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_set_and_get_study_system_attrs(storage_mode: str) -> None:
     with StorageSupplier(storage_mode) as storage:
         study_id = storage.create_new_study(directions=[StudyDirection.MINIMIZE])
@@ -236,6 +294,21 @@ def test_set_and_get_study_system_attrs(storage_mode: str) -> None:
         # Non-existent study id.
         with pytest.raises(KeyError):
             storage.set_study_system_attr(non_existent_study_id, "key", "value")
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_set_and_get_study_system_attrs_for_floats(storage_mode: str) -> None:
+    with StorageSupplier(storage_mode) as storage:
+        study_id = storage.create_new_study(directions=[StudyDirection.MINIMIZE])
+
+        def check_set_and_get(key: str, value: Any) -> None:
+            storage.set_study_system_attr(study_id, key, value)
+            assert is_equal_floats(storage.get_study_system_attrs(study_id)[key], value)
+
+        # Test setting value.
+        for key, value in FLOAT_ATTRS.items():
+            check_set_and_get(key, value)
+        assert is_equal_float_dicts(storage.get_study_system_attrs(study_id), FLOAT_ATTRS)
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
@@ -435,6 +508,20 @@ def test_set_trial_state_values_for_state(storage_mode: str) -> None:
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_set_trial_state_values_for_floats(storage_mode: str) -> None:
+    with StorageSupplier(storage_mode) as storage:
+        study_id = storage.create_new_study(directions=[StudyDirection.MINIMIZE])
+        for value in FLOAT_VALUES:
+            if math.isnan(value):
+                continue
+            trial_id = storage.create_new_trial(study_id)
+            storage.set_trial_state_values(trial_id, state=TrialState.COMPLETE, values=(value,))
+            set_value = storage.get_trial(trial_id).value
+            assert set_value is not None
+            assert is_equal_floats(set_value, value)
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_get_trial_param_and_get_trial_params(storage_mode: str) -> None:
     with StorageSupplier(storage_mode) as storage:
         _, study_to_trials = _setup_studies(storage, n_study=2, n_trial=5, seed=1)
@@ -526,6 +613,32 @@ def test_set_trial_param(storage_mode: str) -> None:
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_set_trial_param_for_floats(storage_mode: str) -> None:
+    with StorageSupplier(storage_mode) as storage:
+        # Setup test across multiple studies and trials.
+        study_id = storage.create_new_study(directions=[StudyDirection.MINIMIZE])
+        trial_id = storage.create_new_trial(study_id)
+
+        for key, value in FLOAT_ATTRS.items():
+            if math.isnan(value):
+                continue
+            param_name = "float_" + key
+            float_dist = FloatDistribution(low=value, high=value)
+            internal_repr = float_dist.to_internal_repr(value)
+            storage.set_trial_param(trial_id, param_name, internal_repr, float_dist)
+            assert is_equal_floats(storage.get_trial_param(trial_id, param_name), internal_repr)
+            assert storage.get_trial(trial_id).distributions[param_name] == float_dist
+
+        for key, value in FLOAT_ATTRS.items():
+            param_name = "categorical_" + key
+            categorical_dist = CategoricalDistribution(choices=(value,))
+            internal_repr = categorical_dist.to_internal_repr(value)
+            storage.set_trial_param(trial_id, param_name, internal_repr, categorical_dist)
+            assert is_equal_floats(storage.get_trial_param(trial_id, param_name), internal_repr)
+            assert storage.get_trial(trial_id).distributions[param_name] == categorical_dist
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_set_trial_state_values_for_values(storage_mode: str) -> None:
     with StorageSupplier(storage_mode) as storage:
         # Setup test across multiple studies and trials.
@@ -613,6 +726,16 @@ def test_set_trial_intermediate_value(storage_mode: str) -> None:
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_set_trial_intermediate_value_for_floats(storage_mode: str) -> None:
+    with StorageSupplier(storage_mode) as storage:
+        study_id = storage.create_new_study(directions=[StudyDirection.MINIMIZE])
+        trial_id = storage.create_new_trial(study_id)
+        for i, value in enumerate(FLOAT_VALUES):
+            storage.set_trial_intermediate_value(trial_id, i, value)
+            assert is_equal_floats(storage.get_trial(trial_id).intermediate_values[i], value)
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_get_trial_user_attrs(storage_mode: str) -> None:
     with StorageSupplier(storage_mode) as storage:
         _, study_to_trials = _setup_studies(storage, n_study=2, n_trial=5, seed=10)
@@ -666,6 +789,23 @@ def test_set_trial_user_attr(storage_mode: str) -> None:
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_set_trial_user_attr_for_floats(storage_mode: str) -> None:
+    with StorageSupplier(storage_mode) as storage:
+        trial_id = storage.create_new_trial(
+            storage.create_new_study(directions=[StudyDirection.MINIMIZE])
+        )
+
+        def check_set_and_get(trial_id: int, key: str, value: Any) -> None:
+            storage.set_trial_user_attr(trial_id, key, value)
+            assert is_equal_floats(storage.get_trial(trial_id).user_attrs[key], value)
+
+        # Test setting value.
+        for key, value in FLOAT_ATTRS.items():
+            check_set_and_get(trial_id, key, value)
+        assert is_equal_float_dicts(storage.get_trial(trial_id).user_attrs, FLOAT_ATTRS)
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_get_trial_system_attrs(storage_mode: str) -> None:
     with StorageSupplier(storage_mode) as storage:
         _, study_to_trials = _setup_studies(storage, n_study=2, n_trial=5, seed=10)
@@ -714,6 +854,23 @@ def test_set_trial_system_attr(storage_mode: str) -> None:
         storage.set_trial_state_values(trial_id_1, state=TrialState.COMPLETE)
         with pytest.raises(UpdateFinishedTrialError):
             storage.set_trial_system_attr(trial_id_1, "key", "value")
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_set_trial_system_attr_for_floats(storage_mode: str) -> None:
+    with StorageSupplier(storage_mode) as storage:
+        trial_id = storage.create_new_trial(
+            storage.create_new_study(directions=[StudyDirection.MINIMIZE])
+        )
+
+        def check_set_and_get(trial_id: int, key: str, value: Any) -> None:
+            storage.set_trial_system_attr(trial_id, key, value)
+            assert is_equal_floats(storage.get_trial(trial_id).system_attrs[key], value)
+
+        # Test setting value.
+        for key, value in FLOAT_ATTRS.items():
+            check_set_and_get(trial_id, key, value)
+        assert is_equal_float_dicts(storage.get_trial(trial_id).system_attrs, FLOAT_ATTRS)
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
