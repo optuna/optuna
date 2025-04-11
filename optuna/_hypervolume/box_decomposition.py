@@ -21,6 +21,8 @@ We refer this paper as Lacour17 in this file.
 
 from __future__ import annotations
 
+import warnings
+
 import numpy as np
 
 from optuna.study._multi_objective import _is_pareto_front
@@ -115,6 +117,7 @@ def _get_non_dominated_hyper_rectangle_bounds(
     return lbs, ubs
 
 
+"""
 def _get_accepted_bound_indices(
     pareto_sols: np.ndarray, ref_point: np.ndarray, alpha: float
 ) -> np.ndarray:
@@ -170,6 +173,7 @@ def _approximate_non_dominated_hyper_rectangle_bounds(
     return aug_pareto_sols[accepted_bound_indices.flatten(), obj_indices].reshape(
         2, n_bounds, n_objectives
     )
+"""
 
 
 def get_non_dominated_hyper_rectangle_bounds(
@@ -185,10 +189,11 @@ def get_non_dominated_hyper_rectangle_bounds(
     n_objectives = loss_vals.shape[-1]
     # The condition here follows BoTorch.
     # https://github.com/pytorch/botorch/blob/v0.13.0/botorch/acquisition/multi_objective/utils.py#L55-L63
-    if n_objectives <= 4:
-        return _get_non_dominated_hyper_rectangle_bounds(sorted_pareto_sols, ref_point)
-    else:
-        alpha = alpha if alpha is not None else 10 ** (-2 if n_objectives >= 6 else -3)
-        return _approximate_non_dominated_hyper_rectangle_bounds(
-            sorted_pareto_sols, ref_point, alpha
-        )
+    if n_objectives > 4:
+        # alpha = alpha if alpha is not None else 10 ** (-2 if n_objectives >= 6 else -3)
+        # return _approximate_non_dominated_hyper_rectangle_bounds(
+        #     sorted_pareto_sols, ref_point, alpha
+        # )
+        warnings.warn("TODO")
+
+    return _get_non_dominated_hyper_rectangle_bounds(sorted_pareto_sols, ref_point)
