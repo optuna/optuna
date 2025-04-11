@@ -12,6 +12,7 @@ from optuna._gp.gp import KernelParamsTensor
 from optuna._gp.gp import posterior
 from optuna._gp.search_space import ScaleType
 from optuna._gp.search_space import SearchSpace
+from optuna.study._multi_objective import _is_pareto_front
 
 
 if TYPE_CHECKING:
@@ -20,6 +21,69 @@ else:
     from optuna._imports import _LazyImport
 
     torch = _LazyImport("torch")
+
+
+def _sample_from_normal_sobol(dim: int, n_samples: int, seed: int | None) -> torch.Tensor:
+    # cf. https://github.com/pytorch/botorch/blob/v0.13.0/botorch/sampling/qmc.py#L26
+    sobol_engine = torch.quasirandom.SobolEngine(
+        dimension=dim, scramble=True, seed=seed
+    )  # type: ignore
+    # The Sobol sequence in [-1, 1].
+    samples = 2.0 * (sobol_engine.draw(n_samples, dtype=torch.float64) - 0.5)
+    # Inverse transform to standard normal (values to close to 0/1 result in inf values).
+    return torch.erfinv(samples) * float(np.sqrt(2))
+
+
+def logehvi(
+    means: torch.Tensor,  # (..., n_objectives)
+    cov: torch.Tensor,  # (..., n_objectives, n_objectives)
+    fixed_samples: torch.Tensor,  # (n_qmc_samples, n_objectives)
+    non_dominated_lower_bounds: torch.Tensor,  # (n_sub_hyper_rectangles, n_objectives)
+    non_dominated_upper_bounds: torch.Tensor,  # (n_sub_hyper_rectangles, n_objectives)
+    is_objective_independent: bool = False,
+) -> torch.Tensor:  # (..., )
+    def _loghvi(
+        loss_vals: torch.Tensor,  # (..., n_objectives)
+        non_dominated_lower_bounds: torch.Tensor,  # (n_sub_hyper_rectangles, n_objectives)
+        non_dominated_upper_bounds: torch.Tensor,  # (n_sub_hyper_rectangles, n_objectives)
+    ) -> torch.Tensor:  # shape = (..., )
+        # NOTE: [Daulton20] is available at https://arxiv.org/abs/2006.05078.
+        # This function calculates Eq. (1) of [Daulton20].
+        # TODO(nabenabe): Adapt to Eq. (3) of [Daulton20] when we support batch optimization.
+        diff = torch.nn.functional.relu(
+            non_dominated_upper_bounds
+            - torch.maximum(loss_vals[..., torch.newaxis, :], non_dominated_lower_bounds)
+        )
+        return torch.special.logsumexp(diff.log().sum(dim=-1), dim=-1)
+
+    def _logehvi(
+        loss_vals: torch.Tensor,  # (..., n_qmc_samples, n_objectives)
+        non_dominated_lower_bounds: torch.Tensor,  # (n_sub_hyper_rectangles, n_objectives)
+        non_dominated_upper_bounds: torch.Tensor,  # (n_sub_hyper_rectangles, n_objectives)
+    ) -> torch.Tensor:  # shape = (..., )
+        log_n_qmc_samples = float(np.log(loss_vals.shape[-2]))
+        log_hvi_vals = _loghvi(loss_vals, non_dominated_lower_bounds, non_dominated_upper_bounds)
+        return -log_n_qmc_samples + torch.special.logsumexp(log_hvi_vals, dim=-1)
+
+    # NOTE(nabenabe): By using fixed samples from the Sobol sequence, EHVI becomes deterministic,
+    # making it possible to optimize the acqf by l-BFGS.
+    n_objectives = means.shape[-1]
+    assert cov.shape[-1] == n_objectives and cov.shape[-2] == n_objectives
+    if is_objective_independent:
+        L = torch.zeros_like(cov, dtype=torch.float64)
+        objective_indices = torch.arange(n_objectives)
+        L[..., objective_indices, objective_indices] = torch.sqrt(
+            cov[..., objective_indices, objective_indices]
+        )
+    else:
+        L = torch.linalg.cholesky(cov)
+
+    # NOTE(nabenabe): matmul (+squeeze) below is equivalent to einsum("BMM,NM->BNM").
+    loss_vals_from_qmc = (
+        means[..., torch.newaxis, :]
+        + torch.matmul(L[..., torch.newaxis, :, :], fixed_samples[..., torch.newaxis]).squeeze()
+    )
+    return _logehvi(loss_vals_from_qmc, non_dominated_lower_bounds, non_dominated_upper_bounds)
 
 
 def standard_logei(z: torch.Tensor) -> torch.Tensor:
@@ -76,6 +140,7 @@ class AcquisitionFunctionType(IntEnum):
     UCB = 1
     LCB = 2
     LOG_PI = 3
+    LOG_EHVI = 4
 
 
 @dataclass(frozen=True)
@@ -117,6 +182,69 @@ class ConstrainedAcquisitionFunctionParams(AcquisitionFunctionParams):
         )
 
 
+@dataclass(frozen=True)
+class MultiObjectiveAcquisitionFunctionParams(AcquisitionFunctionParams):
+    acqf_params_for_objectives: list[AcquisitionFunctionParams]
+    non_dominated_lower_bounds: torch.Tensor
+    non_dominated_upper_bounds: torch.Tensor
+    fixed_samples: torch.Tensor
+
+    @classmethod
+    def from_acqf_params(
+        cls,
+        acqf_params_for_objectives: list[AcquisitionFunctionParams],
+        Y: np.ndarray,
+        n_qmc_samples: int,
+        qmc_seed: int | None,
+    ) -> MultiObjectiveAcquisitionFunctionParams:
+        def get_non_dominated_hyper_rectangle_bounds(
+            pareto_sols: np.ndarray, ref_point: np.ndarray
+        ) -> tuple[np.ndarray, np.ndarray]:
+            # NOTE(nabenabe): This is a dummy implementation for formatter.
+            return np.zeros((1, Y.shape[-1])), np.zeros((1, Y.shape[-1]))
+
+        loss_vals = -Y  # NOTE(nabenabe): Y is to be maximized, loss_vals is to be minimized.
+        pareto_sols = loss_vals[_is_pareto_front(loss_vals, assume_unique_lexsorted=False)]
+        ref_point = np.max(loss_vals, axis=0) * 1.1
+        # lbs, ubs = get_non_dominated_hyper_rectangle_bounds(pareto_sols, ref_point)
+        lbs, ubs = get_non_dominated_hyper_rectangle_bounds(pareto_sols, ref_point)
+        non_dominated_lower_bounds = torch.from_numpy(lbs)
+        non_dominated_upper_bounds = torch.from_numpy(ubs)
+        fixed_samples = _sample_from_normal_sobol(
+            dim=loss_vals.shape[-1], n_samples=n_qmc_samples, seed=qmc_seed
+        )
+
+        inverse_squared_lengthscales = np.mean(
+            [
+                acqf_params.kernel_params.inverse_squared_lengthscales.detach().numpy()
+                for acqf_params in acqf_params_for_objectives
+            ],
+            axis=0,
+        )
+        dummy_kernel_params = KernelParamsTensor(
+            # inverse_squared_lengthscales is used in optim_mixed.py.
+            inverse_squared_lengthscales=torch.from_numpy(inverse_squared_lengthscales),
+            kernel_scale=torch.empty(0),
+            noise_var=torch.empty(0),
+        )
+        repr_acqf_params = acqf_params_for_objectives[0]
+        return cls(
+            acqf_type=AcquisitionFunctionType.LOG_EHVI,
+            kernel_params=dummy_kernel_params,
+            X=repr_acqf_params.X,
+            search_space=repr_acqf_params.search_space,
+            cov_Y_Y_inv=np.empty(0),
+            cov_Y_Y_inv_Y=np.empty(0),
+            max_Y=np.nan,  # This is not used anywhere.
+            beta=None,
+            acqf_stabilizing_noise=repr_acqf_params[0].acqf_stabilizing_noise,
+            acqf_params_for_objectives=acqf_params_for_objectives,
+            non_dominated_lower_bounds=non_dominated_lower_bounds,
+            non_dominated_upper_bounds=non_dominated_upper_bounds,
+            fixed_samples=fixed_samples,
+        )
+
+
 def create_acqf_params(
     acqf_type: AcquisitionFunctionType,
     kernel_params: KernelParamsTensor,
@@ -148,7 +276,40 @@ def create_acqf_params(
     )
 
 
+def _eval_ehvi(
+    evhi_acqf_params: MultiObjectiveAcquisitionFunctionParams, x: torch.Tensor
+) -> torch.Tensor:
+    means_ = []
+    vars_ = []
+    X = evhi_acqf_params.X
+    for acqf_params in evhi_acqf_params.acqf_params_for_objectives:
+        mean, var = posterior(
+            kernel_params=acqf_params.kernel_params,
+            X=X,
+            is_categorical=torch.from_numpy(
+                acqf_params.search_space.scale_types == ScaleType.CATEGORICAL
+            ),
+            cov_Y_Y_inv=acqf_params.cov_Y_Y_inv,
+            cov_Y_Y_inv_Y=acqf_params.cov_Y_Y_inv_Y,
+            x=x,
+        )
+        means_.append(mean)
+        vars_.append(var + evhi_acqf_params.acqf_stabilizing_noise)
+
+    return logehvi(
+        means=torch.stack(means_, axis=-1),
+        cov=torch.diag_embed(torch.stack(vars_, axis=-1)),
+        fixed_samples=evhi_acqf_params.fixed_samples,
+        non_dominated_lower_bounds=evhi_acqf_params.non_dominated_lower_bounds,
+        non_dominated_upper_bounds=evhi_acqf_params.non_dominated_upper_bounds,
+        is_objective_independent=True,  # TODO(nabenabe): Introduce Multi-task GP.
+    )
+
+
 def eval_acqf(acqf_params: AcquisitionFunctionParams, x: torch.Tensor) -> torch.Tensor:
+    if acqf_params.acqf_type == AcquisitionFunctionType.LOG_EHVI:
+        return _eval_ehvi(acqf_params=acqf_params, x=x)
+
     mean, var = posterior(
         acqf_params.kernel_params,
         torch.from_numpy(acqf_params.X),
