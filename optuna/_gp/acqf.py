@@ -237,7 +237,7 @@ class MultiObjectiveAcquisitionFunctionParams(AcquisitionFunctionParams):
             cov_Y_Y_inv_Y=np.empty(0),
             max_Y=np.nan,  # This is not used anywhere.
             beta=None,
-            acqf_stabilizing_noise=repr_acqf_params[0].acqf_stabilizing_noise,
+            acqf_stabilizing_noise=repr_acqf_params.acqf_stabilizing_noise,
             acqf_params_for_objectives=acqf_params_for_objectives,
             non_dominated_lower_bounds=non_dominated_lower_bounds,
             non_dominated_upper_bounds=non_dominated_upper_bounds,
@@ -281,24 +281,25 @@ def _eval_ehvi(
 ) -> torch.Tensor:
     means_ = []
     vars_ = []
-    X = evhi_acqf_params.X
+    X = torch.from_numpy(evhi_acqf_params.X)
+    is_categorical = torch.from_numpy(
+        evhi_acqf_params.search_space.scale_types == ScaleType.CATEGORICAL
+    )
     for acqf_params in evhi_acqf_params.acqf_params_for_objectives:
         mean, var = posterior(
             kernel_params=acqf_params.kernel_params,
             X=X,
-            is_categorical=torch.from_numpy(
-                acqf_params.search_space.scale_types == ScaleType.CATEGORICAL
-            ),
-            cov_Y_Y_inv=acqf_params.cov_Y_Y_inv,
-            cov_Y_Y_inv_Y=acqf_params.cov_Y_Y_inv_Y,
+            is_categorical=is_categorical,
+            cov_Y_Y_inv=torch.from_numpy(acqf_params.cov_Y_Y_inv),
+            cov_Y_Y_inv_Y=torch.from_numpy(acqf_params.cov_Y_Y_inv_Y),
             x=x,
         )
         means_.append(mean)
         vars_.append(var + evhi_acqf_params.acqf_stabilizing_noise)
 
     return logehvi(
-        means=torch.stack(means_, axis=-1),
-        cov=torch.diag_embed(torch.stack(vars_, axis=-1)),
+        means=torch.stack(means_, dim=-1),
+        cov=torch.diag_embed(torch.stack(vars_, dim=-1)),
         fixed_samples=evhi_acqf_params.fixed_samples,
         non_dominated_lower_bounds=evhi_acqf_params.non_dominated_lower_bounds,
         non_dominated_upper_bounds=evhi_acqf_params.non_dominated_upper_bounds,
@@ -308,7 +309,8 @@ def _eval_ehvi(
 
 def eval_acqf(acqf_params: AcquisitionFunctionParams, x: torch.Tensor) -> torch.Tensor:
     if acqf_params.acqf_type == AcquisitionFunctionType.LOG_EHVI:
-        return _eval_ehvi(acqf_params=acqf_params, x=x)
+        assert isinstance(acqf_params, MultiObjectiveAcquisitionFunctionParams)
+        return _eval_ehvi(evhi_acqf_params=acqf_params, x=x)
 
     mean, var = posterior(
         acqf_params.kernel_params,
