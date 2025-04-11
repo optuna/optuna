@@ -21,8 +21,7 @@ EPS = 1e-12
 
 
 class _ParzenEstimatorParameters(NamedTuple):
-    consider_prior: bool
-    prior_weight: float | None
+    prior_weight: float
     consider_magic_clip: bool
     consider_endpoints: bool
     weights: Callable[[int], np.ndarray]
@@ -40,11 +39,11 @@ class _ParzenEstimator:
         parameters: _ParzenEstimatorParameters,
         predetermined_weights: np.ndarray | None = None,
     ) -> None:
-        if parameters.consider_prior:
-            if parameters.prior_weight is None:
-                raise ValueError("Prior weight must be specified when consider_prior==True.")
-            elif parameters.prior_weight <= 0:
-                raise ValueError("Prior weight must be positive.")
+        if parameters.prior_weight < 0:
+            raise ValueError(
+                "A non-negative value must be specified for prior_weight,"
+                f" but got {parameters.prior_weight}."
+            )
 
         self._search_space = search_space
 
@@ -61,8 +60,7 @@ class _ParzenEstimator:
 
         if len(transformed_observations) == 0:
             weights = np.array([1.0])
-        elif parameters.consider_prior:
-            assert parameters.prior_weight is not None
+        else:
             weights = np.append(weights, [parameters.prior_weight])
         weights /= weights.sum()
         self._mixture_distribution = _MixtureOfProductDistribution(
@@ -190,8 +188,7 @@ class _ParzenEstimator:
                 weights=np.full((1, n_choices), fill_value=1.0 / n_choices)
             )
 
-        n_kernels = len(observations) + parameters.consider_prior
-        assert parameters.prior_weight is not None
+        n_kernels = len(observations) + 1  # NOTE(sawa3030): +1 for prior.
         weights = np.full(
             shape=(n_kernels, n_choices),
             fill_value=parameters.prior_weight / n_kernels,
@@ -209,7 +206,8 @@ class _ParzenEstimator:
         else:
             weights[np.arange(len(observed_indices)), observed_indices] += 1
 
-        weights /= weights.sum(axis=1, keepdims=True)
+        row_sums = weights.sum(axis=1, keepdims=True)
+        weights /= np.where(row_sums == 0, 1, row_sums)
         return _BatchedCategoricalDistributions(weights)
 
     def _calculate_numerical_distributions(
@@ -223,7 +221,6 @@ class _ParzenEstimator:
         step_or_0 = step or 0
 
         mus = observations
-        consider_prior = parameters.consider_prior or len(observations) == 0
 
         def compute_sigmas() -> np.ndarray:
             if parameters.multivariate:
@@ -237,7 +234,7 @@ class _ParzenEstimator:
             else:
                 # TODO(contramundum53): Remove dependency on prior_mu
                 prior_mu = 0.5 * (low + high)
-                mus_with_prior = np.append(mus, prior_mu) if consider_prior else mus
+                mus_with_prior = np.append(mus, prior_mu)
 
                 sorted_indices = np.argsort(mus_with_prior)
                 sorted_mus = mus_with_prior[sorted_indices]
@@ -263,22 +260,16 @@ class _ParzenEstimator:
             maxsigma = 1.0 * (high - low + step_or_0)
             if parameters.consider_magic_clip:
                 # TODO(contramundum53): Remove dependency of minsigma on consider_prior.
-                minsigma = (
-                    1.0
-                    * (high - low + step_or_0)
-                    / min(100.0, (1.0 + len(observations) + consider_prior))
-                )
+                n_kernels = len(observations) + 1  # NOTE(sawa3030): +1 for prior.
+                minsigma = 1.0 * (high - low + step_or_0) / min(100.0, (1.0 + n_kernels))
             else:
                 minsigma = EPS
             return np.asarray(np.clip(sigmas, minsigma, maxsigma))
 
         sigmas = compute_sigmas()
 
-        if consider_prior:
-            prior_mu = 0.5 * (low + high)
-            prior_sigma = 1.0 * (high - low + step_or_0)
-            mus = np.append(mus, [prior_mu])
-            sigmas = np.append(sigmas, [prior_sigma])
+        mus = np.append(mus, [0.5 * (low + high)])
+        sigmas = np.append(sigmas, [1.0 * (high - low + step_or_0)])
 
         if step is None:
             return _BatchedTruncNormDistributions(mus, sigmas, low, high)
