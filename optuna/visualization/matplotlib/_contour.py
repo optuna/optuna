@@ -104,7 +104,7 @@ def _get_contour_plot(info: _ContourInfo) -> "Axes":
         cs_list = []
         for x_i in range(len(sorted_params)):
             for y_i in range(len(sorted_params)):
-                ax = axs[y_i, x_i]
+                ax = axs[y_i, x_i]  # type: ignore[index]
                 cs = _generate_contour_subplot(sub_plot_infos[y_i][x_i], ax, cmap)
                 if isinstance(cs, ContourSet):
                     cs_list.append(cs)
