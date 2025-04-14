@@ -403,10 +403,10 @@ def test_set_trial_state_values_for_state(storage_mode: str) -> None:
                 continue
             assert storage.get_trial(trial_id).state == TrialState.RUNNING
             datetime_start_prev = storage.get_trial(trial_id).datetime_start
-            storage.set_trial_state_values(
-                trial_id, state=state, values=(0.0,) if state.is_finished() else None
-            )
+            values = (0.0,) if state.is_finished() else None
+            storage.set_trial_state_values(trial_id, state=state, values=values)
             assert storage.get_trial(trial_id).state == state
+            assert storage.get_trial(trial_id).values == values
             # Repeated state changes to RUNNING should not trigger further datetime_start changes.
             if state == TrialState.RUNNING:
                 assert storage.get_trial(trial_id).datetime_start == datetime_start_prev
