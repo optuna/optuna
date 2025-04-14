@@ -260,12 +260,12 @@ def _eval_ehvi(
             cov_Y_Y_inv_Y=torch.from_numpy(acqf_params.cov_Y_Y_inv_Y),
             x=x,
         )
-        stdevs = torch.sqrt(var + evhi_acqf_params.acqf_stabilizing_noise)
+        stdev = torch.sqrt(var + evhi_acqf_params.acqf_stabilizing_noise)
         # NOTE(nabenabe): By using fixed samples from the Sobol sequence, EHVI becomes
         # deterministic, making it possible to optimize the acqf by l-BFGS.
         Y_post.append(
-            means[..., torch.newaxis, :]
-            + stdevs[..., torch.newaxis, :] * fixed_samples[..., torch.newaxis, :, :]
+            mean[..., torch.newaxis, :]
+            + stdev[..., torch.newaxis, :] * fixed_samples[..., torch.newaxis, :, :]
         )
 
     # NOTE(nabenabe): Use the following once multi-task GP is supported.
