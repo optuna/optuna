@@ -117,83 +117,20 @@ def _get_non_dominated_hyper_rectangle_bounds(
     return lbs, ubs
 
 
-"""
-def _get_accepted_bound_indices(
-    pareto_sols: np.ndarray, ref_point: np.ndarray, alpha: float
-) -> np.ndarray:
-    aug_pareto_sols = np.vstack(
-        [np.min(pareto_sols, axis=0) - 1, pareto_sols, np.max(pareto_sols, axis=0) + 1]
-    )
-    aug_pareto_indices = np.argsort(aug_pareto_sols, axis=0)
-    threshold = alpha * np.prod(aug_pareto_sols[-1] - aug_pareto_sols[0])
-    (n_sols, n_objectives) = aug_pareto_sols.shape
-    obj_indices = np.arange(n_objectives)
-    init_bound_indices = np.tile(np.asarray([0, n_sols - 1])[:, np.newaxis], n_objectives)
-    if pareto_sols.shape[0] == 0:
-        return init_bound_indices[..., np.newaxis, :]
-
-    stack = [init_bound_indices]
-    accepted_bound_indices = []
-    while len(stack) > 0:
-        bound_indices = stack.pop()
-        target_sol_indices = aug_pareto_indices[bound_indices, obj_indices]
-        bs = aug_pareto_sols[target_sol_indices, obj_indices]  # Upper/Lower bounds.
-        non_doms = np.all(np.any(bs[:, np.newaxis] <= pareto_sols, axis=-1), axis=-1)
-        assert not isinstance(non_doms, np.bool) and non_doms.shape == (2,), "MyPy Redefinition."
-        lb_non_dom, ub_non_dom = non_doms
-        if ub_non_dom:  # Upper bound is non-dominated by all Pareto solutions.
-            accepted_bound_indices.append(target_sol_indices)
-            continue
-
-        max_idx = np.argmax(bound_indices[1] - bound_indices[0])
-        max_idx_diff = int(bound_indices[1, max_idx] - bound_indices[0, max_idx])
-        if not lb_non_dom or np.prod(bs[1] - bs[0]) <= threshold or max_idx_diff <= 1:
-            continue
-
-        # Halve the hyperrectangle defined by the bound_indices in two parts.
-        bound_indices_above = bound_indices.copy()
-        bound_indices_below = bound_indices.copy()
-        # Increase the lower bound.
-        bound_indices_above[0, max_idx] += max_idx_diff // 2
-        # Decrease the upper bound.
-        bound_indices_below[1, max_idx] -= (max_idx_diff + 1) // 2
-        stack.extend([bound_indices_below, bound_indices_above])
-
-    return np.concat(np.asarray(accepted_bound_indices)[..., np.newaxis, :], axis=1)
-
-
-def _approximate_non_dominated_hyper_rectangle_bounds(
-    pareto_sols: np.ndarray, ref_point: np.ndarray, alpha: float
-) -> tuple[np.ndarray, np.ndarray]:  # (n_bounds, n_objectives) and (n_bounds, n_objectives)
-    # See ``Towards Efficient Multiobjective Optimization: Multiobjective statistical criterions``.
-    accepted_bound_indices = _get_accepted_bound_indices(pareto_sols, ref_point, alpha)
-    (_, n_bounds, n_objectives) = accepted_bound_indices.shape
-    aug_pareto_sols = np.vstack([np.full(n_objectives, -np.inf), pareto_sols, ref_point])
-    obj_indices = np.tile(np.arange(n_objectives), 2 * n_bounds)
-    return aug_pareto_sols[accepted_bound_indices.flatten(), obj_indices].reshape(
-        2, n_bounds, n_objectives
-    )
-"""
-
-
 def get_non_dominated_hyper_rectangle_bounds(
     loss_vals: np.ndarray, ref_point: np.ndarray, alpha: float | None = None
 ) -> tuple[np.ndarray, np.ndarray]:  # (n_bounds, n_objectives) and (n_bounds, n_objectives)
-    def _get_sorted_pareto_sols(loss_vals: np.ndarray) -> np.ndarray:
-        unique_lexsorted_loss_vals = np.unique(loss_vals, axis=0)
-        return unique_lexsorted_loss_vals[
-            _is_pareto_front(unique_lexsorted_loss_vals, assume_unique_lexsorted=True)
-        ]
-
-    sorted_pareto_sols = _get_sorted_pareto_sols(loss_vals)
+    unique_lexsorted_loss_vals = np.unique(loss_vals, axis=0)
+    sorted_pareto_sols = unique_lexsorted_loss_vals[
+        _is_pareto_front(unique_lexsorted_loss_vals, assume_unique_lexsorted=True)
+    ]
     n_objectives = loss_vals.shape[-1]
     # The condition here follows BoTorch.
     # https://github.com/pytorch/botorch/blob/v0.13.0/botorch/acquisition/multi_objective/utils.py#L55-L63
     if n_objectives > 4:
-        # alpha = alpha if alpha is not None else 10 ** (-2 if n_objectives >= 6 else -3)
-        # return _approximate_non_dominated_hyper_rectangle_bounds(
-        #     sorted_pareto_sols, ref_point, alpha
-        # )
-        warnings.warn("TODO")
+        warnings.warn(
+            "GPSampler might be significantly slow for n_objectives > 4. "
+            "Please consider using another sampler instead."
+        )
 
     return _get_non_dominated_hyper_rectangle_bounds(sorted_pareto_sols, ref_point)
