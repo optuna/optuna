@@ -35,55 +35,21 @@ def _sample_from_normal_sobol(dim: int, n_samples: int, seed: int | None) -> tor
 
 
 def logehvi(
-    means: torch.Tensor,  # (..., n_objectives)
-    cov: torch.Tensor,  # (..., n_objectives, n_objectives)
-    fixed_samples: torch.Tensor,  # (n_qmc_samples, n_objectives)
+    Y_post: torch.Tensor,  # (..., n_qmc_samples, n_objectives)
     non_dominated_lower_bounds: torch.Tensor,  # (n_sub_hyper_rectangles, n_objectives)
     non_dominated_upper_bounds: torch.Tensor,  # (n_sub_hyper_rectangles, n_objectives)
-    is_objective_independent: bool = False,
 ) -> torch.Tensor:  # (..., )
-    def _loghvi(
-        loss_vals: torch.Tensor,  # (..., n_objectives)
-        non_dominated_lower_bounds: torch.Tensor,  # (n_sub_hyper_rectangles, n_objectives)
-        non_dominated_upper_bounds: torch.Tensor,  # (n_sub_hyper_rectangles, n_objectives)
-    ) -> torch.Tensor:  # shape = (..., )
-        # NOTE: [Daulton20] is available at https://arxiv.org/abs/2006.05078.
-        # This function calculates Eq. (1) of [Daulton20].
-        # TODO(nabenabe): Adapt to Eq. (3) of [Daulton20] when we support batch optimization.
-        diff = torch.nn.functional.relu(
-            non_dominated_upper_bounds
-            - torch.maximum(loss_vals[..., torch.newaxis, :], non_dominated_lower_bounds)
-        )
-        return torch.special.logsumexp(diff.log().sum(dim=-1), dim=-1)
-
-    def _logehvi(
-        loss_vals: torch.Tensor,  # (..., n_qmc_samples, n_objectives)
-        non_dominated_lower_bounds: torch.Tensor,  # (n_sub_hyper_rectangles, n_objectives)
-        non_dominated_upper_bounds: torch.Tensor,  # (n_sub_hyper_rectangles, n_objectives)
-    ) -> torch.Tensor:  # shape = (..., )
-        log_n_qmc_samples = float(np.log(loss_vals.shape[-2]))
-        log_hvi_vals = _loghvi(loss_vals, non_dominated_lower_bounds, non_dominated_upper_bounds)
-        return -log_n_qmc_samples + torch.special.logsumexp(log_hvi_vals, dim=-1)
-
-    # NOTE(nabenabe): By using fixed samples from the Sobol sequence, EHVI becomes deterministic,
-    # making it possible to optimize the acqf by l-BFGS.
-    n_objectives = means.shape[-1]
-    assert cov.shape[-1] == n_objectives and cov.shape[-2] == n_objectives
-    if is_objective_independent:
-        L = torch.zeros_like(cov, dtype=torch.float64)
-        objective_indices = torch.arange(n_objectives)
-        L[..., objective_indices, objective_indices] = torch.sqrt(
-            cov[..., objective_indices, objective_indices]
-        )
-    else:
-        L = torch.linalg.cholesky(cov)
-
-    # NOTE(nabenabe): matmul (+squeeze) below is equivalent to einsum("BMM,NM->BNM").
-    loss_vals_from_qmc = (
-        means[..., torch.newaxis, :]
-        + torch.matmul(L[..., torch.newaxis, :, :], fixed_samples[..., torch.newaxis]).squeeze()
+    # TODO(nabenabe): Adapt here to the maximization version as Y_post is now assumed to be loss.
+    log_n_qmc_samples = float(np.log(Y_post.shape[-2]))
+    # NOTE: [Daulton20] is available at https://arxiv.org/abs/2006.05078.
+    # This function calculates Eq. (1) of [Daulton20].
+    # TODO(nabenabe): Adapt to Eq. (3) of [Daulton20] when we support batch optimization.
+    diff = torch.nn.functional.relu(
+        non_dominated_upper_bounds
+        - torch.maximum(Y_post[..., torch.newaxis, :], non_dominated_lower_bounds)
     )
-    return _logehvi(loss_vals_from_qmc, non_dominated_lower_bounds, non_dominated_upper_bounds)
+    log_hvi_vals = torch.special.logsumexp(diff.log().sum(dim=-1), dim=-1)
+    return -log_n_qmc_samples + torch.special.logsumexp(log_hvi_vals, dim=-1)
 
 
 def standard_logei(z: torch.Tensor) -> torch.Tensor:
@@ -206,7 +172,7 @@ class MultiObjectiveAcquisitionFunctionParams(AcquisitionFunctionParams):
         loss_vals = -Y  # NOTE(nabenabe): Y is to be maximized, loss_vals is to be minimized.
         pareto_sols = loss_vals[_is_pareto_front(loss_vals, assume_unique_lexsorted=False)]
         ref_point = np.max(loss_vals, axis=0) * 1.1
-        # lbs, ubs = get_non_dominated_hyper_rectangle_bounds(pareto_sols, ref_point)
+        # TODO(nabenabe): Adapt the signs for the maximization version.
         lbs, ubs = get_non_dominated_hyper_rectangle_bounds(pareto_sols, ref_point)
         non_dominated_lower_bounds = torch.from_numpy(lbs)
         non_dominated_upper_bounds = torch.from_numpy(ubs)
@@ -279,12 +245,12 @@ def create_acqf_params(
 def _eval_ehvi(
     evhi_acqf_params: MultiObjectiveAcquisitionFunctionParams, x: torch.Tensor
 ) -> torch.Tensor:
-    means_ = []
-    vars_ = []
     X = torch.from_numpy(evhi_acqf_params.X)
     is_categorical = torch.from_numpy(
         evhi_acqf_params.search_space.scale_types == ScaleType.CATEGORICAL
     )
+    Y_post = []
+    fixed_samples = evhi_acqf_params.fixed_samples
     for acqf_params in evhi_acqf_params.acqf_params_for_objectives:
         mean, var = posterior(
             kernel_params=acqf_params.kernel_params,
@@ -294,16 +260,21 @@ def _eval_ehvi(
             cov_Y_Y_inv_Y=torch.from_numpy(acqf_params.cov_Y_Y_inv_Y),
             x=x,
         )
-        means_.append(mean)
-        vars_.append(var + evhi_acqf_params.acqf_stabilizing_noise)
+        stdevs = torch.sqrt(var + evhi_acqf_params.acqf_stabilizing_noise)
+        # NOTE(nabenabe): By using fixed samples from the Sobol sequence, EHVI becomes
+        # deterministic, making it possible to optimize the acqf by l-BFGS.
+        Y_post.append(
+            means[..., torch.newaxis, :]
+            + stdevs[..., torch.newaxis, :] * fixed_samples[..., torch.newaxis, :, :]
+        )
 
+    # NOTE(nabenabe): Use the following once multi-task GP is supported.
+    # L = torch.linalg.cholesky(cov)
+    # Y_post = means[..., torch.newaxis, :] + torch.einsum("...MM,NM->...NM", L, fixed_samples)
     return logehvi(
-        means=torch.stack(means_, dim=-1),
-        cov=torch.diag_embed(torch.stack(vars_, dim=-1)),
-        fixed_samples=evhi_acqf_params.fixed_samples,
+        Y_post=torch.stack(Y_post, dim=-1),
         non_dominated_lower_bounds=evhi_acqf_params.non_dominated_lower_bounds,
         non_dominated_upper_bounds=evhi_acqf_params.non_dominated_upper_bounds,
-        is_objective_independent=True,  # TODO(nabenabe): Introduce Multi-task GP.
     )
 
 
