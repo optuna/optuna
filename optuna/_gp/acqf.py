@@ -177,7 +177,7 @@ class MultiObjectiveAcquisitionFunctionParams(AcquisitionFunctionParams):
             return torch.from_numpy(-ubs), torch.from_numpy(-lbs)
 
         fixed_samples = _sample_from_normal_sobol(
-            dim=loss_vals.shape[-1], n_samples=n_qmc_samples, seed=qmc_seed
+            dim=Y.shape[-1], n_samples=n_qmc_samples, seed=qmc_seed
         )
         non_dominated_lower_bounds, non_dominated_upper_bounds = _get_hyper_rectangle_bounds()
         inverse_squared_lengthscales = np.mean(
