@@ -11,6 +11,7 @@ import warnings
 import numpy as np
 
 from optuna import _deprecated
+from optuna._convert_positional_args import convert_positional_args
 from optuna._experimental import warn_experimental_argument
 from optuna._hypervolume import compute_hypervolume
 from optuna._hypervolume.hssp import _solve_hssp
@@ -118,18 +119,6 @@ class TPESampler(BaseSampler):
         explicitly specified when study is created.
 
     Args:
-        consider_prior:
-            Enhance the stability of Parzen estimator by imposing a Gaussian prior when
-            :obj:`True`. The prior is only effective if the sampling distribution is
-            either :class:`~optuna.distributions.FloatDistribution`,
-            or :class:`~optuna.distributions.IntDistribution`.
-
-            .. warning::
-                Deprecated in v4.3.0. ``consider_prior`` argument will be removed in the future.
-                The removal of this feature is currently scheduled for v6.0.0,
-                but this schedule is subject to change.
-                From v4.3.0 onward, ``consider_prior`` automatically falls back to ``True``.
-                See https://github.com/optuna/optuna/releases/tag/v4.3.0.
         prior_weight:
             The weight of the prior. This argument is used in
             :class:`~optuna.distributions.FloatDistribution`,
@@ -166,6 +155,18 @@ class TPESampler(BaseSampler):
                 <https://doi.org/10.1613/jair.1.13188>`__.
         seed:
             Seed for random number generator.
+        consider_prior:
+            Enhance the stability of Parzen estimator by imposing a Gaussian prior when
+            :obj:`True`. The prior is only effective if the sampling distribution is
+            either :class:`~optuna.distributions.FloatDistribution`,
+            or :class:`~optuna.distributions.IntDistribution`.
+
+            .. warning::
+                Deprecated in v4.3.0. ``consider_prior`` argument will be removed in the future.
+                The removal of this feature is currently scheduled for v6.0.0,
+                but this schedule is subject to change.
+                From v4.3.0 onward, ``consider_prior`` automatically falls back to ``True``.
+                See https://github.com/optuna/optuna/releases/tag/v4.3.0.
         multivariate:
             If this is :obj:`True`, the multivariate TPE is used when suggesting parameters.
             The multivariate TPE is reported to outperform the independent TPE. See `BOHB: Robust
@@ -273,9 +274,24 @@ class TPESampler(BaseSampler):
                 See https://github.com/optuna/optuna/releases/tag/v3.4.0.
     """
 
+    @convert_positional_args(
+        previous_positional_arg_names=[
+            "self",
+            "consider_prior",
+            "prior_weight",
+            "consider_magic_clip",
+            "consider_endpoints",
+            "n_startup_trials",
+            "n_ei_candidates",
+            "gamma",
+            "weights",
+            "seed",
+        ],
+        deprecated_version="4.3.0",
+        removed_version="6.0.0",
+    )
     def __init__(
         self,
-        consider_prior: bool = True,
         prior_weight: float = 1.0,
         consider_magic_clip: bool = True,
         consider_endpoints: bool = False,
@@ -285,6 +301,7 @@ class TPESampler(BaseSampler):
         weights: Callable[[int], np.ndarray] = default_weights,
         seed: int | None = None,
         *,
+        consider_prior: bool = True,
         multivariate: bool = False,
         group: bool = False,
         warn_independent_sampling: bool = True,
