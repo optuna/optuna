@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-import pytest
-
 import numpy as np
-from optuna.study._multi_objective import _is_pareto_front
-from optuna._hypervolume.wfg import compute_hypervolume
-from optuna._hypervolume.box_decomposition import _get_non_dominated_hyper_rectangle_bounds
+import pytest
 import torch
+
+from optuna._hypervolume.box_decomposition import _get_non_dominated_hyper_rectangle_bounds
+from optuna._hypervolume.wfg import compute_hypervolume
+from optuna.study._multi_objective import _is_pareto_front
 
 
 def _generate_pareto_sols(n_objectives: int, n_trials: int, seed: int) -> np.ndarray:
@@ -33,6 +33,6 @@ def test_exact_box_decomposition(n_objectives: int) -> None:
         diff = torch.nn.functional.relu(
             torch.tensor(ubs) - torch.maximum(new_points[..., torch.newaxis, :], torch.tensor(lbs))
         )
-        ans[i] = torch.special.logsumexp(diff.log().sum(axis=-1), axis=-1).exp().detach().numpy()
+        ans[i] = torch.special.logsumexp(diff.log().sum(dim=-1), dim=-1).exp().detach().numpy()
 
     assert np.allclose(ans, correct)
