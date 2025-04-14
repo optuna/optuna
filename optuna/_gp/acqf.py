@@ -39,14 +39,13 @@ def logehvi(
     non_dominated_lower_bounds: torch.Tensor,  # (n_sub_hyper_rectangles, n_objectives)
     non_dominated_upper_bounds: torch.Tensor,  # (n_sub_hyper_rectangles, n_objectives)
 ) -> torch.Tensor:  # (..., )
-    # TODO(nabenabe): Adapt here to the maximization version as Y_post is now assumed to be loss.
     log_n_qmc_samples = float(np.log(Y_post.shape[-2]))
     # NOTE: [Daulton20] is available at https://arxiv.org/abs/2006.05078.
     # This function calculates Eq. (1) of [Daulton20].
     # TODO(nabenabe): Adapt to Eq. (3) of [Daulton20] when we support batch optimization.
     diff = torch.nn.functional.relu(
-        non_dominated_upper_bounds
-        - torch.maximum(Y_post[..., torch.newaxis, :], non_dominated_lower_bounds)
+        torch.minimum(Y_post[..., torch.newaxis, :], non_dominated_upper_bounds)
+        - non_dominated_lower_bounds
     )
     log_hvi_vals = torch.special.logsumexp(diff.log().sum(dim=-1), dim=-1)
     return -log_n_qmc_samples + torch.special.logsumexp(log_hvi_vals, dim=-1)
@@ -169,17 +168,18 @@ class MultiObjectiveAcquisitionFunctionParams(AcquisitionFunctionParams):
             # NOTE(nabenabe): This is a dummy implementation for formatter.
             return np.zeros((1, Y.shape[-1])), np.zeros((1, Y.shape[-1]))
 
-        loss_vals = -Y  # NOTE(nabenabe): Y is to be maximized, loss_vals is to be minimized.
-        pareto_sols = loss_vals[_is_pareto_front(loss_vals, assume_unique_lexsorted=False)]
-        ref_point = np.max(loss_vals, axis=0) * 1.1
-        # TODO(nabenabe): Adapt the signs for the maximization version.
-        lbs, ubs = get_non_dominated_hyper_rectangle_bounds(pareto_sols, ref_point)
-        non_dominated_lower_bounds = torch.from_numpy(lbs)
-        non_dominated_upper_bounds = torch.from_numpy(ubs)
+        def _get_hyper_rectangle_bounds() -> tuple[torch.Tensor, torch.Tensor]:
+            loss_vals = -Y  # NOTE(nabenabe): Y is to be maximized, loss_vals is to be minimized.
+            pareto_sols = loss_vals[_is_pareto_front(loss_vals, assume_unique_lexsorted=False)]
+            ref_point = np.max(loss_vals, axis=0) * 1.1
+            lbs, ubs = get_non_dominated_hyper_rectangle_bounds(pareto_sols, ref_point)
+            # NOTE(nabenabe): Flip back the sign to make them compatible with maximization.
+            return torch.from_numpy(-ubs), torch.from_numpy(-lbs)
+
         fixed_samples = _sample_from_normal_sobol(
             dim=loss_vals.shape[-1], n_samples=n_qmc_samples, seed=qmc_seed
         )
-
+        non_dominated_lower_bounds, non_dominated_upper_bounds = _get_hyper_rectangle_bounds()
         inverse_squared_lengthscales = np.mean(
             [
                 acqf_params.kernel_params.inverse_squared_lengthscales.detach().numpy()
