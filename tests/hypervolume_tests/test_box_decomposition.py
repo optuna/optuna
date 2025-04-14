@@ -21,13 +21,14 @@ def test_exact_box_decomposition(n_objectives: int) -> None:
     pareto_sols = _generate_pareto_sols(n_objectives, n_trials=100, seed=42)
     ref_point = np.ones(pareto_sols.shape[-1]) * 1.1
     n_sols = pareto_sols.shape[0]
-    llo_mat = ~np.eye(n_sols, dtype=bool)
+    # LOO means leave one out.
+    loo_mat = ~np.eye(n_sols, dtype=bool)
 
     hv = compute_hypervolume(pareto_sols, ref_point, assume_pareto=True)
-    correct = hv - np.array([compute_hypervolume(pareto_sols[llo], ref_point) for llo in llo_mat])
+    correct = hv - np.array([compute_hypervolume(pareto_sols[loo], ref_point) for loo in loo_mat])
     ans = np.empty_like(correct)
-    for i, llo in enumerate(llo_mat):
-        lbs, ubs = _get_non_dominated_hyper_rectangle_bounds(pareto_sols[llo], ref_point)
+    for i, loo in enumerate(loo_mat):
+        lbs, ubs = _get_non_dominated_hyper_rectangle_bounds(pareto_sols[loo], ref_point)
         new_points = torch.tensor(pareto_sols[np.newaxis, i])
         diff = torch.nn.functional.relu(
             torch.tensor(ubs) - torch.maximum(new_points[..., torch.newaxis, :], torch.tensor(lbs))
