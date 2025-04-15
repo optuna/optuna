@@ -6,8 +6,8 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from optuna.search_space import intersection_search_space  # Used at runtime too
-from optuna.trial import TrialState  # Used at runtime, so keep it outside TYPE_CHECKING
+from optuna.search_space import intersection_search_space
+from optuna.trial import TrialState
 
 
 if TYPE_CHECKING:
