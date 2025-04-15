@@ -39,15 +39,17 @@ def _get_upper_bound_set(
         ref_point: The reference point.
 
     Returns:
-        upper_bound_set: The upper bound set, which is U(N) in the paper. The shape is
-        (n_bounds, n_objectives).
-        def_points: The defining points of each vector in U(N). The shape is
-        (n_bounds, n_objectives, n_objectives).
+        upper_bound_set: The upper bound set, which is ``U(N)`` in the paper. The shape is
+        ``(n_bounds, n_objectives)``.
+        def_points: The defining points of each vector in ``U(N)``. The shape is
+        ``(n_bounds, n_objectives, n_objectives)``.
 
     NOTE:
-        ``pareto_sols`` corresponds to N and ``upper_bound_set`` corresponds to U(N) in the paper.
-        ``def_points`` (the shape is (n_bounds, n_objectives, n_objectives)) is not well explained
-        in the paper, but basically, def_points[i, j] = z[j] of upper_bound_set[i].
+        ``pareto_sols`` corresponds to ``N`` and ``upper_bound_set`` corresponds to ``U(N)`` in the
+        paper.
+        ``def_points`` (the shape is ``(n_bounds, n_objectives, n_objectives)``) is not well
+        explained in the paper, but basically, ``def_points[i, j] = z[j]`` of
+        ``upper_bound_set[i]``.
     """
     (_, n_objectives) = sorted_pareto_sols.shape
     objective_indices = np.arange(n_objectives)
@@ -66,7 +68,7 @@ def _get_upper_bound_set(
         # NOTE(nabenabe): `-inf` comes from Line 2 and `k!=j` in Line 3 of Alg. 2.
         # NOTE(nabenabe): If True, include `u` in `A` at this index to the set in Line 3 of Alg. 2.
         include = sol >= np.max(np.where(target_filter, dominated_dps, -np.inf), axis=-2)
-        # NOTE(nabenabe): The indices of `u` with `True` in include. Each `u` can get `True`
+        # NOTE(nabenabe): The indices of `u` with `True` in include. Each `u` may yield `True`
         # multiple times for different indices `j`.
         including_indices = np.tile(np.arange(n_bounds)[:, np.newaxis], n_objectives)[include]
         # The index `j` for each `u` s.t. `\hat{z}_j \geq \max_{k \neq j}{z_j^k(u)}`.
@@ -81,7 +83,7 @@ def _get_upper_bound_set(
     upper_bound_set = np.asarray([ref_point])  # Line 1 of Alg. 2.
     def_points = np.full((1, n_objectives, n_objectives), -np.inf)  # z^k(z^r) = \hat{z}^k
     def_points[0, objective_indices, objective_indices] = ref_point  # \hat{z}^k is a dummy point.
-    for solution in sorted_pareto_sols:  # NOTE(nabenabe): Sorted is necessary.
+    for solution in sorted_pareto_sols:  # NOTE(nabenabe): Sorted must be fulfilled.
         upper_bound_set, def_points = update(solution, upper_bound_set, def_points)
 
     return upper_bound_set, def_points
@@ -106,7 +108,7 @@ def _get_non_dominated_hyper_rectangle_bounds(
     sorted_pareto_sols: np.ndarray, ref_point: np.ndarray
 ) -> tuple[np.ndarray, np.ndarray]:  # (n_bounds, n_objectives) and (n_bounds, n_objectives)
     # The calculation of u[k] and l[k] in the paper: https://arxiv.org/abs/2006.05078
-    # NOTE(nabenabe): The paper handles maximization problems, but we do minimization here.
+    # NOTE(nabenabe): The paper handles maximization problems, but we consider minimization here.
     _upper_bound_set = _get_upper_bound_set(sorted_pareto_sols, ref_point)[0]
     upper_bound_set = _upper_bound_set[np.argsort(_upper_bound_set[:, 0])[::-1]]
     # Flip the sign and use upper_bound_set as the Pareto solutions. Then we can calculate the
