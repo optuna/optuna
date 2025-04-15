@@ -47,7 +47,10 @@ SQLITE3_TIMEOUT = 300
 
 class StorageSupplier:
     def __init__(
-        self, storage_specifier: str, base_storage: BaseStorage | None = None, **kwargs: Any
+        self,
+        storage_specifier: str,
+        base_storage: BaseStorage | None = None,
+        **kwargs: Any,
     ) -> None:
         self.storage_specifier = storage_specifier
         if base_storage is not None:
