@@ -18,7 +18,7 @@ def _generate_pareto_sols(n_objectives: int, n_trials: int, seed: int) -> np.nda
 @pytest.mark.parametrize("n_objectives", range(2, 5))
 def test_exact_box_decomposition(n_objectives: int) -> None:
     pareto_sols = _generate_pareto_sols(n_objectives, n_trials=100, seed=42)
-    ref_point = np.ones(pareto_sols.shape[-1]) * 1.1
+    ref_point = np.ones(pareto_sols.shape[-1]) * 10.0
     n_sols = pareto_sols.shape[0]
     # LOO means leave one out.
     loo_mat = ~np.eye(n_sols, dtype=bool)
