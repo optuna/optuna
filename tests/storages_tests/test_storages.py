@@ -400,7 +400,7 @@ def _test_set_and_get_compatibility(storage_set: BaseStorage, storage_get: BaseS
         if state == TrialState.WAITING:
             continue
         assert storage_get.get_trial(trial_id).state == TrialState.RUNNING
-        values = [0.0] if state.is_finished() else None
+        values = None
         storage_set.set_trial_state_values(trial_id, state=state, values=values)
         assert storage_get.get_trial(trial_id).state == state
         assert storage_get.get_trial(trial_id).values == values
