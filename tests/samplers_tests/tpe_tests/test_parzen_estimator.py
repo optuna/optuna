@@ -47,11 +47,9 @@ MULTIVARIATE_SAMPLES = {
 }
 
 
-@pytest.mark.parametrize("consider_prior", [True, False])
 @pytest.mark.parametrize("multivariate", [True, False])
-def test_init_parzen_estimator(consider_prior: bool, multivariate: bool) -> None:
+def test_init_parzen_estimator(multivariate: bool) -> None:
     parameters = _ParzenEstimatorParameters(
-        consider_prior=consider_prior,
         prior_weight=1.0,
         consider_magic_clip=False,
         consider_endpoints=False,
@@ -62,56 +60,46 @@ def test_init_parzen_estimator(consider_prior: bool, multivariate: bool) -> None
 
     mpe = _ParzenEstimator(MULTIVARIATE_SAMPLES, SEARCH_SPACE, parameters)
 
-    weights = np.array([1] + consider_prior * [1], dtype=float)
+    weights = np.array([1, 1], dtype=float)
     weights /= weights.sum()
 
     expected_univariate = _MixtureOfProductDistribution(
         weights=weights,
         distributions=[
             _BatchedTruncNormDistributions(
-                mu=np.array([1.0] + consider_prior * [50.5]),
-                sigma=np.array([49.5 if consider_prior else 99.0] + consider_prior * [99.0]),
+                mu=np.array([1.0, 50.5]),
+                sigma=np.array([49.5, 99.0]),
                 low=1.0,
                 high=100.0,
             ),
             _BatchedTruncNormDistributions(
-                mu=np.array([np.log(1.0)] + consider_prior * [np.log(100) / 2.0]),
-                sigma=np.array(
-                    [np.log(100) / 2 if consider_prior else np.log(100.0)]
-                    + consider_prior * [np.log(100)]
-                ),
+                mu=np.array([np.log(1.0), np.log(100) / 2.0]),
+                sigma=np.array([np.log(100) / 2, np.log(100)]),
                 low=np.log(1.0),
                 high=np.log(100.0),
             ),
             _BatchedDiscreteTruncNormDistributions(
-                mu=np.array([1.0] + consider_prior * [50.5]),
-                sigma=np.array([49.5 if consider_prior else 100.5] + consider_prior * [102.0]),
+                mu=np.array([1.0, 50.5]),
+                sigma=np.array([49.5, 102.0]),
                 low=1.0,
                 high=100.0,
                 step=3.0,
             ),
             _BatchedDiscreteTruncNormDistributions(
-                mu=np.array([1.0] + consider_prior * [50.5]),
-                sigma=np.array([49.5 if consider_prior else 99.5] + consider_prior * [100.0]),
+                mu=np.array([1.0, 50.5]),
+                sigma=np.array([49.5, 100.0]),
                 low=1,
                 high=100,
                 step=1,
             ),
             _BatchedTruncNormDistributions(
-                mu=np.array(
-                    [np.log(1.0)] + consider_prior * [(np.log(100.5) + np.log(0.5)) / 2.0]
-                ),
-                sigma=np.array(
-                    [(np.log(100.5) + np.log(0.5)) / 2 if consider_prior else np.log(100.5)]
-                    + consider_prior * [np.log(100.5) - np.log(0.5)]
-                ),
+                mu=np.array([np.log(1.0), (np.log(100.5) + np.log(0.5)) / 2.0]),
+                sigma=np.array([(np.log(100.5) + np.log(0.5)) / 2, np.log(100.5) - np.log(0.5)]),
                 low=np.log(0.5),
                 high=np.log(100.5),
             ),
             _BatchedCategoricalDistributions(
                 np.array([[0.2, 0.6, 0.2], [1.0 / 3.0, 1.0 / 3.0, 1.0 / 3.0]])
-                if consider_prior
-                else np.array([[0.25, 0.5, 0.25]])
             ),
             _BatchedCategoricalDistributions(
                 np.array(
@@ -120,8 +108,6 @@ def test_init_parzen_estimator(consider_prior: bool, multivariate: bool) -> None
                         [1.0 / 4.0, 1.0 / 4.0, 1.0 / 4.0, 1.0 / 4.0],
                     ]
                 )
-                if consider_prior
-                else np.array([[0.2, 0.4, 0.2, 0.2]])
             ),
         ],
     )
@@ -130,46 +116,41 @@ def test_init_parzen_estimator(consider_prior: bool, multivariate: bool) -> None
         weights=weights,
         distributions=[
             _BatchedTruncNormDistributions(
-                mu=np.array([1.0] + consider_prior * [50.5]),
-                sigma=np.array([SIGMA0 * 99.0] + consider_prior * [99.0]),
+                mu=np.array([1.0, 50.5]),
+                sigma=np.array([SIGMA0 * 99.0, 99.0]),
                 low=1.0,
                 high=100.0,
             ),
             _BatchedTruncNormDistributions(
-                mu=np.array([np.log(1.0)] + consider_prior * [np.log(100) / 2.0]),
-                sigma=np.array([SIGMA0 * np.log(100)] + consider_prior * [np.log(100)]),
+                mu=np.array([np.log(1.0), np.log(100) / 2.0]),
+                sigma=np.array([SIGMA0 * np.log(100), np.log(100)]),
                 low=np.log(1.0),
                 high=np.log(100.0),
             ),
             _BatchedDiscreteTruncNormDistributions(
-                mu=np.array([1.0] + consider_prior * [50.5]),
-                sigma=np.array([SIGMA0 * 102.0] + consider_prior * [102.0]),
+                mu=np.array([1.0, 50.5]),
+                sigma=np.array([SIGMA0 * 102.0, 102.0]),
                 low=1.0,
                 high=100.0,
                 step=3.0,
             ),
             _BatchedDiscreteTruncNormDistributions(
-                mu=np.array([1.0] + consider_prior * [50.5]),
-                sigma=np.array([SIGMA0 * 100.0] + consider_prior * [100.0]),
+                mu=np.array([1.0, 50.5]),
+                sigma=np.array([SIGMA0 * 100.0, 100.0]),
                 low=1,
                 high=100,
                 step=1,
             ),
             _BatchedTruncNormDistributions(
-                mu=np.array(
-                    [np.log(1.0)] + consider_prior * [(np.log(100.5) + np.log(0.5)) / 2.0]
-                ),
+                mu=np.array([np.log(1.0), (np.log(100.5) + np.log(0.5)) / 2.0]),
                 sigma=np.array(
-                    [SIGMA0 * (np.log(100.5) - np.log(0.5))]
-                    + consider_prior * [np.log(100.5) - np.log(0.5)]
+                    [SIGMA0 * (np.log(100.5) - np.log(0.5)), np.log(100.5) - np.log(0.5)]
                 ),
                 low=np.log(0.5),
                 high=np.log(100.5),
             ),
             _BatchedCategoricalDistributions(
                 np.array([[0.2, 0.6, 0.2], [1.0 / 3.0, 1.0 / 3.0, 1.0 / 3.0]])
-                if consider_prior
-                else np.array([[0.25, 0.5, 0.25]])
             ),
             _BatchedCategoricalDistributions(
                 np.array(
@@ -177,8 +158,6 @@ def test_init_parzen_estimator(consider_prior: bool, multivariate: bool) -> None
                         [1.0 / 6.0, 0.5, 1.0 / 6.0, 1.0 / 6.0],
                         [1.0 / 4.0, 1.0 / 4.0, 1.0 / 4.0, 1.0 / 4.0],
                     ]
-                    if consider_prior
-                    else np.array([[0.2, 0.4, 0.2, 0.2]])
                 )
             ),
         ],
@@ -198,21 +177,18 @@ def test_init_parzen_estimator(consider_prior: bool, multivariate: bool) -> None
 
 @pytest.mark.parametrize("mus", (np.asarray([]), np.asarray([0.4]), np.asarray([-0.4, 0.4])))
 @pytest.mark.parametrize("prior_weight", [1.0, 0.01, 100.0])
-@pytest.mark.parametrize("prior", (True, False))
 @pytest.mark.parametrize("magic_clip", (True, False))
 @pytest.mark.parametrize("endpoints", (True, False))
 @pytest.mark.parametrize("multivariate", (True, False))
 def test_calculate_shape_check(
     mus: np.ndarray,
     prior_weight: float,
-    prior: bool,
     magic_clip: bool,
     endpoints: bool,
     multivariate: bool,
 ) -> None:
     parameters = _ParzenEstimatorParameters(
         prior_weight=prior_weight,
-        consider_prior=prior,
         consider_magic_clip=magic_clip,
         consider_endpoints=endpoints,
         weights=default_weights,
@@ -222,17 +198,15 @@ def test_calculate_shape_check(
     mpe = _ParzenEstimator(
         {"a": mus}, {"a": distributions.FloatDistribution(-1.0, 1.0)}, parameters
     )
-    assert len(mpe._mixture_distribution.weights) == max(len(mus) + int(prior), 1)
+    assert len(mpe._mixture_distribution.weights) == len(mus) + 1  # NOTE(sawa3030): +1 for prior.
 
 
 @pytest.mark.parametrize("mus", (np.asarray([]), np.asarray([0.4]), np.asarray([-0.4, 0.4])))
 @pytest.mark.parametrize("prior_weight", [1.0, 0.01, 100.0])
-@pytest.mark.parametrize("prior", (True, False))
 @pytest.mark.parametrize("categorical_distance_func", ({}, {"c": lambda x, y: abs(x - y)}))
 def test_calculate_shape_check_categorical(
     mus: np.ndarray,
     prior_weight: float,
-    prior: bool,
     categorical_distance_func: dict[
         str,
         Callable[[CategoricalChoiceType, CategoricalChoiceType], float],
@@ -240,7 +214,6 @@ def test_calculate_shape_check_categorical(
 ) -> None:
     parameters = _ParzenEstimatorParameters(
         prior_weight=prior_weight,
-        consider_prior=prior,
         consider_magic_clip=True,
         consider_endpoints=False,
         weights=default_weights,
@@ -250,15 +223,13 @@ def test_calculate_shape_check_categorical(
     mpe = _ParzenEstimator(
         {"c": mus}, {"c": distributions.CategoricalDistribution([0.0, 1.0, 2.0])}, parameters
     )
-    assert len(mpe._mixture_distribution.weights) == max(len(mus) + int(prior), 1)
+    assert len(mpe._mixture_distribution.weights) == len(mus) + 1  # NOTE(sawa3030): +1 for prior
 
 
-@pytest.mark.parametrize("prior_weight", [None, -1.0, 0.0])
 @pytest.mark.parametrize("mus", (np.asarray([]), np.asarray([0.4]), np.asarray([-0.4, 0.4])))
-def test_invalid_prior_weight(prior_weight: float, mus: np.ndarray) -> None:
+def test_invalid_prior_weight(mus: np.ndarray) -> None:
     parameters = _ParzenEstimatorParameters(
-        prior_weight=prior_weight,
-        consider_prior=True,
+        prior_weight=-1.0,
         consider_magic_clip=False,
         consider_endpoints=False,
         weights=default_weights,
@@ -275,55 +246,45 @@ def test_invalid_prior_weight(prior_weight: float, mus: np.ndarray) -> None:
     [
         [
             np.asarray([]),
-            {"prior": False, "magic_clip": False, "endpoints": True},
-            {"weights": [1.0], "mus": [0.0], "sigmas": [2.0]},
-        ],
-        [
-            np.asarray([]),
-            {"prior": True, "magic_clip": False, "endpoints": True},
+            {"magic_clip": False, "endpoints": True},
             {"weights": [1.0], "mus": [0.0], "sigmas": [2.0]},
         ],
         [
             np.asarray([0.4]),
-            {"prior": True, "magic_clip": False, "endpoints": True},
+            {"magic_clip": False, "endpoints": True},
             {"weights": [0.5, 0.5], "mus": [0.4, 0.0], "sigmas": [0.6, 2.0]},
         ],
         [
             np.asarray([-0.4]),
-            {"prior": True, "magic_clip": False, "endpoints": True},
+            {"magic_clip": False, "endpoints": True},
             {"weights": [0.5, 0.5], "mus": [-0.4, 0.0], "sigmas": [0.6, 2.0]},
         ],
         [
             np.asarray([-0.4, 0.4]),
-            {"prior": True, "magic_clip": False, "endpoints": True},
+            {"magic_clip": False, "endpoints": True},
             {"weights": [1.0 / 3] * 3, "mus": [-0.4, 0.4, 0.0], "sigmas": [0.6, 0.6, 2.0]},
         ],
         [
             np.asarray([-0.4, 0.4]),
-            {"prior": True, "magic_clip": False, "endpoints": False},
+            {"magic_clip": False, "endpoints": False},
             {"weights": [1.0 / 3] * 3, "mus": [-0.4, 0.4, 0.0], "sigmas": [0.4, 0.4, 2.0]},
         ],
         [
-            np.asarray([-0.4, 0.4]),
-            {"prior": False, "magic_clip": False, "endpoints": True},
-            {"weights": [0.5, 0.5], "mus": [-0.4, 0.4], "sigmas": [0.8, 0.8]},
-        ],
-        [
             np.asarray([-0.4, 0.4, 0.41, 0.42]),
-            {"prior": False, "magic_clip": False, "endpoints": True},
+            {"magic_clip": False, "endpoints": True},
             {
-                "weights": [0.25, 0.25, 0.25, 0.25],
-                "mus": [-0.4, 0.4, 0.41, 0.42],
-                "sigmas": [0.8, 0.8, 0.01, 0.58],
+                "weights": [0.2, 0.2, 0.2, 0.2, 0.2],
+                "mus": [-0.4, 0.4, 0.41, 0.42, 0.0],
+                "sigmas": [0.6, 0.4, 0.01, 0.58, 2.0],
             },
         ],
         [
             np.asarray([-0.4, 0.4, 0.41, 0.42]),
-            {"prior": False, "magic_clip": True, "endpoints": True},
+            {"magic_clip": True, "endpoints": True},
             {
-                "weights": [0.25, 0.25, 0.25, 0.25],
-                "mus": [-0.4, 0.4, 0.41, 0.42],
-                "sigmas": [0.8, 0.8, 0.4, 0.58],
+                "weights": [0.2, 0.2, 0.2, 0.2, 0.2],
+                "mus": [-0.4, 0.4, 0.41, 0.42, 0.0],
+                "sigmas": [0.6, 0.4, 1.0 / 3, 0.58, 2.0],
             },
         ],
     ],
@@ -333,7 +294,6 @@ def test_calculate(
 ) -> None:
     parameters = _ParzenEstimatorParameters(
         prior_weight=1.0,
-        consider_prior=flags["prior"],
         consider_magic_clip=flags["magic_clip"],
         consider_endpoints=flags["endpoints"],
         weights=default_weights,
@@ -370,7 +330,6 @@ def test_calculate(
 def test_invalid_weights(weights: Callable[[int], np.ndarray]) -> None:
     parameters = _ParzenEstimatorParameters(
         prior_weight=1.0,
-        consider_prior=False,
         consider_magic_clip=False,
         consider_endpoints=False,
         weights=weights,

@@ -73,9 +73,6 @@ def test_multi_objective_sample_independent_prior() -> None:
     sampler = TPESampler(seed=0)
     suggestion = suggest(sampler, study, trial, dist, past_trials)
 
-    sampler = TPESampler(consider_prior=False, seed=0)
-    assert suggest(sampler, study, trial, dist, past_trials) != suggestion
-
     sampler = TPESampler(prior_weight=0.5, seed=0)
     assert suggest(sampler, study, trial, dist, past_trials) != suggestion
 
