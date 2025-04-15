@@ -1,0 +1,41 @@
+name: Checks (with optional dependencies)
+
+on:
+  schedule:
+    - cron: '0 23 * * SUN-THU'
+  workflow_dispatch:
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: actions/setup-python@v5
+      with:
+        python-version: 3.12
+
+    - name: Install
+      run: |
+        python -m pip install -U pip
+        pip install -U -e '.[benchmark, checking, document, optional, test]' --extra-index-url https://download.pytorch.org/whl/cpu
+
+    - name: Output installed packages
+      run: |
+        pip freeze --all
+    - name: Output dependency tree
+      run: |
+        pip install pipdeptree
+        pipdeptree
+  
+    - name: black
+      run: black . --check --diff
+    - name: flake8
+      run: flake8 .
+    - name: isort
+      run: isort . --check --diff
+    - name: mypy
+      run: mypy . --warn-unused-ignores
+    - name: blackdoc
+      run: blackdoc . --check --diff

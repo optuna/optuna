@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from collections.abc import Sequence
 from io import BytesIO
 from typing import Any
 
@@ -74,7 +75,7 @@ def _create_study_mixture_category_types() -> Study:
 
 
 @parametrize_plot_slice
-def test_plot_slice_customized_target_name(plot_slice: Callable[..., Any]) -> None:
+def test_plot_slice_customized_target_name(plot_slice: Callable[..., Sequence]) -> None:
     params = ["param_a", "param_b"]
     study = prepare_study_with_trials()
     figure = plot_slice(study, params=params, target_name="Target Name")

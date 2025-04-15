@@ -13,7 +13,9 @@ with try_import() as _imports:
     from matplotlib.collections import PathCollection
     from matplotlib.colors import Colormap
     from matplotlib.contour import ContourSet
+    from matplotlib.dates import DateFormatter
     from matplotlib.figure import Figure
+    from mpl_toolkits.mplot3d.axes3d import Axes3D
 
     # TODO(ytknzw): Set precise version.
     if version.parse(matplotlib_version) < version.parse("3.0.0"):
@@ -31,9 +33,11 @@ __all__ = [
     "matplotlib_version",
     "plt",
     "Axes",
-    "LineCollection",
-    "PathCollection",
+    "Axes3D",
     "Colormap",
     "ContourSet",
+    "DateFormatter",
     "Figure",
+    "LineCollection",
+    "PathCollection",
 ]

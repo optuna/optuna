@@ -103,8 +103,8 @@ def _get_grids_and_grid_indices_of_trials(
         n_steps = min(round((dist.high - dist.low) / dist.step) + 1, n_steps)
 
     scaler = np.log if dist.log else np.asarray
-    grids = np.linspace(scaler(dist.low), scaler(dist.high), n_steps)  # type: ignore[operator]
-    params = scaler([t.params[param_name] for t in trials])  # type: ignore[operator]
+    grids = np.linspace(scaler(dist.low), scaler(dist.high), n_steps)
+    params = scaler([t.params[param_name] for t in trials])
     step_size = grids[1] - grids[0]
     # grids[indices[n] - 1] < param - step_size / 2 <= grids[indices[n]]
     indices = np.searchsorted(grids, params - step_size / 2)
