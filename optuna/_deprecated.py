@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections.abc import Callable
 import functools
 import textwrap
 from typing import Any
@@ -15,6 +14,8 @@ from optuna._experimental import _validate_version
 
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from typing_extensions import ParamSpec
 
     FT = TypeVar("FT")
