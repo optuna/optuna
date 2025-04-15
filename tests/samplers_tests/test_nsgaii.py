@@ -933,7 +933,7 @@ def test_crossover_deterministic(
     def _normal(*args: Any, **kwargs: Any) -> Any:
         if kwargs.get("size") is None:
             return rand_value
-        return np.full(kwargs.get("size"), rand_value)  # type: ignore[arg-type]
+        return np.full(kwargs.get("size"), rand_value)
 
     rng = Mock()
     rng.rand = Mock(side_effect=_rand)

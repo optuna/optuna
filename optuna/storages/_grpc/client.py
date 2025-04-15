@@ -72,7 +72,7 @@ class GrpcStorageProxy(BaseStorage):
                 f"{host}:{port}",
                 options=[("grpc.max_receive_message_length", -1)],
             )
-        )  # type: ignore
+        )
         self._cache = GrpcClientCache(self._stub)
         self._host = host
         self._port = port
@@ -87,7 +87,7 @@ class GrpcStorageProxy(BaseStorage):
         self.__dict__.update(state)
         self._stub = api_pb2_grpc.StorageServiceStub(
             grpc.insecure_channel(f"{self._host}:{self._port}")
-        )  # type: ignore
+        )
         self._cache = GrpcClientCache(self._stub)
 
     def create_new_study(
