@@ -1651,7 +1651,7 @@ def test_tell_from_another_process() -> None:
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_pop_waiting_trial_thread_safe(storage_mode: str) -> None:
-    if storage_mode in ("sqlite", "cached_sqlite", "grpc_rdb"):
+    if "sqlite" in storage_mode:
         pytest.skip("study._pop_waiting_trial is not thread-safe on SQLite3")
 
     num_enqueued = 10
