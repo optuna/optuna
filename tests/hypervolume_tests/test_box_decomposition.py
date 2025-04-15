@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
-import torch
 
 from optuna._hypervolume.box_decomposition import _get_non_dominated_hyper_rectangle_bounds
 from optuna._hypervolume.wfg import compute_hypervolume
@@ -29,10 +28,8 @@ def test_exact_box_decomposition(n_objectives: int) -> None:
     ans = np.empty_like(correct)
     for i, loo in enumerate(loo_mat):
         lbs, ubs = _get_non_dominated_hyper_rectangle_bounds(pareto_sols[loo], ref_point)
-        new_points = torch.tensor(pareto_sols[np.newaxis, i])
-        diff = torch.nn.functional.relu(
-            torch.tensor(ubs) - torch.maximum(new_points[..., torch.newaxis, :], torch.tensor(lbs))
-        )
-        ans[i] = torch.special.logsumexp(diff.log().sum(dim=-1), dim=-1).exp().detach().numpy()
+        new_points = pareto_sols[np.newaxis, i]
+        diff = np.maximum(0.0, ubs - np.maximum(new_points[..., np.newaxis, :], lbs))
+        ans[i] = np.sum(np.prod(diff, axis=-1), axis=-1)
 
     assert np.allclose(ans, correct)

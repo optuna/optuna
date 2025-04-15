@@ -58,18 +58,18 @@ def _get_upper_bound_set(
     def update(sol: np.ndarray, ubs: np.ndarray, dps: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         # The update rule is written in Section 2.2 of Lacour17.
         is_dominated = np.all(sol < ubs, axis=-1)
-        if not np.any(is_dominated):
+        if not any(is_dominated):
             return ubs, dps
 
-        dominated_dps = dps[is_dominated]  # The set A in Line 5 of Alg. 2.
+        dominated_dps = dps[is_dominated]  # The set `A` in Line 5 of Alg. 2.
         n_bounds = dominated_dps.shape[0]
-        # NOTE(nabenabe): -inf comes from Line 2 and k!=j in Line 3 of Alg. 2.
-        # NOTE(nabenabe): If True, include u in A at this index to the set in Line 3 of Alg. 2.
+        # NOTE(nabenabe): `-inf` comes from Line 2 and `k!=j` in Line 3 of Alg. 2.
+        # NOTE(nabenabe): If True, include `u` in `A` at this index to the set in Line 3 of Alg. 2.
         include = sol >= np.max(np.where(target_filter, dominated_dps, -np.inf), axis=-2)
-        # NOTE(nabenabe): The indices of u that got True in include. Each u can get True multiple
-        # times for different indices j. Vectorization can process everything simultaneously.
+        # NOTE(nabenabe): The indices of `u` with `True` in include. Each `u` can get `True`
+        # multiple times for different indices `j`.
         including_indices = np.tile(np.arange(n_bounds)[:, np.newaxis], n_objectives)[include]
-        # The index `j` for each u s.t. \hat{z}_j \geq \max_{k \neq j}{z_j^k(u)}.
+        # The index `j` for each `u` s.t. `\hat{z}_j \geq \max_{k \neq j}{z_j^k(u)}`.
         target_axis = np.tile(objective_indices, (n_bounds, 1))[include]
         target_indices = np.arange(target_axis.size)
         new_dps = dominated_dps[including_indices]  # The 2nd row of the last Eq in Page 5.
