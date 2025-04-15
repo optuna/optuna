@@ -30,6 +30,7 @@ def test_exact_box_decomposition(n_objectives: int) -> None:
         lbs, ubs = _get_non_dominated_hyper_rectangle_bounds(pareto_sols[loo], ref_point)
         new_points = pareto_sols[np.newaxis, i]
         diff = np.maximum(0.0, ubs - np.maximum(new_points[..., np.newaxis, :], lbs))
+        # The minimization version of Eq. (1) in https://arxiv.org/pdf/2006.05078.
         ans[i] = np.sum(np.prod(diff, axis=-1), axis=-1)
 
     assert np.allclose(ans, correct)
