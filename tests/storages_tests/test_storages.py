@@ -24,6 +24,7 @@ from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.study._frozen import FrozenStudy
 from optuna.study._study_direction import StudyDirection
 from optuna.testing.storages import STORAGE_MODES
+from optuna.testing.storages import STORAGE_MODES_PAIRS
 from optuna.testing.storages import StorageSupplier
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
@@ -390,6 +391,23 @@ def test_get_trial_number_from_id(storage_mode: str) -> None:
 
         with pytest.raises(KeyError):
             storage.get_trial_number_from_id(trial_id + 1)
+
+
+@pytest.mark.parametrize("storage_mode_pairs", STORAGE_MODES_PAIRS)
+def test_set_and_get_trial_state_values_through_grpc(storage_mode_pairs: tuple[str, str]) -> None:
+    storage_mode_set, storage_mode_get = storage_mode_pairs
+    with StorageSupplier(storage_mode_set) as storage_set:
+        with StorageSupplier(storage_mode_get) as storage_get:
+            study_id = storage_set.create_new_study(directions=[StudyDirection.MINIMIZE])
+            trial_ids = [storage_set.create_new_trial(study_id) for _ in ALL_STATES]
+            for trial_id, state in zip(trial_ids, ALL_STATES):
+                if state == TrialState.WAITING:
+                    continue
+                assert storage_get.get_trial(trial_id).state == TrialState.RUNNING
+                values = [0.0] if state.is_finished() else None
+                storage_set.set_trial_state_values(trial_id, state=state, values=values)
+                assert storage_get.get_trial(trial_id).state == state
+                assert storage_get.get_trial(trial_id).values == values
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
@@ -773,7 +791,7 @@ def test_get_all_trials(storage_mode: str) -> None:
 def test_get_all_trials_params_order(storage_mode: str, param_names: list[str]) -> None:
     # We don't actually require that all storages to preserve the order of parameters,
     # but all current implementations except for GrpcStorageProxy do, so we test this property.
-    if storage_mode in ("grpc_rdb", "grpc_journal_file"):
+    if "grpc" in storage_mode:
         pytest.skip("GrpcStorageProxy does not preserve the order of parameters.")
 
     with StorageSupplier(storage_mode) as storage:

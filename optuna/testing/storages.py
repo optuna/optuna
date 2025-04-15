@@ -24,22 +24,31 @@ else:
     grpc = _LazyImport("grpc")
 
 
-STORAGE_MODES: list[Any] = [
+STORAGE_MODES_DIRECT: list[Any] = [
     "inmemory",
     "sqlite",
     "cached_sqlite",
     "journal",
     "journal_redis",
-    "grpc_rdb",
-    "grpc_journal_file",
 ]
 
+STORAGE_MODES_GRPC = ["grpc_" + mode for mode in STORAGE_MODES_DIRECT]
+
+STORAGE_MODES = STORAGE_MODES_DIRECT + STORAGE_MODES_GRPC
 
 STORAGE_MODES_HEARTBEAT = [
     "sqlite",
     "cached_sqlite",
 ]
 
+
+STORAGE_MODES_PAIRS = [
+    pair
+    for pair in zip(
+        STORAGE_MODES_DIRECT + STORAGE_MODES_GRPC, STORAGE_MODES_GRPC + STORAGE_MODES_DIRECT
+    )
+    if "inmemory" not in pair[0]
+]
 SQLITE3_TIMEOUT = 300
 
 
@@ -52,33 +61,40 @@ class StorageSupplier:
         self.thread: threading.Thread | None = None
         self.proxy: GrpcStorageProxy | None = None
 
-    def __enter__(
+    def __enter__(self) -> BaseStorage:
+        storage: BaseStorage = self._create_direct_storage()
+        if "cached_" in self.storage_specifier:
+            assert isinstance(storage, optuna.storages.RDBStorage)
+            storage = self._create_cached_storage(storage)
+        elif "grpc_" in self.storage_specifier:
+            storage = self._create_proxy(storage)
+        return storage
+
+    def _create_cached_storage(
+        self, storage: optuna.storages.RDBStorage
+    ) -> optuna.storages._CachedStorage:
+        return optuna.storages._CachedStorage(storage)
+
+    def _create_direct_storage(
         self,
     ) -> (
         optuna.storages.InMemoryStorage
-        | optuna.storages._CachedStorage
         | optuna.storages.RDBStorage
         | optuna.storages.JournalStorage
-        | optuna.storages.GrpcStorageProxy
     ):
-        if self.storage_specifier == "inmemory":
+        if "inmemory" in self.storage_specifier:
             if len(self.extra_args) > 0:
                 raise ValueError("InMemoryStorage does not accept any arguments!")
             return optuna.storages.InMemoryStorage()
         elif "sqlite" in self.storage_specifier:
             self.tempfile = NamedTemporaryFilePool().tempfile()
             url = "sqlite:///{}".format(self.tempfile.name)
-            rdb_storage = optuna.storages.RDBStorage(
+            return optuna.storages.RDBStorage(
                 url,
                 engine_kwargs={"connect_args": {"timeout": SQLITE3_TIMEOUT}},
                 **self.extra_args,
             )
-            return (
-                optuna.storages._CachedStorage(rdb_storage)
-                if "cached" in self.storage_specifier
-                else rdb_storage
-            )
-        elif self.storage_specifier == "journal_redis":
+        elif "journal_redis" in self.storage_specifier:
             journal_redis_storage = optuna.storages.journal.JournalRedisBackend(
                 "redis://localhost"
             )
@@ -86,24 +102,13 @@ class StorageSupplier:
                 "redis", fakeredis.FakeStrictRedis()  # type: ignore[no-untyped-call]
             )
             return optuna.storages.JournalStorage(journal_redis_storage)
-        elif self.storage_specifier == "grpc_journal_file":
-            self.tempfile = self.extra_args.get("file", NamedTemporaryFilePool().tempfile())
-            assert self.tempfile is not None
-            storage = optuna.storages.JournalStorage(
-                optuna.storages.journal.JournalFileBackend(self.tempfile.name)
-            )
-            return self._create_proxy(storage)
         elif "journal" in self.storage_specifier:
             self.tempfile = self.extra_args.get("file", NamedTemporaryFilePool().tempfile())
             assert self.tempfile is not None
             file_storage = JournalFileBackend(self.tempfile.name)
             return optuna.storages.JournalStorage(file_storage)
-        elif self.storage_specifier == "grpc_rdb":
-            self.tempfile = NamedTemporaryFilePool().tempfile()
-            url = "sqlite:///{}".format(self.tempfile.name)
-            return self._create_proxy(optuna.storages.RDBStorage(url))
         else:
-            assert False
+            assert False, "Unsupported storage specifier: {}".format(self.storage_specifier)
 
     def _create_proxy(self, storage: BaseStorage) -> GrpcStorageProxy:
         port = _find_free_port()
