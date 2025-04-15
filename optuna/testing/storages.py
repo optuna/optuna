@@ -32,9 +32,15 @@ STORAGE_MODES_DIRECT: list[Any] = [
     "journal_redis",
 ]
 
-STORAGE_MODES_GRPC = ["grpc_" + mode for mode in STORAGE_MODES_DIRECT]
-
-STORAGE_MODES = STORAGE_MODES_DIRECT + STORAGE_MODES_GRPC
+STORAGE_MODES: list[Any] = [
+    "inmemory",
+    "sqlite",
+    "cached_sqlite",
+    "journal",
+    "journal_redis",
+    "grpc_sqlite",
+    "grpc_journal",
+]
 
 STORAGE_MODES_HEARTBEAT = [
     "sqlite",
