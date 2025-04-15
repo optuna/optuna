@@ -350,11 +350,12 @@ class OptunaStorageProxyService(api_pb2_grpc.StorageServiceServicer):
         if self._ttl_cache_seconds is None:
             trials = self._get_all_trials(study_id, context)
         else:
-            now = time.time()
-            if now >= self._cached_trials[study_id].last_sync_time + self._ttl_cache_seconds:
-                _logger.info("Syncing trials for study_id=%d", study_id)
-                self._cached_trials[study_id].trials = self._get_all_trials(study_id, context)
-                self._cached_trials[study_id].last_sync_time = now
+            with self._lock:
+                now = time.time()
+                if now >= self._cached_trials[study_id].last_sync_time + self._ttl_cache_seconds:
+                    _logger.info("Syncing trials for study_id=%d", study_id)
+                    self._cached_trials[study_id].trials = self._get_all_trials(study_id, context)
+                    self._cached_trials[study_id].last_sync_time = now
             trials = self._cached_trials[study_id].trials
         filtered_trials = [
             _to_proto_trial(t)
