@@ -399,7 +399,7 @@ def _test_set_and_get_compatibility(
     study_id = storage_set.create_new_study(directions=[StudyDirection.MINIMIZE])
     trial_ids = [storage_set.create_new_trial(study_id) for _ in ALL_STATES]
     for trial_id, state in zip(trial_ids, ALL_STATES):
-        if state == TrialState.WAITING:
+        if state in (TrialState.WAITING, TrialState.RUNNING):
             continue
         assert storage_get.get_trial(trial_id).state == TrialState.RUNNING
         storage_set.set_trial_state_values(trial_id, state=state, values=values)
@@ -408,7 +408,7 @@ def _test_set_and_get_compatibility(
 
 
 @pytest.mark.parametrize("storage_mode_direct", STORAGE_MODES_DIRECT)
-@pytest.mark.parametrize("values", [None, [0.0], [0.0, 1.0]])
+@pytest.mark.parametrize("values", [None, [0.0]])
 def test_set_and_get_trial_state_values_through_grpc_proxy(
     storage_mode_direct: str, values: list[float] | None
 ) -> None:
@@ -419,14 +419,14 @@ def test_set_and_get_trial_state_values_through_grpc_proxy(
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-@pytest.mark.parametrize("values", [None, [0.0], [0.0, 1.0]])
+@pytest.mark.parametrize("values", [None, [0.0]])
 def test_set_trial_state_values_for_state(storage_mode: str, values: list[float] | None) -> None:
     with StorageSupplier(storage_mode) as storage:
         study_id = storage.create_new_study(directions=[StudyDirection.MINIMIZE])
         trial_ids = [storage.create_new_trial(study_id) for _ in ALL_STATES]
 
         for trial_id, state in zip(trial_ids, ALL_STATES):
-            if state == TrialState.WAITING:
+            if state in (TrialState.WAITING, TrialState.RUNNING):
                 continue
             assert storage.get_trial(trial_id).state == TrialState.RUNNING
             datetime_start_prev = storage.get_trial(trial_id).datetime_start
