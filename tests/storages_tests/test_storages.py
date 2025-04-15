@@ -24,7 +24,7 @@ from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.study._frozen import FrozenStudy
 from optuna.study._study_direction import StudyDirection
 from optuna.testing.storages import STORAGE_MODES
-from optuna.testing.storages import STORAGE_MODES_PAIRS
+from optuna.testing.storages import STORAGE_MODES_DIRECT
 from optuna.testing.storages import StorageSupplier
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
@@ -393,21 +393,25 @@ def test_get_trial_number_from_id(storage_mode: str) -> None:
             storage.get_trial_number_from_id(trial_id + 1)
 
 
-@pytest.mark.parametrize("storage_mode_pairs", STORAGE_MODES_PAIRS)
-def test_set_and_get_trial_state_values_through_grpc(storage_mode_pairs: tuple[str, str]) -> None:
-    storage_mode_set, storage_mode_get = storage_mode_pairs
-    with StorageSupplier(storage_mode_set) as storage_set:
-        with StorageSupplier(storage_mode_get) as storage_get:
-            study_id = storage_set.create_new_study(directions=[StudyDirection.MINIMIZE])
-            trial_ids = [storage_set.create_new_trial(study_id) for _ in ALL_STATES]
-            for trial_id, state in zip(trial_ids, ALL_STATES):
-                if state == TrialState.WAITING:
-                    continue
-                assert storage_get.get_trial(trial_id).state == TrialState.RUNNING
-                values = [0.0] if state.is_finished() else None
-                storage_set.set_trial_state_values(trial_id, state=state, values=values)
-                assert storage_get.get_trial(trial_id).state == state
-                assert storage_get.get_trial(trial_id).values == values
+def _test_set_and_get_compatibility(storage_set: BaseStorage, storage_get: BaseStorage) -> None:
+    study_id = storage_set.create_new_study(directions=[StudyDirection.MINIMIZE])
+    trial_ids = [storage_set.create_new_trial(study_id) for _ in ALL_STATES]
+    for trial_id, state in zip(trial_ids, ALL_STATES):
+        if state == TrialState.WAITING:
+            continue
+        assert storage_get.get_trial(trial_id).state == TrialState.RUNNING
+        values = [0.0] if state.is_finished() else None
+        storage_set.set_trial_state_values(trial_id, state=state, values=values)
+        assert storage_get.get_trial(trial_id).state == state
+        assert storage_get.get_trial(trial_id).values == values
+
+
+@pytest.mark.parametrize("storage_mode_direct", STORAGE_MODES_DIRECT)
+def test_set_and_get_trial_state_values_through_grpc_proxy(storage_mode_direct: str) -> None:
+    with StorageSupplier(storage_mode_direct) as storage_direct:
+        with StorageSupplier("grpc_proxy", storage_direct) as storage_grpc_proxy:
+            _test_set_and_get_compatibility(storage_grpc_proxy, storage_direct)
+            _test_set_and_get_compatibility(storage_direct, storage_grpc_proxy)
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)

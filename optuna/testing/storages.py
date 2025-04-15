@@ -42,19 +42,17 @@ STORAGE_MODES_HEARTBEAT = [
 ]
 
 
-STORAGE_MODES_PAIRS = [
-    pair
-    for pair in zip(
-        STORAGE_MODES_DIRECT + STORAGE_MODES_GRPC, STORAGE_MODES_GRPC + STORAGE_MODES_DIRECT
-    )
-    if "inmemory" not in pair[0]
-]
 SQLITE3_TIMEOUT = 300
 
 
 class StorageSupplier:
-    def __init__(self, storage_specifier: str, **kwargs: Any) -> None:
+    def __init__(
+        self, storage_specifier: str, base_storage: BaseStorage | None = None, **kwargs: Any
+    ) -> None:
         self.storage_specifier = storage_specifier
+        if base_storage is not None:
+            assert storage_specifier == "grpc_proxy"
+        self.base_storage = base_storage
         self.extra_args = kwargs
         self.tempfile: IO[Any] | None = None
         self.server: grpc.Server | None = None
@@ -62,6 +60,8 @@ class StorageSupplier:
         self.proxy: GrpcStorageProxy | None = None
 
     def __enter__(self) -> BaseStorage:
+        if self.base_storage is not None:
+            return self._create_proxy(self.base_storage)
         storage: BaseStorage = self._create_direct_storage()
         if "cached_" in self.storage_specifier:
             assert isinstance(storage, optuna.storages.RDBStorage)
