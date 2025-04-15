@@ -396,11 +396,7 @@ def test_get_trial_number_from_id(storage_mode: str) -> None:
 def _test_set_and_get_compatibility(storage_set: BaseStorage, storage_get: BaseStorage) -> None:
     study_id = storage_set.create_new_study(directions=[StudyDirection.MINIMIZE])
     trial_ids = [storage_set.create_new_trial(study_id) for _ in ALL_STATES]
-    assert TrialState.RUNNING in ALL_STATES
-    assert TrialState.WAITING in ALL_STATES
-    assert TrialState.COMPLETE in ALL_STATES
-    assert TrialState.PRUNED in ALL_STATES
-    assert TrialState.FAIL in ALL_STATES
+    assert len(set(trial_ids)) == len(ALL_STATES)
     for trial_id, state in zip(trial_ids, ALL_STATES):
         if state == TrialState.WAITING:
             continue
