@@ -40,9 +40,8 @@ def logehvi(
     non_dominated_box_upper_bounds: torch.Tensor,  # (n_boxes, n_objectives)
 ) -> torch.Tensor:  # (..., )
     log_n_qmc_samples = float(np.log(Y_post.shape[-2]))
-    # NOTE: Daulton20 is available at https://arxiv.org/abs/2006.05078.
-    # This function calculates Eq. (1) of Daulton20.
-    # TODO(nabenabe): Adapt to Eq. (3) of Daulton20 when we support batch optimization.
+    # This function calculates Eq. (1) of https://arxiv.org/abs/2006.05078.
+    # TODO(nabenabe): Adapt to Eq. (3) when we support batch optimization.
     diff = torch.nn.functional.relu(
         torch.minimum(Y_post[..., torch.newaxis, :], non_dominated_box_upper_bounds)
         - non_dominated_box_lower_bounds
