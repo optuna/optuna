@@ -53,9 +53,9 @@ def _get_upper_bound_set(
     """
     (_, n_objectives) = sorted_pareto_sols.shape
     objective_indices = np.arange(n_objectives)
-    target_filter = ~np.eye(n_objectives, dtype=bool)
+    skip_ineq_judge = np.eye(n_objectives, dtype=bool)
     # NOTE(nabenabe): False at 0 comes from Line 2 of Alg. 2. (loss_vals is sorted w.r.t. 0-th obj)
-    target_filter[:, 0] = False
+    skip_ineq_judge[:, 0] = True
 
     def update(sol: np.ndarray, ubs: np.ndarray, dps: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         # The update rule is written in Section 2.2 of Lacour17.
@@ -66,18 +66,21 @@ def _get_upper_bound_set(
         dominated_dps = dps[is_dominated]  # The set `A` in Line 5 of Alg. 2.
         n_bounds = dominated_dps.shape[0]
         # NOTE(nabenabe): `-inf` comes from Line 2 and `k!=j` in Line 3 of Alg. 2.
-        # NOTE(nabenabe): If True, include `u` in `A` at this index to the set in Line 3 of Alg. 2.
-        include = sol >= np.max(np.where(target_filter, dominated_dps, -np.inf), axis=-2)
-        # NOTE(nabenabe): The indices of `u` with `True` in include. Each `u` may yield `True`
+        # NOTE(nabenabe): If `update[i,j]=True`, update `ubs[i,j]` to `(z_j, u_{-j})`, i.e.,
+        # `np.where(objective_indices != j, ubs[i], sol[j])` in `new_ubs`. cf. Lines 2,3 of Alg. 2.
+        update = sol >= np.max(np.where(skip_ineq_judge, -np.inf, dominated_dps), axis=-2)
+        # NOTE(nabenabe): The indices of `u` with `True` in update. Each `u` may yield `True`
         # multiple times for different indices `j`.
-        including_indices = np.tile(np.arange(n_bounds)[:, np.newaxis], n_objectives)[include]
-        # The index `j` for each `u` s.t. `\hat{z}_j \geq \max_{k \neq j}{z_j^k(u)}`.
-        target_axis = np.tile(objective_indices, (n_bounds, 1))[include]
-        target_indices = np.arange(target_axis.size)
-        new_dps = dominated_dps[including_indices]  # The 2nd row of the last Eq in Page 5.
-        new_dps[target_indices, target_axis] = sol  # The 1st row of the same Eq.
-        new_ubs = ubs[is_dominated][including_indices]  # Line 3 of Alg. 2.
-        new_ubs[target_indices, target_axis] = sol[target_axis]  # \bar{z}_j in Line 3.
+        ubs_indices_to_update = np.tile(np.arange(n_bounds)[:, np.newaxis], n_objectives)[update]
+        # The dimension `j` for each `u` s.t. `\hat{z}_j \geq \max_{k \neq j}{z_j^k(u)}`.
+        dimensions_to_update = np.tile(objective_indices, (n_bounds, 1))[update]
+        target_axis = np.tile(objective_indices, (n_bounds, 1))[update]
+        assert ubs_indices_to_update.size == dimensions_to_update.size
+        target_indices = np.arange(dimensions_to_update.size)
+        new_dps = dominated_dps[ubs_indices_to_update]  # The 2nd row of the last Eq in Page 5.
+        new_dps[target_indices, dimensions_to_update] = sol  # The 1st row of the same Eq.
+        new_ubs = ubs[is_dominated][ubs_indices_to_update]  # Line 3 of Alg. 2.
+        new_ubs[target_indices, dimensions_to_update] = sol[dimensions_to_update]  # \bar{z}_j in Line 3.
         return np.vstack([ubs[~is_dominated], new_ubs]), np.vstack([dps[~is_dominated], new_dps])
 
     upper_bound_set = np.asarray([ref_point])  # Line 1 of Alg. 2.
@@ -120,7 +123,7 @@ def _get_non_dominated_box_bounds(
 
 
 def get_non_dominated_box_bounds(
-    loss_vals: np.ndarray, ref_point: np.ndarray, alpha: float | None = None
+    loss_vals: np.ndarray, ref_point: np.ndarray
 ) -> tuple[np.ndarray, np.ndarray]:  # (n_bounds, n_objectives) and (n_bounds, n_objectives)
     unique_lexsorted_loss_vals = np.unique(loss_vals, axis=0)
     sorted_pareto_sols = unique_lexsorted_loss_vals[
