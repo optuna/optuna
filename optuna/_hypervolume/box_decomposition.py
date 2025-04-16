@@ -5,10 +5,10 @@ but they are refactored significantly from the original version.
 For ``_get_upper_bound_set``, look at:
     * https://github.com/pytorch/botorch/blob/v0.13.0/botorch/utils/multi_objective/box_decompositions/utils.py#L101-L160
 
-For ``_get_hyper_rectangle_bounds``, look at:
+For ``_get_box_bounds``, look at:
     * https://github.com/pytorch/botorch/blob/v0.13.0/botorch/utils/multi_objective/box_decompositions/utils.py#L163-L193
 
-For ``_get_non_dominated_hyper_rectangle_bounds``, look at:
+For ``_get_non_dominated_box_bounds``, look at:
     * https://github.com/pytorch/botorch/blob/v0.13.0/botorch/utils/multi_objective/box_decompositions/non_dominated.py#L395-L430
 
 The preprocessing for four or fewer objectives, we use the algorithm proposed by:
@@ -89,7 +89,7 @@ def _get_upper_bound_set(
     return upper_bound_set, def_points
 
 
-def _get_hyper_rectangle_bounds(
+def _get_box_bounds(
     def_points: np.ndarray, upper_bound_set: np.ndarray, ref_point: np.ndarray
 ) -> np.ndarray:
     # Eq. (2) of Lacour17.
@@ -104,7 +104,7 @@ def _get_hyper_rectangle_bounds(
     return bounds[:, not_empty]
 
 
-def _get_non_dominated_hyper_rectangle_bounds(
+def _get_non_dominated_box_bounds(
     sorted_pareto_sols: np.ndarray, ref_point: np.ndarray
 ) -> tuple[np.ndarray, np.ndarray]:  # (n_bounds, n_objectives) and (n_bounds, n_objectives)
     # The calculation of u[k] and l[k] in the paper: https://arxiv.org/abs/2006.05078
@@ -114,12 +114,12 @@ def _get_non_dominated_hyper_rectangle_bounds(
     # Flip the sign and use upper_bound_set as the Pareto solutions. Then we can calculate the
     # lower bound set as well.
     point_at_infinity = np.full_like(ref_point, np.inf)
-    neg_bound_set, neg_def_points = _get_upper_bound_set(-upper_bound_set, point_at_infinity)
-    ubs, lbs = -_get_hyper_rectangle_bounds(neg_def_points, neg_bound_set, point_at_infinity)
+    neg_upper_bound_set, neg_def_points = _get_upper_bound_set(-upper_bound_set, point_at_infinity)
+    ubs, lbs = -_get_box_bounds(neg_def_points, neg_upper_bound_set, point_at_infinity)
     return lbs, ubs
 
 
-def get_non_dominated_hyper_rectangle_bounds(
+def get_non_dominated_box_bounds(
     loss_vals: np.ndarray, ref_point: np.ndarray, alpha: float | None = None
 ) -> tuple[np.ndarray, np.ndarray]:  # (n_bounds, n_objectives) and (n_bounds, n_objectives)
     unique_lexsorted_loss_vals = np.unique(loss_vals, axis=0)
@@ -135,4 +135,4 @@ def get_non_dominated_hyper_rectangle_bounds(
             "Please consider using another sampler instead."
         )
 
-    return _get_non_dominated_hyper_rectangle_bounds(sorted_pareto_sols, ref_point)
+    return _get_non_dominated_box_bounds(sorted_pareto_sols, ref_point)

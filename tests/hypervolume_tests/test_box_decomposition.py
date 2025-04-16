@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from optuna._hypervolume.box_decomposition import _get_non_dominated_hyper_rectangle_bounds
+from optuna._hypervolume.box_decomposition import get_non_dominated_box_bounds
 from optuna._hypervolume.wfg import compute_hypervolume
 from optuna.study._multi_objective import _is_pareto_front
 
@@ -27,10 +27,10 @@ def test_exact_box_decomposition(n_objectives: int) -> None:
     correct = hv - np.array([compute_hypervolume(pareto_sols[loo], ref_point) for loo in loo_mat])
     ans = np.empty_like(correct)
     for i, loo in enumerate(loo_mat):
-        lbs, ubs = _get_non_dominated_hyper_rectangle_bounds(pareto_sols[loo], ref_point)
+        lbs, ubs = get_non_dominated_box_bounds(pareto_sols[loo], ref_point)
         new_points = pareto_sols[np.newaxis, i]
         diff = np.maximum(0.0, ubs - np.maximum(new_points[..., np.newaxis, :], lbs))
         # The minimization version of Eq. (1) in https://arxiv.org/pdf/2006.05078.
-        ans[i] = np.sum(np.prod(diff, axis=-1), axis=-1)
+        ans[i] = np.sum(np.prod(diff, axis=-1))
 
     assert np.allclose(ans, correct)
