@@ -74,13 +74,14 @@ def _get_upper_bound_set(
         ubs_indices_to_update = np.tile(np.arange(n_bounds)[:, np.newaxis], n_objectives)[update]
         # The dimension `j` for each `u` s.t. `\hat{z}_j \geq \max_{k \neq j}{z_j^k(u)}`.
         dimensions_to_update = np.tile(objective_indices, (n_bounds, 1))[update]
-        target_axis = np.tile(objective_indices, (n_bounds, 1))[update]
         assert ubs_indices_to_update.size == dimensions_to_update.size
-        target_indices = np.arange(dimensions_to_update.size)
-        new_dps = dominated_dps[ubs_indices_to_update]  # The 2nd row of the last Eq in Page 5.
-        new_dps[target_indices, dimensions_to_update] = sol  # The 1st row of the same Eq.
-        new_ubs = ubs[is_dominated][ubs_indices_to_update]  # Line 3 of Alg. 2.
-        new_ubs[target_indices, dimensions_to_update] = sol[dimensions_to_update]  # \bar{z}_j in Line 3.
+        indices_for_sweeping = np.arange(dimensions_to_update.size)
+        # The last Eq in Page 5.
+        new_dps = dominated_dps[ubs_indices_to_update]
+        new_dps[indices_for_sweeping, dimensions_to_update] = sol
+        # Line 3 of Alg. 2. `sol[dimensions_to_update]` is equivalent to `\bar{z}_j`.
+        new_ubs = ubs[is_dominated][ubs_indices_to_update]
+        new_ubs[indices_for_sweeping, dimensions_to_update] = sol[dimensions_to_update]
         return np.vstack([ubs[~is_dominated], new_ubs]), np.vstack([dps[~is_dominated], new_dps])
 
     upper_bound_set = np.asarray([ref_point])  # Line 1 of Alg. 2.
