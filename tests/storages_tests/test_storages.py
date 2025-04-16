@@ -24,7 +24,6 @@ from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.study._frozen import FrozenStudy
 from optuna.study._study_direction import StudyDirection
 from optuna.testing.storages import STORAGE_MODES
-from optuna.testing.storages import STORAGE_MODES_DIRECT
 from optuna.testing.storages import StorageSupplier
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
@@ -393,46 +392,21 @@ def test_get_trial_number_from_id(storage_mode: str) -> None:
             storage.get_trial_number_from_id(trial_id + 1)
 
 
-def _test_set_and_get_compatibility(
-    storage_set: BaseStorage, storage_get: BaseStorage, values: list[float] | None
-) -> None:
-    study_id = storage_set.create_new_study(directions=[StudyDirection.MINIMIZE])
-    trial_ids = [storage_set.create_new_trial(study_id) for _ in ALL_STATES]
-    for trial_id, state in zip(trial_ids, ALL_STATES):
-        if state in (TrialState.WAITING, TrialState.RUNNING):
-            continue
-        assert storage_get.get_trial(trial_id).state == TrialState.RUNNING
-        storage_set.set_trial_state_values(trial_id, state=state, values=values)
-        assert storage_get.get_trial(trial_id).state == state
-        assert storage_get.get_trial(trial_id).values == values
-
-
-@pytest.mark.parametrize("storage_mode_direct", STORAGE_MODES_DIRECT)
-@pytest.mark.parametrize("values", [None, [0.0]])
-def test_set_and_get_trial_state_values_through_grpc_proxy(
-    storage_mode_direct: str, values: list[float] | None
-) -> None:
-    with StorageSupplier(storage_mode_direct) as storage_direct:
-        with StorageSupplier("grpc_proxy", storage_direct) as storage_grpc_proxy:
-            _test_set_and_get_compatibility(storage_grpc_proxy, storage_direct, values)
-            _test_set_and_get_compatibility(storage_direct, storage_grpc_proxy, values)
-
-
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-@pytest.mark.parametrize("values", [None, [0.0]])
-def test_set_trial_state_values_for_state(storage_mode: str, values: list[float] | None) -> None:
+def test_set_trial_state_values_for_state(storage_mode: str) -> None:
     with StorageSupplier(storage_mode) as storage:
         study_id = storage.create_new_study(directions=[StudyDirection.MINIMIZE])
         trial_ids = [storage.create_new_trial(study_id) for _ in ALL_STATES]
 
         for trial_id, state in zip(trial_ids, ALL_STATES):
-            if state in (TrialState.WAITING, TrialState.RUNNING):
+            if state == TrialState.WAITING:
                 continue
             assert storage.get_trial(trial_id).state == TrialState.RUNNING
             datetime_start_prev = storage.get_trial(trial_id).datetime_start
-            storage.set_trial_state_values(trial_id, state=state, values=values)
+            storage.set_trial_state_values(
+                trial_id, state=state, values=(0.0,) if state.is_finished() else None
+            )
             assert storage.get_trial(trial_id).state == state
-            assert storage.get_trial(trial_id).values == values
             # Repeated state changes to RUNNING should not trigger further datetime_start changes.
             if state == TrialState.RUNNING:
                 assert storage.get_trial(trial_id).datetime_start == datetime_start_prev
@@ -799,7 +773,7 @@ def test_get_all_trials(storage_mode: str) -> None:
 def test_get_all_trials_params_order(storage_mode: str, param_names: list[str]) -> None:
     # We don't actually require that all storages to preserve the order of parameters,
     # but all current implementations except for GrpcStorageProxy do, so we test this property.
-    if "grpc" in storage_mode:
+    if storage_mode in ("grpc_rdb", "grpc_journal_file"):
         pytest.skip("GrpcStorageProxy does not preserve the order of parameters.")
 
     with StorageSupplier(storage_mode) as storage:

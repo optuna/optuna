@@ -24,86 +24,61 @@ else:
     grpc = _LazyImport("grpc")
 
 
-STORAGE_MODES_DIRECT: list[Any] = [
-    "inmemory",
-    "sqlite",
-    "cached_sqlite",
-    "journal",
-    "journal_redis",
-]
-
 STORAGE_MODES: list[Any] = [
     "inmemory",
     "sqlite",
     "cached_sqlite",
     "journal",
     "journal_redis",
-    "grpc_sqlite",
-    "grpc_journal",
+    "grpc_rdb",
+    "grpc_journal_file",
 ]
+
 
 STORAGE_MODES_HEARTBEAT = [
     "sqlite",
     "cached_sqlite",
 ]
 
-
 SQLITE3_TIMEOUT = 300
 
 
 class StorageSupplier:
-    def __init__(
-        self,
-        storage_specifier: str,
-        base_storage: BaseStorage | None = None,
-        **kwargs: Any,
-    ) -> None:
+    def __init__(self, storage_specifier: str, **kwargs: Any) -> None:
         self.storage_specifier = storage_specifier
-        if base_storage is not None:
-            assert storage_specifier == "grpc_proxy"
-        self.base_storage = base_storage
         self.extra_args = kwargs
         self.tempfile: IO[Any] | None = None
         self.server: grpc.Server | None = None
         self.thread: threading.Thread | None = None
         self.proxy: GrpcStorageProxy | None = None
 
-    def __enter__(self) -> BaseStorage:
-        if self.base_storage is not None:
-            return self._create_proxy(self.base_storage)
-        storage: BaseStorage = self._create_direct_storage()
-        if "cached_" in self.storage_specifier:
-            assert isinstance(storage, optuna.storages.RDBStorage)
-            storage = self._create_cached_storage(storage)
-        elif "grpc_" in self.storage_specifier:
-            storage = self._create_proxy(storage)
-        return storage
-
-    def _create_cached_storage(
-        self, storage: optuna.storages.RDBStorage
-    ) -> optuna.storages._CachedStorage:
-        return optuna.storages._CachedStorage(storage)
-
-    def _create_direct_storage(
+    def __enter__(
         self,
     ) -> (
         optuna.storages.InMemoryStorage
+        | optuna.storages._CachedStorage
         | optuna.storages.RDBStorage
         | optuna.storages.JournalStorage
+        | optuna.storages.GrpcStorageProxy
     ):
-        if "inmemory" in self.storage_specifier:
+        if self.storage_specifier == "inmemory":
             if len(self.extra_args) > 0:
                 raise ValueError("InMemoryStorage does not accept any arguments!")
             return optuna.storages.InMemoryStorage()
         elif "sqlite" in self.storage_specifier:
             self.tempfile = NamedTemporaryFilePool().tempfile()
             url = "sqlite:///{}".format(self.tempfile.name)
-            return optuna.storages.RDBStorage(
+            rdb_storage = optuna.storages.RDBStorage(
                 url,
                 engine_kwargs={"connect_args": {"timeout": SQLITE3_TIMEOUT}},
                 **self.extra_args,
             )
-        elif "journal_redis" in self.storage_specifier:
+            return (
+                optuna.storages._CachedStorage(rdb_storage)
+                if "cached" in self.storage_specifier
+                else rdb_storage
+            )
+        elif self.storage_specifier == "journal_redis":
             journal_redis_storage = optuna.storages.journal.JournalRedisBackend(
                 "redis://localhost"
             )
@@ -111,13 +86,24 @@ class StorageSupplier:
                 "redis", fakeredis.FakeStrictRedis()  # type: ignore[no-untyped-call]
             )
             return optuna.storages.JournalStorage(journal_redis_storage)
+        elif self.storage_specifier == "grpc_journal_file":
+            self.tempfile = self.extra_args.get("file", NamedTemporaryFilePool().tempfile())
+            assert self.tempfile is not None
+            storage = optuna.storages.JournalStorage(
+                optuna.storages.journal.JournalFileBackend(self.tempfile.name)
+            )
+            return self._create_proxy(storage)
         elif "journal" in self.storage_specifier:
             self.tempfile = self.extra_args.get("file", NamedTemporaryFilePool().tempfile())
             assert self.tempfile is not None
             file_storage = JournalFileBackend(self.tempfile.name)
             return optuna.storages.JournalStorage(file_storage)
+        elif self.storage_specifier == "grpc_rdb":
+            self.tempfile = NamedTemporaryFilePool().tempfile()
+            url = "sqlite:///{}".format(self.tempfile.name)
+            return self._create_proxy(optuna.storages.RDBStorage(url))
         else:
-            assert False, "Unsupported storage specifier: {}".format(self.storage_specifier)
+            assert False
 
     def _create_proxy(self, storage: BaseStorage) -> GrpcStorageProxy:
         port = _find_free_port()

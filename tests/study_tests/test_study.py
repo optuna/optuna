@@ -1043,7 +1043,7 @@ def test_optimize_infinite_budget_progbar() -> None:
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_get_trials(storage_mode: str) -> None:
-    if "grpc_" in storage_mode:
+    if storage_mode in ("grpc_rdb", "grpc_journal_file"):
         pytest.skip("gRPC storage doesn't use `copy.deepcopy`.")
 
     with StorageSupplier(storage_mode) as storage:
@@ -1658,7 +1658,7 @@ def test_tell_from_another_process() -> None:
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_pop_waiting_trial_thread_safe(storage_mode: str) -> None:
-    if "sqlite" in storage_mode:
+    if storage_mode in ("sqlite", "cached_sqlite", "grpc_rdb"):
         pytest.skip("study._pop_waiting_trial is not thread-safe on SQLite3")
 
     num_enqueued = 10
