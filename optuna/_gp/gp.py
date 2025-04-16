@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections.abc import Callable
 from dataclasses import dataclass
 import math
 from typing import Any
@@ -13,6 +12,8 @@ from optuna.logging import get_logger
 
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     import scipy.optimize as so
     import torch
 else:
