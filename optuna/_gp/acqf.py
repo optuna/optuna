@@ -36,16 +36,16 @@ def _sample_from_normal_sobol(dim: int, n_samples: int, seed: int | None) -> tor
 
 def logehvi(
     Y_post: torch.Tensor,  # (..., n_qmc_samples, n_objectives)
-    non_dominated_lower_bounds: torch.Tensor,  # (n_sub_hyper_rectangles, n_objectives)
-    non_dominated_upper_bounds: torch.Tensor,  # (n_sub_hyper_rectangles, n_objectives)
+    non_dominated_box_lower_bounds: torch.Tensor,  # (n_boxes, n_objectives)
+    non_dominated_box_upper_bounds: torch.Tensor,  # (n_boxes, n_objectives)
 ) -> torch.Tensor:  # (..., )
     log_n_qmc_samples = float(np.log(Y_post.shape[-2]))
-    # NOTE: [Daulton20] is available at https://arxiv.org/abs/2006.05078.
-    # This function calculates Eq. (1) of [Daulton20].
-    # TODO(nabenabe): Adapt to Eq. (3) of [Daulton20] when we support batch optimization.
+    # NOTE: Daulton20 is available at https://arxiv.org/abs/2006.05078.
+    # This function calculates Eq. (1) of Daulton20.
+    # TODO(nabenabe): Adapt to Eq. (3) of Daulton20 when we support batch optimization.
     diff = torch.nn.functional.relu(
-        torch.minimum(Y_post[..., torch.newaxis, :], non_dominated_upper_bounds)
-        - non_dominated_lower_bounds
+        torch.minimum(Y_post[..., torch.newaxis, :], non_dominated_box_upper_bounds)
+        - non_dominated_box_lower_bounds
     )
     log_hvi_vals = torch.special.logsumexp(diff.log().sum(dim=-1), dim=-1)
     return -log_n_qmc_samples + torch.special.logsumexp(log_hvi_vals, dim=-1)
@@ -150,8 +150,8 @@ class ConstrainedAcquisitionFunctionParams(AcquisitionFunctionParams):
 @dataclass(frozen=True)
 class MultiObjectiveAcquisitionFunctionParams(AcquisitionFunctionParams):
     acqf_params_for_objectives: list[AcquisitionFunctionParams]
-    non_dominated_lower_bounds: torch.Tensor
-    non_dominated_upper_bounds: torch.Tensor
+    non_dominated_box_lower_bounds: torch.Tensor
+    non_dominated_box_upper_bounds: torch.Tensor
     fixed_samples: torch.Tensor
 
     @classmethod
@@ -162,24 +162,26 @@ class MultiObjectiveAcquisitionFunctionParams(AcquisitionFunctionParams):
         n_qmc_samples: int,
         qmc_seed: int | None,
     ) -> MultiObjectiveAcquisitionFunctionParams:
-        def get_non_dominated_hyper_rectangle_bounds(
+        def get_non_dominated_box_bounds(
             pareto_sols: np.ndarray, ref_point: np.ndarray
         ) -> tuple[np.ndarray, np.ndarray]:
             # NOTE(nabenabe): This is a dummy implementation for formatter.
             return np.zeros((1, Y.shape[-1])), np.zeros((1, Y.shape[-1]))
 
-        def _get_hyper_rectangle_bounds() -> tuple[torch.Tensor, torch.Tensor]:
+        def _get_non_dominated_box_bounds() -> tuple[torch.Tensor, torch.Tensor]:
             loss_vals = -Y  # NOTE(nabenabe): Y is to be maximized, loss_vals is to be minimized.
             pareto_sols = loss_vals[_is_pareto_front(loss_vals, assume_unique_lexsorted=False)]
             ref_point = np.max(loss_vals, axis=0) * 1.1
-            lbs, ubs = get_non_dominated_hyper_rectangle_bounds(pareto_sols, ref_point)
+            lbs, ubs = get_non_dominated_box_bounds(pareto_sols, ref_point)
             # NOTE(nabenabe): Flip back the sign to make them compatible with maximization.
             return torch.from_numpy(-ubs), torch.from_numpy(-lbs)
 
         fixed_samples = _sample_from_normal_sobol(
             dim=Y.shape[-1], n_samples=n_qmc_samples, seed=qmc_seed
         )
-        non_dominated_lower_bounds, non_dominated_upper_bounds = _get_hyper_rectangle_bounds()
+        (non_dominated_box_lower_bounds, non_dominated_box_upper_bounds) = (
+            _get_non_dominated_box_bounds()
+        )
         inverse_squared_lengthscales = np.mean(
             [
                 acqf_params.kernel_params.inverse_squared_lengthscales.detach().numpy()
@@ -205,8 +207,8 @@ class MultiObjectiveAcquisitionFunctionParams(AcquisitionFunctionParams):
             beta=None,
             acqf_stabilizing_noise=repr_acqf_params.acqf_stabilizing_noise,
             acqf_params_for_objectives=acqf_params_for_objectives,
-            non_dominated_lower_bounds=non_dominated_lower_bounds,
-            non_dominated_upper_bounds=non_dominated_upper_bounds,
+            non_dominated_box_lower_bounds=non_dominated_box_lower_bounds,
+            non_dominated_box_upper_bounds=non_dominated_box_upper_bounds,
             fixed_samples=fixed_samples,
         )
 
@@ -273,8 +275,8 @@ def _eval_ehvi(
     # Y_post = means[..., torch.newaxis, :] + torch.einsum("...MM,NM->...NM", L, fixed_samples)
     return logehvi(
         Y_post=torch.stack(Y_post, dim=-1),
-        non_dominated_lower_bounds=evhi_acqf_params.non_dominated_lower_bounds,
-        non_dominated_upper_bounds=evhi_acqf_params.non_dominated_upper_bounds,
+        non_dominated_box_lower_bounds=evhi_acqf_params.non_dominated_box_lower_bounds,
+        non_dominated_box_upper_bounds=evhi_acqf_params.non_dominated_box_upper_bounds,
     )
 
 
