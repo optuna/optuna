@@ -44,8 +44,13 @@ SQLITE3_TIMEOUT = 300
 
 
 class StorageSupplier:
-    def __init__(self, storage_specifier: str, **kwargs: Any) -> None:
+    def __init__(
+        self, storage_specifier: str, base_storage: BaseStorage | None = None, **kwargs: Any
+    ) -> None:
         self.storage_specifier = storage_specifier
+        if base_storage is not None:
+            assert storage_specifier == "grpc_proxy"
+        self.base_storage = base_storage
         self.extra_args = kwargs
         self.tempfile: IO[Any] | None = None
         self.server: grpc.Server | None = None
@@ -61,6 +66,8 @@ class StorageSupplier:
         | optuna.storages.JournalStorage
         | optuna.storages.GrpcStorageProxy
     ):
+        if self.base_storage is not None:
+            return self._create_proxy(self.base_storage)
         if self.storage_specifier == "inmemory":
             if len(self.extra_args) > 0:
                 raise ValueError("InMemoryStorage does not accept any arguments!")
