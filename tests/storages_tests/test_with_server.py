@@ -23,19 +23,6 @@ from optuna.trial import TrialState
 
 _STUDY_NAME = "_test_multiprocess"
 
-
-FLOAT_VALUES = (
-    0,
-    math.pi,
-    sys.float_info.max,
-    -sys.float_info.max,
-    sys.float_info.min,
-    -sys.float_info.min,
-    float("inf"),
-    -float("inf"),
-    float("nan"),
-)
-
 FLOAT_ATTRS = {
     "zero": 0,
     "pi": math.pi,
@@ -291,7 +278,7 @@ def test_set_and_get_study_system_attrs_for_floats() -> None:
 def test_set_trial_state_values_for_floats() -> None:
     storage = get_storage()
     study_id = storage.create_new_study(directions=[StudyDirection.MINIMIZE])
-    for value in FLOAT_VALUES:
+    for value in FLOAT_ATTRS.values():
         if math.isnan(value):
             continue
         trial_id = storage.create_new_trial(study_id)
@@ -331,7 +318,7 @@ def test_set_trial_intermediate_value_for_floats() -> None:
     storage = get_storage()
     study_id = storage.create_new_study(directions=[StudyDirection.MINIMIZE])
     trial_id = storage.create_new_trial(study_id)
-    for i, value in enumerate(FLOAT_VALUES):
+    for i, value in enumerate(FLOAT_ATTRS.values()):
         storage.set_trial_intermediate_value(trial_id, i, value)
         assert is_equal_floats(storage.get_trial(trial_id).intermediate_values[i], value)
 
