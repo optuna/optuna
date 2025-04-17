@@ -2,13 +2,11 @@ from __future__ import annotations
 
 import copy
 from datetime import datetime
-from datetime import timedelta
 import pickle
 import random
 from time import sleep
 from typing import Any
 
-from freezegun import freeze_time
 import numpy as np
 import pytest
 
@@ -26,7 +24,6 @@ from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.study._frozen import FrozenStudy
 from optuna.study._study_direction import StudyDirection
 from optuna.testing.storages import STORAGE_MODES
-from optuna.testing.storages import STORAGE_MODES_GRPC
 from optuna.testing.storages import StorageSupplier
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
@@ -771,63 +768,6 @@ def test_get_all_trials(storage_mode: str) -> None:
             storage.get_all_trials(non_existent_study_id)
 
 
-@pytest.mark.parametrize("storage_mode", STORAGE_MODES_GRPC)
-def test_get_all_trials_grpc_proxy_server_ttl_cache_is_none(storage_mode: str) -> None:
-    n_trials_init = 1
-    n_trials_add = 2
-    with StorageSupplier(storage_mode) as storage:
-        study_id = storage.create_new_study(directions=[StudyDirection.MAXIMIZE])
-        generator = random.Random(51)
-
-        for _ in range(n_trials_init):
-            t = _generate_trial(generator)
-            storage.create_new_trial(study_id, template_trial=t)
-
-        # Synchronize the storage cache.
-        trials = storage.get_all_trials(study_id)
-        assert len(trials) == n_trials_init
-
-        for _ in range(n_trials_add):
-            t = _generate_trial(generator)
-            storage.create_new_trial(study_id, template_trial=t)
-
-        # Synchronize the storage cache always if ttl_cache_seconds is None.
-        trials = storage.get_all_trials(study_id)
-        assert len(trials) == n_trials_init + n_trials_add
-
-
-@pytest.mark.parametrize("storage_mode", STORAGE_MODES_GRPC)
-def test_get_all_trials_grpc_proxy_server_ttl_cache(storage_mode: str) -> None:
-    n_trials_init = 1
-    n_trials_add = 2
-    ttl_cache_seconds = 10
-    with StorageSupplier(storage_mode, ttl_cache_seconds=ttl_cache_seconds) as storage:
-        with freeze_time() as frozen_datetime:
-            study_id = storage.create_new_study(directions=[StudyDirection.MAXIMIZE])
-            generator = random.Random(51)
-
-            for _ in range(n_trials_init):
-                t = _generate_trial(generator)
-                storage.create_new_trial(study_id, template_trial=t)
-
-            # Synchronize the storage cache.
-            trials = storage.get_all_trials(study_id)
-            assert len(trials) == n_trials_init
-
-            for _ in range(n_trials_add):
-                t = _generate_trial(generator)
-                storage.create_new_trial(study_id, template_trial=t)
-
-            # not synchronized yet.
-            trials = storage.get_all_trials(study_id)
-            assert len(trials) == n_trials_init
-
-            frozen_datetime.tick(delta=timedelta(seconds=ttl_cache_seconds))
-            # Synchronize the storage cache after the ttl_cache_seconds.
-            trials = storage.get_all_trials(study_id)
-            assert len(trials) == n_trials_init + n_trials_add
-
-
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 @pytest.mark.parametrize("param_names", [["a", "b"], ["b", "a"]])
 def test_get_all_trials_params_order(storage_mode: str, param_names: list[str]) -> None:
@@ -880,7 +820,7 @@ def test_get_all_trials_state_option(storage_mode: str) -> None:
         )
 
         for state in states:
-            t = _generate_trial(generator)
+            t = generate_trial(generator)
             t.state = state
             storage.create_new_trial(study_id, template_trial=t)
 
@@ -960,7 +900,7 @@ def test_get_n_trials_state_option(storage_mode: str) -> None:
         ]
 
         for s in states:
-            t = _generate_trial(generator)
+            t = generate_trial(generator)
             t.state = s
             storage.create_new_trial(study_id, template_trial=t)
 
@@ -999,7 +939,7 @@ def test_get_best_trial(storage_mode: str, direction: StudyDirection, values: li
         generator = random.Random(51)
 
         for v in values:
-            template_trial = _generate_trial(generator)
+            template_trial = generate_trial(generator)
             template_trial.state = TrialState.COMPLETE
             template_trial.value = v
             storage.create_new_trial(study_id, template_trial=template_trial)
@@ -1075,7 +1015,7 @@ def _setup_studies(
         storage.set_study_system_attr(study_id, "s", i)
         trials = {}
         for j in range(n_trial):
-            trial = _generate_trial(generator)
+            trial = generate_trial(generator)
             trial.number = j
             trial._trial_id = storage.create_new_trial(study_id, trial)
             trials[trial._trial_id] = trial
@@ -1090,7 +1030,7 @@ def _setup_studies(
     return study_id_to_frozen_study, study_id_to_trials
 
 
-def _generate_trial(generator: random.Random) -> FrozenTrial:
+def generate_trial(generator: random.Random) -> FrozenTrial:
     example_params = {
         "paramA": (generator.uniform(0, 1), FloatDistribution(0, 1)),
         "paramB": (generator.uniform(1, 2), FloatDistribution(1, 2, log=True)),
@@ -1149,7 +1089,7 @@ def test_get_best_trial_for_multi_objective_optimization(storage_mode: str) -> N
 
         generator = random.Random(51)
         for i in range(3):
-            template_trial = _generate_trial(generator)
+            template_trial = generate_trial(generator)
             template_trial.state = TrialState.COMPLETE
             template_trial.values = [i, i + 1]
             storage.create_new_trial(study_id, template_trial=template_trial)
