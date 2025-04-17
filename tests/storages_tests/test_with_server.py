@@ -7,7 +7,6 @@ import math
 import os
 import pickle
 import sys
-from typing import Any
 
 import numpy as np
 import pytest
@@ -251,13 +250,9 @@ def test_set_and_get_study_user_attrs_for_floats() -> None:
     storage = get_storage()
     study_id = storage.create_new_study(directions=[StudyDirection.MINIMIZE])
 
-    def check_set_and_get(key: str, value: Any) -> None:
-        storage.set_study_user_attr(study_id, key, value)
-        assert is_equal_floats(storage.get_study_user_attrs(study_id)[key], value)
-
     # Test setting value.
     for key, value in FLOAT_ATTRS.items():
-        check_set_and_get(key, value)
+        storage.set_study_user_attr(study_id, key, value)
     assert is_equal_float_dicts(storage.get_study_user_attrs(study_id), FLOAT_ATTRS)
 
 
@@ -265,13 +260,9 @@ def test_set_and_get_study_system_attrs_for_floats() -> None:
     storage = get_storage()
     study_id = storage.create_new_study(directions=[StudyDirection.MINIMIZE])
 
-    def check_set_and_get(key: str, value: Any) -> None:
-        storage.set_study_system_attr(study_id, key, value)
-        assert is_equal_floats(storage.get_study_system_attrs(study_id)[key], value)
-
     # Test setting value.
     for key, value in FLOAT_ATTRS.items():
-        check_set_and_get(key, value)
+        storage.set_study_system_attr(study_id, key, value)
     assert is_equal_float_dicts(storage.get_study_system_attrs(study_id), FLOAT_ATTRS)
 
 
@@ -329,13 +320,9 @@ def test_set_trial_user_attr_for_floats() -> None:
         storage.create_new_study(directions=[StudyDirection.MINIMIZE])
     )
 
-    def check_set_and_get(trial_id: int, key: str, value: Any) -> None:
-        storage.set_trial_user_attr(trial_id, key, value)
-        assert is_equal_floats(storage.get_trial(trial_id).user_attrs[key], value)
-
     # Test setting value.
     for key, value in FLOAT_ATTRS.items():
-        check_set_and_get(trial_id, key, value)
+        storage.set_trial_user_attr(trial_id, key, value)
     assert is_equal_float_dicts(storage.get_trial(trial_id).user_attrs, FLOAT_ATTRS)
 
 
@@ -345,11 +332,7 @@ def test_set_trial_system_attr_for_floats() -> None:
         storage.create_new_study(directions=[StudyDirection.MINIMIZE])
     )
 
-    def check_set_and_get(trial_id: int, key: str, value: Any) -> None:
-        storage.set_trial_system_attr(trial_id, key, value)
-        assert is_equal_floats(storage.get_trial(trial_id).system_attrs[key], value)
-
     # Test setting value.
     for key, value in FLOAT_ATTRS.items():
-        check_set_and_get(trial_id, key, value)
+        storage.set_trial_system_attr(trial_id, key, value)
     assert is_equal_float_dicts(storage.get_trial(trial_id).system_attrs, FLOAT_ATTRS)
