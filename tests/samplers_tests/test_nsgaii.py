@@ -905,7 +905,7 @@ def test_crossover_duplicated_param_values(crossover: BaseCrossover) -> None:
             VSBXCrossover(),
             0.0,
             np.array([-1076.02679423, -2151.84728898]),
-        ),
+        ),  # Check to avoid edge cases that result in 0 division.
         (VSBXCrossover(), 0.5, np.array([3.0, 4.0])),  # p2.
         (VSBXCrossover(), 1.0, np.array([3.0, 4.0])),  # p2.
         # p1, p2 and p3 are on x + 1, and distance from child to PSL is 0.
