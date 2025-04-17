@@ -592,27 +592,23 @@ def test_set_trial_param(storage_mode: str) -> None:
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_set_trial_param_for_floats(storage_mode: str) -> None:
     with StorageSupplier(storage_mode) as storage:
-        # Setup test across multiple studies and trials.
         study_id = storage.create_new_study(directions=[StudyDirection.MINIMIZE])
         trial_id = storage.create_new_trial(study_id)
 
         for key, value in FLOAT_ATTRS.items():
-            if math.isnan(value):  # NOTE: `suggest_float` does not generate `nan`.
-                continue
-            param_name = "float_" + key
-            float_dist = FloatDistribution(low=value, high=value)
-            internal_repr = float_dist.to_internal_repr(value)
-            storage.set_trial_param(trial_id, param_name, internal_repr, float_dist)
-            assert is_equal_floats(storage.get_trial_param(trial_id, param_name), internal_repr)
-            assert storage.get_trial(trial_id).distributions[param_name] == float_dist
-
-        for key, value in FLOAT_ATTRS.items():
-            param_name = "categorical_" + key
-            categorical_dist = CategoricalDistribution(choices=(value,))
-            internal_repr = categorical_dist.to_internal_repr(value)
-            storage.set_trial_param(trial_id, param_name, internal_repr, categorical_dist)
-            assert is_equal_floats(storage.get_trial_param(trial_id, param_name), internal_repr)
-            assert storage.get_trial(trial_id).distributions[param_name] == categorical_dist
+            float_distribution = FloatDistribution(low=value, high=value)
+            categorical_distribution = CategoricalDistribution(choices=(value,))
+            for distribution in (float_distribution, categorical_distribution):
+                # NOTE: suggest_float does not generate NaN.
+                if isinstance(distribution, FloatDistribution) and math.isnan(value):
+                    continue
+                param_name = distribution.__class__.__name__ + key
+                internal_repr = distribution.to_internal_repr(value)
+                storage.set_trial_param(trial_id, param_name, internal_repr, distribution)
+                assert is_equal_floats(
+                    storage.get_trial_param(trial_id, param_name), internal_repr
+                )
+                assert storage.get_trial(trial_id).distributions[param_name] == distribution
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
