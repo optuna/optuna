@@ -50,6 +50,14 @@ class MedianPruner(PercentilePruner):
             )
             study.optimize(objective, n_trials=20)
 
+
+
+    ..note::
+        The MedianPruner in Optuna ignores intermediate NaNs during median calculation
+        for pruning but it struggles to compute a valid median.
+        This limitation often leads to unintended pruning of trials.
+
+
     Args:
         n_startup_trials:
             Pruning is disabled until the given number of trials finish in the same study.
