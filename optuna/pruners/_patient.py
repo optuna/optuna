@@ -51,6 +51,13 @@ class PatientPruner(BasePruner):
             )
             study.optimize(objective, n_trials=20)
 
+
+
+    ..note::
+        The PatientPruner handles NaN values by skipping them in pruning decisions without
+        failing the trial. Trials with final NaN values fail,
+        but intermediate NaN values are tolerated and excluded from calculations.
+
     Args:
         wrapped_pruner:
             Wrapped pruner to perform pruning when :class:`~optuna.pruners.PatientPruner` allows a
