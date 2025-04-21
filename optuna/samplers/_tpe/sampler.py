@@ -287,7 +287,7 @@ class TPESampler(BaseSampler):
             "weights",
             "seed",
         ],
-        deprecated_version="4.3.0",
+        deprecated_version="4.4.0",
         removed_version="6.0.0",
     )
     def __init__(
