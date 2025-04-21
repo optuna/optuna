@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from collections.abc import Callable
-from collections.abc import Sequence
 from functools import wraps
 from inspect import Parameter
 from inspect import signature
@@ -15,6 +13,9 @@ from optuna._experimental import _validate_version
 
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+    from collections.abc import Sequence
+
     from typing_extensions import ParamSpec
 
     _P = ParamSpec("_P")
