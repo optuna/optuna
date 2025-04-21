@@ -167,8 +167,9 @@ class CmaEsSampler(BaseSampler):
                 Deprecated in v4.4.0. ``restart_strategy`` argument will be removed in the future.
                 The removal of this feature is currently scheduled for v6.0.0,
                 but this schedule is subject to change.
+                From v4.4.0 onward, ``restart_strategy`` automatically falls back to ``None``, and
+                ``restart_strategy`` will be supported in OptunaHub.
                 See https://github.com/optuna/optuna/releases/tag/v4.4.0.
-                `restart_strategy` will be supported in OptunaHub.
 
         popsize:
             A population size of CMA-ES.
@@ -179,7 +180,12 @@ class CmaEsSampler(BaseSampler):
             or ``restart_strategy = 'bipop'`` is specified.
 
             .. warning::
-                Deprecated along with ``restart_strategy``.
+                Deprecated in v4.4.0. ``restart_strategy`` argument will be removed in the future.
+                The removal of this feature is currently scheduled for v6.0.0,
+                but this schedule is subject to change.
+                From v4.4.0 onward, ``restart_strategy`` automatically falls back to ``None``, and
+                ``restart_strategy`` will be supported in OptunaHub.
+                See https://github.com/optuna/optuna/releases/tag/v4.4.0.
 
         consider_pruned_trials:
             If this is :obj:`True`, the PRUNED trials are considered for sampling.
@@ -262,7 +268,7 @@ class CmaEsSampler(BaseSampler):
         lr_adapt: bool = False,
         source_trials: list[FrozenTrial] | None = None,
     ) -> None:
-        if restart_strategy is not None:
+        if restart_strategy is not None or inc_popsize != 2:
             msg = _deprecated._DEPRECATION_WARNING_TEMPLATE.format(
                 name="`restart_strategy`", d_ver="4.4.0", r_ver="6.0.0"
             )
