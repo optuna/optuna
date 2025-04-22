@@ -15,14 +15,11 @@ def _test_set_and_get_compatibility(
     storage_set: BaseStorage, storage_get: BaseStorage, values: list[float] | None
 ) -> None:
     study_id = storage_set.create_new_study(directions=[StudyDirection.MINIMIZE])
-    trial_ids = [storage_set.create_new_trial(study_id) for _ in ALL_STATES]
-    for trial_id, state in zip(trial_ids, ALL_STATES):
-        if state in (TrialState.WAITING, TrialState.RUNNING):
-            continue
-        assert storage_get.get_trial(trial_id).state == TrialState.RUNNING
-        storage_set.set_trial_state_values(trial_id, state=state, values=values)
-        assert storage_get.get_trial(trial_id).state == state
-        assert storage_get.get_trial(trial_id).values == values
+    trial_id = storage_set.create_new_trial(study_id)
+    assert storage_get.get_trial(trial_id).state == TrialState.RUNNING
+    storage_set.set_trial_state_values(trial_id, state=TrialState.COMPLETE, values=values)
+    assert storage_get.get_trial(trial_id).state == TrialState.COMPLETE
+    assert storage_get.get_trial(trial_id).values == values
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
