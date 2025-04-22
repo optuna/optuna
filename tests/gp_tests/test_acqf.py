@@ -7,9 +7,9 @@ import torch
 from optuna._gp.acqf import AcquisitionFunctionParams
 from optuna._gp.acqf import AcquisitionFunctionType
 from optuna._gp.acqf import ConstrainedAcquisitionFunctionParams
-from optuna._gp.acqf import MultiObjectiveAcquisitionFunctionParams
 from optuna._gp.acqf import create_acqf_params
 from optuna._gp.acqf import eval_acqf
+from optuna._gp.acqf import MultiObjectiveAcquisitionFunctionParams
 from optuna._gp.gp import KernelParamsTensor
 from optuna._gp.search_space import ScaleType
 from optuna._gp.search_space import SearchSpace
