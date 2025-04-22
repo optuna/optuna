@@ -8,8 +8,6 @@ from optuna.testing.storages import STORAGE_MODES
 from optuna.testing.storages import StorageSupplier
 from optuna.trial import TrialState
 
-from .test_storages import ALL_STATES
-
 
 def _test_set_and_get_compatibility(
     storage_set: BaseStorage, storage_get: BaseStorage, values: list[float] | None
