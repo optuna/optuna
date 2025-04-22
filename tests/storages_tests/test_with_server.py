@@ -270,7 +270,7 @@ def test_set_trial_state_values_for_floats() -> None:
     storage = get_storage()
     study_id = storage.create_new_study(directions=[StudyDirection.MINIMIZE])
     for value in FLOAT_ATTRS.values():
-        if math.isnan(value):
+        if math.isnan(value):  # NOTE: Optuna does not accept `nan` as `value`.
             continue
         trial_id = storage.create_new_trial(study_id)
         storage.set_trial_state_values(trial_id, state=TrialState.COMPLETE, values=(value,))
