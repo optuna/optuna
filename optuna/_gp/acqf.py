@@ -165,7 +165,7 @@ class MultiObjectiveAcquisitionFunctionParams(AcquisitionFunctionParams):
             pareto_sols: np.ndarray, ref_point: np.ndarray
         ) -> tuple[np.ndarray, np.ndarray]:
             # NOTE(nabenabe): This is a dummy implementation for formatter.
-            return np.zeros((1, Y.shape[-1])), np.zeros((1, Y.shape[-1]))
+            return np.ones((5, Y.shape[-1])) * 5.0, np.ones((5, Y.shape[-1])) * 10.0
 
         def _get_non_dominated_box_bounds() -> tuple[torch.Tensor, torch.Tensor]:
             loss_vals = -Y  # NOTE(nabenabe): Y is to be maximized, loss_vals is to be minimized.
@@ -252,7 +252,7 @@ def _eval_ehvi(
     )
     Y_post = []
     fixed_samples = evhi_acqf_params.fixed_samples
-    for acqf_params in evhi_acqf_params.acqf_params_for_objectives:
+    for i, acqf_params in enumerate(evhi_acqf_params.acqf_params_for_objectives):
         mean, var = posterior(
             kernel_params=acqf_params.kernel_params,
             X=X,
@@ -264,14 +264,11 @@ def _eval_ehvi(
         stdev = torch.sqrt(var + evhi_acqf_params.acqf_stabilizing_noise)
         # NOTE(nabenabe): By using fixed samples from the Sobol sequence, EHVI becomes
         # deterministic, making it possible to optimize the acqf by l-BFGS.
-        Y_post.append(
-            mean[..., torch.newaxis, :]
-            + stdev[..., torch.newaxis, :] * fixed_samples[..., torch.newaxis, :, :]
-        )
+        Y_post.append(mean[..., torch.newaxis] + stdev[..., torch.newaxis] * fixed_samples[..., i])
 
     # NOTE(nabenabe): Use the following once multi-task GP is supported.
     # L = torch.linalg.cholesky(cov)
-    # Y_post = means[..., torch.newaxis, :] + torch.einsum("...MM,NM->...NM", L, fixed_samples)
+    # Y_post = means[..., torch.newaxis, :] + torch.einsum("...MM,SM->...SM", L, fixed_samples)
     return logehvi(
         Y_post=torch.stack(Y_post, dim=-1),
         non_dominated_box_lower_bounds=evhi_acqf_params.non_dominated_box_lower_bounds,
