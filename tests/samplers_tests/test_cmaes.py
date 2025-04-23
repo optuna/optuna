@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import math
 from typing import Any
 from unittest.mock import MagicMock
 from unittest.mock import Mock
@@ -71,8 +70,7 @@ def test_init_cmaes_opts(use_separable_cma: bool, cma_class_str: str, popsize: i
         assert np.allclose(actual_kwargs["bounds"], np.array([(0, 1), (0, 1)]))
         assert actual_kwargs["seed"] == np.random.RandomState(1).randint(1, np.iinfo(np.int32).max)
         assert actual_kwargs["n_max_resampling"] == 10 * 2
-        expected_popsize = 4 + math.floor(3 * math.log(2)) if popsize is None else popsize
-        assert actual_kwargs["population_size"] == expected_popsize
+        assert actual_kwargs["population_size"] == popsize
 
 
 @pytest.mark.filterwarnings("ignore::optuna.exceptions.ExperimentalWarning")
@@ -106,8 +104,7 @@ def test_init_cmaes_opts_with_margin(popsize: int | None) -> None:
         assert np.allclose(actual_kwargs["steps"], np.array([0.0, 0.5]))
         assert actual_kwargs["seed"] == np.random.RandomState(1).randint(1, np.iinfo(np.int32).max)
         assert actual_kwargs["n_max_resampling"] == 10 * 2
-        expected_popsize = 4 + math.floor(3 * math.log(2)) if popsize is None else popsize
-        assert actual_kwargs["population_size"] == expected_popsize
+        assert actual_kwargs["population_size"] == popsize
 
 
 @pytest.mark.filterwarnings("ignore::optuna.exceptions.ExperimentalWarning")
