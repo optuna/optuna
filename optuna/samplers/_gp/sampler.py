@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from collections.abc import Callable
-from collections.abc import Sequence
 from typing import Any
 from typing import cast
 from typing import TYPE_CHECKING
@@ -11,7 +9,6 @@ import numpy as np
 import optuna
 from optuna._experimental import experimental_class
 from optuna._experimental import warn_experimental_argument
-from optuna.distributions import BaseDistribution
 from optuna.samplers._base import _CONSTRAINTS_KEY
 from optuna.samplers._base import _process_constraints_after_trial
 from optuna.samplers._base import BaseSampler
@@ -22,6 +19,9 @@ from optuna.trial import TrialState
 
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+    from collections.abc import Sequence
+
     import torch
 
     import optuna._gp.acqf as acqf
@@ -29,6 +29,7 @@ if TYPE_CHECKING:
     import optuna._gp.optim_mixed as optim_mixed
     import optuna._gp.prior as prior
     import optuna._gp.search_space as gp_search_space
+    from optuna.distributions import BaseDistribution
     from optuna.study import Study
 else:
     from optuna._imports import _LazyImport
@@ -95,13 +96,11 @@ class GPSampler(BaseSampler):
         self._independent_sampler = independent_sampler or optuna.samplers.RandomSampler(seed=seed)
         self._intersection_search_space = optuna.search_space.IntersectionSearchSpace()
         self._n_startup_trials = n_startup_trials
-        self._log_prior: "Callable[[gp.KernelParamsTensor], torch.Tensor]" = (
-            prior.default_log_prior
-        )
+        self._log_prior: Callable[[gp.KernelParamsTensor], torch.Tensor] = prior.default_log_prior
         self._minimum_noise: float = prior.DEFAULT_MINIMUM_NOISE_VAR
         # We cache the kernel parameters for initial values of fitting the next time.
-        self._kernel_params_cache: "gp.KernelParamsTensor | None" = None
-        self._constraints_kernel_params_cache: "list[gp.KernelParamsTensor] | None" = None
+        self._kernel_params_cache: gp.KernelParamsTensor | None = None
+        self._constraints_kernel_params_cache: list[gp.KernelParamsTensor] | None = None
         self._optimize_n_samples: int = 2048
         self._deterministic = deterministic_objective
         self._constraints_func = constraints_func
@@ -126,7 +125,7 @@ class GPSampler(BaseSampler):
 
     def _optimize_acqf(
         self,
-        acqf_params: "acqf.AcquisitionFunctionParams",
+        acqf_params: acqf.AcquisitionFunctionParams,
         best_params: np.ndarray | None,
     ) -> np.ndarray:
         # Advanced users can override this method to change the optimization algorithm.
