@@ -63,23 +63,9 @@ def _calculate_hypervolume_improvement(
     return np.sum(np.prod(diff, axis=-1), axis=-1)
 
 
-parametrized_n_objectives = pytest.mark.parametrize("n_objectives", [2, 3, 4])
-
-
-@pytest.mark.parametrize(
-    "gen",
-    (
-        _generate_concave_instances,
-        _generate_convex_instances,
-        _generate_instances_with_negative,
-        _generate_linear_instances,
-    ),
-)
-@parametrized_n_objectives
-def test_exact_box_decomposition(gen: InstanceGenerator, n_objectives: int) -> None:
-    n_trials = 30 if n_objectives == 4 else 60
-    pareto_sols = gen(n_objectives=n_objectives, n_trials=n_trials, seed=42)
-    ref_point = np.ones(pareto_sols.shape[-1]) * 10.0
+def _verify_exact_hypervolume_improvement(pareto_sols: np.ndarray) -> None:
+    ref_point = np.max(pareto_sols, axis=0)
+    ref_point = np.maximum(ref_point * 1.1, ref_point * 0.9)
     n_sols = pareto_sols.shape[0]
     # LOO means leave one out.
     loo_mat = ~np.eye(n_sols, dtype=bool)
@@ -92,6 +78,36 @@ def test_exact_box_decomposition(gen: InstanceGenerator, n_objectives: int) -> N
         ans[i] = _calculate_hypervolume_improvement(lbs, ubs, pareto_sols[np.newaxis, i])[0]
 
     assert np.allclose(ans, correct)
+
+
+parametrized_n_objectives = pytest.mark.parametrize("n_objectives", [2, 3, 4])
+parametrized_generators = pytest.mark.parametrize(
+    "gen",
+    (
+        _generate_concave_instances,
+        _generate_convex_instances,
+        _generate_instances_with_negative,
+        _generate_linear_instances,
+    ),
+)
+
+
+@parametrized_generators
+@parametrized_n_objectives
+def test_exact_box_decomposition(gen: InstanceGenerator, n_objectives: int) -> None:
+    n_trials = 30 if n_objectives == 4 else 60
+    pareto_sols = gen(n_objectives=n_objectives, n_trials=n_trials, seed=42)
+    _verify_exact_hypervolume_improvement(pareto_sols)
+
+
+@parametrized_generators
+@parametrized_n_objectives
+def test_box_decomposition_general_position(gen: InstanceGenerator, n_objectives: int) -> None:
+    # By using integer values, duplications can be guaranteed.
+    pareto_sols = _extract_pareto_sols(
+        np.round(gen(n_objectives=n_objectives, n_trials=100, seed=42) * 5)
+    )
+    _verify_exact_hypervolume_improvement(pareto_sols)
 
 
 @parametrized_n_objectives
@@ -110,10 +126,6 @@ def test_box_decomposition_with_empty_set(n_objectives: int) -> None:
     lbs, ubs = get_non_dominated_box_bounds(pareto_sols, ref_point)
     hvi = _calculate_hypervolume_improvement(lbs, ubs, np.zeros((1, n_objectives)))[0]
     assert np.isclose(hvi, 10**n_objectives)
-
-
-def test_box_decomposition_general_position() -> None:
-    pass
 
 
 @pytest.mark.parametrize(
