@@ -126,6 +126,8 @@ def _get_non_dominated_box_bounds(
 def get_non_dominated_box_bounds(
     loss_vals: np.ndarray, ref_point: np.ndarray
 ) -> tuple[np.ndarray, np.ndarray]:  # (n_bounds, n_objectives) and (n_bounds, n_objectives)
+    assert np.all(np.isfinite(loss_vals)), "loss_vals must be clipped before box decomposition."
+    # Remove duplications and lexsort the solutions by ``np.unique``.
     unique_lexsorted_loss_vals = np.unique(loss_vals, axis=0)
     sorted_pareto_sols = unique_lexsorted_loss_vals[
         _is_pareto_front(unique_lexsorted_loss_vals, assume_unique_lexsorted=True)
