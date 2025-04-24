@@ -137,7 +137,7 @@ def get_non_dominated_box_bounds(
     # https://github.com/pytorch/botorch/blob/v0.13.0/botorch/acquisition/multi_objective/utils.py#L55-L63
     if n_objectives > 4:
         warnings.warn(
-            "GPSampler might be significantly slow for n_objectives > 4. "
+            "Box decomposition of solutions might be significantly slow for n_objectives > 4. "
             "Please consider using another sampler instead."
         )
 
