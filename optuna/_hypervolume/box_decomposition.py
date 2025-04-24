@@ -54,7 +54,7 @@ def _get_upper_bound_set(
     (_, n_objectives) = sorted_pareto_sols.shape
     objective_indices = np.arange(n_objectives)
     skip_ineq_judge = np.eye(n_objectives, dtype=bool)
-    # NOTE(nabenabe): False at 0 comes from Line 2 of Alg. 2. (loss_vals is sorted w.r.t. 0-th obj)
+    # NOTE(nabenabe): True at 0 comes from Line 2 of Alg. 2. (loss_vals is sorted w.r.t. 0-th obj)
     skip_ineq_judge[:, 0] = True
 
     def update(sol: np.ndarray, ubs: np.ndarray, dps: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
