@@ -73,7 +73,7 @@ def _verify_exact_hypervolume_improvement(pareto_sols: np.ndarray) -> None:
         correct = hv - compute_hypervolume(pareto_sols[loo], ref_point)
         lbs, ubs = get_non_dominated_box_bounds(pareto_sols[loo], ref_point)
         out = _calculate_hypervolume_improvement(lbs, ubs, pareto_sols[np.newaxis, i])
-        assert out.shape == (1, )
+        assert out.shape == (1,)
         assert np.isclose(out[0], correct)
 
 
