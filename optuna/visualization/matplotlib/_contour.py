@@ -97,6 +97,7 @@ def _get_contour_plot(info: _ContourInfo) -> "Axes":
     else:
         # Set up the graph style.
         fig, axs = plt.subplots(n_params, n_params)
+        assert isinstance(axs, np.ndarray)
         fig.suptitle("Contour Plot")
         cmap = _set_cmap(reverse_scale)
 

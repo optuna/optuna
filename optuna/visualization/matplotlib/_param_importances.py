@@ -113,6 +113,8 @@ def _get_importances_plot(infos: tuple[_ImportancesInfo, ...]) -> "Axes":
 
 
 def _set_bar_labels(info: _ImportancesInfo, fig: "Figure", ax: "Axes", offset: float) -> None:
+    # Figure canvas does not necessarily have a get_renderer.
+    assert hasattr(fig.canvas, "get_renderer")
     renderer = fig.canvas.get_renderer()
     for idx, (val, label) in enumerate(zip(info.importance_values, info.importance_labels)):
         text = ax.text(val, idx + offset, label, va="center")

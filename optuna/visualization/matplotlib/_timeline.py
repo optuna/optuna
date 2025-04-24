@@ -9,6 +9,7 @@ from optuna.visualization.matplotlib._matplotlib_imports import _imports
 
 if _imports.is_successful():
     from optuna.visualization.matplotlib._matplotlib_imports import Axes
+    from optuna.visualization.matplotlib._matplotlib_imports import DateFormatter
     from optuna.visualization.matplotlib._matplotlib_imports import matplotlib
     from optuna.visualization.matplotlib._matplotlib_imports import plt
 
@@ -62,10 +63,14 @@ def _get_timeline_plot(info: _TimelineInfo) -> "Axes":
     if len(info.bars) == 0:
         return ax
 
+    # According to the `ax.barh` docstring, using list[timedelta] as width and list[datetime] as
+    # left is supported, but mypy does not recognize it. Please refer to the following link for
+    # more details:
+    # https://github.com/matplotlib/matplotlib/blob/v3.10.1/lib/matplotlib/axes/_axes.py#L2701-L2836
     ax.barh(
         y=[b.number for b in info.bars],
-        width=[b.complete - b.start for b in info.bars],
-        left=[b.start for b in info.bars],
+        width=[b.complete - b.start for b in info.bars],  # type: ignore[arg-type]
+        left=[b.start for b in info.bars],  # type: ignore[arg-type]
         color=[_cm[_get_state_name(b)] for b in info.bars],
     )
 
@@ -83,8 +88,13 @@ def _get_timeline_plot(info: _TimelineInfo) -> "Axes":
     last_complete_time = max([b.complete for b in info.bars])
     margin = (last_complete_time - first_start_time) * 0.05
 
-    ax.set_xlim(right=last_complete_time + margin, left=first_start_time - margin)
+    # Officially, ax.set_xlim expects arguments right and left to be float,
+    # but ax.barh() accepts datetime, so we leave the type as datetime.
+    ax.set_xlim(
+        right=last_complete_time + margin,  # type: ignore[arg-type]
+        left=first_start_time - margin,  # type: ignore[arg-type]
+    )
     ax.yaxis.set_major_locator(matplotlib.ticker.MaxNLocator(integer=True))
-    ax.xaxis.set_major_formatter(matplotlib.dates.DateFormatter("%H:%M:%S"))
+    ax.xaxis.set_major_formatter(DateFormatter("%H:%M:%S"))  # type: ignore[no-untyped-call]
     plt.gcf().autofmt_xdate()
     return ax
