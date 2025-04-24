@@ -235,7 +235,7 @@ For more details, please refer to [the optunahub documentation](https://optuna.g
 ### Publish your packages
 
 You can publish your package via [optunahub-registry](https://github.com/optuna/optunahub-registry).
-See the [OptunaHub tutorial](https://optuna.github.io/optunahub-registry/index.html).
+See the [Tutorials for Contributors](https://optuna.github.io/optunahub/tutorials_for_contributors.html) in OptunaHub.
 
 
 ## Communication
