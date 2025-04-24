@@ -66,18 +66,15 @@ def _calculate_hypervolume_improvement(
 def _verify_exact_hypervolume_improvement(pareto_sols: np.ndarray) -> None:
     ref_point = np.max(pareto_sols, axis=0)
     ref_point = np.maximum(ref_point * 1.1, ref_point * 0.9)
-    n_sols = pareto_sols.shape[0]
-    # LOO means leave one out.
-    loo_mat = ~np.eye(n_sols, dtype=bool)
-
     hv = compute_hypervolume(pareto_sols, ref_point, assume_pareto=True)
-    correct = hv - np.array([compute_hypervolume(pareto_sols[loo], ref_point) for loo in loo_mat])
-    ans = np.empty_like(correct)
-    for i, loo in enumerate(loo_mat):
+    for i in range(pareto_sols.shape[0]):
+        # LOO means leave one out.
+        loo = np.arange(pareto_sols.shape[0]) != i
+        correct = hv - compute_hypervolume(pareto_sols[loo], ref_point)
         lbs, ubs = get_non_dominated_box_bounds(pareto_sols[loo], ref_point)
-        ans[i] = _calculate_hypervolume_improvement(lbs, ubs, pareto_sols[np.newaxis, i])[0]
-
-    assert np.allclose(ans, correct)
+        out = _calculate_hypervolume_improvement(lbs, ubs, pareto_sols[np.newaxis, i])
+        assert out.shape == (1, )
+        assert np.isclose(out[0], correct)
 
 
 parametrized_n_objectives = pytest.mark.parametrize("n_objectives", [2, 3, 4])
