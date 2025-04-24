@@ -60,12 +60,6 @@ def is_equal_floats(a: float, b: float) -> bool:
     return a == b
 
 
-def is_equal_float_dicts(a: dict[str, float], b: dict[str, float]) -> bool:
-    if a.keys() != b.keys():
-        return False
-    return all(is_equal_floats(value, b[key]) for key, value in a.items())
-
-
 def test_get_storage() -> None:
     assert isinstance(optuna.storages.get_storage(None), InMemoryStorage)
     assert isinstance(optuna.storages.get_storage("sqlite:///:memory:"), _CachedStorage)
@@ -247,7 +241,7 @@ def test_set_and_get_study_user_attrs_for_floats(storage_mode: str) -> None:
         # Test setting value.
         for key, value in FLOAT_ATTRS.items():
             storage.set_study_user_attr(study_id, key, value)
-        assert is_equal_float_dicts(storage.get_study_user_attrs(study_id), FLOAT_ATTRS)
+            assert is_equal_floats(storage.get_study_user_attrs(study_id)[key], value)
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
@@ -285,7 +279,7 @@ def test_set_and_get_study_system_attrs_for_floats(storage_mode: str) -> None:
         # Test setting value.
         for key, value in FLOAT_ATTRS.items():
             storage.set_study_system_attr(study_id, key, value)
-        assert is_equal_float_dicts(storage.get_study_system_attrs(study_id), FLOAT_ATTRS)
+            assert is_equal_floats(storage.get_study_system_attrs(study_id)[key], value)
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
@@ -771,7 +765,7 @@ def test_set_trial_user_attr_for_floats(storage_mode: str) -> None:
         # Test setting value.
         for key, value in FLOAT_ATTRS.items():
             storage.set_trial_user_attr(trial_id, key, value)
-        assert is_equal_float_dicts(storage.get_trial(trial_id).user_attrs, FLOAT_ATTRS)
+            assert is_equal_floats(storage.get_trial_user_attrs(trial_id)[key], value)
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
@@ -835,7 +829,7 @@ def test_set_trial_system_attr_for_floats(storage_mode: str) -> None:
         # Test setting value.
         for key, value in FLOAT_ATTRS.items():
             storage.set_trial_system_attr(trial_id, key, value)
-        assert is_equal_float_dicts(storage.get_trial(trial_id).system_attrs, FLOAT_ATTRS)
+            assert is_equal_floats(storage.get_trial_system_attrs(trial_id)[key], value)
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
