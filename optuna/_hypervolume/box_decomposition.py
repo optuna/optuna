@@ -98,6 +98,7 @@ def _get_box_bounds(
 ) -> np.ndarray:
     # Eq. (2) of Lacour17.
     n_objectives = upper_bound_set.shape[-1]
+    assert n_objectives > 1, "This function is used only for multi-objective problems."
     bounds = np.empty((2, *upper_bound_set.shape))
     bounds[0, :, 0] = def_points[:, 0, 0]
     bounds[1, :, 0] = ref_point[0]
@@ -113,14 +114,18 @@ def _get_non_dominated_box_bounds(
 ) -> tuple[np.ndarray, np.ndarray]:  # (n_bounds, n_objectives) and (n_bounds, n_objectives)
     # The calculation of u[k] and l[k] in the paper: https://arxiv.org/abs/2006.05078
     # NOTE(nabenabe): The paper handles maximization problems, but we consider minimization here.
-    _upper_bound_set = _get_upper_bound_set(sorted_pareto_sols, ref_point)[0]
-    upper_bound_set = _upper_bound_set[np.argsort(_upper_bound_set[:, 0])[::-1]]
-    # Flip the sign and use upper_bound_set as the Pareto solutions. Then we can calculate the
+    neg_upper_bound_set = -_get_upper_bound_set(sorted_pareto_sols, ref_point)[0]
+    sorted_neg_upper_bound_set = neg_upper_bound_set[np.argsort(neg_upper_bound_set[:, 0])]
+    # Use the sign-flipped upper_bound_set as the Pareto solutions. Then we can calculate the
     # lower bound set as well.
     point_at_infinity = np.full_like(ref_point, np.inf)
-    neg_upper_bound_set, neg_def_points = _get_upper_bound_set(-upper_bound_set, point_at_infinity)
-    ubs, lbs = -_get_box_bounds(neg_def_points, neg_upper_bound_set, point_at_infinity)
-    return lbs, ubs
+    neg_lower_bound_set, neg_def_points = _get_upper_bound_set(
+        sorted_neg_upper_bound_set, point_at_infinity
+    )
+    upper_box_bounds, lower_box_bounds = -_get_box_bounds(
+        neg_def_points, neg_lower_bound_set, point_at_infinity
+    )
+    return lower_box_bounds, upper_box_bounds
 
 
 def get_non_dominated_box_bounds(
@@ -135,9 +140,10 @@ def get_non_dominated_box_bounds(
     n_objectives = loss_vals.shape[-1]
     # The condition here follows BoTorch.
     # https://github.com/pytorch/botorch/blob/v0.13.0/botorch/acquisition/multi_objective/utils.py#L55-L63
+    assert n_objectives > 1, "This function is used only for multi-objective problems."
     if n_objectives > 4:
         warnings.warn(
-            "Box decomposition of solutions might be significantly slow for n_objectives > 4. "
+            "GPSampler might be significantly slow for n_objectives > 4. "
             "Please consider using another sampler instead."
         )
 
