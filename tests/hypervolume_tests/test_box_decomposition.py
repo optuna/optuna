@@ -77,8 +77,7 @@ def _verify_exact_hypervolume_improvement(pareto_sols: np.ndarray) -> None:
         assert np.isclose(out[0], correct)
 
 
-parametrized_n_objectives = pytest.mark.parametrize("n_objectives", [2, 3, 4])
-parametrized_generators = pytest.mark.parametrize(
+@pytest.mark.parametrize(
     "gen",
     (
         _generate_concave_instances,
@@ -87,18 +86,23 @@ parametrized_generators = pytest.mark.parametrize(
         _generate_linear_instances,
     ),
 )
-
-
-@parametrized_generators
-@parametrized_n_objectives
+@pytest.mark.parametrize("n_objectives", [2, 3, 4])
 def test_exact_box_decomposition(gen: InstanceGenerator, n_objectives: int) -> None:
     n_trials = 30 if n_objectives == 4 else 60
     pareto_sols = gen(n_objectives=n_objectives, n_trials=n_trials, seed=42)
     _verify_exact_hypervolume_improvement(pareto_sols)
 
 
-@parametrized_generators
-@parametrized_n_objectives
+@pytest.mark.parametrize(
+    "gen",
+    (
+        _generate_concave_instances,
+        _generate_convex_instances,
+        _generate_instances_with_negative,
+        _generate_linear_instances,
+    ),
+)
+@pytest.mark.parametrize("n_objectives", [2, 3, 4])
 def test_box_decomposition_general_position(gen: InstanceGenerator, n_objectives: int) -> None:
     # By using integer values, duplications can be guaranteed.
     pareto_sols = _extract_pareto_sols(
@@ -107,7 +111,7 @@ def test_box_decomposition_general_position(gen: InstanceGenerator, n_objectives
     _verify_exact_hypervolume_improvement(pareto_sols)
 
 
-@parametrized_n_objectives
+@pytest.mark.parametrize("n_objectives", [2, 3, 4])
 def test_box_decomposition_with_1_solution(n_objectives: int) -> None:
     pareto_sols = np.ones((1, n_objectives))
     ref_point = np.ones(n_objectives) * 10.0
@@ -116,7 +120,7 @@ def test_box_decomposition_with_1_solution(n_objectives: int) -> None:
     assert np.isclose(hvi, 10**n_objectives - 9**n_objectives)
 
 
-@parametrized_n_objectives
+@pytest.mark.parametrize("n_objectives", [2, 3, 4])
 def test_box_decomposition_with_empty_set(n_objectives: int) -> None:
     pareto_sols = np.ones((0, n_objectives))
     ref_point = np.ones(n_objectives) * 10.0
