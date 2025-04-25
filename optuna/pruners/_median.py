@@ -5,7 +5,16 @@ class MedianPruner(PercentilePruner):
     """Pruner using the median stopping rule.
 
     Prune if the trial's best intermediate result is worse than median of intermediate results of
-    previous trials at the same step.
+    previous trials at the same step. It stops unpromising trials early based on the
+    intermediate results compared against the median (or a chosen percentile) of previous
+    completed trials.
+
+    The pruner handles NaN values in the following manner:
+
+    1. If all intermediate values of the current trial are NaN, the trial will be pruned.
+
+    2. During the median calculation across completed trials, NaN values
+       are ignored. Only valid numeric values are considered.
 
     Example:
 
@@ -51,28 +60,22 @@ class MedianPruner(PercentilePruner):
             study.optimize(objective, n_trials=20)
 
 
-
-    ..note::
-        The MedianPruner in Optuna ignores intermediate NaNs during median calculation
-        for pruning but it struggles to compute a valid median.
-        This limitation often leads to unintended pruning of trials.
-
-
-    Args:
-        n_startup_trials:
-            Pruning is disabled until the given number of trials finish in the same study.
-        n_warmup_steps:
-            Pruning is disabled until the trial exceeds the given number of step. Note that
-            this feature assumes that ``step`` starts at zero.
-        interval_steps:
-            Interval in number of steps between the pruning checks, offset by the warmup steps.
-            If no value has been reported at the time of a pruning check, that particular check
-            will be postponed until a value is reported.
-        n_min_trials:
-            Minimum number of reported trial results at a step to judge whether to prune.
-            If the number of reported intermediate values from all trials at the current step
-            is less than ``n_min_trials``, the trial will not be pruned. This can be used to ensure
-            that a minimum number of trials are run to completion without being pruned.
+        Args:
+            n_startup_trials:
+                Pruning is disabled until the given number of trials finish in the same study.
+            n_warmup_steps:
+                Pruning is disabled until the trial exceeds the given number of step. Note that
+                this feature assumes that ``step`` starts at zero.
+            interval_steps:
+                Interval in number of steps between the pruning checks, offset by the warmup steps.
+                If no value has been reported at the time of a pruning check, that particular check
+                will be postponed until a value is reported.
+            n_min_trials:
+                Minimum number of reported trial results at a step to judge whether to prune.
+                If the number of reported intermediate values from all trials at the current step
+                is less than ``n_min_trials``, the trial will not be pruned. This can be
+                used to ensure that a minimum number of trials are run to completion
+                without being pruned.
     """
 
     def __init__(
