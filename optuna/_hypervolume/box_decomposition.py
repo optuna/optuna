@@ -63,7 +63,8 @@ def _get_upper_bound_set(
         if not any(is_dominated):
             return ubs, dps
 
-        dominated_dps = dps[is_dominated]  # The set `A` in Line 5 of Alg. 2.
+        # The defining points `z(u)` for each `u in A` in Line 5 of Alg. 2.
+        dominated_dps = dps[is_dominated]
         n_bounds = dominated_dps.shape[0]
         # NOTE(nabenabe): `-inf` comes from Line 2 and `k!=j` in Line 3 of Alg. 2.
         # NOTE(nabenabe): If `update[i,j]=True`, update `ubs[i,j]` to `(z_j, u_{-j})`, i.e.,
