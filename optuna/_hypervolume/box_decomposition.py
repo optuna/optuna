@@ -143,8 +143,8 @@ def get_non_dominated_box_bounds(
     assert n_objectives > 1, "This function is used only for multi-objective problems."
     if n_objectives > 4:
         warnings.warn(
-            "GPSampler might be significantly slow for n_objectives > 4. "
-            "Please consider using another sampler instead."
+            "Box decomposition (typically for `GPSampler`) might be significantly slow for "
+            "n_objectives > 4. Please consider using another sampler instead."
         )
 
     return _get_non_dominated_box_bounds(sorted_pareto_sols, ref_point)
