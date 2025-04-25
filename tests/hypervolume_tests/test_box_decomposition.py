@@ -103,8 +103,12 @@ def test_exact_box_decomposition(gen: InstanceGenerator, n_objectives: int) -> N
     ),
 )
 @pytest.mark.parametrize("n_objectives", [2, 3, 4])
-def test_box_decomposition_general_position(gen: InstanceGenerator, n_objectives: int) -> None:
+def test_box_decomposition_with_non_general_position(
+    gen: InstanceGenerator, n_objectives: int
+) -> None:
     # By using integer values, duplications can be guaranteed.
+    # We are testing Proposition 2.2 in the paper: https://arxiv.org/abs/1510.01963
+    # General position means that no two distinct points share the same value in any dimensions.
     pareto_sols = _extract_pareto_sols(
         np.round(gen(n_objectives=n_objectives, n_trials=100, seed=42) * 5)
     )
