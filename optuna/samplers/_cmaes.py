@@ -384,9 +384,6 @@ class CmaEsSampler(BaseSampler):
             search_space, transform_step=not self._with_margin, transform_0_1=True
         )
 
-        if self._popsize is None:
-            self._popsize = 4 + math.floor(3 * math.log(len(trans.bounds)))
-
         optimizer = self._restore_optimizer(completed_trials)
         if optimizer is None:
             optimizer = self._init_optimizer(trans, study.direction)
