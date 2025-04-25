@@ -24,6 +24,6 @@ def _test_set_and_get_compatibility(
 @pytest.mark.parametrize("values", [None, [0.0]])
 def test_set_and_get_trial_state_values(storage_mode: str, values: list[float] | None) -> None:
     with StorageSupplier(storage_mode) as storage_direct:
-        with StorageSupplier("grpc_proxy", storage_direct) as storage_grpc_proxy:
+        with StorageSupplier("grpc_proxy", base_storage=storage_direct) as storage_grpc_proxy:
             _test_set_and_get_compatibility(storage_grpc_proxy, storage_direct, values)
             _test_set_and_get_compatibility(storage_direct, storage_grpc_proxy, values)
