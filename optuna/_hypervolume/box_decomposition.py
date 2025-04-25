@@ -95,7 +95,7 @@ def _get_upper_bound_set(
 
 
 def _get_box_bounds(
-    def_points: np.ndarray, upper_bound_set: np.ndarray, ref_point: np.ndarray
+    upper_bound_set: np.ndarray, def_points: np.ndarray, ref_point: np.ndarray
 ) -> np.ndarray:
     # Eq. (2) of Lacour17.
     n_objectives = upper_bound_set.shape[-1]
