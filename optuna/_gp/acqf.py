@@ -34,20 +34,6 @@ def _sample_from_normal_sobol(dim: int, n_samples: int, seed: int | None) -> tor
     return torch.erfinv(samples) * float(np.sqrt(2))
 
 
-def logdiffexp(log_a: torch.Tensor, log_b: torch.Tensor) -> torch.Tensor:
-    # Calculate log(a - b) where a > b.
-    # Accurately computing log(1 - exp(-|a|)) Assessed by the Rmpfr Package (cf. Eq. (7))
-    # cf. https://cran.r-project.org/web/packages/Rmpfr/vignettes/log1mexp-note.pdf
-    # https://github.com/pytorch/botorch/blob/77a2867a727663d3b98c0100d52656d24dc0fb67/botorch/utils/safe_math.py#L107
-    # log(a - b) = log a(1 - b/a) = log a + log(1 - b/a).
-    # log_b is also the negative inf if log_a is negative inf.
-    log_a_by_b = log_a.masked_fill(torch.isneginf(log_a), 0.0) - log_b
-    log_2 = 0.6931471805599453
-    is_small = log_2 > log_a_by_b  # log_a_by_b < 0
-    torch.where(is_small, log_a_by_b.expm1().log())
-    return log_a + log1mexp(log_b - log_a.masked_fill(is_neg_inf, 0.0))
-
-
 def logehvi(
     Y_post: torch.Tensor,  # (..., n_qmc_samples, n_objectives)
     non_dominated_box_lower_bounds: torch.Tensor,  # (n_boxes, n_objectives)
@@ -56,13 +42,16 @@ def logehvi(
     log_n_qmc_samples = float(np.log(Y_post.shape[-2]))
     # This function calculates Eq. (1) of https://arxiv.org/abs/2006.05078.
     # TODO(nabenabe): Adapt to Eq. (3) when we support batch optimization.
-    relu_is_zero = Y_post[..., torch.newaxis, :] <= non_dominated_box_lower_bounds
-    log_box_upper_bounds = torch.minimum(
-        Y_post[..., torch.newaxis, :], non_dominated_box_upper_bounds
-    ).log()
-    log_box_lower_bounds = torch.minimum(box_upper_bounds, non_dominated_box_lower_bounds).log()
-    log_diff = logdiffexp(log_box_upper_bounds, log_box_lower_bounds)
-    log_hvi_vals = torch.special.logsumexp(log_diff.sum(dim=-1), dim=-1)
+    # TODO(nabenabe): Make the calculation here more numerically stable.
+    # cf. https://arxiv.org/abs/2310.20708
+    # Check the implementations here:
+    # https://github.com/pytorch/botorch/blob/v0.13.0/botorch/utils/safe_math.py
+    # https://github.com/pytorch/botorch/blob/v0.13.0/botorch/acquisition/multi_objective/logei.py#L146-L266
+    diff = torch.nn.functional.relu(
+        torch.minimum(Y_post[..., torch.newaxis, :], non_dominated_box_upper_bounds)
+        - non_dominated_box_lower_bounds
+    )
+    log_hvi_vals = torch.special.logsumexp(diff.log().sum(dim=-1), dim=-1)
     return -log_n_qmc_samples + torch.special.logsumexp(log_hvi_vals, dim=-1)
 
 
