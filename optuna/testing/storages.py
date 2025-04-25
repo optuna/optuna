@@ -40,10 +40,6 @@ STORAGE_MODES_HEARTBEAT = [
     "cached_sqlite",
 ]
 
-STORAGE_MODES_GRPC = [
-    "grpc_rdb",
-    "grpc_journal_file",
-]
 
 SQLITE3_TIMEOUT = 300
 

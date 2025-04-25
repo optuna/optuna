@@ -7,10 +7,15 @@ from freezegun import freeze_time
 import pytest
 
 from optuna.study._study_direction import StudyDirection
-from optuna.testing.storages import STORAGE_MODES_GRPC
 from optuna.testing.storages import StorageSupplier
 
 from .test_storages import generate_trial
+
+
+STORAGE_MODES_GRPC = [
+    "grpc_rdb",
+    "grpc_journal_file",
+]
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES_GRPC)
