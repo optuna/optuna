@@ -122,10 +122,10 @@ def _get_non_dominated_box_bounds(
     neg_lower_bound_set, neg_def_points = _get_upper_bound_set(
         sorted_neg_upper_bound_set, point_at_infinity
     )
-    upper_box_bounds, lower_box_bounds = -_get_box_bounds(
+    box_upper_bounds, box_lower_bounds = -_get_box_bounds(
         neg_def_points, neg_lower_bound_set, point_at_infinity
     )
-    return lower_box_bounds, upper_box_bounds
+    return box_lower_bounds, box_upper_bounds
 
 
 def get_non_dominated_box_bounds(
