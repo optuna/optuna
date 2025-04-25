@@ -10,7 +10,9 @@ from optuna.study._study_direction import StudyDirection
 
 @experimental_class("2.8.0")
 class PatientPruner(BasePruner):
-    """Pruner which wraps another pruner with tolerance.
+    """Pruner which wraps another pruner with tolerance.This pruner monitors intermediate values
+    and prunes a trial if the improvement is less than a threshold after a patience period.
+    If intermediate values contain NaNs, they are ignored during pruning calculations.
 
     Example:
 
@@ -52,11 +54,6 @@ class PatientPruner(BasePruner):
             study.optimize(objective, n_trials=20)
 
 
-
-    ..note::
-        The PatientPruner handles NaN values by skipping them in pruning decisions without
-        failing the trial. Trials with final NaN values fail,
-        but intermediate NaN values are tolerated and excluded from calculations.
 
     Args:
         wrapped_pruner:
