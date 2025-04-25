@@ -180,11 +180,11 @@ class CmaEsSampler(BaseSampler):
             or ``restart_strategy = 'bipop'`` is specified.
 
             .. warning::
-                Deprecated in v4.4.0. ``restart_strategy`` argument will be removed in the future.
+                Deprecated in v4.4.0. ``inc_posize`` argument will be removed in the future.
                 The removal of this feature is currently scheduled for v6.0.0,
                 but this schedule is subject to change.
-                From v4.4.0 onward, ``restart_strategy`` automatically falls back to ``None``, and
-                ``restart_strategy`` will be supported in OptunaHub.
+                From v4.4.0 onward, ``inc_posize`` automatically falls back to -1, and
+                ``inc_posize`` will be supported in OptunaHub.
                 See https://github.com/optuna/optuna/releases/tag/v4.4.0.
 
         consider_pruned_trials:
