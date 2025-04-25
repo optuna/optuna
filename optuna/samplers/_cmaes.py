@@ -389,7 +389,7 @@ class CmaEsSampler(BaseSampler):
 
         optimizer = self._restore_optimizer(completed_trials)
         if optimizer is None:
-            optimizer = self._init_optimizer(trans, study.direction, population_size=self._popsize)
+            optimizer = self._init_optimizer(trans, study.direction)
 
         if optimizer.dim != len(trans.bounds):
             if self._warn_independent_sampling:
@@ -406,7 +406,7 @@ class CmaEsSampler(BaseSampler):
         # See https://github.com/optuna/optuna/pull/920#discussion_r385114002 for details.
         solution_trials = self._get_solution_trials(completed_trials, optimizer.generation)
 
-        if len(solution_trials) >= self._popsize:
+        if len(solution_trials) >= optimizer.population_size:
             solutions: list[tuple[np.ndarray, float]] = []
             for t in solution_trials[: self._popsize]:
                 assert t.value is not None, "completed trials must have a value"
@@ -496,7 +496,6 @@ class CmaEsSampler(BaseSampler):
         self,
         trans: _SearchSpaceTransform,
         direction: StudyDirection,
-        population_size: int | None = None,
     ) -> "CmaClass":
         lower_bounds = trans.bounds[:, 0]
         upper_bounds = trans.bounds[:, 1]
@@ -544,7 +543,7 @@ class CmaEsSampler(BaseSampler):
                 bounds=trans.bounds,
                 seed=self._cma_rng.rng.randint(1, 2**31 - 2),
                 n_max_resampling=10 * n_dimension,
-                population_size=population_size,
+                population_size=self._popsize,
             )
 
         if self._with_margin:
@@ -567,7 +566,7 @@ class CmaEsSampler(BaseSampler):
                 cov=cov,
                 seed=self._cma_rng.rng.randint(1, 2**31 - 2),
                 n_max_resampling=10 * n_dimension,
-                population_size=population_size,
+                population_size=self._popsize,
             )
 
         return cmaes.CMA(
@@ -577,7 +576,7 @@ class CmaEsSampler(BaseSampler):
             bounds=trans.bounds,
             seed=self._cma_rng.rng.randint(1, 2**31 - 2),
             n_max_resampling=10 * n_dimension,
-            population_size=population_size,
+            population_size=self._popsize,
             lr_adapt=self._lr_adapt,
         )
 
