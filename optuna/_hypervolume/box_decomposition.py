@@ -116,12 +116,17 @@ def _get_non_dominated_box_bounds(
     # The calculation of u[k] and l[k] in the paper: https://arxiv.org/abs/2006.05078
     # NOTE(nabenabe): The paper handles maximization problems, but we consider minimization here.
     neg_upper_bound_set = -_get_upper_bound_set(sorted_pareto_sols, ref_point)[0]
-    sorted_neg_upper_bound_set = neg_upper_bound_set[np.argsort(neg_upper_bound_set[:, 0])]
+    sorted_neg_upper_bound_set = np.unique(neg_upper_bound_set, axis=0)  # lexsort by np.unique.
     # Use the sign-flipped upper_bound_set as the Pareto solutions. Then we can calculate the
     # lower bound set as well.
     point_at_infinity = np.full_like(ref_point, np.inf)
+    # NOTE(nabenabe): Since our goal is to partition the non-dominated space, we only need
+    # the Pareto solutions in the `neg_upper_bound_set`.
     neg_lower_bound_set, neg_def_points = _get_upper_bound_set(
-        sorted_neg_upper_bound_set, point_at_infinity
+        sorted_pareto_sols=sorted_neg_upper_bound_set[
+            _is_pareto_front(sorted_neg_upper_bound_set, assume_unique_lexsorted=True)
+        ],
+        ref_point=point_at_infinity,
     )
     box_upper_bounds, box_lower_bounds = -_get_box_bounds(
         neg_lower_bound_set, neg_def_points, point_at_infinity
