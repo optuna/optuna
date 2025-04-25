@@ -180,11 +180,11 @@ class CmaEsSampler(BaseSampler):
             or ``restart_strategy = 'bipop'`` is specified.
 
             .. warning::
-                Deprecated in v4.4.0. ``inc_popsize`` argument will be removed in the future.
+                Deprecated in v4.4.0. ``restart_strategy`` argument will be removed in the future.
                 The removal of this feature is currently scheduled for v6.0.0,
                 but this schedule is subject to change.
-                From v4.4.0 onward, ``inc_popsize`` automatically falls back to -1, and
-                ``inc_popsize`` will be supported in OptunaHub.
+                From v4.4.0 onward, ``restart_strategy`` automatically falls back to ``None``, and
+                ``restart_strategy`` will be supported in OptunaHub.
                 See https://github.com/optuna/optuna/releases/tag/v4.4.0.
 
         consider_pruned_trials:
@@ -262,13 +262,13 @@ class CmaEsSampler(BaseSampler):
         consider_pruned_trials: bool = False,
         restart_strategy: str | None = None,
         popsize: int | None = None,
-        inc_popsize: int = -1,
+        inc_popsize: int = 2,
         use_separable_cma: bool = False,
         with_margin: bool = False,
         lr_adapt: bool = False,
         source_trials: list[FrozenTrial] | None = None,
     ) -> None:
-        if restart_strategy is not None or inc_popsize != -1:
+        if restart_strategy is not None or inc_popsize != 2:
             msg = _deprecated._DEPRECATION_WARNING_TEMPLATE.format(
                 name="`restart_strategy`", d_ver="4.4.0", r_ver="6.0.0"
             )
@@ -384,9 +384,12 @@ class CmaEsSampler(BaseSampler):
             search_space, transform_step=not self._with_margin, transform_0_1=True
         )
 
+        if self._popsize is None:
+            self._popsize = 4 + math.floor(3 * math.log(len(trans.bounds)))
+
         optimizer = self._restore_optimizer(completed_trials)
         if optimizer is None:
-            optimizer = self._init_optimizer(trans, study.direction)
+            optimizer = self._init_optimizer(trans, study.direction, population_size=self._popsize)
 
         if optimizer.dim != len(trans.bounds):
             if self._warn_independent_sampling:
@@ -403,7 +406,7 @@ class CmaEsSampler(BaseSampler):
         # See https://github.com/optuna/optuna/pull/920#discussion_r385114002 for details.
         solution_trials = self._get_solution_trials(completed_trials, optimizer.generation)
 
-        if len(solution_trials) >= optimizer.population_size:
+        if len(solution_trials) >= self._popsize:
             solutions: list[tuple[np.ndarray, float]] = []
             for t in solution_trials[: self._popsize]:
                 assert t.value is not None, "completed trials must have a value"
@@ -493,6 +496,7 @@ class CmaEsSampler(BaseSampler):
         self,
         trans: _SearchSpaceTransform,
         direction: StudyDirection,
+        population_size: int | None = None,
     ) -> "CmaClass":
         lower_bounds = trans.bounds[:, 0]
         upper_bounds = trans.bounds[:, 1]
@@ -540,7 +544,7 @@ class CmaEsSampler(BaseSampler):
                 bounds=trans.bounds,
                 seed=self._cma_rng.rng.randint(1, 2**31 - 2),
                 n_max_resampling=10 * n_dimension,
-                population_size=self._popsize,
+                population_size=population_size,
             )
 
         if self._with_margin:
@@ -563,7 +567,7 @@ class CmaEsSampler(BaseSampler):
                 cov=cov,
                 seed=self._cma_rng.rng.randint(1, 2**31 - 2),
                 n_max_resampling=10 * n_dimension,
-                population_size=self._popsize,
+                population_size=population_size,
             )
 
         return cmaes.CMA(
@@ -573,7 +577,7 @@ class CmaEsSampler(BaseSampler):
             bounds=trans.bounds,
             seed=self._cma_rng.rng.randint(1, 2**31 - 2),
             n_max_resampling=10 * n_dimension,
-            population_size=self._popsize,
+            population_size=population_size,
             lr_adapt=self._lr_adapt,
         )
 
