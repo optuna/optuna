@@ -114,6 +114,8 @@ def _get_non_dominated_box_bounds(
     sorted_pareto_sols: np.ndarray, ref_point: np.ndarray
 ) -> tuple[np.ndarray, np.ndarray]:  # (n_bounds, n_objectives) and (n_bounds, n_objectives)
     # The calculation of u[k] and l[k] in the paper: https://arxiv.org/abs/2006.05078
+    # See below for the proof of this function's validity:
+    # cf. https://github.com/optuna/optuna/pull/6039#issuecomment-2831926573
     # NOTE(nabenabe): The paper handles maximization problems, but we consider minimization here.
     neg_upper_bound_set = -_get_upper_bound_set(sorted_pareto_sols, ref_point)[0]
     sorted_neg_upper_bound_set = np.unique(neg_upper_bound_set, axis=0)  # lexsort by np.unique.
