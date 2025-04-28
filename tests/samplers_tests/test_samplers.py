@@ -72,6 +72,8 @@ parametrize_multi_objective_sampler = pytest.mark.parametrize(
         optuna.samplers.NSGAIISampler,
         optuna.samplers.NSGAIIISampler,
         lambda: optuna.samplers.TPESampler(n_startup_trials=0),
+        lambda: get_gp_sampler(deterministic_objective=True),
+        lambda: get_gp_sampler(deterministic_objective=False),
     ],
 )
 
