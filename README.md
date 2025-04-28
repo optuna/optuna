@@ -25,12 +25,12 @@ Optuna can dynamically construct the search spaces for the hyperparameters.
 
 ## :loudspeaker: News
 <!-- TODO: when you add a new line, please delete the oldest line -->
+* **Apr 14, 2025**: Optuna 4.3.0 are out! Check out [the release note](https://github.com/optuna/optuna/releases/tag/v4.3.0) for details.
 * **Mar 24, 2025**: A new article [Distributed Optimization in Optuna and gRPC Storage Proxy](https://medium.com/optuna/distributed-optimization-in-optuna-and-grpc-storage-proxy-08db83f1d608) has been published.
 * **Mar 11, 2025**: A new article [[Optuna v4.2] Gaussian Process-Based Sampler Can Now Handle Inequality Constraints](https://medium.com/optuna/optuna-v4-2-gaussian-process-based-sampler-can-now-handle-inequality-constraints-a4f68e8ee810) has been published.
 * **Feb 17, 2025**: A new article [SMAC3 Registered on OptunaHub](https://medium.com/optuna/smac3-registered-on-optunahub-4fb9e90855cb) has been published.
 * **Jan 22, 2025**: A new article [OptunaHub Benchmarks: A New Feature to Use/Register Various Benchmark Problems](https://medium.com/optuna/optunahub-benchmarks-a-new-feature-to-use-register-various-benchmark-problems-694401524ce0) has been published.
 * **Jan 20, 2025**: Optuna 4.2.0 and OptunaHub 0.2.0 are out! Try the newest Optuna and OptunaHub! Check out [the release note](https://github.com/optuna/optuna/releases/tag/v4.2.0) for details.
-* **Jan 16, 2025**: A new article [Overview of Python Free Threading (v3.13t) Support in Optuna](https://medium.com/optuna/overview-of-python-free-threading-v3-13t-support-in-optuna-ad9ab62a11ba) has been published.
 
 ## :fire: Key Features
 
@@ -235,7 +235,7 @@ For more details, please refer to [the optunahub documentation](https://optuna.g
 ### Publish your packages
 
 You can publish your package via [optunahub-registry](https://github.com/optuna/optunahub-registry).
-See the [OptunaHub tutorial](https://optuna.github.io/optunahub-registry/index.html).
+See the [Tutorials for Contributors](https://optuna.github.io/optunahub/tutorials_for_contributors.html) in OptunaHub.
 
 
 ## Communication

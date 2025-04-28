@@ -1,18 +1,23 @@
 from __future__ import annotations
 
 import abc
-from collections.abc import Callable
-from collections.abc import Collection
 from typing import cast
+from typing import TYPE_CHECKING
 
 import numpy as np
 
-from optuna._transform import _SearchSpaceTransform
-from optuna.distributions import BaseDistribution
 from optuna.search_space import intersection_search_space
-from optuna.study import Study
-from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
+
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+    from collections.abc import Collection
+
+    from optuna._transform import _SearchSpaceTransform
+    from optuna.distributions import BaseDistribution
+    from optuna.study import Study
+    from optuna.trial import FrozenTrial
 
 
 class BaseImportanceEvaluator(abc.ABC):
@@ -145,7 +150,9 @@ def _get_filtered_trials(
         trial
         for trial in trials
         if set(params) <= set(trial.params)
-        and np.isfinite(target(trial) if target is not None else cast(float, trial.value))
+        and np.isfinite(
+            target(trial) if target is not None else cast("float", trial.value)
+        )  # TC006
     ]
 
 

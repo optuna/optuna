@@ -865,7 +865,6 @@ def test_crossover_inlined_categorical_distribution() -> None:
         BLXAlphaCrossover(),
         SPXCrossover(),
         SBXCrossover(),
-        VSBXCrossover(),
         UNDXCrossover(),
     ],
 )
@@ -902,7 +901,11 @@ def test_crossover_duplicated_param_values(crossover: BaseCrossover) -> None:
         (SBXCrossover(), 0.0, np.array([2.0, 3.0])),  # c1 = (p1 + p2) / 2.
         (SBXCrossover(), 0.5, np.array([3.0, 4.0])),  # p2.
         (SBXCrossover(), 1.0, np.array([3.0, 4.0])),  # p2.
-        (VSBXCrossover(), 0.0, np.array([2.0, 3.0])),  # c1 = (p1 + p2) / 2.
+        (
+            VSBXCrossover(),
+            0.0,
+            np.array([-1076.02679423, -2151.84728898]),
+        ),  # Check to avoid edge cases that result in 0 division.
         (VSBXCrossover(), 0.5, np.array([3.0, 4.0])),  # p2.
         (VSBXCrossover(), 1.0, np.array([3.0, 4.0])),  # p2.
         # p1, p2 and p3 are on x + 1, and distance from child to PSL is 0.
@@ -933,7 +936,7 @@ def test_crossover_deterministic(
     def _normal(*args: Any, **kwargs: Any) -> Any:
         if kwargs.get("size") is None:
             return rand_value
-        return np.full(kwargs.get("size"), rand_value)  # type: ignore[arg-type]
+        return np.full(kwargs.get("size"), rand_value)
 
     rng = Mock()
     rng.rand = Mock(side_effect=_rand)

@@ -81,7 +81,7 @@ def _get_rank_plot(
 
         for x_i in range(n_params):
             for y_i in range(n_params):
-                ax = axs[x_i, y_i]
+                ax = axs[x_i, y_i]  # type: ignore[index]
                 # Set the x or y label only if the subplot is in the edge of the overall figure.
                 pc = _add_rank_subplot(
                     ax,
@@ -95,7 +95,9 @@ def _get_rank_plot(
     pc.set_cmap(plt.get_cmap("RdYlBu_r"))
     cbar = fig.colorbar(pc, ax=axs, ticks=tick_info.coloridxs)
     cbar.ax.set_yticklabels(tick_info.text)
-    cbar.outline.set_edgecolor("gray")
+    # NOTE(Alnusjaponica): The class of cbar.outline inherits matplotlib.patches.Patch,
+    # which has set_edgecolor method. However, mypy does not recognize it.
+    cbar.outline.set_edgecolor("gray")  # type: ignore[operator]
     return axs
 
 

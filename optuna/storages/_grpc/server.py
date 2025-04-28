@@ -30,7 +30,7 @@ def make_server(
     server = grpc.server(thread_pool or ThreadPoolExecutor(max_workers=10))
     api_pb2_grpc.add_StorageServiceServicer_to_server(
         grpc_servicer.OptunaStorageProxyService(storage), server
-    )  # type: ignore
+    )
     server.add_insecure_port(f"{host}:{port}")
     return server
 
