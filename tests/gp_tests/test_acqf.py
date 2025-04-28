@@ -18,14 +18,11 @@ from optuna._gp.search_space import SearchSpace
 def verify_eval_acqf(x: np.ndarray, acqf_params: AcquisitionFunctionParams) -> None:
     x_tensor = torch.from_numpy(x)
     x_tensor.requires_grad_(True)
-
     acqf_value = eval_acqf(acqf_params, x_tensor)
     acqf_value.sum().backward()  # type: ignore
     acqf_grad = x_tensor.grad
     assert acqf_grad is not None
-
     assert acqf_value.shape == x.shape[:-1]
-
     assert torch.all(torch.isfinite(acqf_value))
     assert torch.all(torch.isfinite(acqf_grad))
 

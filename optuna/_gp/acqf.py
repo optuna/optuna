@@ -12,6 +12,7 @@ from optuna._gp.gp import KernelParamsTensor
 from optuna._gp.gp import posterior
 from optuna._gp.search_space import ScaleType
 from optuna._gp.search_space import SearchSpace
+from optuna._hypervolume import get_non_dominated_box_bounds
 from optuna.study._multi_objective import _is_pareto_front
 
 
@@ -47,7 +48,9 @@ def logehvi(
     # Check the implementations here:
     # https://github.com/pytorch/botorch/blob/v0.13.0/botorch/utils/safe_math.py
     # https://github.com/pytorch/botorch/blob/v0.13.0/botorch/acquisition/multi_objective/logei.py#L146-L266
-    diff = torch.nn.functional.relu(
+    _EPS = torch.tensor(1e-12, dtype=torch.float64)  # NOTE(nabenabe): grad becomes nan when EPS=0.
+    diff = torch.maximum(
+        _EPS,
         torch.minimum(Y_post[..., torch.newaxis, :], non_dominated_box_upper_bounds)
         - non_dominated_box_lower_bounds
     )
@@ -166,16 +169,11 @@ class MultiObjectiveAcquisitionFunctionParams(AcquisitionFunctionParams):
         n_qmc_samples: int,
         qmc_seed: int | None,
     ) -> MultiObjectiveAcquisitionFunctionParams:
-        def get_non_dominated_box_bounds(
-            pareto_sols: np.ndarray, ref_point: np.ndarray
-        ) -> tuple[np.ndarray, np.ndarray]:
-            # NOTE(nabenabe): This is a dummy implementation for formatter.
-            return np.ones((5, Y.shape[-1])) * 5.0, np.ones((5, Y.shape[-1])) * 10.0
-
         def _get_non_dominated_box_bounds() -> tuple[torch.Tensor, torch.Tensor]:
             loss_vals = -Y  # NOTE(nabenabe): Y is to be maximized, loss_vals is to be minimized.
             pareto_sols = loss_vals[_is_pareto_front(loss_vals, assume_unique_lexsorted=False)]
-            ref_point = np.max(loss_vals, axis=0) * 1.1
+            ref_point = np.max(loss_vals, axis=0)
+            ref_point = np.maximum(1.1 * ref_point, 0.9 * ref_point)
             lbs, ubs = get_non_dominated_box_bounds(pareto_sols, ref_point)
             # NOTE(nabenabe): Flip back the sign to make them compatible with maximization.
             return torch.from_numpy(-ubs), torch.from_numpy(-lbs)
