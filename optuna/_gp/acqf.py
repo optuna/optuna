@@ -54,8 +54,9 @@ def logehvi(
         torch.minimum(Y_post[..., torch.newaxis, :], non_dominated_box_upper_bounds)
         - non_dominated_box_lower_bounds,
     )
-    log_hvi_vals = torch.special.logsumexp(diff.log().sum(dim=-1), dim=-1)
-    return -log_n_qmc_samples + torch.special.logsumexp(log_hvi_vals, dim=-1)
+    # NOTE(nabenabe): logsumexp with dim=-1 is for the HVI calculation and that with dim=-2 is for
+    # expectation of the HVIs over the fixed_samples.
+    return torch.special.logsumexp(diff.log().sum(dim=-1), dim=(-2, -1)) - log_n_qmc_samples
 
 
 def standard_logei(z: torch.Tensor) -> torch.Tensor:
