@@ -185,6 +185,10 @@ class MultiObjectiveAcquisitionFunctionParams(AcquisitionFunctionParams):
         (non_dominated_box_lower_bounds, non_dominated_box_upper_bounds) = (
             _get_non_dominated_box_bounds()
         )
+        # The inverse_squared_lengthscales below is used only in optim_mixed.
+        # Since all the objectives are equally important, we simply use the mean of
+        # inverse_squared_lengthscales over all the objectives.
+        # cf. https://github.com/optuna/optuna/blob/v4.3.0/optuna/_gp/optim_mixed.py#L200-L209
         inverse_squared_lengthscales = np.mean(
             [
                 acqf_params.kernel_params.inverse_squared_lengthscales.detach().numpy()
