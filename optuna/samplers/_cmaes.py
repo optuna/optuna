@@ -405,7 +405,7 @@ class CmaEsSampler(BaseSampler):
 
         if len(solution_trials) >= optimizer.population_size:
             solutions: list[tuple[np.ndarray, float]] = []
-            for t in solution_trials[: self._popsize]:
+            for t in solution_trials[: optimizer.population_size]:
                 assert t.value is not None, "completed trials must have a value"
                 if isinstance(optimizer, cmaes.CMAwM):
                     x = np.array(t.system_attrs["x_for_tell"])
