@@ -174,7 +174,7 @@ class MultiObjectiveAcquisitionFunctionParams(AcquisitionFunctionParams):
             loss_vals = -Y  # NOTE(nabenabe): Y is to be maximized, loss_vals is to be minimized.
             pareto_sols = loss_vals[_is_pareto_front(loss_vals, assume_unique_lexsorted=False)]
             ref_point = np.max(loss_vals, axis=0)
-            ref_point = np.maximum(1.1 * ref_point, 0.9 * ref_point)
+            ref_point = np.nextafter(np.maximum(1.1 * ref_point, 0.9 * ref_point), np.inf)
             lbs, ubs = get_non_dominated_box_bounds(pareto_sols, ref_point)
             # NOTE(nabenabe): Flip back the sign to make them compatible with maximization.
             return torch.from_numpy(-ubs), torch.from_numpy(-lbs)
