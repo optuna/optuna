@@ -52,7 +52,7 @@ def logehvi(
     diff = torch.maximum(
         _EPS,
         torch.minimum(Y_post[..., torch.newaxis, :], non_dominated_box_upper_bounds)
-        - non_dominated_box_lower_bounds
+        - non_dominated_box_lower_bounds,
     )
     log_hvi_vals = torch.special.logsumexp(diff.log().sum(dim=-1), dim=-1)
     return -log_n_qmc_samples + torch.special.logsumexp(log_hvi_vals, dim=-1)
