@@ -182,7 +182,7 @@ class MultiObjectiveAcquisitionFunctionParams(AcquisitionFunctionParams):
         fixed_samples = _sample_from_normal_sobol(
             dim=Y.shape[-1], n_samples=n_qmc_samples, seed=qmc_seed
         )
-        (non_dominated_box_lower_bounds, non_dominated_box_upper_bounds) = (
+        non_dominated_box_lower_bounds, non_dominated_box_upper_bounds = (
             _get_non_dominated_box_bounds()
         )
         # The inverse_squared_lengthscales below is used only in optim_mixed.
