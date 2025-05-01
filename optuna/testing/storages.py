@@ -111,6 +111,8 @@ class StorageSupplier:
 
     def _create_proxy(self, storage: BaseStorage) -> GrpcStorageProxy:
         port = _find_free_port()
+        extra_args = self.extra_args.copy()
+        extra_args.pop("base_storage", None)
         self.server = optuna.storages._grpc.server.make_server(
             storage, "localhost", port, **self.extra_args
         )
