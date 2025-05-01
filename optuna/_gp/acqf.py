@@ -254,13 +254,13 @@ def create_acqf_params(
 def _eval_ehvi(
     ehvi_acqf_params: MultiObjectiveAcquisitionFunctionParams, x: torch.Tensor
 ) -> torch.Tensor:
-    X = torch.from_numpy(evhi_acqf_params.X)
+    X = torch.from_numpy(ehvi_acqf_params.X)
     is_categorical = torch.from_numpy(
-        evhi_acqf_params.search_space.scale_types == ScaleType.CATEGORICAL
+        ehvi_acqf_params.search_space.scale_types == ScaleType.CATEGORICAL
     )
     Y_post = []
-    fixed_samples = evhi_acqf_params.fixed_samples
-    for i, acqf_params in enumerate(evhi_acqf_params.acqf_params_for_objectives):
+    fixed_samples = ehvi_acqf_params.fixed_samples
+    for i, acqf_params in enumerate(ehvi_acqf_params.acqf_params_for_objectives):
         mean, var = posterior(
             kernel_params=acqf_params.kernel_params,
             X=X,
@@ -269,7 +269,7 @@ def _eval_ehvi(
             cov_Y_Y_inv_Y=torch.from_numpy(acqf_params.cov_Y_Y_inv_Y),
             x=x,
         )
-        stdev = torch.sqrt(var + evhi_acqf_params.acqf_stabilizing_noise)
+        stdev = torch.sqrt(var + ehvi_acqf_params.acqf_stabilizing_noise)
         # NOTE(nabenabe): By using fixed samples from the Sobol sequence, EHVI becomes
         # deterministic, making it possible to optimize the acqf by l-BFGS.
         Y_post.append(mean[..., torch.newaxis] + stdev[..., torch.newaxis] * fixed_samples[..., i])
@@ -279,15 +279,15 @@ def _eval_ehvi(
     # Y_post = means[..., torch.newaxis, :] + torch.einsum("...MM,SM->...SM", L, fixed_samples)
     return logehvi(
         Y_post=torch.stack(Y_post, dim=-1),
-        non_dominated_box_lower_bounds=evhi_acqf_params.non_dominated_box_lower_bounds,
-        non_dominated_box_upper_bounds=evhi_acqf_params.non_dominated_box_upper_bounds,
+        non_dominated_box_lower_bounds=ehvi_acqf_params.non_dominated_box_lower_bounds,
+        non_dominated_box_upper_bounds=ehvi_acqf_params.non_dominated_box_upper_bounds,
     )
 
 
 def eval_acqf(acqf_params: AcquisitionFunctionParams, x: torch.Tensor) -> torch.Tensor:
     if acqf_params.acqf_type == AcquisitionFunctionType.LOG_EHVI:
         assert isinstance(acqf_params, MultiObjectiveAcquisitionFunctionParams)
-        return _eval_ehvi(evhi_acqf_params=acqf_params, x=x)
+        return _eval_ehvi(ehvi_acqf_params=acqf_params, x=x)
 
     mean, var = posterior(
         acqf_params.kernel_params,
