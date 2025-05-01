@@ -187,18 +187,18 @@ class MultiObjectiveAcquisitionFunctionParams(AcquisitionFunctionParams):
             _get_non_dominated_box_bounds()
         )
         # The inverse_squared_lengthscales below is used only in optim_mixed.
-        # Since all the objectives are equally important, we simply use the mean of
-        # inverse_squared_lengthscales over all the objectives.
-        # cf. https://github.com/optuna/optuna/blob/v4.3.0/optuna/_gp/optim_mixed.py#L200-L209
         inverse_squared_lengthscales_array = np.array(
             [
                 acqf_params.kernel_params.inverse_squared_lengthscales.detach().numpy()
                 for acqf_params in acqf_params_for_objectives
             ]
         )
+        # Since all the objectives are equally important, we simply use the mean of
+        # inverse of squared mean lengthscales over all the objectives.
         mean_lengthscales = np.mean(1 / np.sqrt(inverse_squared_lengthscales_array), axis=0)
         dummy_kernel_params = KernelParamsTensor(
             # inverse_squared_lengthscales is used in optim_mixed.py.
+            # cf. https://github.com/optuna/optuna/blob/v4.3.0/optuna/_gp/optim_mixed.py#L200-L209
             inverse_squared_lengthscales=torch.from_numpy(1.0 / mean_lengthscales**2),
             # These parameters will not be used anywhere.
             kernel_scale=torch.empty(0),
