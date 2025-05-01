@@ -252,7 +252,7 @@ def create_acqf_params(
 
 
 def _eval_ehvi(
-    evhi_acqf_params: MultiObjectiveAcquisitionFunctionParams, x: torch.Tensor
+    ehvi_acqf_params: MultiObjectiveAcquisitionFunctionParams, x: torch.Tensor
 ) -> torch.Tensor:
     X = torch.from_numpy(evhi_acqf_params.X)
     is_categorical = torch.from_numpy(
