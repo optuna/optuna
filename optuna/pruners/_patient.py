@@ -53,8 +53,6 @@ class PatientPruner(BasePruner):
             )
             study.optimize(objective, n_trials=20)
 
-
-
     Args:
         wrapped_pruner:
             Wrapped pruner to perform pruning when :class:`~optuna.pruners.PatientPruner` allows a
