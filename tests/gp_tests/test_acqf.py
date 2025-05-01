@@ -42,7 +42,7 @@ def kernel_params() -> KernelParamsTensor:
 
 
 @pytest.fixture
-def search_space():
+def search_space() -> SearchSpace:
     n_dims = 2
     return SearchSpace(
         scale_types=np.full(n_dims, ScaleType.LINEAR),
