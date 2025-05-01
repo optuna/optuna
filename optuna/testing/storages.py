@@ -114,7 +114,7 @@ class StorageSupplier:
         extra_args = self.extra_args.copy()
         extra_args.pop("base_storage", None)
         self.server = optuna.storages._grpc.server.make_server(
-            storage, "localhost", port, **self.extra_args
+            storage, "localhost", port, **extra_args
         )
         self.thread = threading.Thread(target=self.server.start)
         self.thread.start()
