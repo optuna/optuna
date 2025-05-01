@@ -59,23 +59,21 @@ class MedianPruner(PercentilePruner):
             )
             study.optimize(objective, n_trials=20)
 
-
-        Args:
-            n_startup_trials:
-                Pruning is disabled until the given number of trials finish in the same study.
-            n_warmup_steps:
-                Pruning is disabled until the trial exceeds the given number of step. Note that
-                this feature assumes that ``step`` starts at zero.
-            interval_steps:
-                Interval in number of steps between the pruning checks, offset by the warmup steps.
-                If no value has been reported at the time of a pruning check, that particular check
-                will be postponed until a value is reported.
-            n_min_trials:
-                Minimum number of reported trial results at a step to judge whether to prune.
-                If the number of reported intermediate values from all trials at the current step
-                is less than ``n_min_trials``, the trial will not be pruned. This can be
-                used to ensure that a minimum number of trials are run to completion
-                without being pruned.
+    Args:
+        n_startup_trials:
+            Pruning is disabled until the given number of trials finish in the same study.
+        n_warmup_steps:
+            Pruning is disabled until the trial exceeds the given number of step. Note that
+            this feature assumes that ``step`` starts at zero.
+        interval_steps:
+            Interval in number of steps between the pruning checks, offset by the warmup steps.
+            If no value has been reported at the time of a pruning check, that particular check
+            will be postponed until a value is reported.
+        n_min_trials:
+            Minimum number of reported trial results at a step to judge whether to prune.
+            If the number of reported intermediate values from all trials at the current step
+            is less than ``n_min_trials``, the trial will not be pruned. This can be used to ensure
+            that a minimum number of trials are run to completion without being pruned.
     """
 
     def __init__(
