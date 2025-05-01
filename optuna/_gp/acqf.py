@@ -199,24 +199,26 @@ class MultiObjectiveAcquisitionFunctionParams(AcquisitionFunctionParams):
         dummy_kernel_params = KernelParamsTensor(
             # inverse_squared_lengthscales is used in optim_mixed.py.
             inverse_squared_lengthscales=torch.from_numpy(inverse_squared_lengthscales),
+            # These parameters will not be used anywhere.
             kernel_scale=torch.empty(0),
             noise_var=torch.empty(0),
         )
         repr_acqf_params = acqf_params_for_objectives[0]
         return cls(
             acqf_type=AcquisitionFunctionType.LOG_EHVI,
-            kernel_params=dummy_kernel_params,
             X=repr_acqf_params.X,
             search_space=repr_acqf_params.search_space,
-            cov_Y_Y_inv=np.empty(0),
-            cov_Y_Y_inv_Y=np.empty(0),
-            max_Y=np.nan,  # This is not used anywhere.
-            beta=None,
             acqf_stabilizing_noise=repr_acqf_params.acqf_stabilizing_noise,
             acqf_params_for_objectives=acqf_params_for_objectives,
             non_dominated_box_lower_bounds=non_dominated_box_lower_bounds,
             non_dominated_box_upper_bounds=non_dominated_box_upper_bounds,
             fixed_samples=fixed_samples,
+            kernel_params=dummy_kernel_params,
+            # The variables below will not be used anywhere, so we simply set dummy values.
+            cov_Y_Y_inv=np.empty(0),
+            cov_Y_Y_inv_Y=np.empty(0),
+            max_Y=np.nan,
+            beta=None,
         )
 
 
@@ -272,6 +274,8 @@ def _eval_ehvi(
         stdev = torch.sqrt(var + ehvi_acqf_params.acqf_stabilizing_noise)
         # NOTE(nabenabe): By using fixed samples from the Sobol sequence, EHVI becomes
         # deterministic, making it possible to optimize the acqf by l-BFGS.
+        # Sobol is better than the standard Monte-Carlo w.r.t. the approximation stability.
+        # cf. Appendix D of https://arxiv.org/pdf/2006.05078
         Y_post.append(mean[..., torch.newaxis] + stdev[..., torch.newaxis] * fixed_samples[..., i])
 
     # NOTE(nabenabe): Use the following once multi-task GP is supported.
