@@ -103,6 +103,9 @@ class StorageSupplier:
             self.tempfile = NamedTemporaryFilePool().tempfile()
             url = "sqlite:///{}".format(self.tempfile.name)
             return self._create_proxy(optuna.storages.RDBStorage(url))
+        elif self.storage_specifier == "grpc_proxy":
+            assert "base_storage" in self.extra_args
+            return self._create_proxy(self.extra_args["base_storage"])
         else:
             assert False
 
