@@ -196,7 +196,7 @@ class MultiObjectiveAcquisitionFunctionParams(AcquisitionFunctionParams):
                 for acqf_params in acqf_params_for_objectives
             ]
         )
-        mean_lengthscales = np.mean(1 / np.sqrt(inverse_squared_lengthscales_array))
+        mean_lengthscales = np.mean(1 / np.sqrt(inverse_squared_lengthscales_array), axis=0)
         dummy_kernel_params = KernelParamsTensor(
             # inverse_squared_lengthscales is used in optim_mixed.py.
             inverse_squared_lengthscales=torch.from_numpy(1.0 / mean_lengthscales**2),
