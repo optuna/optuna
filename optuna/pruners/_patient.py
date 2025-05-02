@@ -20,6 +20,7 @@ class PatientPruner(BasePruner):
         not be pruned
         2. During the pruning calculations, NaN values are ignored. Only valid numeric values are
         considered.
+
     Example:
 
         .. testcode::
