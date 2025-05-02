@@ -249,7 +249,7 @@ class OptunaStorageProxyService(api_pb2_grpc.StorageServiceServicer):
     ) -> api_pb2.SetTrialStateValuesReply:
         trial_id = request.trial_id
         state = request.state
-        values = list(request.values)
+        values = list(request.values) if request.values else None
         try:
             trial_updated = self._backend.set_trial_state_values(
                 trial_id, _from_proto_trial_state(state), values

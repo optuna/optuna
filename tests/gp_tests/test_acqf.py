@@ -27,22 +27,28 @@ def verify_eval_acqf(x: np.ndarray, acqf_params: AcquisitionFunctionParams) -> N
     assert torch.all(torch.isfinite(acqf_grad))
 
 
-def get_kernel_params_and_search_space_and_X() -> (
-    tuple[KernelParamsTensor, SearchSpace, np.ndarray]
-):
-    X = np.array([[0.1, 0.2], [0.2, 0.3], [0.3, 0.1]])
-    n_dims = X.shape[-1]
-    kernel_params = KernelParamsTensor(
+@pytest.fixture
+def X() -> np.ndarray:
+    return np.array([[0.1, 0.2], [0.2, 0.3], [0.3, 0.1]])
+
+
+@pytest.fixture
+def kernel_params() -> KernelParamsTensor:
+    return KernelParamsTensor(
         inverse_squared_lengthscales=torch.tensor([2.0, 3.0], dtype=torch.float64),
         kernel_scale=torch.tensor(4.0, dtype=torch.float64),
         noise_var=torch.tensor(0.1, dtype=torch.float64),
     )
-    search_space = SearchSpace(
+
+
+@pytest.fixture
+def search_space() -> SearchSpace:
+    n_dims = 2
+    return SearchSpace(
         scale_types=np.full(n_dims, ScaleType.LINEAR),
         bounds=np.array([[0.0, 1.0] * n_dims]),
         steps=np.zeros(n_dims),
     )
-    return kernel_params, search_space, X
 
 
 parametrized_x = pytest.mark.parametrize(
@@ -74,9 +80,11 @@ def test_eval_acqf(
     acqf_type: AcquisitionFunctionType,
     beta: float | None,
     x: np.ndarray,
+    kernel_params: KernelParamsTensor,
+    search_space: SearchSpace,
+    X: np.ndarray,
 ) -> None:
     Y = np.array([1.0, 2.0, 3.0])
-    kernel_params, search_space, X = get_kernel_params_and_search_space_and_X()
     acqf_params = create_acqf_params(
         acqf_type=acqf_type,
         kernel_params=kernel_params,
@@ -91,10 +99,15 @@ def test_eval_acqf(
 
 @parametrized_x
 @parametrized_additional_values
-def test_eval_acqf_with_constraints(x: np.ndarray, additional_values: np.ndarray) -> None:
+def test_eval_acqf_with_constraints(
+    x: np.ndarray,
+    additional_values: np.ndarray,
+    kernel_params: KernelParamsTensor,
+    search_space: SearchSpace,
+    X: np.ndarray,
+) -> None:
     c = additional_values.copy()
     Y = np.array([1.0, 2.0, 3.0])
-    kernel_params, search_space, X = get_kernel_params_and_search_space_and_X()
     is_feasible = np.all(c <= 0, axis=1)
     is_all_infeasible = not np.any(is_feasible)
     acqf_params = create_acqf_params(
@@ -126,9 +139,14 @@ def test_eval_acqf_with_constraints(x: np.ndarray, additional_values: np.ndarray
 
 @parametrized_x
 @parametrized_additional_values
-def test_eval_multi_objective_acqf(x: np.ndarray, additional_values: np.ndarray) -> None:
+def test_eval_multi_objective_acqf(
+    x: np.ndarray,
+    additional_values: np.ndarray,
+    kernel_params: KernelParamsTensor,
+    search_space: SearchSpace,
+    X: np.ndarray,
+) -> None:
     Y = np.hstack([np.array([1.0, 2.0, 3.0])[:, np.newaxis], additional_values])
-    kernel_params, search_space, X = get_kernel_params_and_search_space_and_X()
     n_objectives = Y.shape[-1]
     acqf_params_for_objectives = []
     for i in range(n_objectives):
