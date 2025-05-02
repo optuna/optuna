@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Callable
+from collections.abc import Sequence
 from typing import Any
 from typing import TYPE_CHECKING
 import warnings
@@ -9,6 +11,7 @@ import numpy as np
 import optuna
 from optuna._experimental import experimental_class
 from optuna._experimental import warn_experimental_argument
+from optuna.distributions import BaseDistribution
 from optuna.samplers._base import _CONSTRAINTS_KEY
 from optuna.samplers._base import _process_constraints_after_trial
 from optuna.samplers._base import BaseSampler
@@ -20,9 +23,6 @@ from optuna.trial import TrialState
 
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
-    from collections.abc import Sequence
-
     import torch
 
     import optuna._gp.acqf as acqf
@@ -30,7 +30,6 @@ if TYPE_CHECKING:
     import optuna._gp.optim_mixed as optim_mixed
     import optuna._gp.prior as prior
     import optuna._gp.search_space as gp_search_space
-    from optuna.distributions import BaseDistribution
     from optuna.study import Study
 else:
     from optuna._imports import _LazyImport
