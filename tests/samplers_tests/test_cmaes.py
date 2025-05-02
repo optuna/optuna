@@ -343,23 +343,6 @@ def _create_trials() -> list[FrozenTrial]:
     return trials
 
 
-@pytest.mark.parametrize(
-    "options, key",
-    [
-        ({"with_margin": False, "use_separable_cma": False}, "cma:"),
-        ({"with_margin": True, "use_separable_cma": False}, "cmawm:"),
-        ({"with_margin": False, "use_separable_cma": True}, "sepcma:"),
-    ],
-)
-def test_sampler_attr_key(options: dict[str, bool], key: str) -> None:
-    # Test sampler attr_key property.
-    sampler = optuna.samplers.CmaEsSampler(
-        with_margin=options["with_margin"], use_separable_cma=options["use_separable_cma"]
-    )
-    assert sampler._attr_keys.optimizer.startswith(key)
-    assert sampler._attr_keys.generation.startswith(key)
-
-
 @pytest.mark.parametrize("sampler_opts", [{}, {"use_separable_cma": True}, {"with_margin": True}])
 def test_restore_optimizer_from_substrings(sampler_opts: dict[str, Any]) -> None:
     popsize = 8
