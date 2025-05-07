@@ -109,6 +109,7 @@ class GPSampler(BaseSampler):
         self._log_prior: Callable[[gp.KernelParamsTensor], torch.Tensor] = prior.default_log_prior
         self._minimum_noise: float = prior.DEFAULT_MINIMUM_NOISE_VAR
         # We cache the kernel parameters for initial values of fitting the next time.
+        # TODO(nabenabe): Make the cache lists system_attrs to make GPSampler stateless.
         self._kernel_params_cache_list: list[gp.KernelParamsTensor] | None = None
         self._constraints_kernel_params_cache: list[gp.KernelParamsTensor] | None = None
         self._deterministic = deterministic_objective
