@@ -40,6 +40,7 @@ STORAGE_MODES_HEARTBEAT = [
     "cached_sqlite",
 ]
 
+
 SQLITE3_TIMEOUT = 300
 
 
@@ -110,7 +111,11 @@ class StorageSupplier:
 
     def _create_proxy(self, storage: BaseStorage) -> GrpcStorageProxy:
         port = _find_free_port()
-        self.server = optuna.storages._grpc.server.make_server(storage, "localhost", port)
+        extra_args = self.extra_args.copy()
+        extra_args.pop("base_storage", None)
+        self.server = optuna.storages._grpc.server.make_server(
+            storage, "localhost", port, **extra_args
+        )
         self.thread = threading.Thread(target=self.server.start)
         self.thread.start()
         self.proxy = GrpcStorageProxy(host="localhost", port=port)
