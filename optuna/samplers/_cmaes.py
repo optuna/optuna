@@ -6,7 +6,6 @@ import math
 import pickle
 from typing import Any
 from typing import cast
-from typing import NamedTuple
 from typing import TYPE_CHECKING
 from typing import Union
 import warnings
@@ -42,11 +41,6 @@ _logger = logging.get_logger(__name__)
 _EPS = 1e-10
 # The value of system_attrs must be less than 2046 characters on RDBStorage.
 _SYSTEM_ATTR_MAX_LENGTH = 2045
-
-
-class _CmaEsAttrKeys(NamedTuple):
-    optimizer: str
-    generation: str
 
 
 class CmaEsSampler(BaseSampler):
@@ -292,6 +286,13 @@ class CmaEsSampler(BaseSampler):
         self._lr_adapt = lr_adapt
         self._source_trials = source_trials
 
+        if self._use_separable_cma:
+            self._attr_prefix = "sepcma:"
+        elif self._with_margin:
+            self._attr_prefix = "cmawm:"
+        else:
+            self._attr_prefix = "cma:"
+
         if self._consider_pruned_trials:
             warn_experimental_argument("consider_pruned_trials")
 
@@ -433,7 +434,7 @@ class CmaEsSampler(BaseSampler):
         else:
             params = optimizer.ask()
 
-        generation_attr_key = self._attr_keys.generation
+        generation_attr_key = self._attr_key_generation
         study._storage.set_trial_system_attr(
             trial._trial_id, generation_attr_key, optimizer.generation
         )
@@ -443,22 +444,16 @@ class CmaEsSampler(BaseSampler):
         return external_values
 
     @property
-    def _attr_keys(self) -> _CmaEsAttrKeys:
-        if self._use_separable_cma:
-            attr_prefix = "sepcma:"
-        elif self._with_margin:
-            attr_prefix = "cmawm:"
-        else:
-            attr_prefix = "cma:"
+    def _attr_key_generation(self) -> str:
+        return self._attr_prefix + "generation"
 
-        return _CmaEsAttrKeys(
-            attr_prefix + "optimizer",
-            attr_prefix + "generation",
-        )
+    @property
+    def _attr_key_optimizer(self) -> str:
+        return self._attr_prefix + "optimizer"
 
     def _concat_optimizer_attrs(self, optimizer_attrs: dict[str, str]) -> str:
         return "".join(
-            optimizer_attrs["{}:{}".format(self._attr_keys.optimizer, i)]
+            optimizer_attrs["{}:{}".format(self._attr_key_optimizer, i)]
             for i in range(len(optimizer_attrs))
         )
 
@@ -468,7 +463,7 @@ class CmaEsSampler(BaseSampler):
         for i in range(math.ceil(optimizer_len / _SYSTEM_ATTR_MAX_LENGTH)):
             start = i * _SYSTEM_ATTR_MAX_LENGTH
             end = min((i + 1) * _SYSTEM_ATTR_MAX_LENGTH, optimizer_len)
-            attrs["{}:{}".format(self._attr_keys.optimizer, i)] = optimizer_str[start:end]
+            attrs["{}:{}".format(self._attr_key_optimizer, i)] = optimizer_str[start:end]
         return attrs
 
     def _restore_optimizer(
@@ -480,7 +475,7 @@ class CmaEsSampler(BaseSampler):
             optimizer_attrs = {
                 key: value
                 for key, value in trial.system_attrs.items()
-                if key.startswith(self._attr_keys.optimizer)
+                if key.startswith(self._attr_key_optimizer)
             }
             if len(optimizer_attrs) == 0:
                 continue
@@ -630,7 +625,7 @@ class CmaEsSampler(BaseSampler):
     def _get_solution_trials(
         self, trials: list[FrozenTrial], generation: int
     ) -> list[FrozenTrial]:
-        generation_attr_key = self._attr_keys.generation
+        generation_attr_key = self._attr_key_generation
         return [t for t in trials if generation == t.system_attrs.get(generation_attr_key, -1)]
 
     def before_trial(self, study: optuna.Study, trial: FrozenTrial) -> None:
