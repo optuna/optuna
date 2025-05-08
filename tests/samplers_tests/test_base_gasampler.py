@@ -219,7 +219,7 @@ def test_get_parent_population(args: dict[str, Any]) -> None:
         mock_study._get_trials.return_value = [
             optuna.trial.FrozenTrial(
                 number=i,
-                trial_id=i,
+                trial_id=i+10,
                 state=optuna.trial.TrialState.WAITING,
                 value=None,
                 datetime_start=None,
@@ -230,7 +230,10 @@ def test_get_parent_population(args: dict[str, Any]) -> None:
                 system_attrs={},
                 intermediate_values={},
                 values=None,
-            ) for i in args["study_system_attrs"][BaseGASamplerTestSampler._get_parent_cache_key_prefix() + "1"]
+            )
+            for i in args["study_system_attrs"][
+                BaseGASamplerTestSampler._get_parent_cache_key_prefix() + "1"
+            ]
         ]
 
     with patch.object(
