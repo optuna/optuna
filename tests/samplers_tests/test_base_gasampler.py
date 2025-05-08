@@ -215,6 +215,23 @@ def test_get_parent_population(args: dict[str, Any]) -> None:
 
     mock_study = MagicMock()
     mock_study._storage.get_study_system_attrs.return_value = args["study_system_attrs"]
+    if args["cache"]:
+        mock_study._get_trials.return_value = [
+            optuna.trial.FrozenTrial(
+                number=i,
+                trial_id=i,
+                state=optuna.trial.TrialState.WAITING,
+                value=None,
+                datetime_start=None,
+                datetime_complete=None,
+                params={},
+                distributions={},
+                user_attrs={},
+                system_attrs={},
+                intermediate_values={},
+                values=None,
+            ) for i in args["study_system_attrs"][BaseGASamplerTestSampler._get_parent_cache_key_prefix() + "1"]
+        ]
 
     with patch.object(
         BaseGASamplerTestSampler,
@@ -232,11 +249,7 @@ def test_get_parent_population(args: dict[str, Any]) -> None:
 
     mock_study._storage.get_study_system_attrs.assert_called_once_with(mock_study._study_id)
 
-    if args["cache"]:
-        mock_study._get_trials.assert_has_calls(
-            [call(deepcopy=False)] + [call().__getitem__(i) for i in args["parent_population"]]
-        )
-    else:
+    if not args["cache"]:
         mock_select_parent.assert_called_once_with(mock_study, args["generation"])
         mock_study._storage.set_study_system_attr.assert_called_once_with(
             mock_study._study_id,
