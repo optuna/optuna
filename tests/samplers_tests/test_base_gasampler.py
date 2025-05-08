@@ -219,7 +219,7 @@ def test_get_parent_population(args: dict[str, Any]) -> None:
         mock_study._get_trials.return_value = [
             optuna.trial.FrozenTrial(
                 number=i,
-                trial_id=i+10,
+                trial_id=i + 10,
                 state=optuna.trial.TrialState.WAITING,
                 value=None,
                 datetime_start=None,
