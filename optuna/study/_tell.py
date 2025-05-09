@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-import copy
 import math
 from typing import TYPE_CHECKING
 import warnings
@@ -115,7 +114,7 @@ def _tell_with_warning(
             f"{value_or_values} and state {state} since trial was already finished. "
             f"Finished trial has values {frozen_trial.values} and state {frozen_trial.state}."
         )
-        return copy.deepcopy(frozen_trial)
+        return frozen_trial
     elif frozen_trial.state != TrialState.RUNNING:
         raise ValueError(f"Cannot tell a {frozen_trial.state.name} trial.")
 
@@ -180,7 +179,7 @@ def _tell_with_warning(
     finally:
         study._storage.set_trial_state_values(frozen_trial._trial_id, state, values)
 
-    frozen_trial = copy.deepcopy(study._storage.get_trial(frozen_trial._trial_id))
+    frozen_trial = study._storage.get_trial(frozen_trial._trial_id)
 
     if warning_message is not None:
         frozen_trial._system_attrs[STUDY_TELL_WARNING_KEY] = warning_message
