@@ -12,8 +12,6 @@ from typing import cast
 from typing import Union
 import warnings
 
-import numpy as np
-
 from optuna._deprecated import deprecated_class
 
 
