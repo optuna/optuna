@@ -5,6 +5,7 @@ from collections.abc import Sequence
 import copy
 import decimal
 import json
+import math
 from numbers import Real
 from typing import Any
 from typing import cast
@@ -193,7 +194,7 @@ class FloatDistribution(BaseDistribution):
                 "float-castable value is expected."
             ) from e
 
-        if np.isnan(internal_repr):
+        if math.isnan(internal_repr):
             raise ValueError(f"`{param_value_in_external_repr}` is invalid value.")
         if self.log and internal_repr <= 0.0:
             raise ValueError(
@@ -384,7 +385,7 @@ class IntDistribution(BaseDistribution):
                 "float-castable value is expected."
             ) from e
 
-        if np.isnan(internal_repr):
+        if math.isnan(internal_repr):
             raise ValueError(f"`{param_value_in_external_repr}` is invalid value.")
         if self.log and internal_repr <= 0.0:
             raise ValueError(
@@ -475,8 +476,8 @@ def _categorical_choice_equal(
     This function can handle NaNs like np.float32("nan") other than float.
     """
 
-    value1_is_nan = isinstance(value1, Real) and np.isnan(float(value1))
-    value2_is_nan = isinstance(value2, Real) and np.isnan(float(value2))
+    value1_is_nan = isinstance(value1, Real) and math.isnan(float(value1))
+    value2_is_nan = isinstance(value2, Real) and math.isnan(float(value2))
     return (value1 == value2) or (value1_is_nan and value2_is_nan)
 
 
