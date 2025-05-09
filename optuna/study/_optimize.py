@@ -7,6 +7,7 @@ from concurrent.futures import FIRST_COMPLETED
 from concurrent.futures import Future
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import wait
+import copy
 import datetime
 import gc
 import itertools
@@ -168,6 +169,7 @@ def _optimize_sequential(
 
         if callbacks is not None:
             for callback in callbacks:
+                frozen_trial = copy.deepcopy(frozen_trial)
                 callback(study, frozen_trial)
 
         if progress_bar is not None:
