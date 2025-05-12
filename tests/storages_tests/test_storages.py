@@ -584,7 +584,7 @@ def test_set_trial_param(storage_mode: str) -> None:
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-def test_set_trial_param_for_floats(storage_mode: str) -> None:
+def test_set_and_get_trial_param_for_floats(storage_mode: str) -> None:
     with StorageSupplier(storage_mode) as storage:
         study_id = storage.create_new_study(directions=[StudyDirection.MINIMIZE])
         trial_id = storage.create_new_trial(study_id)
@@ -756,7 +756,7 @@ def test_set_trial_user_attr(storage_mode: str) -> None:
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-def test_set_trial_user_attr_for_floats(storage_mode: str) -> None:
+def test_set_and_get_trial_user_attr_for_floats(storage_mode: str) -> None:
     with StorageSupplier(storage_mode) as storage:
         trial_id = storage.create_new_trial(
             storage.create_new_study(directions=[StudyDirection.MINIMIZE])
@@ -820,7 +820,7 @@ def test_set_trial_system_attr(storage_mode: str) -> None:
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-def test_set_trial_system_attr_for_floats(storage_mode: str) -> None:
+def test_set_and_get_trial_system_attr_for_floats(storage_mode: str) -> None:
     with StorageSupplier(storage_mode) as storage:
         trial_id = storage.create_new_trial(
             storage.create_new_study(directions=[StudyDirection.MINIMIZE])

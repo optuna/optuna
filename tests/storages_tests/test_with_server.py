@@ -270,7 +270,7 @@ def test_set_trial_state_values_for_floats() -> None:
         assert is_equal_floats(set_value, value)
 
 
-def test_set_trial_param_for_floats() -> None:
+def test_set_and_get_trial_param_for_floats() -> None:
     storage = get_storage()
     study_id = storage.create_new_study(directions=[StudyDirection.MINIMIZE])
     trial_id = storage.create_new_trial(study_id)
@@ -298,7 +298,7 @@ def test_set_trial_intermediate_value_for_floats() -> None:
         assert is_equal_floats(storage.get_trial(trial_id).intermediate_values[i], value)
 
 
-def test_set_trial_user_attr_for_floats() -> None:
+def test_set_and_get_trial_user_attr_for_floats() -> None:
     storage = get_storage()
     trial_id = storage.create_new_trial(
         storage.create_new_study(directions=[StudyDirection.MINIMIZE])
@@ -310,7 +310,7 @@ def test_set_trial_user_attr_for_floats() -> None:
         assert is_equal_floats(storage.get_trial_user_attrs(trial_id)[key], value)
 
 
-def test_set_trial_system_attr_for_floats() -> None:
+def test_set_and_get_trial_system_attr_for_floats() -> None:
     storage = get_storage()
     trial_id = storage.create_new_trial(
         storage.create_new_study(directions=[StudyDirection.MINIMIZE])
