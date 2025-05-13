@@ -337,10 +337,6 @@ class GPSampler(BaseSampler):
         param_distribution: BaseDistribution,
     ) -> Any:
         if len(study.directions) > 1:
-            warnings.warn(
-                f"Multi-objective optimization by {self.__class__.__name__} is an experimental "
-                "feature. The interface can change in the future."
-            )
             if self._constraints_func is not None:
                 raise ValueError(
                     f"{self.__class__.__name__} has not supported multi-objective optimization "
