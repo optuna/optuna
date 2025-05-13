@@ -175,10 +175,10 @@ class GPSampler(BaseSampler):
         constraints_acqf_params = []
         for i, (vals, mean, std) in enumerate(zip(standardized_constraint_vals.T, means, stds)):
             cache = (
-                self._constraints_kernel_params_cache and self._constraints_kernel_params_cache[i]
+                self._constraints_kernel_params_cache[i]
+                if self._constraints_kernel_params_cache is not None
+                else None
             )
-            assert isinstance(cache, gp.KernelParamsTensor) or cache is None
-
             kernel_params = gp.fit_kernel_params(
                 X=normalized_params,
                 Y=vals,
@@ -238,8 +238,11 @@ class GPSampler(BaseSampler):
         n_objectives = standardized_score_vals.shape[-1]
         is_categorical = internal_search_space.scale_types == gp_search_space.ScaleType.CATEGORICAL
         for i in range(n_objectives):
-            cache = self._kernel_params_cache_list and self._kernel_params_cache_list[i]
-            assert isinstance(cache, gp.KernelParamsTensor) or cache is None
+            cache = (
+                self._kernel_params_cache_list[i]
+                if self._kernel_params_cache_list is not None
+                else None
+            )
             kernel_params_list.append(
                 gp.fit_kernel_params(
                     X=normalized_params,
