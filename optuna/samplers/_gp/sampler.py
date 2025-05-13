@@ -209,6 +209,13 @@ class GPSampler(BaseSampler):
     def sample_relative(
         self, study: Study, trial: FrozenTrial, search_space: dict[str, BaseDistribution]
     ) -> dict[str, Any]:
+        if len(study.directions) > 1:
+            if self._constraints_func is not None:
+                raise ValueError(
+                    f"{self.__class__.__name__} has not supported multi-objective optimization "
+                    "with constraints."
+                )
+
         if search_space == {}:
             return {}
 
@@ -336,13 +343,6 @@ class GPSampler(BaseSampler):
         param_name: str,
         param_distribution: BaseDistribution,
     ) -> Any:
-        if len(study.directions) > 1:
-            if self._constraints_func is not None:
-                raise ValueError(
-                    f"{self.__class__.__name__} has not supported multi-objective optimization "
-                    "with constraints."
-                )
-
         return self._independent_sampler.sample_independent(
             study, trial, param_name, param_distribution
         )
