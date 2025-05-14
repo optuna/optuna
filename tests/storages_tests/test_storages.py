@@ -820,7 +820,7 @@ def test_get_all_trials_state_option(storage_mode: str) -> None:
         )
 
         for state in states:
-            t = _generate_trial(generator)
+            t = generate_trial(generator)
             t.state = state
             storage.create_new_trial(study_id, template_trial=t)
 
@@ -900,7 +900,7 @@ def test_get_n_trials_state_option(storage_mode: str) -> None:
         ]
 
         for s in states:
-            t = _generate_trial(generator)
+            t = generate_trial(generator)
             t.state = s
             storage.create_new_trial(study_id, template_trial=t)
 
@@ -939,7 +939,7 @@ def test_get_best_trial(storage_mode: str, direction: StudyDirection, values: li
         generator = random.Random(51)
 
         for v in values:
-            template_trial = _generate_trial(generator)
+            template_trial = generate_trial(generator)
             template_trial.state = TrialState.COMPLETE
             template_trial.value = v
             storage.create_new_trial(study_id, template_trial=template_trial)
@@ -1015,7 +1015,7 @@ def _setup_studies(
         storage.set_study_system_attr(study_id, "s", i)
         trials = {}
         for j in range(n_trial):
-            trial = _generate_trial(generator)
+            trial = generate_trial(generator)
             trial.number = j
             trial._trial_id = storage.create_new_trial(study_id, trial)
             trials[trial._trial_id] = trial
@@ -1030,7 +1030,7 @@ def _setup_studies(
     return study_id_to_frozen_study, study_id_to_trials
 
 
-def _generate_trial(generator: random.Random) -> FrozenTrial:
+def generate_trial(generator: random.Random) -> FrozenTrial:
     example_params = {
         "paramA": (generator.uniform(0, 1), FloatDistribution(0, 1)),
         "paramB": (generator.uniform(1, 2), FloatDistribution(1, 2, log=True)),
@@ -1089,7 +1089,7 @@ def test_get_best_trial_for_multi_objective_optimization(storage_mode: str) -> N
 
         generator = random.Random(51)
         for i in range(3):
-            template_trial = _generate_trial(generator)
+            template_trial = generate_trial(generator)
             template_trial.state = TrialState.COMPLETE
             template_trial.values = [i, i + 1]
             storage.create_new_trial(study_id, template_trial=template_trial)
