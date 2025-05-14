@@ -103,8 +103,8 @@ class GPSampler(BaseSampler):
             considered feasible if and only if all values are equal to 0 or smaller.
 
             The ``constraints_func`` will be evaluated after each successful trial.
-            The function won't be called when trials fail or they are pruned, but this behavior is
-            subject to change in the future releases.
+            The function won't be called when trials fail or are pruned, but this behavior is
+            subject to change in future releases.
     """
 
     def __init__(
