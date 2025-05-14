@@ -654,13 +654,14 @@ class Study:
             A returned trial is deep copied thus user can modify it as needed.
         """
 
-        return _tell_with_warning(
+        frozen_trial, _ = _tell_with_warning(
             study=self,
             trial=trial,
             value_or_values=values,
             state=state,
             skip_if_finished=skip_if_finished,
         )
+        return frozen_trial
 
     def set_user_attr(self, key: str, value: Any) -> None:
         """Set a user attribute to the study.
