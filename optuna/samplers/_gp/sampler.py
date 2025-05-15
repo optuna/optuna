@@ -208,12 +208,11 @@ class GPSampler(BaseSampler):
     def sample_relative(
         self, study: Study, trial: FrozenTrial, search_space: dict[str, BaseDistribution]
     ) -> dict[str, Any]:
-        if study._is_multi_objective():
-            if self._constraints_func is not None:
-                raise ValueError(
-                    f"{self.__class__.__name__} has not supported multi-objective optimization "
-                    "with constraints."
-                )
+        if study._is_multi_objective() and self._constraints_func is not None:
+            sampler_name = self.__class__.__name__
+            raise ValueError(
+                f"{sampler_name} has not supported constrained multi-objective optimization "
+            )
 
         if search_space == {}:
             return {}
@@ -296,13 +295,16 @@ class GPSampler(BaseSampler):
                     _is_pareto_front(standardized_score_vals, assume_unique_lexsorted=False)
                 ]
                 n_pareto_sols = len(pareto_params)
+                # TODO(nabenabe): Verify the validity of this choice.
                 size = min(self._n_local_search // 2, n_pareto_sols)
                 chosen_indices = self._rng.rng.choice(
                     np.arange(n_pareto_sols), size=size, replace=False
                 )
                 best_params = pareto_params[chosen_indices]
         else:
-            assert n_objectives == len(kernel_params_list) == 1, "Multi-objective has not been supported."
+            assert (
+                n_objectives == len(kernel_params_list) == 1
+            ), "Multi-objective has not been supported."
             constraint_vals, is_feasible = _get_constraint_vals_and_feasibility(study, trials)
             is_all_infeasible = not np.any(is_feasible)
 
