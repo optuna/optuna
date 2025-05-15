@@ -302,7 +302,7 @@ class GPSampler(BaseSampler):
                 )
                 best_params = pareto_params[chosen_indices]
         else:
-            assert len(kernel_params_list) == 1, "Multi-objective has not been supported."
+            assert n_objectives == len(kernel_params_list) == 1, "Multi-objective has not been supported."
             constraint_vals, is_feasible = _get_constraint_vals_and_feasibility(study, trials)
             is_all_infeasible = not np.any(is_feasible)
 
