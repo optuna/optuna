@@ -208,7 +208,7 @@ class GPSampler(BaseSampler):
     def sample_relative(
         self, study: Study, trial: FrozenTrial, search_space: dict[str, BaseDistribution]
     ) -> dict[str, Any]:
-        if len(study.directions) > 1:
+        if study._is_multi_objective():
             if self._constraints_func is not None:
                 raise ValueError(
                     f"{self.__class__.__name__} has not supported multi-objective optimization "
