@@ -58,6 +58,7 @@ class GPSampler(BaseSampler):
     hyperparameters given the past trials.
     To prevent overfitting, Gamma prior is introduced for kernel scale and noise variance and
     a hand-crafted prior is introduced for inverse squared lengthscales.
+
     As an acquisition function, we use:
         - log expected improvement (logEI) for single-objective optimization, and
         - the product of logEI and the logarithm of the feasible probability with the independent
@@ -72,6 +73,7 @@ class GPSampler(BaseSampler):
     The local search iteratively optimizes the acquisition function by repeating:
         1. Gradient ascent using l-BFGS-B for continuous parameters, and
         2. Line search or exhaustive search for each discrete parameter independently.
+
     We use line search instead of rounding the results from the continuous optimization since EI
     typically yields a high value between one grid and its adjacent grid.
 
