@@ -231,7 +231,7 @@ class GPSampler(BaseSampler):
 
         _sign = np.array([-1.0 if d == StudyDirection.MINIMIZE else 1.0 for d in study.directions])
         standardized_score_vals, _, _ = _standardize_values(
-            values=gp.warn_and_convert_inf(_sign * np.array([trial.values for trial in trials]))
+            _sign * np.array([trial.values for trial in trials])
         )
 
         if self._kernel_params_cache_list is not None and len(
