@@ -60,12 +60,32 @@ class GPSampler(BaseSampler):
     This sampler fits a Gaussian process (GP) to the objective function and optimizes
     the acquisition function to suggest the next parameters.
 
-    The current implementation uses:
-        - Matern kernel with nu=2.5 (twice differentiable),
-        - Automatic relevance determination (ARD) for the length scale of each parameter,
-        - Gamma prior for inverse squared lengthscales, kernel scale, and noise variance,
-        - Log Expected Improvement (logEI) as the acquisition function, and
-        - Quasi-Monte Carlo (QMC) sampling to optimize the acquisition function.
+    The current implementation uses Matern kernel with nu=2.5 (twice differentiable) with automatic
+    relevance determination (ARD) for the length scale of each parameter.
+    The hyperparameters of the kernel are obtained by maximizing the marginal log-likelihood of the
+    hyperparameters given the past trials.
+    To prevent overfitting, Gamma prior is introduced for kernel scale and noise variance and
+    a hand-crafted prior is introduced for inverse squared lengthscales.
+
+    As an acquisition function, we use:
+        - log expected improvement (logEI) for single-objective optimization, and
+        - the product of logEI and the logarithm of the feasible probability with the independent
+          assumption of each constraint for (black-box inequality) constrained optimization.
+
+    The optimization of the acquisition function is performed via:
+        1. Collect the best params from the past trials,
+        2. Collect ``n_preliminary_samples`` points using Quasi-Monte Carlo (QMC) sampling,
+        3. Choose the best point from the collected points,
+        4. Choose ``n_local_search`` points from the collected points using the roulette selection,
+        5. Perform a local search for each chosen point as an initial point, and
+        6. Return the point with the best acquisition function value as the next parameter.
+
+    The local search iteratively optimizes the acquisition function by repeating:
+        1. Gradient ascent using l-BFGS-B for continuous parameters, and
+        2. Line search or exhaustive search for each discrete parameter independently.
+
+    We use line search instead of rounding the results from the continuous optimization since EI
+    typically yields a high value between one grid and its adjacent grid.
 
     .. note::
         This sampler requires ``scipy`` and ``torch``.
@@ -75,21 +95,31 @@ class GPSampler(BaseSampler):
         seed:
             Random seed to initialize internal random number generator.
             Defaults to :obj:`None` (a seed is picked randomly).
-
         independent_sampler:
             Sampler used for initial sampling (for the first ``n_startup_trials`` trials)
             and for conditional parameters. Defaults to :obj:`None`
             (a random sampler with the same ``seed`` is used).
-
         n_startup_trials:
             Number of initial trials. Defaults to 10.
-
         deterministic_objective:
             Whether the objective function is deterministic or not.
             If :obj:`True`, the sampler will fix the noise variance of the surrogate model to
             the minimum value (slightly above 0 to ensure numerical stability).
             Defaults to :obj:`False`. Currently, all the objectives will be assume to be
             deterministic if :obj:`True`.
+        constraints_func:
+            An optional function that computes the objective constraints. It must take a
+            :class:`~optuna.trial.FrozenTrial` and return the constraints. The return value must
+            be a sequence of :obj:`float` s. A value strictly larger than 0 means that a
+            constraints is violated. A value equal to or smaller than 0 is considered feasible.
+            If ``constraints_func`` returns more than one value for a trial, that trial is
+            considered feasible if and only if all values are equal to 0 or smaller.
+
+            The ``constraints_func`` will be evaluated after each successful trial.
+            The function won't be called when trials fail or are pruned, but this behavior is
+            subject to change in future releases.
+            Currently, the ``constraints_func`` option is not supported for multi-objective
+            optimization.
     """
 
     def __init__(
