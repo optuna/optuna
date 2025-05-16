@@ -211,7 +211,7 @@ class GPSampler(BaseSampler):
     ) -> dict[str, Any]:
         if study._is_multi_objective() and self._constraints_func is not None:
             raise ValueError(
-                "GPSampler has not supported constrained multi-objective optimization "
+                "GPSampler does not support constrained multi-objective optimization."
             )
 
         if search_space == {}:
