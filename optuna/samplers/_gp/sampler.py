@@ -73,10 +73,12 @@ class GPSampler(BaseSampler):
           assumption of each constraint for (black-box inequality) constrained optimization.
 
     The optimization of the acquisition function is performed via:
-        1. Collect ``n_preliminary_samples`` points using Quasi-Monte Carlo (QMC) sampling,
-        2. Choose ``n_local_search`` points from the collected points using the roulette selection,
-        3. Perform a local search for each chosen point as an initial point, and
-        4. Return the point with the best acquisition function value as the next parameter.
+        1. Collect the best params from the past trials,
+        2. Collect ``n_preliminary_samples`` points using Quasi-Monte Carlo (QMC) sampling,
+        3. Choose the best point from the collected points,
+        4. Choose ``n_local_search`` points from the collected points using the roulette selection,
+        5. Perform a local search for each chosen point as an initial point, and
+        6. Return the point with the best acquisition function value as the next parameter.
 
     The local search iteratively optimizes the acquisition function by repeating:
         1. Gradient ascent using l-BFGS-B for continuous parameters, and
