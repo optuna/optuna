@@ -292,7 +292,7 @@ class GPSampler(BaseSampler):
                     qmc_seed=self._rng.rng.randint(1 << 30),
                 )
                 pareto_params = normalized_params[
-                    _is_pareto_front(standardized_score_vals, assume_unique_lexsorted=False)
+                    _is_pareto_front(-standardized_score_vals, assume_unique_lexsorted=False)
                 ]
                 n_pareto_sols = len(pareto_params)
                 # TODO(nabenabe): Verify the validity of this choice.
