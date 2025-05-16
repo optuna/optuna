@@ -100,3 +100,10 @@ def test_constraints_func_nan() -> None:
     assert all(0 <= x <= 1 for x in trials[0].params.values())  # The params are normal.
     assert trials[0].values == list(trials[0].params.values())  # The values are normal.
     assert trials[0].system_attrs[_CONSTRAINTS_KEY] is None  # None is set for constraints.
+
+
+def test_raise_error_for_constrained_multi_objective() -> None:
+    sampler = GPSampler(constraints_func=(lambda t: (t.number,)))
+    study = optuna.create_study(directions=["minimize"] * 2, sampler=sampler)
+    with pytest.raises(ValueError):
+        study.optimize(func=(lambda t: (t.suggest_float("x", -1, 1), 0.0)), n_trials=1)
