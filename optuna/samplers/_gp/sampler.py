@@ -119,6 +119,7 @@ class GPSampler(BaseSampler):
 
         # Control parameters of the acquisition function optimization.
         self._n_preliminary_samples: int = 2048
+        # NOTE(nabenabe): ehvi in BoTorchSampler uses 20.
         self._n_local_search = 10
         self._tol = 1e-4
 
