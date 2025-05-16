@@ -298,7 +298,7 @@ class GPSampler(BaseSampler):
                 # TODO(nabenabe): Verify the validity of this choice.
                 size = min(self._n_local_search // 2, n_pareto_sols)
                 chosen_indices = self._rng.rng.choice(
-                    np.arange(n_pareto_sols), size=size, replace=False
+                    n_pareto_sols, size=size, replace=False
                 )
                 best_params = pareto_params[chosen_indices]
         else:
