@@ -23,7 +23,6 @@ from optuna import trial as trial_module
 from optuna.storages._heartbeat import get_heartbeat_thread
 from optuna.storages._heartbeat import is_heartbeat_enabled
 from optuna.study._tell import _tell_with_warning
-from optuna.study._tell import STUDY_TELL_WARNING_KEY
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
@@ -206,7 +205,7 @@ def _run_trial(
 
     # `_tell_with_warning` may raise during trial post-processing.
     try:
-        frozen_trial = _tell_with_warning(
+        frozen_trial, warning_message = _tell_with_warning(
             study=study,
             trial=trial,
             value_or_values=value_or_values,
@@ -215,6 +214,7 @@ def _run_trial(
         )
     except Exception:
         frozen_trial = study._storage.get_trial(trial._trial_id)
+        warning_message = None
         raise
     finally:
         if frozen_trial.state == TrialState.COMPLETE:
@@ -229,10 +229,10 @@ def _run_trial(
                     exc_info=func_err_fail_exc_info,
                     value_or_values=value_or_values,
                 )
-            elif STUDY_TELL_WARNING_KEY in frozen_trial.system_attrs:
+            elif warning_message is not None:
                 _log_failed_trial(
                     frozen_trial,
-                    frozen_trial.system_attrs[STUDY_TELL_WARNING_KEY],
+                    warning_message,
                     value_or_values=value_or_values,
                 )
             else:
