@@ -181,9 +181,9 @@ def test_get_population(args: dict[str, Any]) -> None:
     [
         {
             "study_system_attrs": {
-                BaseGASamplerTestSampler._get_parent_cache_key_prefix() + "1": [0, 1, 2]
+                BaseGASamplerTestSampler._get_parent_cache_key_prefix() + "1": [3, 4, 5]
             },
-            "parent_population": [0, 1, 2],
+            "parent_population": [3, 4, 5],
             "generation": 1,
             "cache": True,
         },
@@ -215,21 +215,17 @@ def test_get_parent_population(args: dict[str, Any]) -> None:
     mock_study = MagicMock()
     mock_study._storage.get_study_system_attrs.return_value = args["study_system_attrs"]
     if args["cache"]:
+
+        class StrictTrialMock(MagicMock):
+            def __getattr__(self, name):
+                if name != "_trial_id":
+                    raise AttributeError(
+                        f"Access to attribute '{name}' is not allowed."
+                    )
+                return super().__getattr__(name)
+    
         mock_study._get_trials.return_value = [
-            optuna.trial.FrozenTrial(
-                number=i,
-                trial_id=i,
-                state=optuna.trial.TrialState.WAITING,
-                value=None,
-                datetime_start=None,
-                datetime_complete=None,
-                params={},
-                distributions={},
-                user_attrs={},
-                system_attrs={},
-                intermediate_values={},
-                values=None,
-            )
+            StrictTrialMock(_trial_id=i)
             for i in args["study_system_attrs"][
                 BaseGASamplerTestSampler._get_parent_cache_key_prefix() + "1"
             ]
