@@ -171,10 +171,8 @@ class BaseGASampler(BaseSampler, abc.ABC):
 
         if cached_parent_population_ids is not None:
             trials = study._get_trials(deepcopy=False)
-            trials_by_id = {}
-            for t in trials:
-                trials_by_id[t._trial_id] = t
-            return [trials_by_id[trial_id] for trial_id in cached_parent_population_ids]
+            parent_population_ids = set(cached_parent_population_ids)
+            return [trial for trial in trials if trial._trial_id in parent_population_ids]
         else:
             parent_population = self.select_parent(study, generation)
             study._storage.set_study_system_attr(
