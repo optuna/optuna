@@ -219,11 +219,10 @@ def test_get_parent_population(args: dict[str, Any]) -> None:
         class StrictTrialMock(MagicMock):
             def __getattr__(self, name):
                 if name != "_trial_id":
-                    raise AttributeError(
-                        f"Access to attribute '{name}' is not allowed."
-                    )
+                    raise AttributeError(f"Access to attribute '{name}' is not allowed.")
                 return super().__getattr__(name)
-    
+
+
         mock_study._get_trials.return_value = [
             StrictTrialMock(_trial_id=i)
             for i in args["study_system_attrs"][
