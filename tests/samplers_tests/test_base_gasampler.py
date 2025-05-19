@@ -247,7 +247,10 @@ def test_get_parent_population(args: dict[str, Any]) -> None:
 
     mock_study._storage.get_study_system_attrs.assert_called_once_with(mock_study._study_id)
 
-    if not args["cache"]:
+    if args["cache"]:
+        assert return_value == mock_study._get_trials.return_value
+        mock_study._get_trials.assert_called_once_with(deepcopy=False)
+    else:
         mock_select_parent.assert_called_once_with(mock_study, args["generation"])
         mock_study._storage.set_study_system_attr.assert_called_once_with(
             mock_study._study_id,
