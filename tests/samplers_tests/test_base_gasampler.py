@@ -217,7 +217,7 @@ def test_get_parent_population(args: dict[str, Any]) -> None:
     if args["cache"]:
 
         class StrictTrialMock(MagicMock):
-            def __getattr__(self, name: str):
+            def __getattr__(self, name: str) -> Any:
                 if name != "_trial_id":
                     raise AttributeError(f"Access to attribute '{name}' is not allowed.")
                 return super().__getattr__(name)
