@@ -69,7 +69,7 @@ class GPSampler(BaseSampler):
 
     As an acquisition function, we use:
         - log expected improvement (logEI) for single-objective optimization, and
-        - the product of logEI and the logarithm of the feasible probability with the independent
+        - the summation of logEI and the logarithm of the feasible probability with the independent
           assumption of each constraint for (black-box inequality) constrained optimization.
 
     The optimization of the acquisition function is performed via:
