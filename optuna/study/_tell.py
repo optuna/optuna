@@ -126,7 +126,7 @@ def _tell_with_warning(
 
     _check_state_and_values(state, values)
 
-    warning_message = None
+    values_conversion_failure_message = None
 
     if state == TrialState.COMPLETE:
         assert values is not None
@@ -158,8 +158,7 @@ def _tell_with_warning(
             values = None
             if not suppress_warning:
                 warnings.warn(values_conversion_failure_message)
-            else:
-                warning_message = values_conversion_failure_message
+                values_conversion_failure_message = None
 
     assert state is not None
 
@@ -178,4 +177,4 @@ def _tell_with_warning(
 
     frozen_trial = copy.deepcopy(study._storage.get_trial(frozen_trial._trial_id))
 
-    return frozen_trial, warning_message
+    return frozen_trial, values_conversion_failure_message
