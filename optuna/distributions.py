@@ -5,15 +5,15 @@ import copy
 import decimal
 import json
 import math
-import warnings
 from numbers import Real
-
 from typing import Any
 from typing import cast
 from typing import TYPE_CHECKING
 from typing import Union
+import warnings
 
 from optuna._deprecated import deprecated_class
+
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
