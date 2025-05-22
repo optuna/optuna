@@ -68,7 +68,8 @@ class GPSampler(BaseSampler):
     a hand-crafted prior is introduced for inverse squared lengthscales.
 
     As an acquisition function, we use:
-        - log expected improvement (logEI) for single-objective optimization, and
+        - log expected improvement (logEI) for single-objective optimization,
+        - log expected hypervolume improvement (logEHVI) for Multi-objective optimization, and
         - the summation of logEI and the logarithm of the feasible probability with the independent
           assumption of each constraint for (black-box inequality) constrained optimization.
 
