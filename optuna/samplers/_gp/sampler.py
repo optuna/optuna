@@ -72,17 +72,32 @@ class GPSampler(BaseSampler):
         - the summation of logEI and the logarithm of the feasible probability with the independent
           assumption of each constraint for (black-box inequality) constrained optimization.
 
+    For further information about these acquisition functions, please refer to the following
+    papers:
+
+    - `Unexpected Improvements to Expected Improvement for Bayesian Optimization
+      <https://arxiv.org/abs/2310.20708>`__
+    - `Differentiable Expected Hypervolume Improvement for Parallel Multi-Objective Bayesian
+      Optimization <https://arxiv.org/abs/2006.05078>`__
+    - `Bayesian Optimization with Inequality Constraints
+      <https://proceedings.mlr.press/v32/gardner14.pdf>`__
+
     The optimization of the acquisition function is performed via:
-        1. Collect the best params from the past trials,
+        1. Collect the best param from the past trials,
         2. Collect ``n_preliminary_samples`` points using Quasi-Monte Carlo (QMC) sampling,
         3. Choose the best point from the collected points,
-        4. Choose ``n_local_search`` points from the collected points using the roulette selection,
+        4. Choose ``n_local_search - 2`` points from the collected points using the roulette
+           selection,
         5. Perform a local search for each chosen point as an initial point, and
         6. Return the point with the best acquisition function value as the next parameter.
+
+    Note that the procedures for non single-objective optimization setups are slightly different
+    from the single-objective version described above.
 
     The local search iteratively optimizes the acquisition function by repeating:
         1. Gradient ascent using l-BFGS-B for continuous parameters, and
         2. Line search or exhaustive search for each discrete parameter independently.
+
     The local search is terminated if the routine stops updating the best parameter set or the
     maximum number of iterations is reached.
 
