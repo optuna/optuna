@@ -1,17 +1,17 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 import abc
 import copy
 import decimal
 import json
 import math
+import warnings
 from numbers import Real
+
 from typing import Any
 from typing import cast
+from typing import TYPE_CHECKING
 from typing import Union
-import warnings
 
 from optuna._deprecated import deprecated_class
 
