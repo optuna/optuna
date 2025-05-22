@@ -83,6 +83,8 @@ class GPSampler(BaseSampler):
     The local search iteratively optimizes the acquisition function by repeating:
         1. Gradient ascent using l-BFGS-B for continuous parameters, and
         2. Line search or exhaustive search for each discrete parameter independently.
+    The local search is terminated if the routine stops updating the best parameter set or the
+    maximum number of iterations is reached.
 
     We use line search instead of rounding the results from the continuous optimization since EI
     typically yields a high value between one grid and its adjacent grid.
