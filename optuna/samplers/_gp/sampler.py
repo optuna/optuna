@@ -92,7 +92,8 @@ class GPSampler(BaseSampler):
         6. Return the point with the best acquisition function value as the next parameter.
 
     Note that the procedures for non single-objective optimization setups are slightly different
-    from the single-objective version described above.
+    from the single-objective version described above, but we omit the descriptions for the others
+    for brevity.
 
     The local search iteratively optimizes the acquisition function by repeating:
         1. Gradient ascent using l-BFGS-B for continuous parameters, and
