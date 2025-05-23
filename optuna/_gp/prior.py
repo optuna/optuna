@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from optuna._gp import gp
-
 
 if TYPE_CHECKING:
     import torch
+
+    from optuna._gp import gp
 else:
     from optuna._imports import _LazyImport
 
