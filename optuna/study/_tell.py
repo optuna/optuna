@@ -9,6 +9,7 @@ import warnings
 import optuna
 from optuna import logging
 from optuna import pruners
+from optuna.exceptions import UpdateFinishedTrialError
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
@@ -21,7 +22,11 @@ if TYPE_CHECKING:
 _logger = logging.get_logger(__name__)
 
 
-def _get_frozen_trial(study: Study, trial: Trial | int) -> FrozenTrial:
+def _get_cached_frozen_trial(study: Study, trial: Trial) -> FrozenTrial:
+    return trial._cached_frozen_trial
+
+
+def _get_frozen_trial_from_storage(study: Study, trial: Trial | int) -> FrozenTrial:
     if isinstance(trial, optuna.Trial):
         trial_id = trial._trial_id
     elif isinstance(trial, int):
@@ -103,16 +108,12 @@ def _tell_with_warning(
     # We must invalidate all trials cache here as it is only valid within a trial.
     study._thread_local.cached_all_trials = None
 
-    # Validate the trial argument.
-    frozen_trial = _get_frozen_trial(study, trial)
-    if frozen_trial.state.is_finished() and skip_if_finished:
-        _logger.info(
-            f"Skipped telling trial {frozen_trial.number} with values "
-            f"{value_or_values} and state {state} since trial was already finished. "
-            f"Finished trial has values {frozen_trial.values} and state {frozen_trial.state}."
-        )
-        return copy.deepcopy(frozen_trial), None
-    elif frozen_trial.state != TrialState.RUNNING:
+    if isinstance(trial, optuna.Trial) and state != TrialState.PRUNED:
+        frozen_trial = _get_cached_frozen_trial(study, trial)
+    else:
+        frozen_trial = _get_frozen_trial_from_storage(study, trial)
+
+    if frozen_trial.state != TrialState.RUNNING and not frozen_trial.state.is_finished():
         raise ValueError(f"Cannot tell a {frozen_trial.state.name} trial.")
 
     # Validate the state and values arguments.
@@ -138,7 +139,6 @@ def _tell_with_warning(
         # Register the last intermediate value if present as the value of the trial.
         # TODO(hvy): Whether a pruned trials should have an actual value can be discussed.
         assert values is None
-
         last_step = frozen_trial.last_step
         if last_step is not None:
             last_intermediate_value = frozen_trial.intermediate_values[last_step]
@@ -173,7 +173,18 @@ def _tell_with_warning(
         study = pruners._filter_study(study, frozen_trial)
         study.sampler.after_trial(study, frozen_trial, state, values)
     finally:
-        study._storage.set_trial_state_values(frozen_trial._trial_id, state, values)
+        try:
+            study._storage.set_trial_state_values(frozen_trial._trial_id, state, values)
+        except UpdateFinishedTrialError:
+            if skip_if_finished:
+                _logger.info(
+                    f"Skipped telling trial {frozen_trial.number} with values "
+                    f"{value_or_values} and state {state} since trial was already finished. "
+                    f"Finished trial has values {frozen_trial.values} and state "
+                    f"{frozen_trial.state}."
+                )
+                return copy.deepcopy(frozen_trial), None
+            raise ValueError(f"Cannot tell a {frozen_trial.state.name} trial.")
 
     frozen_trial = copy.deepcopy(study._storage.get_trial(frozen_trial._trial_id))
 
