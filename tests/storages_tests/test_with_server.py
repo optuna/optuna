@@ -3,13 +3,17 @@ from __future__ import annotations
 from collections.abc import Sequence
 from concurrent.futures import ProcessPoolExecutor
 from concurrent.futures import ThreadPoolExecutor
+import math
 import os
 import pickle
+import sys
 
 import numpy as np
 import pytest
 
 import optuna
+from optuna.distributions import CategoricalDistribution
+from optuna.distributions import FloatDistribution
 from optuna.storages import BaseStorage
 from optuna.storages.journal import JournalRedisBackend
 from optuna.study import StudyDirection
@@ -17,6 +21,26 @@ from optuna.trial import TrialState
 
 
 _STUDY_NAME = "_test_multiprocess"
+
+FLOAT_ATTRS = {
+    "zero": 0,
+    "pi": math.pi,
+    "max": sys.float_info.max,
+    "negative max": -sys.float_info.max,
+    "min": sys.float_info.min,
+    "negative min": -sys.float_info.min,
+    "inf": float("inf"),
+    "negative inf": -float("inf"),
+    "nan": float("nan"),
+}
+
+
+def is_equal_floats(a: float, b: float) -> bool:
+    if math.isnan(a):
+        return math.isnan(b)
+    if math.isnan(b):
+        return False
+    return a == b
 
 
 def f(x: float, y: float) -> float:
@@ -211,3 +235,88 @@ def test_get_best_trial(direction: StudyDirection, values: Sequence[float]) -> N
     )
     expected_value = max(values) if direction == StudyDirection.MAXIMIZE else min(values)
     assert study.best_value == expected_value
+
+
+def test_set_and_get_study_user_attrs_for_floats() -> None:
+    storage = get_storage()
+    study_id = storage.create_new_study(directions=[StudyDirection.MINIMIZE])
+
+    # Test setting value.
+    for key, value in FLOAT_ATTRS.items():
+        storage.set_study_user_attr(study_id, key, value)
+        assert is_equal_floats(storage.get_study_user_attrs(study_id)[key], value)
+
+
+def test_set_and_get_study_system_attrs_for_floats() -> None:
+    storage = get_storage()
+    study_id = storage.create_new_study(directions=[StudyDirection.MINIMIZE])
+
+    # Test setting value.
+    for key, value in FLOAT_ATTRS.items():
+        storage.set_study_system_attr(study_id, key, value)
+        assert is_equal_floats(storage.get_study_system_attrs(study_id)[key], value)
+
+
+def test_set_trial_state_values_for_floats() -> None:
+    storage = get_storage()
+    study_id = storage.create_new_study(directions=[StudyDirection.MINIMIZE])
+    for value in FLOAT_ATTRS.values():
+        if math.isnan(value):  # NOTE: Optuna does not accept `nan` as `value`.
+            continue
+        trial_id = storage.create_new_trial(study_id)
+        storage.set_trial_state_values(trial_id, state=TrialState.COMPLETE, values=(value,))
+        set_value = storage.get_trial(trial_id).value
+        assert set_value is not None
+        assert is_equal_floats(set_value, value)
+
+
+def test_set_and_get_trial_param_for_floats() -> None:
+    storage = get_storage()
+    study_id = storage.create_new_study(directions=[StudyDirection.MINIMIZE])
+    trial_id = storage.create_new_trial(study_id)
+
+    for key, value in FLOAT_ATTRS.items():
+        float_distribution = FloatDistribution(low=value, high=value)
+        categorical_distribution = CategoricalDistribution(choices=(value,))
+        for distribution in (float_distribution, categorical_distribution):
+            # NOTE: suggest_float does not generate NaN, and MySQL cannot handle infinities.
+            if isinstance(distribution, FloatDistribution) and not math.isfinite(value):
+                continue
+            param_name = distribution.__class__.__name__ + key
+            internal_repr = distribution.to_internal_repr(value)
+            storage.set_trial_param(trial_id, param_name, internal_repr, distribution)
+            assert is_equal_floats(storage.get_trial_param(trial_id, param_name), internal_repr)
+            assert storage.get_trial(trial_id).distributions[param_name] == distribution
+
+
+def test_set_trial_intermediate_value_for_floats() -> None:
+    storage = get_storage()
+    study_id = storage.create_new_study(directions=[StudyDirection.MINIMIZE])
+    trial_id = storage.create_new_trial(study_id)
+    for i, value in enumerate(FLOAT_ATTRS.values()):
+        storage.set_trial_intermediate_value(trial_id, i, value)
+        assert is_equal_floats(storage.get_trial(trial_id).intermediate_values[i], value)
+
+
+def test_set_and_get_trial_user_attr_for_floats() -> None:
+    storage = get_storage()
+    trial_id = storage.create_new_trial(
+        storage.create_new_study(directions=[StudyDirection.MINIMIZE])
+    )
+
+    # Test setting value.
+    for key, value in FLOAT_ATTRS.items():
+        storage.set_trial_user_attr(trial_id, key, value)
+        assert is_equal_floats(storage.get_trial_user_attrs(trial_id)[key], value)
+
+
+def test_set_and_get_trial_system_attr_for_floats() -> None:
+    storage = get_storage()
+    trial_id = storage.create_new_trial(
+        storage.create_new_study(directions=[StudyDirection.MINIMIZE])
+    )
+
+    # Test setting value.
+    for key, value in FLOAT_ATTRS.items():
+        storage.set_trial_system_attr(trial_id, key, value)
+        assert is_equal_floats(storage.get_trial_system_attrs(trial_id)[key], value)
