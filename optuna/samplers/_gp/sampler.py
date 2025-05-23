@@ -68,10 +68,11 @@ class GPSampler(BaseSampler):
     a hand-crafted prior is introduced for inverse squared lengthscales.
 
     As an acquisition function, we use:
-        - log expected improvement (logEI) for single-objective optimization,
-        - log expected hypervolume improvement (logEHVI) for Multi-objective optimization, and
-        - the summation of logEI and the logarithm of the feasible probability with the independent
-          assumption of each constraint for (black-box inequality) constrained optimization.
+
+    - log expected improvement (logEI) for single-objective optimization,
+    - log expected hypervolume improvement (logEHVI) for Multi-objective optimization, and
+    - the summation of logEI and the logarithm of the feasible probability with the independent
+      assumption of each constraint for (black-box inequality) constrained optimization.
 
     For further information about these acquisition functions, please refer to the following
     papers:
@@ -84,21 +85,23 @@ class GPSampler(BaseSampler):
       <https://proceedings.mlr.press/v32/gardner14.pdf>`__
 
     The optimization of the acquisition function is performed via:
-        1. Collect the best param from the past trials,
-        2. Collect ``n_preliminary_samples`` points using Quasi-Monte Carlo (QMC) sampling,
-        3. Choose the best point from the collected points,
-        4. Choose ``n_local_search - 2`` points from the collected points using the roulette
-           selection,
-        5. Perform a local search for each chosen point as an initial point, and
-        6. Return the point with the best acquisition function value as the next parameter.
+
+    1. Collect the best param from the past trials,
+    2. Collect ``n_preliminary_samples`` points using Quasi-Monte Carlo (QMC) sampling,
+    3. Choose the best point from the collected points,
+    4. Choose ``n_local_search - 2`` points from the collected points using the roulette
+       selection,
+    5. Perform a local search for each chosen point as an initial point, and
+    6. Return the point with the best acquisition function value as the next parameter.
 
     Note that the procedures for non single-objective optimization setups are slightly different
     from the single-objective version described above, but we omit the descriptions for the others
     for brevity.
 
     The local search iteratively optimizes the acquisition function by repeating:
-        1. Gradient ascent using l-BFGS-B for continuous parameters, and
-        2. Line search or exhaustive search for each discrete parameter independently.
+
+    1. Gradient ascent using l-BFGS-B for continuous parameters, and
+    2. Line search or exhaustive search for each discrete parameter independently.
 
     The local search is terminated if the routine stops updating the best parameter set or the
     maximum number of iterations is reached.
