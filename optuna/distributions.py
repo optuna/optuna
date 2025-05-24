@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import abc
-from collections.abc import Sequence
 import copy
 import decimal
 import json
@@ -9,10 +8,15 @@ import math
 from numbers import Real
 from typing import Any
 from typing import cast
+from typing import TYPE_CHECKING
 from typing import Union
 import warnings
 
 from optuna._deprecated import deprecated_class
+
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 
 CategoricalChoiceType = Union[None, bool, int, float, str]
@@ -304,7 +308,7 @@ class DiscreteUniformDistribution(FloatDistribution):
         :class:`~optuna.distributions.FloatDistribution`.
         This property is a proxy for its ``step`` attribute.
         """
-        return cast(float, self.step)
+        return cast("float", self.step)
 
     @q.setter
     def q(self, v: float) -> None:
