@@ -5,7 +5,13 @@ class MedianPruner(PercentilePruner):
     """Pruner using the median stopping rule.
 
     Prune if the trial's best intermediate result is worse than median of intermediate results of
-    previous trials at the same step.
+    previous trials at the same step. It stops unpromising trials early based on the
+    intermediate results compared against the median of previous completed trials.
+
+    The pruner handles NaN values in the following manner:
+        1. If all intermediate values of the current trial are NaN, the trial will be pruned.
+        2. During the median calculation across completed trials, NaN values are ignored.
+           Only valid numeric values are considered.
 
     Example:
 

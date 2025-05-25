@@ -11,6 +11,7 @@ import warnings
 import numpy as np
 
 from optuna import _deprecated
+from optuna._convert_positional_args import convert_positional_args
 from optuna._experimental import warn_experimental_argument
 from optuna._hypervolume import compute_hypervolume
 from optuna._hypervolume.hssp import _solve_hssp
@@ -273,8 +274,25 @@ class TPESampler(BaseSampler):
                 See https://github.com/optuna/optuna/releases/tag/v3.4.0.
     """
 
+    @convert_positional_args(
+        previous_positional_arg_names=[
+            "self",
+            "consider_prior",
+            "prior_weight",
+            "consider_magic_clip",
+            "consider_endpoints",
+            "n_startup_trials",
+            "n_ei_candidates",
+            "gamma",
+            "weights",
+            "seed",
+        ],
+        deprecated_version="4.4.0",
+        removed_version="6.0.0",
+    )
     def __init__(
         self,
+        *,
         consider_prior: bool = True,
         prior_weight: float = 1.0,
         consider_magic_clip: bool = True,
@@ -284,7 +302,6 @@ class TPESampler(BaseSampler):
         gamma: Callable[[int], int] = default_gamma,
         weights: Callable[[int], np.ndarray] = default_weights,
         seed: int | None = None,
-        *,
         multivariate: bool = False,
         group: bool = False,
         warn_independent_sampling: bool = True,

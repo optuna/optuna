@@ -63,6 +63,8 @@ class SBXCrossover(BaseCrossover):
         uniform_crossover_prob: float = 0.5,
         use_child_gene_prob: float = 0.5,
     ) -> None:
+        if (eta is not None) and (eta < 0.0):
+            raise ValueError("The value of `eta` must be greater than or equal to 0.0.")
         self._eta = eta
 
         if uniform_crossover_prob < 0.0 or uniform_crossover_prob > 1.0:
