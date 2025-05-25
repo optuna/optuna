@@ -72,6 +72,9 @@ class PercentilePruner(BasePruner):
 
     Prune if the best intermediate value is in the bottom percentile among trials at the same step.
 
+    The pruner excludes trials return NaN as their final objective value. It only considers the
+    successful intermediate values from completed trials.
+
     Example:
 
         .. testcode::
