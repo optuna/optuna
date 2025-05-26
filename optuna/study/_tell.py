@@ -112,7 +112,7 @@ def _tell_with_warning(
     else:
         frozen_trial = _get_frozen_trial_from_storage(study, trial)
 
-    if frozen_trial.state != TrialState.RUNNING and not frozen_trial.state.is_finished():
+    if frozen_trial.state == TrialState.WAITING:
         raise ValueError(f"Cannot tell a {frozen_trial.state.name} trial.")
 
     # Validate the state and values arguments.
