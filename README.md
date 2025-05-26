@@ -30,7 +30,7 @@ Optuna 5.0 Roadmap published for review. Please take a look at [the planned impr
 
 Please take a few minutes to fill in this survey, and let us know how you use Optuna now and what improvements you'd like.🤔
 
-All questions optional. 🙇‍♂️ https://forms.gle/wVwLCQ9g6st6AXuq9
+All questions are optional. 🙇‍♂️ https://forms.gle/wVwLCQ9g6st6AXuq9
 
 <!-- TODO: when you add a new line, please delete the oldest line -->
 * **May 26, 2025**: Optuna 5.0 roadmap has been published! See [the blog](https://medium.com/optuna/optuna-v5-roadmap-ac7d6935a878) for more details.
