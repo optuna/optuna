@@ -24,13 +24,21 @@ for machine learning. It features an imperative, *define-by-run* style user API.
 Optuna can dynamically construct the search spaces for the hyperparameters.
 
 ## :loudspeaker: News
+Help us create the next version of Optuna!
+
+Optuna 5.0 Roadmap published for review. Please take a look at [the planned improvements to Optuna](https://medium.com/optuna/optuna-v5-roadmap-ac7d6935a878), and share your feedback in [the github issues](https://github.com/optuna/optuna/labels/v5). PR contributions also welcome!
+
+Please take a few minutes to fill in this survey, and let us know how you use Optuna now and what improvements you'd like.🤔
+
+All questions are optional. 🙇‍♂️ https://forms.gle/wVwLCQ9g6st6AXuq9
+
 <!-- TODO: when you add a new line, please delete the oldest line -->
+* **May 26, 2025**: Optuna 5.0 roadmap has been published! See [the blog](https://medium.com/optuna/optuna-v5-roadmap-ac7d6935a878) for more details.
 * **Apr 14, 2025**: Optuna 4.3.0 are out! Check out [the release note](https://github.com/optuna/optuna/releases/tag/v4.3.0) for details.
 * **Mar 24, 2025**: A new article [Distributed Optimization in Optuna and gRPC Storage Proxy](https://medium.com/optuna/distributed-optimization-in-optuna-and-grpc-storage-proxy-08db83f1d608) has been published.
 * **Mar 11, 2025**: A new article [[Optuna v4.2] Gaussian Process-Based Sampler Can Now Handle Inequality Constraints](https://medium.com/optuna/optuna-v4-2-gaussian-process-based-sampler-can-now-handle-inequality-constraints-a4f68e8ee810) has been published.
 * **Feb 17, 2025**: A new article [SMAC3 Registered on OptunaHub](https://medium.com/optuna/smac3-registered-on-optunahub-4fb9e90855cb) has been published.
 * **Jan 22, 2025**: A new article [OptunaHub Benchmarks: A New Feature to Use/Register Various Benchmark Problems](https://medium.com/optuna/optunahub-benchmarks-a-new-feature-to-use-register-various-benchmark-problems-694401524ce0) has been published.
-* **Jan 20, 2025**: Optuna 4.2.0 and OptunaHub 0.2.0 are out! Try the newest Optuna and OptunaHub! Check out [the release note](https://github.com/optuna/optuna/releases/tag/v4.2.0) for details.
 
 ## :fire: Key Features
 
