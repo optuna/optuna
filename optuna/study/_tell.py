@@ -103,6 +103,12 @@ def _tell_with_warning(
             If :obj:`True`, tell will not show warnings when tell receives an invalid
             values. This flag is expected to be :obj:`True` only when it is invoked by
             Study.optimize.
+
+    Note:
+        This function uses ``trial._cached_frozen_trial`` if available, instead of
+        retrieving the trial again from storage. Make sure that the cached version
+        is consistent with the corresponding frozen trial in storage to avoid unexpected
+        behavior.
     """
 
     # We must invalidate all trials cache here as it is only valid within a trial.
