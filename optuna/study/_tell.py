@@ -26,23 +26,16 @@ def _get_cached_frozen_trial(study: Study, trial: Trial) -> FrozenTrial:
     return trial._cached_frozen_trial
 
 
-def _get_frozen_trial_from_storage(study: Study, trial: Trial | int) -> FrozenTrial:
-    if isinstance(trial, optuna.Trial):
-        trial_id = trial._trial_id
-    elif isinstance(trial, int):
-        trial_number = trial
-        try:
-            trial_id = study._storage.get_trial_id_from_study_id_trial_number(
-                study._study_id, trial_number
-            )
-        except KeyError as e:
-            raise ValueError(
-                f"Cannot tell for trial with number {trial_number} since it has not been "
-                "created."
-            ) from e
-    else:
-        raise TypeError("Trial must be a trial object or trial number.")
-
+def _get_frozen_trial_from_storage(study: Study, trial: int) -> FrozenTrial:
+    trial_number = trial
+    try:
+        trial_id = study._storage.get_trial_id_from_study_id_trial_number(
+            study._study_id, trial_number
+        )
+    except KeyError as e:
+        raise ValueError(
+            f"Cannot tell for trial with number {trial_number} since it has not been created."
+        ) from e
     return study._storage.get_trial(trial_id)
 
 
@@ -114,7 +107,7 @@ def _tell_with_warning(
     # We must invalidate all trials cache here as it is only valid within a trial.
     study._thread_local.cached_all_trials = None
 
-    if isinstance(trial, optuna.Trial) and state != TrialState.PRUNED:
+    if isinstance(trial, optuna.Trial):
         frozen_trial = _get_cached_frozen_trial(study, trial)
     else:
         frozen_trial = _get_frozen_trial_from_storage(study, trial)
