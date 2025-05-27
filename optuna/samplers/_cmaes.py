@@ -1,19 +1,19 @@
 from __future__ import annotations
 
-from collections.abc import Callable
 from collections.abc import Sequence
 import copy
 import math
 import pickle
 from typing import Any
 from typing import cast
-from typing import NamedTuple
 from typing import TYPE_CHECKING
 from typing import Union
+import warnings
 
 import numpy as np
 
 import optuna
+from optuna import _deprecated
 from optuna import logging
 from optuna._experimental import warn_experimental_argument
 from optuna._imports import _LazyImport
@@ -41,17 +41,6 @@ _logger = logging.get_logger(__name__)
 _EPS = 1e-10
 # The value of system_attrs must be less than 2046 characters on RDBStorage.
 _SYSTEM_ATTR_MAX_LENGTH = 2045
-
-
-class _CmaEsAttrKeys(NamedTuple):
-    optimizer: Callable[[int], str]
-    generation: Callable[[int], str]
-    popsize: Callable[[], str]
-    n_restarts: Callable[[], str]
-    n_restarts_with_large: str
-    poptype: str
-    small_n_eval: str
-    large_n_eval: str
 
 
 class CmaEsSampler(BaseSampler):
@@ -168,20 +157,29 @@ class CmaEsSampler(BaseSampler):
             increased or decreased.
             Please see also ``inc_popsize`` parameter.
 
-            .. note::
-                Added in v2.1.0 as an experimental feature. The interface may change in newer
-                versions without prior notice. See
-                https://github.com/optuna/optuna/releases/tag/v2.1.0.
+            .. warning::
+                Deprecated in v4.4.0. ``restart_strategy`` argument will be removed in the future.
+                The removal of this feature is currently scheduled for v6.0.0,
+                but this schedule is subject to change.
+                From v4.4.0 onward, ``restart_strategy`` automatically falls back to ``None``, and
+                ``restart_strategy`` will be supported in OptunaHub.
+                See https://github.com/optuna/optuna/releases/tag/v4.4.0.
 
         popsize:
-            A population size of CMA-ES. When ``restart_strategy = 'ipop'``
-            or ``restart_strategy = 'bipop'`` is specified,
-            this is used as the initial population size.
+            A population size of CMA-ES.
 
         inc_popsize:
             Multiplier for increasing population size before each restart.
             This argument will be used when ``restart_strategy = 'ipop'``
             or ``restart_strategy = 'bipop'`` is specified.
+
+            .. warning::
+                Deprecated in v4.4.0. ``inc_popsize`` argument will be removed in the future.
+                The removal of this feature is currently scheduled for v6.0.0,
+                but this schedule is subject to change.
+                From v4.4.0 onward, ``inc_popsize`` is no longer utilized within Optuna, and
+                ``inc_popsize`` will be supported in OptunaHub.
+                See https://github.com/optuna/optuna/releases/tag/v4.4.0.
 
         consider_pruned_trials:
             If this is :obj:`True`, the PRUNED trials are considered for sampling.
@@ -258,12 +256,22 @@ class CmaEsSampler(BaseSampler):
         consider_pruned_trials: bool = False,
         restart_strategy: str | None = None,
         popsize: int | None = None,
-        inc_popsize: int = 2,
+        inc_popsize: int = -1,
         use_separable_cma: bool = False,
         with_margin: bool = False,
         lr_adapt: bool = False,
         source_trials: list[FrozenTrial] | None = None,
     ) -> None:
+        if restart_strategy is not None or inc_popsize != -1:
+            msg = _deprecated._DEPRECATION_WARNING_TEMPLATE.format(
+                name="`restart_strategy`", d_ver="4.4.0", r_ver="6.0.0"
+            )
+            warnings.warn(
+                f"{msg} From v4.4.0 onward, `restart_strategy` automatically falls back to "
+                "`None`. `restart_strategy` will be supported in OptunaHub.",
+                FutureWarning,
+            )
+
         self._x0 = x0
         self._sigma0 = sigma0
         self._independent_sampler = independent_sampler or optuna.samplers.RandomSampler(seed=seed)
@@ -272,16 +280,18 @@ class CmaEsSampler(BaseSampler):
         self._cma_rng = LazyRandomState(seed)
         self._search_space = IntersectionSearchSpace()
         self._consider_pruned_trials = consider_pruned_trials
-        self._restart_strategy = restart_strategy
-        self._initial_popsize = popsize
-        self._inc_popsize = inc_popsize
+        self._popsize = popsize
         self._use_separable_cma = use_separable_cma
         self._with_margin = with_margin
         self._lr_adapt = lr_adapt
         self._source_trials = source_trials
 
-        if self._restart_strategy:
-            warn_experimental_argument("restart_strategy")
+        if self._use_separable_cma:
+            self._attr_prefix = "sepcma:"
+        elif self._with_margin:
+            self._attr_prefix = "cmawm:"
+        else:
+            self._attr_prefix = "cma:"
 
         if self._consider_pruned_trials:
             warn_experimental_argument("consider_pruned_trials")
@@ -314,16 +324,6 @@ class CmaEsSampler(BaseSampler):
             raise ValueError(
                 "It is prohibited to pass `use_separable_cma` or `with_margin` argument when "
                 "using `lr_adapt`."
-            )
-
-        if restart_strategy not in (
-            "ipop",
-            "bipop",
-            None,
-        ):
-            raise ValueError(
-                "restart_strategy={} is unsupported. "
-                "Please specify: 'ipop', 'bipop', or None.".format(restart_strategy)
             )
 
         # TODO(knshnb): Support sep-CMA-ES with margin.
@@ -385,38 +385,9 @@ class CmaEsSampler(BaseSampler):
             search_space, transform_step=not self._with_margin, transform_0_1=True
         )
 
-        if self._initial_popsize is None:
-            self._initial_popsize = 4 + math.floor(3 * math.log(len(trans.bounds)))
-
-        popsize: int = self._initial_popsize
-        n_restarts: int = 0
-        n_restarts_with_large: int = 0
-        poptype: str = "small"
-        small_n_eval: int = 0
-        large_n_eval: int = 0
-        if len(completed_trials) != 0:
-            latest_trial = completed_trials[-1]
-
-            popsize_attr_key = self._attr_keys.popsize()
-            if popsize_attr_key in latest_trial.system_attrs:
-                popsize = latest_trial.system_attrs[popsize_attr_key]
-            else:
-                popsize = self._initial_popsize
-
-            n_restarts_attr_key = self._attr_keys.n_restarts()
-            n_restarts = latest_trial.system_attrs.get(n_restarts_attr_key, 0)
-            n_restarts_with_large = latest_trial.system_attrs.get(
-                self._attr_keys.n_restarts_with_large, 0
-            )
-            poptype = latest_trial.system_attrs.get(self._attr_keys.poptype, "small")
-            small_n_eval = latest_trial.system_attrs.get(self._attr_keys.small_n_eval, 0)
-            large_n_eval = latest_trial.system_attrs.get(self._attr_keys.large_n_eval, 0)
-
-        optimizer = self._restore_optimizer(completed_trials, n_restarts)
+        optimizer = self._restore_optimizer(completed_trials)
         if optimizer is None:
-            optimizer = self._init_optimizer(
-                trans, study.direction, population_size=self._initial_popsize
-            )
+            optimizer = self._init_optimizer(trans, study.direction)
 
         if optimizer.dim != len(trans.bounds):
             if self._warn_independent_sampling:
@@ -431,13 +402,11 @@ class CmaEsSampler(BaseSampler):
 
         # TODO(c-bata): Reduce the number of wasted trials during parallel optimization.
         # See https://github.com/optuna/optuna/pull/920#discussion_r385114002 for details.
-        solution_trials = self._get_solution_trials(
-            completed_trials, optimizer.generation, n_restarts
-        )
+        solution_trials = self._get_solution_trials(completed_trials, optimizer.generation)
 
-        if len(solution_trials) >= popsize:
+        if len(solution_trials) >= optimizer.population_size:
             solutions: list[tuple[np.ndarray, float]] = []
-            for t in solution_trials[:popsize]:
+            for t in solution_trials[: optimizer.population_size]:
                 assert t.value is not None, "completed trials must have a value"
                 if isinstance(optimizer, cmaes.CMAwM):
                     x = np.array(t.system_attrs["x_for_tell"])
@@ -448,41 +417,9 @@ class CmaEsSampler(BaseSampler):
 
             optimizer.tell(solutions)
 
-            if self._restart_strategy == "ipop" and optimizer.should_stop():
-                n_restarts += 1
-                popsize = popsize * self._inc_popsize
-                optimizer = self._init_optimizer(
-                    trans, study.direction, population_size=popsize, randomize_start_point=True
-                )
-
-            if self._restart_strategy == "bipop" and optimizer.should_stop():
-                n_restarts += 1
-
-                n_eval = popsize * optimizer.generation
-                if poptype == "small":
-                    small_n_eval += n_eval
-                else:  # poptype == "large"
-                    large_n_eval += n_eval
-
-                if small_n_eval < large_n_eval:
-                    poptype = "small"
-                    popsize_multiplier = self._inc_popsize**n_restarts_with_large
-                    popsize = math.floor(
-                        self._initial_popsize
-                        * popsize_multiplier ** (self._cma_rng.rng.uniform() ** 2)
-                    )
-                else:
-                    poptype = "large"
-                    n_restarts_with_large += 1
-                    popsize = self._initial_popsize * (self._inc_popsize**n_restarts_with_large)
-
-                optimizer = self._init_optimizer(
-                    trans, study.direction, population_size=popsize, randomize_start_point=True
-                )
-
             # Store optimizer.
             optimizer_str = pickle.dumps(optimizer).hex()
-            optimizer_attrs = self._split_optimizer_str(optimizer_str, n_restarts)
+            optimizer_attrs = self._split_optimizer_str(optimizer_str)
             for key in optimizer_attrs:
                 study._storage.set_trial_system_attr(trial._trial_id, key, optimizer_attrs[key])
 
@@ -497,23 +434,9 @@ class CmaEsSampler(BaseSampler):
         else:
             params = optimizer.ask()
 
-        generation_attr_key = self._attr_keys.generation(n_restarts)
+        generation_attr_key = self._attr_key_generation
         study._storage.set_trial_system_attr(
             trial._trial_id, generation_attr_key, optimizer.generation
-        )
-        popsize_attr_key = self._attr_keys.popsize()
-        study._storage.set_trial_system_attr(trial._trial_id, popsize_attr_key, popsize)
-        n_restarts_attr_key = self._attr_keys.n_restarts()
-        study._storage.set_trial_system_attr(trial._trial_id, n_restarts_attr_key, n_restarts)
-        study._storage.set_trial_system_attr(
-            trial._trial_id, self._attr_keys.n_restarts_with_large, n_restarts_with_large
-        )
-        study._storage.set_trial_system_attr(trial._trial_id, self._attr_keys.poptype, poptype)
-        study._storage.set_trial_system_attr(
-            trial._trial_id, self._attr_keys.small_n_eval, small_n_eval
-        )
-        study._storage.set_trial_system_attr(
-            trial._trial_id, self._attr_keys.large_n_eval, large_n_eval
         )
 
         external_values = trans.untransform(params)
@@ -521,86 +444,43 @@ class CmaEsSampler(BaseSampler):
         return external_values
 
     @property
-    def _attr_keys(self) -> _CmaEsAttrKeys:
-        if self._use_separable_cma:
-            attr_prefix = "sepcma:"
-        elif self._with_margin:
-            attr_prefix = "cmawm:"
-        else:
-            attr_prefix = "cma:"
+    def _attr_key_generation(self) -> str:
+        return self._attr_prefix + "generation"
 
-        def optimizer_key_template(restart: int) -> str:
-            if self._restart_strategy is None:
-                return attr_prefix + "optimizer"
-            else:
-                return attr_prefix + "{}:restart_{}:optimizer".format(
-                    self._restart_strategy, restart
-                )
+    @property
+    def _attr_key_optimizer(self) -> str:
+        return self._attr_prefix + "optimizer"
 
-        def generation_attr_key_template(restart: int) -> str:
-            if self._restart_strategy is None:
-                return attr_prefix + "generation"
-            else:
-                return attr_prefix + "{}:restart_{}:generation".format(
-                    self._restart_strategy, restart
-                )
-
-        def popsize_attr_key_template() -> str:
-            if self._restart_strategy is None:
-                return attr_prefix + "popsize"
-            else:
-                return attr_prefix + "{}:popsize".format(self._restart_strategy)
-
-        def n_restarts_attr_key_template() -> str:
-            if self._restart_strategy is None:
-                return attr_prefix + "n_restarts"
-            else:
-                return attr_prefix + "{}:n_restarts".format(self._restart_strategy)
-
-        return _CmaEsAttrKeys(
-            optimizer_key_template,
-            generation_attr_key_template,
-            popsize_attr_key_template,
-            n_restarts_attr_key_template,
-            attr_prefix + "n_restarts_with_large",
-            attr_prefix + "poptype",
-            attr_prefix + "small_n_eval",
-            attr_prefix + "large_n_eval",
-        )
-
-    def _concat_optimizer_attrs(self, optimizer_attrs: dict[str, str], n_restarts: int = 0) -> str:
+    def _concat_optimizer_attrs(self, optimizer_attrs: dict[str, str]) -> str:
         return "".join(
-            optimizer_attrs["{}:{}".format(self._attr_keys.optimizer(n_restarts), i)]
+            optimizer_attrs["{}:{}".format(self._attr_key_optimizer, i)]
             for i in range(len(optimizer_attrs))
         )
 
-    def _split_optimizer_str(self, optimizer_str: str, n_restarts: int = 0) -> dict[str, str]:
+    def _split_optimizer_str(self, optimizer_str: str) -> dict[str, str]:
         optimizer_len = len(optimizer_str)
         attrs = {}
         for i in range(math.ceil(optimizer_len / _SYSTEM_ATTR_MAX_LENGTH)):
             start = i * _SYSTEM_ATTR_MAX_LENGTH
             end = min((i + 1) * _SYSTEM_ATTR_MAX_LENGTH, optimizer_len)
-            attrs["{}:{}".format(self._attr_keys.optimizer(n_restarts), i)] = optimizer_str[
-                start:end
-            ]
+            attrs["{}:{}".format(self._attr_key_optimizer, i)] = optimizer_str[start:end]
         return attrs
 
     def _restore_optimizer(
         self,
         completed_trials: "list[optuna.trial.FrozenTrial]",
-        n_restarts: int = 0,
     ) -> "CmaClass" | None:
         # Restore a previous CMA object.
         for trial in reversed(completed_trials):
             optimizer_attrs = {
                 key: value
                 for key, value in trial.system_attrs.items()
-                if key.startswith(self._attr_keys.optimizer(n_restarts))
+                if key.startswith(self._attr_key_optimizer)
             }
             if len(optimizer_attrs) == 0:
                 continue
 
-            optimizer_str = self._concat_optimizer_attrs(optimizer_attrs, n_restarts)
+            optimizer_str = self._concat_optimizer_attrs(optimizer_attrs)
             return pickle.loads(bytes.fromhex(optimizer_str))
         return None
 
@@ -608,19 +488,13 @@ class CmaEsSampler(BaseSampler):
         self,
         trans: _SearchSpaceTransform,
         direction: StudyDirection,
-        population_size: int | None = None,
-        randomize_start_point: bool = False,
     ) -> "CmaClass":
         lower_bounds = trans.bounds[:, 0]
         upper_bounds = trans.bounds[:, 1]
         n_dimension = len(trans.bounds)
 
         if self._source_trials is None:
-            if randomize_start_point:
-                mean = lower_bounds + (upper_bounds - lower_bounds) * self._cma_rng.rng.rand(
-                    n_dimension
-                )
-            elif self._x0 is None:
+            if self._x0 is None:
                 mean = lower_bounds + (upper_bounds - lower_bounds) / 2
             else:
                 # `self._x0` is external representations.
@@ -661,7 +535,7 @@ class CmaEsSampler(BaseSampler):
                 bounds=trans.bounds,
                 seed=self._cma_rng.rng.randint(1, 2**31 - 2),
                 n_max_resampling=10 * n_dimension,
-                population_size=population_size,
+                population_size=self._popsize,
             )
 
         if self._with_margin:
@@ -684,7 +558,7 @@ class CmaEsSampler(BaseSampler):
                 cov=cov,
                 seed=self._cma_rng.rng.randint(1, 2**31 - 2),
                 n_max_resampling=10 * n_dimension,
-                population_size=population_size,
+                population_size=self._popsize,
             )
 
         return cmaes.CMA(
@@ -694,7 +568,7 @@ class CmaEsSampler(BaseSampler):
             bounds=trans.bounds,
             seed=self._cma_rng.rng.randint(1, 2**31 - 2),
             n_max_resampling=10 * n_dimension,
-            population_size=population_size,
+            population_size=self._popsize,
             lr_adapt=self._lr_adapt,
         )
 
@@ -749,9 +623,9 @@ class CmaEsSampler(BaseSampler):
         return complete_trials
 
     def _get_solution_trials(
-        self, trials: list[FrozenTrial], generation: int, n_restarts: int
+        self, trials: list[FrozenTrial], generation: int
     ) -> list[FrozenTrial]:
-        generation_attr_key = self._attr_keys.generation(n_restarts)
+        generation_attr_key = self._attr_key_generation
         return [t for t in trials if generation == t.system_attrs.get(generation_attr_key, -1)]
 
     def before_trial(self, study: optuna.Study, trial: FrozenTrial) -> None:

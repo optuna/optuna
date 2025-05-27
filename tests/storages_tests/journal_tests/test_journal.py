@@ -67,7 +67,7 @@ class JournalLogStorageSupplier:
             journal_redis_storage = optuna.storages.journal.JournalRedisBackend(
                 "redis://localhost", use_cluster
             )
-            journal_redis_storage._redis = FakeStrictRedis()  # type: ignore[no-untyped-call]
+            journal_redis_storage._redis = FakeStrictRedis()
             return journal_redis_storage
         else:
             raise RuntimeError("Unknown log storage type: {}".format(self.storage_type))

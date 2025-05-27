@@ -654,13 +654,14 @@ class Study:
             A returned trial is deep copied thus user can modify it as needed.
         """
 
-        return _tell_with_warning(
+        frozen_trial, _ = _tell_with_warning(
             study=self,
             trial=trial,
             value_or_values=values,
             state=state,
             skip_if_finished=skip_if_finished,
         )
+        return frozen_trial
 
     def set_user_attr(self, key: str, value: Any) -> None:
         """Set a user attribute to the study.
@@ -1059,7 +1060,18 @@ class Study:
         for trial in self._storage.get_all_trials(
             self._study_id, deepcopy=False, states=(TrialState.WAITING,)
         ):
-            if not self._storage.set_trial_state_values(trial._trial_id, state=TrialState.RUNNING):
+            # Attempt to set the state to RUNNING.
+            # - If another process or thread has already changed the state to RUNNING,
+            #   set_trial_state_values returns False.
+            # - If another process or thread has already finished the trial,
+            #   an UpdateFinishedTrialError is raised.
+            try:
+                if not self._storage.set_trial_state_values(
+                    trial._trial_id,
+                    state=TrialState.RUNNING,
+                ):
+                    continue
+            except exceptions.UpdateFinishedTrialError:
                 continue
 
             _logger.debug("Trial {} popped from the trial queue.".format(trial.number))
@@ -1239,6 +1251,10 @@ def create_study(
     elif direction is not None and directions is not None:
         raise ValueError("Specify only one of `direction` and `directions`.")
     elif direction is not None:
+        if isinstance(direction, Sequence) and not isinstance(direction, str):
+            raise ValueError(
+                "Use `directions` instead of `direction` for multi-objective optimization."
+            )
         directions = [direction]
     elif directions is not None:
         directions = list(directions)
@@ -1252,8 +1268,8 @@ def create_study(
         for d in directions
     ):
         raise ValueError(
-            "Please set either 'minimize' or 'maximize' to direction. You can also set the "
-            "corresponding `StudyDirection` member."
+            f"`directions` must be a list of `minimize` or `maximize`, but got {directions}. "
+            "For single-objective optimization, please use `direction` instead of `directions`."
         )
 
     direction_objects = [
