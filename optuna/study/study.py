@@ -661,7 +661,7 @@ class Study:
             state=state,
             skip_if_finished=skip_if_finished,
         )
-        return frozen_trial
+        return copy.deepcopy(frozen_trial)
 
     def set_user_attr(self, key: str, value: Any) -> None:
         """Set a user attribute to the study.

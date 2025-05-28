@@ -168,8 +168,7 @@ def _optimize_sequential(
 
         if callbacks is not None:
             for callback in callbacks:
-                frozen_trial = copy.deepcopy(frozen_trial)
-                callback(study, frozen_trial)
+                callback(study, copy.deepcopy(frozen_trial))
 
         if progress_bar is not None:
             elapsed_seconds = (datetime.datetime.now() - time_start).total_seconds()
