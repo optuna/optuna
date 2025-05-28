@@ -70,13 +70,6 @@ class GrpcStorageProxy(BaseStorage):
 
         Currently, gRPC storage proxy in combination with an SQLite3 database may cause unexpected
         behaviors when calling :func:`optuna.delete_study` due to non-invalidated cache.
-
-    .. warning::
-
-        Currently, gRPC storage proxy does not support the
-        :class:`~optuna.storages.JournalStorage`. This issue is tracked in
-        https://github.com/optuna/optuna/issues/6084. Please use
-        :class:`~optuna.storages.RDBStorage` instead.
     """
 
     def __init__(self, *, host: str = "localhost", port: int = 13000) -> None:
