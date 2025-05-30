@@ -30,6 +30,9 @@ jobs:
         python -m pip install -U pip
         pip install --progress-bar off -U .[checking]
 
+        # TODO(HideakiImamura): Remove the version constraint on mypy.
+        pip install --progress-bar off -U "mypy<1.16.0"
+
     - name: Output installed packages
       run: |
         pip freeze --all
