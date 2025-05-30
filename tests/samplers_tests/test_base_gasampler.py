@@ -215,15 +215,8 @@ def test_get_parent_population(args: dict[str, Any]) -> None:
     mock_study = MagicMock()
     mock_study._storage.get_study_system_attrs.return_value = args["study_system_attrs"]
     if args["cache"]:
-
-        class StrictTrialMock(MagicMock):
-            def __getattr__(self, name: str) -> Any:
-                if name != "_trial_id":
-                    raise AttributeError(f"Access to attribute '{name}' is not allowed.")
-                return super().__getattr__(name)
-
         mock_study._get_trials.return_value = [
-            StrictTrialMock(_trial_id=i)
+            MagicMock(_trial_id=i)
             for i in args["study_system_attrs"][
                 BaseGASamplerTestSampler._get_parent_cache_key_prefix() + "1"
             ]
@@ -247,6 +240,7 @@ def test_get_parent_population(args: dict[str, Any]) -> None:
 
     if args["cache"]:
         assert return_value == mock_study._get_trials.return_value
+        assert mock_select_parent.call_count == 0
         mock_study._get_trials.assert_called_once_with(deepcopy=False)
     else:
         mock_select_parent.assert_called_once_with(mock_study, args["generation"])
