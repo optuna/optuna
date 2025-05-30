@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import abc
 from typing import Any
+from collections.abc import Iterator
 
 from optuna._deprecated import deprecated_class
 
@@ -18,7 +19,7 @@ class BaseJournalBackend(abc.ABC):
     """
 
     @abc.abstractmethod
-    def read_logs(self, log_number_from: int) -> list[dict[str, Any]]:
+    def read_logs(self, log_number_from: int) -> Iterator[dict[str, Any]]:
         """Read logs with a log number greater than or equal to ``log_number_from``.
 
         If ``log_number_from`` is 0, read all the logs.
