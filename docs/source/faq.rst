@@ -776,7 +776,7 @@ However, if it is necessary to remove artifacts from a Python script, users can 
             # Remove the artifacts uploaded to ``base_path``.
             artifact_store.remove(artifact_meta.artifact_id)
 
-How can I address the error related to capitilization when using MySQL?
+How can I address the error related to case-insensitivity when using MySQL?
 -----------------------------------------------------------------------
 
 By default, MySQL is case-insensitive when comparing string by default.
