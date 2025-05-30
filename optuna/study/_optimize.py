@@ -7,6 +7,7 @@ from concurrent.futures import FIRST_COMPLETED
 from concurrent.futures import Future
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import wait
+import copy
 import datetime
 import gc
 import itertools
@@ -167,7 +168,7 @@ def _optimize_sequential(
 
         if callbacks is not None:
             for callback in callbacks:
-                callback(study, frozen_trial)
+                callback(study, copy.deepcopy(frozen_trial))
 
         if progress_bar is not None:
             elapsed_seconds = (datetime.datetime.now() - time_start).total_seconds()
