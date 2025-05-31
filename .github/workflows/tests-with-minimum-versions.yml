@@ -21,6 +21,7 @@ jobs:
     strategy:
       matrix:
         python-version: ['3.8', '3.9']
+        group: [1, 2, 3, 4]
 
     services:
       redis:
@@ -90,9 +91,9 @@ jobs:
     - name: Scheduled tests
       if:  ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
       run: |
-        pytest tests
+        pytest tests -v --splits 4 --group ${{ matrix.group }}
 
     - name: Tests
       if:  ${{ github.event_name != 'schedule' && github.event_name != 'workflow_dispatch' }}
       run: |
-        pytest tests -m "not slow"
+        pytest tests -m "not slow" -v --splits 4 --group ${{ matrix.group }}
