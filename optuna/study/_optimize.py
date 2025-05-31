@@ -21,6 +21,7 @@ from optuna import exceptions
 from optuna import logging
 from optuna import progress_bar as pbar_module
 from optuna import trial as trial_module
+from optuna.exceptions import ExperimentalWarning
 from optuna.storages._heartbeat import get_heartbeat_thread
 from optuna.storages._heartbeat import is_heartbeat_enabled
 from optuna.study._tell import _tell_with_warning
@@ -183,7 +184,10 @@ def _run_trial(
     catch: tuple[type[Exception], ...],
 ) -> trial_module.FrozenTrial:
     if is_heartbeat_enabled(study._storage):
-        optuna.storages.fail_stale_trials(study)
+        with warnings.catch_warnings():
+            # Ignore ExperimentalWarning when using fail_stale_trials internally.
+            warnings.simplefilter("ignore", ExperimentalWarning)
+            optuna.storages.fail_stale_trials(study)
 
     trial = study.ask()
 
