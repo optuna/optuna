@@ -27,6 +27,25 @@ def test_wfg_2d(assume_pareto: bool, n_sols: int) -> None:
     assert optuna._hypervolume.compute_hypervolume(s, r, assume_pareto) == n * n - n * (n - 1) // 2
 
 
+@pytest.mark.parametrize("assume_pareto", (True, False))
+@pytest.mark.parametrize("n_sols", list(range(2, 10)))
+def test_wfg_3d(assume_pareto: bool, n_sols: int) -> None:
+    n = n_sols
+    rng = np.random.RandomState(42)
+    r = n * np.ones(3)
+    sa: list[list[int]] = []
+    for x in range(n):
+        for y in range(n - x):
+            sa.append([x, y, n - 1 - x - y])
+    print(sa)
+    s = np.array(sa, dtype=int)
+    s = _shuffle_and_filter_sols(s, assume_pareto, rng)
+    assert (
+        optuna._hypervolume.compute_hypervolume(s, r, assume_pareto)
+        == n * n * n - (n - 1) * n * (n + 1) // 6
+    )
+
+
 @pytest.mark.parametrize("n_objs", list(range(2, 10)))
 @pytest.mark.parametrize("assume_pareto", (True, False))
 def test_wfg_nd(n_objs: int, assume_pareto: bool) -> None:
