@@ -37,7 +37,6 @@ def test_wfg_3d(assume_pareto: bool, n_sols: int) -> None:
     for x in range(n):
         for y in range(n - x):
             sa.append([x, y, n - 1 - x - y])
-    print(sa)
     s = np.array(sa, dtype=int)
     s = _shuffle_and_filter_sols(s, assume_pareto, rng)
     assert (
