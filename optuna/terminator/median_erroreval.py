@@ -31,7 +31,7 @@ class MedianErrorEvaluator(BaseErrorEvaluator):
             The ``warm_up_trials`` can exclude them from the calculation.
         n_initial_trials:
             A parameter specifies the number of initial trials considered in the calculation of
-            median after `warm_up_trials`. Default to 20.
+            median after ``warm_up_trials``. Default to 20.
         threshold_ratio:
             A parameter specifies the ratio between the threshold and initial median.
             Default to 0.01.

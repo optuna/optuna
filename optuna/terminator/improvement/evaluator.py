@@ -215,10 +215,10 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
 class BestValueStagnationEvaluator(BaseImprovementEvaluator):
     """Evaluates the stagnation period of the best value in an optimization process.
 
-    This class is initialized with a maximum stagnation period (`max_stagnation_trials`)
+    This class is initialized with a maximum stagnation period (``max_stagnation_trials``)
     and is designed to evaluate the remaining trials before reaching this maximum period
     of allowed stagnation. If this remaining trials reach zero, the trial terminates.
-    Therefore, the default error evaluator is instantiated by StaticErrorEvaluator(const=0).
+    Therefore, the default error evaluator is instantiated by ``StaticErrorEvaluator(const=0)``.
 
     Args:
         max_stagnation_trials:
