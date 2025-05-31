@@ -1158,6 +1158,8 @@ class Study:
         "direction",
         "load_if_exists",
     ],
+    deprecated_version="3.0.0",
+    removed_version="5.0.0",
 )
 def create_study(
     *,
@@ -1307,6 +1309,8 @@ def create_study(
         "sampler",
         "pruner",
     ],
+    deprecated_version="3.0.0",
+    removed_version="5.0.0",
 )
 def load_study(
     *,
@@ -1394,6 +1398,8 @@ def load_study(
         "study_name",
         "storage",
     ],
+    deprecated_version="3.0.0",
+    removed_version="5.0.0",
 )
 def delete_study(
     *,
@@ -1455,6 +1461,8 @@ def delete_study(
         "to_study_name",
     ],
     warning_stacklevel=3,
+    deprecated_version="3.0.0",
+    removed_version="5.0.0",
 )
 def copy_study(
     *,

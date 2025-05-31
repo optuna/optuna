@@ -48,7 +48,9 @@ class ArtifactMeta:
 
 
 @convert_positional_args(
-    previous_positional_arg_names=["study_or_trial", "file_path", "artifact_store"]
+    previous_positional_arg_names=["study_or_trial", "file_path", "artifact_store"],
+    deprecated_version="4.0.0",
+    removed_version="6.0.0",
 )
 def upload_artifact(
     *,

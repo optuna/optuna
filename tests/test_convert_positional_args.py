@@ -12,7 +12,11 @@ def _sample_func(*, a: int, b: int, c: int) -> int:
 
 
 class _SimpleClass:
-    @convert_positional_args(previous_positional_arg_names=["self", "a", "b"])
+    @convert_positional_args(
+        previous_positional_arg_names=["self", "a", "b"],
+        deprecated_version="9.9.9",
+        removed_version="9.9.9",
+    )
     def simple_method(self, a: int, *, b: int, c: int = 1) -> None:
         pass
 
@@ -20,7 +24,9 @@ class _SimpleClass:
 def test_convert_positional_args_decorator() -> None:
     previous_positional_arg_names: list[str] = []
     decorator_converter = convert_positional_args(
-        previous_positional_arg_names=previous_positional_arg_names
+        previous_positional_arg_names=previous_positional_arg_names,
+        deprecated_version="9.9.9",
+        removed_version="9.9.9",
     )
 
     decorated_func = decorator_converter(_sample_func)
@@ -43,7 +49,9 @@ def test_convert_positional_args_future_warning_for_methods() -> None:
 def test_convert_positional_args_future_warning() -> None:
     previous_positional_arg_names: list[str] = ["a", "b"]
     decorator_converter = convert_positional_args(
-        previous_positional_arg_names=previous_positional_arg_names
+        previous_positional_arg_names=previous_positional_arg_names,
+        deprecated_version="9.9.9",
+        removed_version="9.9.9",
     )
     assert callable(decorator_converter)
 
@@ -62,7 +70,9 @@ def test_convert_positional_args_future_warning() -> None:
 def test_convert_positional_args_mypy_type_inference() -> None:
     previous_positional_arg_names: list[str] = []
     decorator_converter = convert_positional_args(
-        previous_positional_arg_names=previous_positional_arg_names
+        previous_positional_arg_names=previous_positional_arg_names,
+        deprecated_version="9.9.9",
+        removed_version="9.9.9",
     )
     assert callable(decorator_converter)
 
@@ -95,7 +105,9 @@ def test_convert_positional_args_invalid_previous_positional_arg_names(
     previous_positional_arg_names: list[str], raise_error: bool
 ) -> None:
     decorator_converter = convert_positional_args(
-        previous_positional_arg_names=previous_positional_arg_names
+        previous_positional_arg_names=previous_positional_arg_names,
+        deprecated_version="9.9.9",
+        removed_version="9.9.9",
     )
     assert callable(decorator_converter)
 
@@ -113,7 +125,9 @@ def test_convert_positional_args_invalid_previous_positional_arg_names(
 def test_convert_positional_args_invalid_positional_args() -> None:
     previous_positional_arg_names: list[str] = ["a", "b"]
     decorator_converter = convert_positional_args(
-        previous_positional_arg_names=previous_positional_arg_names
+        previous_positional_arg_names=previous_positional_arg_names,
+        deprecated_version="9.9.9",
+        removed_version="9.9.9",
     )
     assert callable(decorator_converter)
 
