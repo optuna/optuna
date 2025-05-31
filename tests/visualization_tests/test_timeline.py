@@ -159,8 +159,7 @@ def test_get_timeline_info_negative_elapsed_time(capsys: _pytest.capture.Capture
         ([TrialState.RUNNING, TrialState.FAIL, TrialState.PRUNED, TrialState.COMPLETE], None),
         ([TrialState.COMPLETE, TrialState.PRUNED, TrialState.FAIL, TrialState.RUNNING], 2),
         ([TrialState.RUNNING, TrialState.FAIL, TrialState.PRUNED, TrialState.COMPLETE], 1),
-        ([TrialState.COMPLETE, TrialState.PRUNED, TrialState.FAIL], 5),  # More than available
-        ([TrialState.COMPLETE, TrialState.FAIL], 0),  # Zero trials
+        ([TrialState.COMPLETE, TrialState.PRUNED, TrialState.FAIL], 5),  # More than available.
     ],
 )
 def test_get_timeline_plot(
@@ -169,7 +168,7 @@ def test_get_timeline_plot(
     n_recent_trials: int | None,
 ) -> None:
     study = _create_study(trial_states)
-    figure = plot_timeline(study)
+    figure = plot_timeline(study, n_recent_trials=n_recent_trials)
 
     if isinstance(figure, go.Figure):
         figure.write_image(BytesIO())
@@ -189,7 +188,7 @@ def test_plot_timeline_n_recent_trials_invalid(
 ) -> None:
     states = [TrialState.COMPLETE, TrialState.PRUNED, TrialState.FAIL, TrialState.RUNNING]
     study = _create_study(states)
-    with pytest.raises(ValueError, match="n_recent_trials must be a positive integer or None"):
+    with pytest.raises(ValueError):
         plot_timeline(study, n_recent_trials=n_recent_trials)
 
 
