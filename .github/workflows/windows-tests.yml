@@ -77,6 +77,6 @@ jobs:
     - name: Tests
       if:  ${{ github.event_name != 'schedule' && github.event_name != 'workflow_dispatch' }}
       run: |
-        pytest -m "not slow"
+        pytest -m "not slow" -n 2
       env:
         MPLBACKEND: "QtAgg" # Use QtAgg as matplotlib backend.
