@@ -1738,15 +1738,15 @@ def test_get_best_trial_deepcopy_control(storage_mode: str) -> None:
         study.optimize(lambda t: t.suggest_float("x", -10, 10), n_trials=5)
 
         with patch("copy.deepcopy", wraps=copy.deepcopy) as mock_deepcopy:
-            # Test _get_best_trial with deepcopy=False
+            # Test _get_best_trial with deepcopy=False.
             best_trial_no_copy = study._get_best_trial(deepcopy=False)
             assert mock_deepcopy.call_count == 0
 
-            # Test _get_best_trial with deepcopy=True (default)
+            # Test _get_best_trial with deepcopy=True (default).
             best_trial_with_copy = study._get_best_trial(deepcopy=True)
             assert mock_deepcopy.call_count > 0
 
-            # Verify both methods return equivalent trials
+            # Verify both methods return equivalent trials.
             assert best_trial_no_copy.number == best_trial_with_copy.number
             assert best_trial_no_copy.value == best_trial_with_copy.value
             assert best_trial_no_copy.params == best_trial_with_copy.params
