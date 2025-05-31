@@ -88,9 +88,16 @@ def test_invalid_heartbeat_interval_and_grace_period(storage_mode: str) -> None:
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES_HEARTBEAT)
 def test_heartbeat_experimental_warnings(storage_mode: str) -> None:
-    with pytest.warns(ExperimentalWarning, match="heartbeat_interval"):
-        with StorageSupplier(storage_mode, heartbeat_interval=2):
-            pass
+    with pytest.warns(ExperimentalWarning, match="heartbeat_interval") as record:
+        with StorageSupplier(storage_mode, heartbeat_interval=2) as storage:
+            study = optuna.create_study(storage=storage)
+            study.optimize(lambda _: 1.0, n_trials=1)
+
+    # Check other ExperimentalWarning related to heartbeat are not raised.
+    assert (
+        len([warning for warning in record if isinstance(warning.message, ExperimentalWarning)])
+        == 1
+    )
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES_HEARTBEAT)
