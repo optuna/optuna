@@ -40,13 +40,18 @@ def plot_timeline(study: Study, n_recent_trials: int | None = None) -> "go.Figur
         n_recent_trials:
             The number of recent trials to plot. If :obj:`None`, all trials are plotted.
             If specified, only the most recent ``n_recent_trials`` will be displayed.
-            If ``n_recent_trials`` is 0 or negative,
-            it is treated as :obj:`None` and all trials are plotted.
-
+            Must be a positive integer.
 
     Returns:
         A :class:`plotly.graph_objects.Figure` object.
+
+    Raises:
+        ValueError: if ``n_recent_trials`` is 0 or negative.
     """
+
+    if n_recent_trials is not None and n_recent_trials <= 0:
+        raise ValueError("n_recent_trials must be a positive integer or None.")
+
     _imports.check()
     info = _get_timeline_info(study, n_recent_trials=n_recent_trials)
     return _get_timeline_plot(info)
@@ -93,7 +98,7 @@ def _get_timeline_info(study: Study, n_recent_trials: int | None = None) -> _Tim
     timedelta_for_small_bar = datetime.timedelta(seconds=1)
 
     trials = study.get_trials(deepcopy=False)
-    if n_recent_trials is not None and n_recent_trials > 0:
+    if n_recent_trials is not None:
         trials = trials[-n_recent_trials:]
 
     for trial in trials:

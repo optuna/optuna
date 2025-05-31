@@ -109,8 +109,6 @@ def test_get_timeline_info(trial_sys_attrs: dict[str, Any] | None, infeasible: b
     [
         (None, 4),
         (2, 2),
-        (0, 4),
-        (-1, 4),
         (100, 4),
     ],
 )
@@ -178,6 +176,21 @@ def test_get_timeline_plot(
     else:
         plt.savefig(BytesIO())
         plt.close()
+
+
+@parametrize_plot_timeline
+@pytest.mark.parametrize(
+    "n_recent_trials",
+    [0, -1, -10],
+)
+def test_plot_timeline_n_recent_trials_invalid(
+    plot_timeline: Callable[..., Any],
+    n_recent_trials: int | None,
+) -> None:
+    states = [TrialState.COMPLETE, TrialState.PRUNED, TrialState.FAIL, TrialState.RUNNING]
+    study = _create_study(states)
+    with pytest.raises(ValueError, match="n_recent_trials must be a positive integer or None"):
+        plot_timeline(study, n_recent_trials=n_recent_trials)
 
 
 @parametrize_plot_timeline
