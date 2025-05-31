@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from concurrent.futures import as_completed
+from concurrent.futures import ProcessPoolExecutor
 from concurrent.futures import ThreadPoolExecutor
 import copy
 import multiprocessing
@@ -1632,31 +1633,29 @@ def _process_tell(study: Study, trial: Trial | int, values: float) -> None:
 
 
 def test_tell_from_another_process() -> None:
-    pool = multiprocessing.Pool()
-
     with StorageSupplier("sqlite") as storage:
         # Create a study and ask for a new trial.
         study = create_study(storage=storage)
         trial0 = study.ask()
 
-        # Test normal behaviour.
-        pool.starmap(_process_tell, [(study, trial0, 1.2)])
+        with ProcessPoolExecutor() as pool:
+            # Test normal behaviour.
+            pool.submit(_process_tell, study=study, trial=trial0, values=1.2).result()
+            assert len(study.trials) == 1
+            assert study.best_trial.state == TrialState.COMPLETE
+            assert study.best_value == 1.2
 
-        assert len(study.trials) == 1
-        assert study.best_trial.state == TrialState.COMPLETE
-        assert study.best_value == 1.2
+            # Test study.tell using trial number.
+            trial = study.ask()
+            pool.submit(_process_tell, study=study, trial=trial.number, values=1.5).result()
+            assert len(study.trials) == 2
+            assert study.best_trial.state == TrialState.COMPLETE
+            assert study.best_value == 1.2
 
-        # Test study.tell using trial number.
-        trial = study.ask()
-        pool.starmap(_process_tell, [(study, trial.number, 1.5)])
-
-        assert len(study.trials) == 2
-        assert study.best_trial.state == TrialState.COMPLETE
-        assert study.best_value == 1.2
-
-        # Should fail because the trial0 is already finished.
-        with pytest.raises(ValueError):
-            pool.starmap(_process_tell, [(study, trial0, 1.2)])
+            # Should fail because the trial0 is already finished.
+            with pytest.raises(ValueError):
+                fut = pool.submit(_process_tell, study=study, trial=trial0, values=1.2)
+                fut.result()
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
