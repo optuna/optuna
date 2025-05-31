@@ -7,7 +7,6 @@ from concurrent.futures import ThreadPoolExecutor
 import copy
 import multiprocessing
 import pickle
-import platform
 import threading
 import time
 from typing import Any
@@ -111,6 +110,14 @@ def check_study(study: Study) -> None:
         check_params(study.best_params)
         check_value(study.best_value)
         check_frozen_trial(study.best_trial)
+
+
+def check_progressbar(err: str) -> None:
+    # Testing for a character that forms progress bar borders.
+    # e.g.
+    # Best trial: 0. Best value: 1: 100%|██████████| 2/2 [00:00<00:00, 2456.40it/s, 0.00/10.0 seconds]  # NOQA: E501
+    assert "%|" in err
+    assert "it/s" in err
 
 
 def stop_objective(threshold_number: int) -> Callable[[Trial], float]:
@@ -841,9 +848,7 @@ def test_optimize_with_progbar(n_jobs: int, capsys: _pytest.capture.CaptureFixtu
     assert "Best trial: 0" in err
     assert "Best value: 1" in err
     assert f"{NUM_MINMAL_TRIALS}/{NUM_MINMAL_TRIALS}" in err
-    if platform.system() != "Windows":
-        # Skip this assertion because the progress bar sometimes stops at 99% on Windows.
-        assert "100%" in err
+    check_progressbar(err)
 
 
 @pytest.mark.parametrize("n_jobs", [1, 2])
@@ -855,9 +860,7 @@ def test_optimize_without_progbar(n_jobs: int, capsys: _pytest.capture.CaptureFi
     assert "Best trial: 0" not in err
     assert "Best value: 1" not in err
     assert "10/10" not in err
-    if platform.system() != "Windows":
-        # Skip this assertion because the progress bar sometimes stops at 99% on Windows.
-        assert "100%" not in err
+    check_progressbar(err)
 
 
 def test_optimize_with_progbar_timeout(capsys: _pytest.capture.CaptureFixture) -> None:
@@ -868,9 +871,7 @@ def test_optimize_with_progbar_timeout(capsys: _pytest.capture.CaptureFixture) -
     assert "Best trial: 0" in err
     assert "Best value: 1" in err
     assert "00:00/00:00" in err
-    if platform.system() != "Windows":
-        # Skip this assertion because the progress bar sometimes stops at 99% on Windows.
-        assert "100%" in err
+    check_progressbar(err)
 
 
 def test_optimize_with_progbar_parallel_timeout(capsys: _pytest.capture.CaptureFixture) -> None:
@@ -881,8 +882,7 @@ def test_optimize_with_progbar_parallel_timeout(capsys: _pytest.capture.CaptureF
         study.optimize(lambda _: 1.0, timeout=0.01, show_progress_bar=True, n_jobs=2)
     _, err = capsys.readouterr()
 
-    # Testing for a character that forms progress bar borders.
-    assert "|" not in err
+    check_progressbar(err)
 
 
 @pytest.mark.parametrize(
@@ -915,9 +915,7 @@ def test_optimize_without_progbar_timeout(
     assert "Best trial: 0" not in err
     assert "Best value: 1.0" not in err
     assert "00:00/00:00" not in err
-    if platform.system() != "Windows":
-        # Skip this assertion because the progress bar sometimes stops at 99% on Windows.
-        assert "100%" not in err
+    check_progressbar(err)
 
 
 @pytest.mark.parametrize("n_jobs", [1, 2])
@@ -934,13 +932,10 @@ def test_optimize_progbar_n_trials_prioritized(
     )
     _, err = capsys.readouterr()
 
-    assert "Best trial: 0" in err
+    assert "Best trial: 0"
     assert "Best value: 1" in err
     assert f"{NUM_MINMAL_TRIALS}/{NUM_MINMAL_TRIALS}" in err
-    if platform.system() != "Windows":
-        # Skip this assertion because the progress bar sometimes stops at 99% on Windows.
-        assert "100%" in err
-    assert "it" in err
+    check_progressbar(err)
 
 
 @pytest.mark.parametrize("n_jobs", [1, 2])
@@ -951,8 +946,7 @@ def test_optimize_without_progbar_n_trials_prioritized(
     study.optimize(lambda _: 1.0, n_trials=NUM_MINMAL_TRIALS, n_jobs=n_jobs, timeout=10.0)
     _, err = capsys.readouterr()
 
-    # Testing for a character that forms progress bar borders.
-    assert "|" not in err
+    check_progressbar(err)
 
 
 @pytest.mark.parametrize("n_jobs", [1, 2])
@@ -965,10 +959,7 @@ def test_optimize_progbar_no_constraints(
         study.optimize(stop_objective(5), n_jobs=n_jobs, show_progress_bar=True)
     _, err = capsys.readouterr()
 
-    # We can't simply test if stderr is empty, since we're not sure
-    # what else could write to it. Instead, we are testing for a character
-    # that forms progress bar borders.
-    assert "|" not in err
+    check_progressbar(err)
 
 
 @pytest.mark.parametrize("n_jobs", [1, 2])
@@ -979,8 +970,7 @@ def test_optimize_without_progbar_no_constraints(
     study.optimize(stop_objective(5), n_jobs=n_jobs)
     _, err = capsys.readouterr()
 
-    # Testing for a character that forms progress bar borders.
-    assert "|" not in err
+    check_progressbar(err)
 
 
 @pytest.mark.parametrize("n_jobs", [1, 4])
