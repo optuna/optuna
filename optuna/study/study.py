@@ -130,7 +130,7 @@ class Study:
 
         """
 
-        best_value = self._get_best_trial(deepcopy=False).value
+        best_value = self.best_trial.value
         assert best_value is not None
 
         return best_value
