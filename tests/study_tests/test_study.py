@@ -47,7 +47,7 @@ from optuna.trial import TrialState
 
 CallbackFuncType = TypingCallable[[Study, FrozenTrial], None]
 
-NUM_MINMAL_TRIALS = 2
+NUM_MINIMAL_TRIALS = 2
 MINIMUM_TIMEOUT_SEC = 0.01
 
 
@@ -136,31 +136,31 @@ def stop_objective(threshold_number: int) -> Callable[[Trial], float]:
 
 def test_optimize_trivial_in_memory_new() -> None:
     study = create_study()
-    study.optimize(func, n_trials=NUM_MINMAL_TRIALS)
+    study.optimize(func, n_trials=NUM_MINIMAL_TRIALS)
     check_study(study)
 
 
 def test_optimize_trivial_in_memory_resume() -> None:
     study = create_study()
-    study.optimize(func, n_trials=NUM_MINMAL_TRIALS)
-    study.optimize(func, n_trials=NUM_MINMAL_TRIALS)
+    study.optimize(func, n_trials=NUM_MINIMAL_TRIALS)
+    study.optimize(func, n_trials=NUM_MINIMAL_TRIALS)
     check_study(study)
 
 
 def test_optimize_trivial_rdb_resume_study() -> None:
     study = create_study(storage="sqlite:///:memory:")
-    study.optimize(func, n_trials=NUM_MINMAL_TRIALS)
+    study.optimize(func, n_trials=NUM_MINIMAL_TRIALS)
     check_study(study)
 
 
 def test_optimize_with_direction() -> None:
     study = create_study(direction="minimize")
-    study.optimize(func, n_trials=NUM_MINMAL_TRIALS)
+    study.optimize(func, n_trials=NUM_MINIMAL_TRIALS)
     assert study.direction == StudyDirection.MINIMIZE
     check_study(study)
 
     study = create_study(direction="maximize")
-    study.optimize(func, n_trials=NUM_MINMAL_TRIALS)
+    study.optimize(func, n_trials=NUM_MINIMAL_TRIALS)
     assert study.direction == StudyDirection.MAXIMIZE
     check_study(study)
 
@@ -174,7 +174,7 @@ def test_optimize_with_direction() -> None:
         create_study(directions="minimize")
 
 
-@pytest.mark.parametrize("n_trials", (0, 1, NUM_MINMAL_TRIALS))
+@pytest.mark.parametrize("n_trials", (0, 1, NUM_MINIMAL_TRIALS))
 @pytest.mark.parametrize("n_jobs", (1, 2, -1))
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_optimize_parallel(n_trials: int, n_jobs: int, storage_mode: str) -> None:
@@ -194,11 +194,11 @@ def test_optimize_with_thread_pool_executor() -> None:
     study = create_study()
     with ThreadPoolExecutor(max_workers=2) as pool:
         for _ in range(2):
-            pool.submit(study.optimize, objective, n_trials=NUM_MINMAL_TRIALS)
-    assert len(study.trials) == 2 * NUM_MINMAL_TRIALS
+            pool.submit(study.optimize, objective, n_trials=NUM_MINIMAL_TRIALS)
+    assert len(study.trials) == 2 * NUM_MINIMAL_TRIALS
 
 
-@pytest.mark.parametrize("n_trials", (0, 1, NUM_MINMAL_TRIALS, None))
+@pytest.mark.parametrize("n_trials", (0, 1, NUM_MINIMAL_TRIALS, None))
 @pytest.mark.parametrize("n_jobs", (1, 2, -1))
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_optimize_parallel_timeout(n_trials: int, n_jobs: int, storage_mode: str) -> None:
@@ -230,26 +230,26 @@ def test_optimize_with_catch(storage_mode: str) -> None:
 
         # Test default exceptions.
         with pytest.raises(ValueError):
-            study.optimize(fail_objective, n_trials=NUM_MINMAL_TRIALS)
+            study.optimize(fail_objective, n_trials=NUM_MINIMAL_TRIALS)
         assert len(study.trials) == 1
         assert all(trial.state == TrialState.FAIL for trial in study.trials)
 
         # Test acceptable exception.
-        study.optimize(fail_objective, n_trials=NUM_MINMAL_TRIALS, catch=(ValueError,))
-        assert len(study.trials) == 1 + NUM_MINMAL_TRIALS
+        study.optimize(fail_objective, n_trials=NUM_MINIMAL_TRIALS, catch=(ValueError,))
+        assert len(study.trials) == 1 + NUM_MINIMAL_TRIALS
         assert all(trial.state == TrialState.FAIL for trial in study.trials)
 
         # Test trial with unacceptable exception.
         with pytest.raises(ValueError):
-            study.optimize(fail_objective, n_trials=NUM_MINMAL_TRIALS, catch=(ArithmeticError,))
-        assert len(study.trials) == 1 + NUM_MINMAL_TRIALS + 1
+            study.optimize(fail_objective, n_trials=NUM_MINIMAL_TRIALS, catch=(ArithmeticError,))
+        assert len(study.trials) == 1 + NUM_MINIMAL_TRIALS + 1
         assert all(trial.state == TrialState.FAIL for trial in study.trials)
 
 
 @pytest.mark.parametrize("catch", [ValueError, (ValueError,), [ValueError], {ValueError}])
 def test_optimize_with_catch_valid_type(catch: Any) -> None:
     study = create_study()
-    study.optimize(fail_objective, n_trials=NUM_MINMAL_TRIALS, catch=catch)
+    study.optimize(fail_objective, n_trials=NUM_MINIMAL_TRIALS, catch=catch)
 
 
 @pytest.mark.parametrize("catch", [None, 1])
@@ -257,7 +257,7 @@ def test_optimize_with_catch_invalid_type(catch: Any) -> None:
     study = create_study()
 
     with pytest.raises(TypeError):
-        study.optimize(fail_objective, n_trials=NUM_MINMAL_TRIALS, catch=catch)
+        study.optimize(fail_objective, n_trials=NUM_MINIMAL_TRIALS, catch=catch)
 
 
 @pytest.mark.parametrize("n_jobs", (2, -1))
@@ -280,12 +280,12 @@ def test_call_another_study_optimize_in_optimize() -> None:
     def objective(t: Trial) -> float:
         inner_study = create_study()
         inner_study.enqueue_trial({"x": t.suggest_int("initial_point", -10, 10)})
-        inner_study.optimize(inner_objective, n_trials=NUM_MINMAL_TRIALS)
+        inner_study.optimize(inner_objective, n_trials=NUM_MINIMAL_TRIALS)
         return inner_study.best_value
 
     study = create_study()
-    study.optimize(objective, n_trials=NUM_MINMAL_TRIALS)
-    assert len(study.trials) == NUM_MINMAL_TRIALS
+    study.optimize(objective, n_trials=NUM_MINIMAL_TRIALS)
+    assert len(study.trials) == NUM_MINIMAL_TRIALS
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
@@ -316,13 +316,13 @@ def test_trial_set_and_get_user_attrs(storage_mode: str) -> None:
 def test_get_all_study_summaries(storage_mode: str, include_best_trial: bool) -> None:
     with StorageSupplier(storage_mode) as storage:
         study = create_study(storage=storage)
-        study.optimize(func, n_trials=NUM_MINMAL_TRIALS)
+        study.optimize(func, n_trials=NUM_MINIMAL_TRIALS)
 
         summaries = get_all_study_summaries(study._storage, include_best_trial)
         summary = [s for s in summaries if s._study_id == study._study_id][0]
 
         assert summary.study_name == study.study_name
-        assert summary.n_trials == NUM_MINMAL_TRIALS
+        assert summary.n_trials == NUM_MINIMAL_TRIALS
         if include_best_trial:
             assert summary.best_trial is not None
         else:
@@ -357,18 +357,18 @@ def test_get_all_study_names(storage_mode: str) -> None:
 
 def test_study_pickle() -> None:
     study_1 = create_study()
-    study_1.optimize(func, n_trials=NUM_MINMAL_TRIALS)
+    study_1.optimize(func, n_trials=NUM_MINIMAL_TRIALS)
     check_study(study_1)
-    assert len(study_1.trials) == NUM_MINMAL_TRIALS
+    assert len(study_1.trials) == NUM_MINIMAL_TRIALS
     dumped_bytes = pickle.dumps(study_1)
 
     study_2 = pickle.loads(dumped_bytes)
     check_study(study_2)
-    assert len(study_2.trials) == NUM_MINMAL_TRIALS
+    assert len(study_2.trials) == NUM_MINIMAL_TRIALS
 
-    study_2.optimize(func, n_trials=NUM_MINMAL_TRIALS)
+    study_2.optimize(func, n_trials=NUM_MINIMAL_TRIALS)
     check_study(study_2)
-    assert len(study_2.trials) == NUM_MINMAL_TRIALS + NUM_MINMAL_TRIALS
+    assert len(study_2.trials) == NUM_MINIMAL_TRIALS + NUM_MINIMAL_TRIALS
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
@@ -525,7 +525,7 @@ def test_nested_optimization() -> None:
         return 1.0
 
     study = create_study()
-    study.optimize(objective, n_trials=NUM_MINMAL_TRIALS, catch=())
+    study.optimize(objective, n_trials=NUM_MINIMAL_TRIALS, catch=())
 
 
 def test_stop_in_objective() -> None:
@@ -541,23 +541,23 @@ def test_stop_in_objective() -> None:
 
 def test_stop_in_callback() -> None:
     def callback(study: Study, trial: FrozenTrial) -> None:
-        if trial.number >= NUM_MINMAL_TRIALS:
+        if trial.number >= NUM_MINIMAL_TRIALS:
             study.stop()
 
     # Test stopping the optimization inside a callback.
     study = create_study()
     study.optimize(lambda _: 1.0, n_trials=10, callbacks=[callback])
-    assert len(study.trials) == NUM_MINMAL_TRIALS + 1
+    assert len(study.trials) == NUM_MINIMAL_TRIALS + 1
 
 
 def test_stop_n_jobs() -> None:
     def callback(study: Study, trial: FrozenTrial) -> None:
-        if trial.number >= NUM_MINMAL_TRIALS:
+        if trial.number >= NUM_MINIMAL_TRIALS:
             study.stop()
 
     study = create_study()
     study.optimize(lambda _: 1.0, n_trials=None, callbacks=[callback], n_jobs=2)
-    assert NUM_MINMAL_TRIALS <= len(study.trials) <= NUM_MINMAL_TRIALS + 1
+    assert NUM_MINIMAL_TRIALS <= len(study.trials) <= NUM_MINIMAL_TRIALS + 1
 
 
 def test_stop_outside_optimize() -> None:
@@ -604,16 +604,16 @@ def test_add_trials(storage_mode: str) -> None:
         study.add_trials([])
         assert len(study.trials) == 0
 
-        trials = [create_trial(value=i) for i in range(NUM_MINMAL_TRIALS)]
+        trials = [create_trial(value=i) for i in range(NUM_MINIMAL_TRIALS)]
         study.add_trials(trials)
-        assert len(study.trials) == NUM_MINMAL_TRIALS
+        assert len(study.trials) == NUM_MINIMAL_TRIALS
         for i, trial in enumerate(study.trials):
             assert trial.number == i
             assert trial.value == i
 
         other_study = create_study(storage=storage)
         other_study.add_trials(study.trials)
-        assert len(other_study.trials) == NUM_MINMAL_TRIALS
+        assert len(other_study.trials) == NUM_MINIMAL_TRIALS
         for i, trial in enumerate(other_study.trials):
             assert trial.number == i
             assert trial.value == i
@@ -676,7 +676,7 @@ def test_enqueue_trial_properly_sets_user_attr(storage_mode: str) -> None:
             y = trial.suggest_int("y", -10, 10)
             return x**2 + y**2
 
-        study.optimize(objective, n_trials=NUM_MINMAL_TRIALS)
+        study.optimize(objective, n_trials=NUM_MINIMAL_TRIALS)
         t0 = study.trials[0]
         assert t0.user_attrs == {"is_optimal": False}
 
@@ -827,15 +827,15 @@ def test_enqueue_trial_skip_existing_handles_common_types(storage_mode: str, par
 @patch("optuna.study._optimize.gc.collect")
 def test_optimize_with_gc(collect_mock: Mock) -> None:
     study = create_study()
-    study.optimize(func, n_trials=NUM_MINMAL_TRIALS, gc_after_trial=True)
+    study.optimize(func, n_trials=NUM_MINIMAL_TRIALS, gc_after_trial=True)
     check_study(study)
-    assert collect_mock.call_count == NUM_MINMAL_TRIALS
+    assert collect_mock.call_count == NUM_MINIMAL_TRIALS
 
 
 @patch("optuna.study._optimize.gc.collect")
 def test_optimize_without_gc(collect_mock: Mock) -> None:
     study = create_study()
-    study.optimize(func, n_trials=NUM_MINMAL_TRIALS, gc_after_trial=False)
+    study.optimize(func, n_trials=NUM_MINIMAL_TRIALS, gc_after_trial=False)
     check_study(study)
     assert collect_mock.call_count == 0
 
@@ -844,21 +844,21 @@ def test_optimize_without_gc(collect_mock: Mock) -> None:
 def test_optimize_with_progbar(n_jobs: int, capsys: _pytest.capture.CaptureFixture) -> None:
     study = create_study()
     study.optimize(
-        lambda _: 1.0, n_trials=NUM_MINMAL_TRIALS, n_jobs=n_jobs, show_progress_bar=True
+        lambda _: 1.0, n_trials=NUM_MINIMAL_TRIALS, n_jobs=n_jobs, show_progress_bar=True
     )
     _, err = capsys.readouterr()
 
     # Search for progress bar elements in stderr.
     assert "Best trial: 0" in err
     assert "Best value: 1" in err
-    assert f"{NUM_MINMAL_TRIALS}/{NUM_MINMAL_TRIALS}" in err
+    assert f"{NUM_MINIMAL_TRIALS}/{NUM_MINIMAL_TRIALS}" in err
     check_progressbar(err)
 
 
 @pytest.mark.parametrize("n_jobs", [1, 2])
 def test_optimize_without_progbar(n_jobs: int, capsys: _pytest.capture.CaptureFixture) -> None:
     study = create_study()
-    study.optimize(lambda _: 1.0, n_trials=NUM_MINMAL_TRIALS, n_jobs=n_jobs)
+    study.optimize(lambda _: 1.0, n_trials=NUM_MINIMAL_TRIALS, n_jobs=n_jobs)
     _, err = capsys.readouterr()
 
     assert "Best trial: 0" not in err
@@ -929,7 +929,7 @@ def test_optimize_progbar_n_trials_prioritized(
     study = create_study()
     study.optimize(
         lambda _: 1.0,
-        n_trials=NUM_MINMAL_TRIALS,
+        n_trials=NUM_MINIMAL_TRIALS,
         n_jobs=n_jobs,
         timeout=10.0,
         show_progress_bar=True,
@@ -938,7 +938,7 @@ def test_optimize_progbar_n_trials_prioritized(
 
     assert "Best trial: 0" in err
     assert "Best value: 1" in err
-    assert f"{NUM_MINMAL_TRIALS}/{NUM_MINMAL_TRIALS}" in err
+    assert f"{NUM_MINIMAL_TRIALS}/{NUM_MINIMAL_TRIALS}" in err
     check_progressbar(err)
 
 
@@ -947,7 +947,7 @@ def test_optimize_without_progbar_n_trials_prioritized(
     n_jobs: int, capsys: _pytest.capture.CaptureFixture
 ) -> None:
     study = create_study()
-    study.optimize(lambda _: 1.0, n_trials=NUM_MINMAL_TRIALS, n_jobs=n_jobs, timeout=10.0)
+    study.optimize(lambda _: 1.0, n_trials=NUM_MINIMAL_TRIALS, n_jobs=n_jobs, timeout=10.0)
     _, err = capsys.readouterr()
 
     check_progressbar(err)
@@ -1192,9 +1192,9 @@ def test_optimize_with_multi_objectives(n_objectives: int) -> None:
     def objective(trial: Trial) -> list[float]:
         return [trial.suggest_float("v{}".format(i), 0, 5) for i in range(n_objectives)]
 
-    study.optimize(objective, n_trials=NUM_MINMAL_TRIALS)
+    study.optimize(objective, n_trials=NUM_MINIMAL_TRIALS)
 
-    assert len(study.trials) == NUM_MINMAL_TRIALS
+    assert len(study.trials) == NUM_MINIMAL_TRIALS
 
     for trial in study.trials:
         assert trial.values
@@ -1276,7 +1276,7 @@ def test_wrong_n_objectives() -> None:
     def objective(trial: Trial) -> list[float]:
         return [trial.suggest_float("v{}".format(i), 0, 5) for i in range(n_objectives + 1)]
 
-    study.optimize(objective, n_trials=NUM_MINMAL_TRIALS)
+    study.optimize(objective, n_trials=NUM_MINIMAL_TRIALS)
 
     for trial in study.trials:
         assert trial.state is TrialState.FAIL
