@@ -10,9 +10,7 @@ from optuna._hypervolume import compute_hypervolume
 from optuna.logging import get_logger
 from optuna.samplers._base import _CONSTRAINTS_KEY
 from optuna.study import Study
-from optuna.study._multi_objective import _dominates
 from optuna.study._study_direction import StudyDirection
-from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 from optuna.visualization._plotly_imports import _imports
 
@@ -98,8 +96,8 @@ def _get_hypervolume_history_info(
 
     # Only feasible trials are considered in hypervolume computation.
     trial_numbers = []
-    values = []
-    best_trials: list[FrozenTrial] = []
+    hypervolume_values = []
+    best_trials_values_normalized: np.ndarray | None = None
     hypervolume = 0.0
     for trial in completed_trials:
         trial_numbers.append(trial.number)
@@ -109,31 +107,34 @@ def _get_hypervolume_history_info(
             constraints_values = trial.system_attrs[_CONSTRAINTS_KEY]
             if any(map(lambda x: x > 0.0, constraints_values)):
                 # The trial is infeasible.
-                values.append(hypervolume)
+                hypervolume_values.append(hypervolume)
                 continue
 
-        if any(map(lambda t: _dominates(t, trial, study.directions), best_trials)):
-            # The trial is not on the Pareto front.
-            values.append(hypervolume)
-            continue
+        values_normalized = (signs * trial.values)[np.newaxis, :]
+        if best_trials_values_normalized is not None:
+            if (best_trials_values_normalized <= values_normalized).all(axis=1).any(axis=0):
+                # The trial is not on the Pareto front.
+                hypervolume_values.append(hypervolume)
+                continue
 
-        best_trials = list(
-            filter(lambda t: not _dominates(trial, t, study.directions), best_trials)
-        ) + [trial]
-
-        loss_vals = np.asarray(
-            list(
-                filter(
-                    lambda v: (v <= minimization_reference_point).all(),
-                    [signs * trial.values for trial in best_trials],
-                )
+        if best_trials_values_normalized is None:
+            best_trials_values_normalized = values_normalized
+        else:
+            is_kept = (best_trials_values_normalized < values_normalized).any(axis=1)
+            best_trials_values_normalized = np.concatenate(
+                [best_trials_values_normalized[is_kept, :], values_normalized], axis=0
             )
-        )
+
+        loss_vals = best_trials_values_normalized[
+            (best_trials_values_normalized <= minimization_reference_point[np.newaxis, :]).all(
+                axis=1
+            )
+        ]
         if loss_vals.size > 0:
             hypervolume = compute_hypervolume(loss_vals, minimization_reference_point)
-        values.append(hypervolume)
+        hypervolume_values.append(hypervolume)
 
-    if len(best_trials) == 0:
+    if best_trials_values_normalized is None:
         _logger.warning("Your study does not have any feasible trials.")
 
-    return _HypervolumeHistoryInfo(trial_numbers, values)
+    return _HypervolumeHistoryInfo(trial_numbers, hypervolume_values)
