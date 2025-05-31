@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from optuna._experimental import experimental_func
 from optuna.study import Study
 from optuna.trial import TrialState
