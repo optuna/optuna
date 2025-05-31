@@ -166,7 +166,9 @@ def test_get_timeline_info_negative_elapsed_time(capsys: _pytest.capture.Capture
     ],
 )
 def test_get_timeline_plot(
-    plot_timeline: Callable[..., Any], trial_states: list[TrialState]
+    plot_timeline: Callable[..., Any],
+    trial_states: list[TrialState],
+    n_recent_trials: int | None,
 ) -> None:
     study = _create_study(trial_states)
     figure = plot_timeline(study)
