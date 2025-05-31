@@ -29,6 +29,11 @@ def plot_timeline(study: Study, n_recent_trials: int | None = None) -> "Axes":
             A :class:`~optuna.study.Study` object whose trials are plotted with
             their lifetime.
         n_recent_trials:
+            The number of recent trials to plot. If :obj:`None`, all trials are plotted.
+            If specified, only the most recent ``n_recent_trials`` will be displayed.
+            If ``n_recent_trials`` is 0 or negative,
+            it is treated as :obj:`None` and all trials are plotted.
+
 
     Returns:
         A :class:`matplotlib.axes.Axes` object.
