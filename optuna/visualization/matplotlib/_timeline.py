@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from optuna._experimental import experimental_func
 from optuna.study import Study
 from optuna.trial import TrialState
@@ -18,7 +20,7 @@ _INFEASIBLE_KEY = "INFEASIBLE"
 
 
 @experimental_func("3.2.0")
-def plot_timeline(study: Study) -> "Axes":
+def plot_timeline(study: Study, n_recent_trials: int | None = None) -> "Axes":
     """Plot the timeline of a study.
 
     .. seealso::
@@ -28,12 +30,23 @@ def plot_timeline(study: Study) -> "Axes":
         study:
             A :class:`~optuna.study.Study` object whose trials are plotted with
             their lifetime.
+        n_recent_trials:
+            The number of recent trials to plot. If :obj:`None`, all trials are plotted.
+            If specified, only the most recent ``n_recent_trials`` will be displayed.
+            Must be a positive integer.
 
     Returns:
-        A :class:`matplotlib.axes.Axes` object.
+        A :class:`plotly.graph_objects.Figure` object.
+
+    Raises:
+        ValueError: if ``n_recent_trials`` is 0 or negative.
     """
+
+    if n_recent_trials is not None and n_recent_trials <= 0:
+        raise ValueError("n_recent_trials must be a positive integer or None.")
+
     _imports.check()
-    info = _get_timeline_info(study)
+    info = _get_timeline_info(study, n_recent_trials)
     return _get_timeline_plot(info)
 
 
