@@ -1728,7 +1728,7 @@ def test_get_metric_names() -> None:
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-def test_get_best_trial_deepcopy_control(storage_mode: str) -> None:
+def test_get_best_trial(storage_mode: str) -> None:
     """Test _get_best_trial method with deepcopy parameter control."""
     if storage_mode in ("grpc_rdb", "grpc_journal_file"):
         pytest.skip("gRPC storage doesn't use `copy.deepcopy`.")
