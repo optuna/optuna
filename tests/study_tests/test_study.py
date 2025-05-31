@@ -1725,3 +1725,29 @@ def test_get_metric_names() -> None:
     assert study.metric_names == ["v0"]
     study.set_metric_names(["v1"])
     assert study.metric_names == ["v1"]
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_get_best_trial_deepcopy_control(storage_mode: str) -> None:
+    """Test _get_best_trial method with deepcopy parameter control."""
+    if storage_mode in ("grpc_rdb", "grpc_journal_file"):
+        pytest.skip("gRPC storage doesn't use `copy.deepcopy`.")
+
+    with StorageSupplier(storage_mode) as storage:
+        study = create_study(storage=storage)
+        study.optimize(lambda t: t.suggest_float("x", -10, 10), n_trials=5)
+
+        with patch("copy.deepcopy", wraps=copy.deepcopy) as mock_deepcopy:
+            # Test _get_best_trial with deepcopy=False
+            best_trial_no_copy = study._get_best_trial(deepcopy=False)
+            assert mock_deepcopy.call_count == 0
+
+            # Test _get_best_trial with deepcopy=True (default)
+            best_trial_with_copy = study._get_best_trial(deepcopy=True)
+            assert mock_deepcopy.call_count > 0
+
+            # Verify both methods return equivalent trials
+            assert best_trial_no_copy.number == best_trial_with_copy.number
+            assert best_trial_no_copy.value == best_trial_with_copy.value
+            assert best_trial_no_copy.params == best_trial_with_copy.params
+            assert best_trial_no_copy.state == best_trial_with_copy.state
