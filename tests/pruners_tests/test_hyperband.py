@@ -242,7 +242,7 @@ def test_hyperband_pruner_and_grid_sampler() -> None:
     assert len(trials) == 9
 
 
-def test_hyperband_pruner_and_bruto_force_sampler() -> None:
+def test_hyperband_pruner_and_brute_force_sampler() -> None:
     def objective(trial: optuna.trial.Trial) -> int:
         x = trial.suggest_int("x", 0, 2)
         y = trial.suggest_int("y", 0, 2)
