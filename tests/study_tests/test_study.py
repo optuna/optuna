@@ -1751,3 +1751,13 @@ def test_get_best_trial_deepcopy_control(storage_mode: str) -> None:
             assert best_trial_no_copy.value == best_trial_with_copy.value
             assert best_trial_no_copy.params == best_trial_with_copy.params
             assert best_trial_no_copy.state == best_trial_with_copy.state
+
+
+def test_best_trial_property_uses_get_best_trial() -> None:
+    """Test that best_trial property calls _get_best_trial with deepcopy=True."""
+    study = create_study()
+    study.optimize(lambda t: t.suggest_float("x", 0, 1), n_trials=3)
+
+    with patch.object(study, "_get_best_trial", wraps=study._get_best_trial) as mock_get_best:
+        _ = study.best_trial
+        mock_get_best.assert_called_once_with(deepcopy=True)
