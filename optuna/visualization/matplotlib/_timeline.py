@@ -18,7 +18,7 @@ _INFEASIBLE_KEY = "INFEASIBLE"
 
 
 @experimental_func("3.2.0")
-def plot_timeline(study: Study) -> "Axes":
+def plot_timeline(study: Study, n_recent_trials: int | None = None) -> "Axes":
     """Plot the timeline of a study.
 
     .. seealso::
@@ -28,12 +28,13 @@ def plot_timeline(study: Study) -> "Axes":
         study:
             A :class:`~optuna.study.Study` object whose trials are plotted with
             their lifetime.
+        n_recent_trials:
 
     Returns:
         A :class:`matplotlib.axes.Axes` object.
     """
     _imports.check()
-    info = _get_timeline_info(study)
+    info = _get_timeline_info(study, n_recent_trials)
     return _get_timeline_plot(info)
 
 

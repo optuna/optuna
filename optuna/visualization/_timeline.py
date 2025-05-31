@@ -39,7 +39,10 @@ def plot_timeline(study: Study, n_recent_trials: int | None = None) -> "go.Figur
             their lifetime.
         n_recent_trials:
             The number of recent trials to plot. If :obj:`None`, all trials are plotted.
-            If specified, only the most recent n_recent_trials will be displayed.
+            If specified, only the most recent ``n_recent_trials`` will be displayed.
+            If ``n_recent_trials`` is 0 or negative,
+            it is treated as :obj:`None` and all trials are plotted.
+
 
     Returns:
         A :class:`plotly.graph_objects.Figure` object.

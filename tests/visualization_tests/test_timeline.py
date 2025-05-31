@@ -109,7 +109,7 @@ def test_get_timeline_info(trial_sys_attrs: dict[str, Any] | None, infeasible: b
     [
         (None, 4),
         (2, 2),
-        (0, 0),
+        (0, 4),
         (-1, 4),
         (100, 4),
     ],
