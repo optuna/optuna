@@ -1761,3 +1761,17 @@ def test_best_trial_property_uses_get_best_trial() -> None:
     with patch.object(study, "_get_best_trial", wraps=study._get_best_trial) as mock_get_best:
         _ = study.best_trial
         mock_get_best.assert_called_once_with(deepcopy=True)
+
+
+def test_log_completed_trial_uses_get_best_trial_no_deepcopy() -> None:
+    """Test that _log_completed_trial uses _get_best_trial with deepcopy=False."""
+    # Set logging level to capture the log message
+    logging.set_verbosity(logging.INFO)
+
+    study = create_study()
+    study.optimize(lambda t: 1.0, n_trials=1)
+    frozen_trial = study.trials[0]
+
+    with patch.object(study, "_get_best_trial", wraps=study._get_best_trial) as mock_get_best:
+        study._log_completed_trial(frozen_trial)
+        mock_get_best.assert_called_once_with(deepcopy=False)
