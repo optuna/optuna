@@ -1775,3 +1775,34 @@ def test_log_completed_trial_uses_get_best_trial_no_deepcopy() -> None:
     with patch.object(study, "_get_best_trial", wraps=study._get_best_trial) as mock_get_best:
         study._log_completed_trial(frozen_trial)
         mock_get_best.assert_called_once_with(deepcopy=False)
+
+
+def test_get_best_trial_performance_comparison() -> None:
+    """Test performance difference between deepcopy=True and deepcopy=False."""
+    study = create_study()
+
+    # Create a study with many parameters to make deepcopy more expensive
+    def complex_objective(trial: Trial) -> float:
+        params = {}
+        for i in range(50):  # Many parameters
+            params[f"x{i}"] = trial.suggest_float(f"x{i}", 0, 1)
+        return sum(params.values())
+
+    study.optimize(complex_objective, n_trials=10)
+
+    # Measure time for deepcopy=True
+    import time
+
+    start_time = time.perf_counter()
+    for _ in range(100):
+        study._get_best_trial(deepcopy=True)
+    deepcopy_time = time.perf_counter() - start_time
+
+    # Measure time for deepcopy=False
+    start_time = time.perf_counter()
+    for _ in range(100):
+        study._get_best_trial(deepcopy=False)
+    no_deepcopy_time = time.perf_counter() - start_time
+
+    # deepcopy=False should be significantly faster
+    assert no_deepcopy_time < deepcopy_time
