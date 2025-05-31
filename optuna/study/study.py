@@ -116,7 +116,7 @@ class Study:
 
         """
 
-        return self._get_best_trial(deepcopy=False).params
+        return self.best_trial.params
 
     @property
     def best_value(self) -> float:
