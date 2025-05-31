@@ -142,6 +142,9 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
             ``heartbeat_interval`` must be :obj:`None` or a positive integer.
 
             .. note::
+                Heartbeat mechanism is experimental. API would change in the future.
+
+            .. note::
                 The heartbeat is supposed to be used with :meth:`~optuna.study.Study.optimize`.
                 If you use :meth:`~optuna.study.Study.ask` and
                 :meth:`~optuna.study.Study.tell` instead, it will not work.
