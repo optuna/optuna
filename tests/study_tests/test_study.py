@@ -832,7 +832,9 @@ def test_optimize_without_gc(collect_mock: Mock) -> None:
 @pytest.mark.parametrize("n_jobs", [1, 2])
 def test_optimize_with_progbar(n_jobs: int, capsys: _pytest.capture.CaptureFixture) -> None:
     study = create_study()
-    study.optimize(lambda _: 1.0, n_trials=NUM_MINMAL_TRIALS, n_jobs=n_jobs, show_progress_bar=True)
+    study.optimize(
+        lambda _: 1.0, n_trials=NUM_MINMAL_TRIALS, n_jobs=n_jobs, show_progress_bar=True
+    )
     _, err = capsys.readouterr()
 
     # Search for progress bar elements in stderr.
@@ -923,7 +925,13 @@ def test_optimize_progbar_n_trials_prioritized(
     n_jobs: int, capsys: _pytest.capture.CaptureFixture
 ) -> None:
     study = create_study()
-    study.optimize(lambda _: 1.0, n_trials=NUM_MINMAL_TRIALS, n_jobs=n_jobs, timeout=10.0, show_progress_bar=True)
+    study.optimize(
+        lambda _: 1.0,
+        n_trials=NUM_MINMAL_TRIALS,
+        n_jobs=n_jobs,
+        timeout=10.0,
+        show_progress_bar=True,
+    )
     _, err = capsys.readouterr()
 
     assert "Best trial: 0" in err
