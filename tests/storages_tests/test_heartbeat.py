@@ -12,6 +12,7 @@ import pytest
 
 import optuna
 from optuna import Study
+from optuna.exceptions import ExperimentalWarning
 from optuna.storages import RDBStorage
 from optuna.storages._callbacks import RetryFailedTrialCallback
 from optuna.storages._heartbeat import BaseHeartbeat
@@ -82,6 +83,13 @@ def test_invalid_heartbeat_interval_and_grace_period(storage_mode: str) -> None:
 
     with pytest.raises(ValueError):
         with StorageSupplier(storage_mode, grace_period=-1):
+            pass
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES_HEARTBEAT)
+def test_heartbeat_experimental_warnings(storage_mode: str) -> None:
+    with pytest.warns(ExperimentalWarning, match="heartbeat_interval"):
+        with StorageSupplier(storage_mode, heartbeat_interval=2):
             pass
 
 
