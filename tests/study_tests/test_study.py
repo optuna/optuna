@@ -936,7 +936,7 @@ def test_optimize_progbar_n_trials_prioritized(
     )
     _, err = capsys.readouterr()
 
-    assert "Best trial: 0"
+    assert "Best trial: 0" in err
     assert "Best value: 1" in err
     assert f"{NUM_MINMAL_TRIALS}/{NUM_MINMAL_TRIALS}" in err
     check_progressbar(err)
