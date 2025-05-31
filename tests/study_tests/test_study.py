@@ -1742,7 +1742,7 @@ def test_get_best_trial(storage_mode: str) -> None:
             best_trial_no_copy = study._get_best_trial(deepcopy=False)
             assert mock_deepcopy.call_count == 0
 
-            # Test _get_best_trial with deepcopy=True (default).
+            # Test _get_best_trial with deepcopy=True.
             best_trial_with_copy = study._get_best_trial(deepcopy=True)
             assert mock_deepcopy.call_count > 0
 
