@@ -285,7 +285,7 @@ class Study:
 
         return self._storage.get_all_trials(self._study_id, deepcopy=deepcopy, states=states)
 
-    def _get_best_trial(self, deepcopy: bool = True) -> FrozenTrial:
+    def _get_best_trial(self, deepcopy: bool) -> FrozenTrial:
         """Return the best trial in the study.
 
         Args:
