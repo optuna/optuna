@@ -919,7 +919,7 @@ def test_optimize_without_progbar_timeout(
     assert "Best trial: 0" not in err
     assert "Best value: 1.0" not in err
     assert "00:00/00:00" not in err
-    check_progressbar(err)
+    check_progressbar(err, is_shown=False)
 
 
 @pytest.mark.parametrize("n_jobs", [1, 2])
@@ -950,7 +950,7 @@ def test_optimize_without_progbar_n_trials_prioritized(
     study.optimize(lambda _: 1.0, n_trials=NUM_MINIMAL_TRIALS, n_jobs=n_jobs, timeout=10.0)
     _, err = capsys.readouterr()
 
-    check_progressbar(err)
+    check_progressbar(err, is_shown=False)
 
 
 @pytest.mark.parametrize("n_jobs", [1, 2])
@@ -974,7 +974,7 @@ def test_optimize_without_progbar_no_constraints(
     study.optimize(stop_objective(5), n_jobs=n_jobs)
     _, err = capsys.readouterr()
 
-    check_progressbar(err)
+    check_progressbar(err, is_shown=False)
 
 
 @pytest.mark.parametrize("n_jobs", [1, 4])
