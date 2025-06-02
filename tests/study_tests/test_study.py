@@ -47,7 +47,7 @@ from optuna.trial import TrialState
 
 CallbackFuncType = TypingCallable[[Study, FrozenTrial], None]
 
-NUM_MINIMAL_TRIALS = 5
+NUM_MINIMAL_TRIALS = 2
 MINIMUM_TIMEOUT_SEC = 0.01
 
 
