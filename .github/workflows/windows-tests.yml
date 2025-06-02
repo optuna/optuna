@@ -20,6 +20,10 @@ jobs:
   tests-windows:
     runs-on: windows-latest
 
+    strategy:
+      matrix:
+        group: [1, 2, 3, 4]
+
     # Not intended for forks.
     if: (github.event_name == 'schedule' && github.repository == 'optuna/optuna') || (github.event_name != 'schedule')
     steps:
@@ -69,14 +73,26 @@ jobs:
     - name: Scheduled tests
       if:  ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
       run: |
-        pytest
+        pytest -v --splits 4 --group ${{ matrix.group }}
       env:
         SQLALCHEMY_WARN_20: 1
         MPLBACKEND: "QtAgg" # Use QtAgg as matplotlib backend.
 
-    - name: Tests
+    - name: Tests group ${{ matrix.group }}
       if:  ${{ github.event_name != 'schedule' && github.event_name != 'workflow_dispatch' }}
       run: |
-        pytest -m "not slow"
+        pytest -m "not slow" -v --splits 4 --group ${{ matrix.group }}
       env:
         MPLBACKEND: "QtAgg" # Use QtAgg as matplotlib backend.
+
+  pass:
+    name: ✅ Pass tests-windows
+    needs: tests-windows
+    runs-on: ubuntu-latest
+
+    if: always()
+
+    steps:
+      - uses: re-actors/alls-green@release/v1
+        with:
+          jobs: ${{ toJSON(needs) }}

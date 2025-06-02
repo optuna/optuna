@@ -99,6 +99,7 @@ test = [
   "kaleido<0.4",  # TODO(nzw0301): Remove the version constraint by installing browser separately.
   "moto",
   "pytest",
+  "pytest-split",
   "scipy>=1.9.2",
   "torch; python_version<='3.12'",  # TODO(gen740): Remove this line when 'torch', a dependency of 'optuna/_gp', supports Python 3.13
   "grpcio",  # optuna/storages/_grpc.

@@ -12,8 +12,12 @@ concurrency:
 
 jobs:
 
-  coverage:
+  coverage-run:
     runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        group: [1, 2, 3, 4]
 
     # Not intended for forks.
     if: github.repository == 'optuna/optuna'
@@ -65,18 +69,55 @@ jobs:
         pipdeptree
 
 
-    - name: Tests
+    - name: Tests group ${{ matrix.group }}
       env:
         OMP_NUM_THREADS: 1
         PYTHONPATH: .  # To invoke sitecutomize.py
         COVERAGE_PROCESS_START: .coveragerc  # https://coverage.readthedocs.io/en/6.4.1/subprocess.html
         COVERAGE_COVERAGE: yes  # https://github.com/nedbat/coveragepy/blob/65bf33fc03209ffb01bbbc0d900017614645ee7a/coverage/control.py#L255-L261
       run: |
-        coverage run --source=optuna -m pytest tests -m "not skip_coverage and not slow"
-        coverage combine
-        coverage xml
-
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v3
+        coverage run --data-file=coverage-${{ matrix.group }} --source=optuna -m pytest tests -m "not skip_coverage and not slow" -v --splits 4 --group ${{ matrix.group }}
+        ls -la .coverage*
+    - name: Upload coverage data
+      uses: actions/upload-artifact@v4
       with:
-        file: ./coverage.xml
+        name: coverage-${{ matrix.group }}
+        path: coverage-${{ matrix.group }}*
+        if-no-files-found: error
+
+  coverage-upload:
+    needs: coverage-run
+    runs-on: ubuntu-latest
+
+    # Not intended for forks.
+    if: github.repository == 'optuna/optuna'
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    - name: Setup Python 3.12
+      uses: actions/setup-python@v5
+      with:
+        python-version: 3.12
+    - name: Download coverage datum
+      uses: actions/download-artifact@v4
+      with:
+        path: coverages
+        pattern: coverage-*
+        merge-multiple: true
+    - name: Show coverage datum
+      run: |
+        ls -l coverages
+    - name: Combine coverage files
+      run: |
+        pip install coverage
+        coverage combine coverages/coverage-*
+        coverage xml
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v5
+      env:
+        COVERAGE_PROCESS_START: .coveragerc  # https://coverage.readthedocs.io/en/6.4.1/subprocess.html
+        COVERAGE_COVERAGE: yes  # https://github.com/nedbat/coveragepy/blob/65bf33fc03209ffb01bbbc0d900017614645ee7a/coverage/control.py#L255-L261
+      with:
+        files: ./coverage.xml
+        verbose: true

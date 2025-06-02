@@ -23,6 +23,7 @@ jobs:
         python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13']
         test-trigger-type:
           - ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && 'Scheduled' || '' }}
+        group: [1, 2, 3, 4]
         exclude:
           - test-trigger-type: ""
             python-version: "3.9"
@@ -88,7 +89,7 @@ jobs:
         pip install pipdeptree
         pipdeptree
 
-    - name: Tests
+    - name: Tests group ${{ matrix.group }}
       run: |
         if [ "${{ github.event_name }}" = "schedule" ] || \
            [ "${{ github.event_name }}" = "workflow_dispatch" ] ; then
@@ -97,6 +98,18 @@ jobs:
           target="not slow"
         fi
 
-        pytest tests -m "$target"
+        pytest tests -m "$target" -v --splits 4 --group ${{ matrix.group }}
       env:
         SQLALCHEMY_WARN_20: 1
+
+  pass:
+    name: ✅ Pass tests
+    needs: tests-tests
+    runs-on: ubuntu-latest
+
+    if: always()
+
+    steps:
+      - uses: re-actors/alls-green@release/v1
+        with:
+          jobs: ${{ toJSON(needs) }}

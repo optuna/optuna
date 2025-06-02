@@ -20,6 +20,10 @@ jobs:
   tests-mac:
     runs-on: macos-latest
 
+    strategy:
+      matrix:
+        group: [1, 2, 3, 4]
+
     # Scheduled Tests are disabled for forks.
     if: (github.event_name == 'schedule' && github.repository == 'optuna/optuna') || (github.event_name != 'schedule')
     steps:
@@ -61,11 +65,23 @@ jobs:
         pipdeptree
 
 
-    - name: Scheduled tests
+    - name: Scheduled tests group ${{ matrix.group }}
       if:  ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
       run: |
-        pytest tests
+        pytest tests -v --splits 4 --group ${{ matrix.group }}
     - name: Tests
       if:  ${{ github.event_name != 'schedule' && github.event_name != 'workflow_dispatch' }}
       run: |
-        pytest tests -m "not slow"
+        pytest tests -m "not slow" -v --splits 4 --group ${{ matrix.group }}
+
+  pass:
+    name: ✅ Pass tests-mac
+    needs: tests-mac
+    runs-on: ubuntu-latest
+
+    if: always()
+
+    steps:
+      - uses: re-actors/alls-green@release/v1
+        with:
+          jobs: ${{ toJSON(needs) }}
