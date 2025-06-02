@@ -883,7 +883,9 @@ def test_optimize_with_progbar_parallel_timeout(capsys: _pytest.capture.CaptureF
     with pytest.warns(
         UserWarning, match="The timeout-based progress bar is not supported with n_jobs != 1."
     ):
-        study.optimize(lambda _: 1.0, timeout=MINIMUM_TIMEOUT_SEC, show_progress_bar=True, n_jobs=2)
+        study.optimize(
+            lambda _: 1.0, timeout=MINIMUM_TIMEOUT_SEC, show_progress_bar=True, n_jobs=2
+        )
     _, err = capsys.readouterr()
 
     # progress bar should not shown when n_jobs != 1.
