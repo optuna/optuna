@@ -112,13 +112,17 @@ def check_study(study: Study) -> None:
         check_frozen_trial(study.best_trial)
 
 
-def check_progressbar(err: str, is_shown: bool = True) -> None:
+def check_progressbar(err: str, is_shown: bool = True, without_n_trials: bool = False) -> None:
     # Testing for a character that forms progress bar borders.
     # e.g.
+    # 1. without n_trials=False:
     # Best trial: 0. Best value: 1: 100%|██████████| 2/2 [00:00<00:00, 2456.40it/s, 0.00/10.0 seconds]  # NOQA: E501
+    # 2. without n_trials=True:
+    # Best trial: 0. Best value: 1:  100%|██████████| 00:01/00:01
     if is_shown:
         assert "%|" in err
-        assert "it/s" in err
+        if not without_n_trials:
+            assert "it/s" in err
     else:
         assert "%|" not in err
         assert "it/s" not in err
@@ -875,7 +879,7 @@ def test_optimize_with_progbar_timeout(capsys: _pytest.capture.CaptureFixture) -
     assert "Best trial: 0" in err
     assert "Best value: 1" in err
     assert "00:00/00:00" in err
-    check_progressbar(err)
+    check_progressbar(err, without_n_trials=True)
 
 
 def test_optimize_with_progbar_parallel_timeout(capsys: _pytest.capture.CaptureFixture) -> None:
