@@ -970,7 +970,8 @@ def test_optimize_progbar_no_constraints(
         study.optimize(stop_objective(5), n_jobs=n_jobs, show_progress_bar=True)
     _, err = capsys.readouterr()
 
-    check_progressbar(err)
+    # optimization is controlled by `stop_objective`, so the progress bar should be shown.
+    check_progressbar(err, is_shown=False)
 
 
 @pytest.mark.parametrize("n_jobs", [1, 2])
