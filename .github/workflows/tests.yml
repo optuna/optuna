@@ -104,7 +104,7 @@ jobs:
 
   pass:
     name: ✅ Pass tests
-    needs: tests-tests
+    needs: tests
     runs-on: ubuntu-latest
 
     if: always()
