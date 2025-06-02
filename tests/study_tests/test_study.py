@@ -545,18 +545,18 @@ def test_stop_in_objective() -> None:
 
 def test_stop_in_callback() -> None:
     def callback(study: Study, trial: FrozenTrial) -> None:
-        if trial.number >= NUM_MINIMAL_TRIALS:
+        if trial.number >= NUM_MINIMAL_TRIALS - 1:
             study.stop()
 
     # Test stopping the optimization inside a callback.
     study = create_study()
     study.optimize(lambda _: 1.0, n_trials=10, callbacks=[callback])
-    assert len(study.trials) == NUM_MINIMAL_TRIALS + 1
+    assert len(study.trials) == NUM_MINIMAL_TRIALS
 
 
 def test_stop_n_jobs() -> None:
     def callback(study: Study, trial: FrozenTrial) -> None:
-        if trial.number >= NUM_MINIMAL_TRIALS:
+        if trial.number >= NUM_MINIMAL_TRIALS - 1:
             study.stop()
 
     study = create_study()
