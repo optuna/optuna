@@ -869,7 +869,7 @@ def test_optimize_without_progbar(n_jobs: int, capsys: _pytest.capture.CaptureFi
 
 def test_optimize_with_progbar_timeout(capsys: _pytest.capture.CaptureFixture) -> None:
     study = create_study()
-    study.optimize(lambda _: 1.0, timeout=0.01, show_progress_bar=True)
+    study.optimize(lambda _: 1.0, timeout=MINIMUM_TIMEOUT_SEC, show_progress_bar=True)
     _, err = capsys.readouterr()
 
     assert "Best trial: 0" in err
@@ -883,10 +883,11 @@ def test_optimize_with_progbar_parallel_timeout(capsys: _pytest.capture.CaptureF
     with pytest.warns(
         UserWarning, match="The timeout-based progress bar is not supported with n_jobs != 1."
     ):
-        study.optimize(lambda _: 1.0, timeout=0.01, show_progress_bar=True, n_jobs=2)
+        study.optimize(lambda _: 1.0, timeout=MINIMUM_TIMEOUT_SEC, show_progress_bar=True, n_jobs=2)
     _, err = capsys.readouterr()
 
-    check_progressbar(err)
+    # progress bar should not shown when n_jobs != 1.
+    check_progressbar(err, is_shown=False)
 
 
 @pytest.mark.parametrize(
@@ -913,7 +914,7 @@ def test_optimize_without_progbar_timeout(
     n_jobs: int, capsys: _pytest.capture.CaptureFixture
 ) -> None:
     study = create_study()
-    study.optimize(lambda _: 1.0, timeout=0.01, n_jobs=n_jobs)
+    study.optimize(lambda _: 1.0, timeout=MINIMUM_TIMEOUT_SEC, n_jobs=n_jobs)
     _, err = capsys.readouterr()
 
     assert "Best trial: 0" not in err
