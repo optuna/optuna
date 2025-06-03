@@ -6,64 +6,51 @@ from optuna.study._multi_objective import _is_pareto_front
 
 
 def _compute_2d(sorted_pareto_sols: np.ndarray, reference_point: np.ndarray) -> float:
-    assert sorted_pareto_sols.shape[1] == 2 and reference_point.shape[0] == 2
-    rect_diag_y = np.append(reference_point[1], sorted_pareto_sols[:-1, 1])
+    assert sorted_pareto_sols.shape[1] == reference_point.shape[0] == 2
+    rect_diag_y = np.concat([reference_point[1:], sorted_pareto_sols[:-1, 1]])
     edge_length_x = reference_point[0] - sorted_pareto_sols[:, 0]
     edge_length_y = rect_diag_y - sorted_pareto_sols[:, 1]
     return edge_length_x @ edge_length_y
 
 
 def _compress_coordinate(coords: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-    # Returns a permutation of 0, 1, ..., N-1 preserving the original order
-    # as well as the sorted sequence.
-    # Example:
-    #    _compress_coordinate([20.0, 40.0, 30.0, 10.0])
-    # == ([1, 3, 2, 0], [10.0, 20.0, 30.0, 40.0])
-    # NOTE: we do not care about tie-breaks but it is sufficent for the use case in _compute_3d.
+    """
+    Return a permutation of 0, 1, ..., N-1 preserving the original order as well as the sorted
+    sequence. Note that since tie-breaking is not necessary for _compute_3d, this function does not
+    consider tie-breaking.
+
+    Example:
+        _compress_coordinate([20.0, 40.0, 30.0, 10.0]) == ([1, 3, 2, 0], [10.0, 20.0, 30.0, 40.0])
+    """
     assert len(coords.shape) == 1
-    sorted_indices = np.argsort(coords)
-    values = coords[sorted_indices]
-
-    r = np.zeros_like(sorted_indices)
-    r[sorted_indices] = np.arange(coords.shape[0], dtype=r.dtype)
-
-    return r, values
+    order = np.argsort(coords)
+    values = coords[order]
+    rev = np.zeros_like(order, dtype=int)
+    rev[order] = np.arange(coords.shape[0], dtype=int)
+    return rev, values
 
 
 def _compute_3d(sorted_pareto_sols: np.ndarray, reference_point: np.ndarray) -> float:
-    # Computes hypervolume for 3D points.
-    # Time complexity: O(N^2) where N is the number of points
-    #
-    # If X, Y, Z coordinates are permutations of 0, 1, ..., N-1 and reference_point is (N, N, N),
-    # the hypervolume is calculated as the number of voxels (x, y, z) which is dominated by
-    # at least one point. If we fix x and y, this number equals the minimum of z' over all points
-    # (x', y', z') satisfying x' <= x and y' <= y. This can be efficiently computed using
-    # cumulative minimum (`np.minimum.accumulate`).
-    # In general case in which coordinates are not permutations, we can use coordinate compression
-    # to reduce to the case where the coordinates form a permutation.
-
-    assert sorted_pareto_sols.shape[1] == 3 and reference_point.shape[0] == 3
-
+    """
+    Compute hypervolume in 3D. Time complexity is O(N^2) where N is sorted_pareto_sols.shape[0].
+    If X, Y, Z coordinates are permutations of 0, 1, ..., N-1 and reference_point is (N, N, N), the
+    hypervolume is calculated as the number of voxels (x, y, z) dominated by at least one point.
+    If we fix x and y, this number is equal to the minimum of z' over all points (x', y', z')
+    satisfying x' <= x and y' <= y. This can be efficiently computed using cumulative minimum
+    (`np.minimum.accumulate`). Non-permutation coordinates can be transformed into permutation
+    coordinates by using coordinate compression.
+    """
+    assert sorted_pareto_sols.shape[1] == reference_point.shape[0] == 3
     n = sorted_pareto_sols.shape[0]
-
-    # Since sorted_pareto_sols[:, 0] is sorted, we don't have to explicitly
-    # compress coordinates for this axis
-    x_vals = np.concatenate([sorted_pareto_sols[:, 0], reference_point[:1]])
-    y_ind, y_vals = _compress_coordinate(sorted_pareto_sols[:, 1])
-    y_vals = np.concatenate([y_vals, reference_point[1:2]])
-
-    z_max = reference_point[2]
-    zs = np.full((n, n), z_max)
-    for i in range(n):
-        zs[i, y_ind[i]] = sorted_pareto_sols[i, 2]
-
-    zs = np.minimum.accumulate(zs, axis=0)
-    zs = np.minimum.accumulate(zs, axis=1)
-
-    x_delta = x_vals[1:] - x_vals[:-1]
-    y_delta = y_vals[1:] - y_vals[:-1]
-
-    return np.sum((z_max - zs) * x_delta[:, np.newaxis] * y_delta[np.newaxis, :], axis=(0, 1))
+    y_indices, y_vals = _compress_coordinate(sorted_pareto_sols[:, 1])
+    dz = np.zeros((n, n), dtype=float)
+    dz[np.arange(n), y_indices] = reference_point[2] - sorted_pareto_sols[:, 2]
+    dz = np.maximum.accumulate(np.maximum.accumulate(dz, axis=0), axis=1)
+    # x_vals is already sorted, so no need to compress this coordinate.
+    x_vals = sorted_pareto_sols[:, 0]
+    dx = np.concat([x_vals[1:], reference_point[:1]]) - x_vals
+    dy = np.concat([y_vals[1:], reference_point[1:2]]) - y_vals
+    return np.sum(dz * dx[:, np.newaxis] * dy[np.newaxis, :], axis=(0, 1))
 
 
 def _compute_hv(sorted_loss_vals: np.ndarray, reference_point: np.ndarray) -> float:
