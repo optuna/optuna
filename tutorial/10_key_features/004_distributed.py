@@ -126,10 +126,11 @@ This change will make multi-threading a good option, especially for parallel opt
 import optuna
 from optuna.storages.journal import JournalStorage, JournalFileBackend
 from optuna.trial import Trial
+import threading
 
 
-def objective(trial: Trial):
-    print(f"{trial.number} Job Started!")
+def objective_1(trial: Trial):
+    print(f"Running trial {trial.number=} in {threading.current_thread().name}")
     x = trial.suggest_float("x", -10, 10)
     return (x - 2) ** 2
 
@@ -137,10 +138,10 @@ def objective(trial: Trial):
 if __name__ == "__main__":
     study = optuna.create_study(
         study_name="journal_storage_multiprocess",
-        storage=JournalStorage(JournalFileBackend(file_path="./journal_example.log")),
-        load_if_exists=True,  # This option avoids creating a new study with the same name.
+        storage=JournalStorage(JournalFileBackend(file_path="./journal.log")),
+        load_if_exists=True,
     )
-    study.optimize(objective, n_trials=30, n_jobs=10)
+    study.optimize(objective_1, n_trials=20, n_jobs=4)
 
 
 ################################################################################
@@ -165,21 +166,22 @@ if __name__ == "__main__":
 import optuna
 from multiprocessing import Pool
 from optuna.storages.journal import JournalStorage, JournalFileBackend
+import os
 
 
-def objective(trial):
+def objective_2(trial):
+    print(f"Running trial {trial.number=} in process {os.getpid()}")
     x = trial.suggest_float("x", -10, 10)
     return (x - 2) ** 2
 
 
-def run_optimization(job_id):
-    print("Running optimization in job:", job_id)
+def run_optimization(_):
     study = optuna.create_study(
         study_name="journal_storage_multiprocess",
-        storage=JournalStorage(JournalFileBackend(file_path="./journal_example.log")),
-        load_if_exists=True,  # This is useful for multi-process optimization
+        storage=JournalStorage(JournalFileBackend(file_path="./journal.log")),
+        load_if_exists=True,
     )
-    study.optimize(objective, n_trials=2)
+    study.optimize(objective_2, n_trials=3)
 
 
 if __name__ == "__main__":
