@@ -152,30 +152,7 @@ class Study:
             method.
 
         """
-
-        if self._is_multi_objective():
-            raise RuntimeError(
-                "A single best trial cannot be retrieved from a multi-objective study. Consider "
-                "using Study.best_trials to retrieve a list containing the best trials."
-            )
-
-        best_trial = self._storage.get_best_trial(self._study_id)
-
-        # If the trial with the best value is infeasible, select the best trial from all feasible
-        # trials. Note that the behavior is undefined when constrained optimization without the
-        # violation value in the best-valued trial.
-        constraints = best_trial.system_attrs.get(_CONSTRAINTS_KEY)
-        if constraints is not None and any([x > 0.0 for x in constraints]):
-            complete_trials = self.get_trials(deepcopy=False, states=[TrialState.COMPLETE])
-            feasible_trials = _get_feasible_trials(complete_trials)
-            if len(feasible_trials) == 0:
-                raise ValueError("No feasible trials are completed yet.")
-            if self.direction == StudyDirection.MAXIMIZE:
-                best_trial = max(feasible_trials, key=lambda t: cast(float, t.value))
-            else:
-                best_trial = min(feasible_trials, key=lambda t: cast(float, t.value))
-
-        return copy.deepcopy(best_trial)
+        return self._get_best_trial(deepcopy=True)
 
     @property
     def best_trials(self) -> list[FrozenTrial]:
@@ -307,6 +284,42 @@ class Study:
             return copy.deepcopy(filtered_trials) if deepcopy else filtered_trials
 
         return self._storage.get_all_trials(self._study_id, deepcopy=deepcopy, states=states)
+
+    def _get_best_trial(self, deepcopy: bool) -> FrozenTrial:
+        """Return the best trial in the study.
+
+        Args:
+            deepcopy: Flag to control whether to apply copy.deepcopy() to the trial.
+                     If False, returns the trial without deep copying for better performance.
+                     Note that if you set this to False, you shouldn't mutate any fields
+                     of the returned trial.
+
+        Returns:
+            A FrozenTrial object of the best trial.
+        """
+        if self._is_multi_objective():
+            raise RuntimeError(
+                "A single best trial cannot be retrieved from a multi-objective study. Consider "
+                "using Study.best_trials to retrieve a list containing the best trials."
+            )
+
+        best_trial = self._storage.get_best_trial(self._study_id)
+
+        # If the trial with the best value is infeasible, select the best trial from all feasible
+        # trials. Note that the behavior is undefined when constrained optimization without the
+        # violation value in the best-valued trial.
+        constraints = best_trial.system_attrs.get(_CONSTRAINTS_KEY)
+        if constraints is not None and any([x > 0.0 for x in constraints]):
+            complete_trials = self.get_trials(deepcopy=False, states=[TrialState.COMPLETE])
+            feasible_trials = _get_feasible_trials(complete_trials)
+            if len(feasible_trials) == 0:
+                raise ValueError("No feasible trials are completed yet.")
+            if self.direction == StudyDirection.MAXIMIZE:
+                best_trial = max(feasible_trials, key=lambda t: cast(float, t.value))
+            else:
+                best_trial = min(feasible_trials, key=lambda t: cast(float, t.value))
+
+        return copy.deepcopy(best_trial) if deepcopy else best_trial
 
     @property
     def user_attrs(self) -> dict[str, Any]:
@@ -1139,7 +1152,7 @@ class Study:
                 f"{trial.params}."
             )
             try:
-                best_trial = self.best_trial
+                best_trial = self._get_best_trial(deepcopy=False)
                 message += f" Best is trial {best_trial.number} with value: {best_trial.value}."
             except ValueError:
                 # If no feasible trials are completed yet, study.best_trial raises ValueError.
