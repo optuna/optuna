@@ -21,6 +21,11 @@ def _compress_coordinate(coords: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
 
     Example:
         _compress_coordinate([20.0, 40.0, 30.0, 10.0]) == ([1, 3, 2, 0], [10.0, 20.0, 30.0, 40.0])
+    
+    Note:
+        This function is equivalent to ``values, r = np.unique(coords, return_inverse=True)``
+        if ``coords`` does not have duplicated values. However, this function is quicker than
+        ``np.unique``.
     """
     assert len(coords.shape) == 1
     sorted_indices = np.argsort(coords)
