@@ -7,7 +7,7 @@ from optuna.study._multi_objective import _is_pareto_front
 
 def _compute_2d(sorted_pareto_sols: np.ndarray, reference_point: np.ndarray) -> float:
     assert sorted_pareto_sols.shape[1] == reference_point.shape[0] == 2
-    rect_diag_y = np.concat([reference_point[1:], sorted_pareto_sols[:-1, 1]])
+    rect_diag_y = np.concatenate([reference_point[1:], sorted_pareto_sols[:-1, 1]])
     edge_length_x = reference_point[0] - sorted_pareto_sols[:, 0]
     edge_length_y = rect_diag_y - sorted_pareto_sols[:, 1]
     return edge_length_x @ edge_length_y
@@ -21,7 +21,7 @@ def _compress_coordinate(coords: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
 
     Example:
         _compress_coordinate([20.0, 40.0, 30.0, 10.0]) == ([1, 3, 2, 0], [10.0, 20.0, 30.0, 40.0])
-    
+
     Note:
         This function is equivalent to ``values, r = np.unique(coords, return_inverse=True)``
         if ``coords`` does not have duplicated values. However, this function is quicker than
@@ -53,8 +53,8 @@ def _compute_3d(sorted_pareto_sols: np.ndarray, reference_point: np.ndarray) -> 
     z_delta = np.maximum.accumulate(np.maximum.accumulate(z_delta, axis=0), axis=1)
     # The x axis is already sorted, so no need to compress this coordinate.
     x_vals = sorted_pareto_sols[:, 0]
-    x_delta = np.concat([x_vals[1:], reference_point[:1]]) - x_vals
-    y_delta = np.concat([y_vals[1:], reference_point[1:2]]) - y_vals
+    x_delta = np.concatenate([x_vals[1:], reference_point[:1]]) - x_vals
+    y_delta = np.concatenate([y_vals[1:], reference_point[1:2]]) - y_vals
     return np.sum(z_delta * x_delta[:, np.newaxis] * y_delta[np.newaxis, :], axis=(0, 1))
 
 
