@@ -23,11 +23,11 @@ def _compress_coordinate(coords: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         _compress_coordinate([20.0, 40.0, 30.0, 10.0]) == ([1, 3, 2, 0], [10.0, 20.0, 30.0, 40.0])
     """
     assert len(coords.shape) == 1
-    order = np.argsort(coords)
-    values = coords[order]
-    rev = np.zeros_like(order, dtype=int)
-    rev[order] = np.arange(coords.shape[0], dtype=int)
-    return rev, values
+    sorted_indices = np.argsort(coords)
+    values = coords[sorted_indices]
+    r = np.zeros_like(sorted_indices, dtype=int)
+    r[sorted_indices] = np.arange(coords.shape[0], dtype=int)
+    return r, values
 
 
 def _compute_3d(sorted_pareto_sols: np.ndarray, reference_point: np.ndarray) -> float:
@@ -43,14 +43,14 @@ def _compute_3d(sorted_pareto_sols: np.ndarray, reference_point: np.ndarray) -> 
     assert sorted_pareto_sols.shape[1] == reference_point.shape[0] == 3
     n = sorted_pareto_sols.shape[0]
     y_indices, y_vals = _compress_coordinate(sorted_pareto_sols[:, 1])
-    dz = np.zeros((n, n), dtype=float)
-    dz[np.arange(n), y_indices] = reference_point[2] - sorted_pareto_sols[:, 2]
-    dz = np.maximum.accumulate(np.maximum.accumulate(dz, axis=0), axis=1)
-    # x_vals is already sorted, so no need to compress this coordinate.
+    z_delta = np.zeros((n, n), dtype=float)
+    z_delta[np.arange(n), y_indices] = reference_point[2] - sorted_pareto_sols[:, 2]
+    z_delta = np.maximum.accumulate(np.maximum.accumulate(z_delta, axis=0), axis=1)
+    # The x axis is already sorted, so no need to compress this coordinate.
     x_vals = sorted_pareto_sols[:, 0]
-    dx = np.concat([x_vals[1:], reference_point[:1]]) - x_vals
-    dy = np.concat([y_vals[1:], reference_point[1:2]]) - y_vals
-    return np.sum(dz * dx[:, np.newaxis] * dy[np.newaxis, :], axis=(0, 1))
+    x_delta = np.concat([x_vals[1:], reference_point[:1]]) - x_vals
+    y_delta = np.concat([y_vals[1:], reference_point[1:2]]) - y_vals
+    return np.sum(z_delta * x_delta[:, np.newaxis] * y_delta[np.newaxis, :], axis=(0, 1))
 
 
 def _compute_hv(sorted_loss_vals: np.ndarray, reference_point: np.ndarray) -> float:
