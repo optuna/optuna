@@ -13,28 +13,6 @@ def _compute_2d(sorted_pareto_sols: np.ndarray, reference_point: np.ndarray) -> 
     return edge_length_x @ edge_length_y
 
 
-def _compress_coordinate(coords: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-    """
-    Return a permutation of 0, 1, ..., N-1 preserving the original order as well as the sorted
-    sequence. Note that since tie-breaking is not necessary for _compute_3d, this function does not
-    consider tie-breaking.
-
-    Example:
-        _compress_coordinate([20.0, 40.0, 30.0, 10.0]) == ([1, 3, 2, 0], [10.0, 20.0, 30.0, 40.0])
-
-    Note:
-        This function is equivalent to ``values, r = np.unique(coords, return_inverse=True)``
-        if ``coords`` does not have duplicated values. However, this function is quicker than
-        ``np.unique``.
-    """
-    assert len(coords.shape) == 1
-    sorted_indices = np.argsort(coords)
-    values = coords[sorted_indices]
-    r = np.zeros_like(sorted_indices, dtype=int)
-    r[sorted_indices] = np.arange(coords.shape[0], dtype=int)
-    return r, values
-
-
 def _compute_3d(sorted_pareto_sols: np.ndarray, reference_point: np.ndarray) -> float:
     """
     Compute hypervolume in 3D. Time complexity is O(N^2) where N is sorted_pareto_sols.shape[0].
