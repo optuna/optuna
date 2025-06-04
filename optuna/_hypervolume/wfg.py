@@ -26,15 +26,15 @@ def _compute_3d(sorted_pareto_sols: np.ndarray, reference_point: np.ndarray) -> 
     assert sorted_pareto_sols.shape[1] == reference_point.shape[0] == 3
     n = sorted_pareto_sols.shape[0]
     y_order = np.argsort(sorted_pareto_sols[:, 1])
-    y_vals = sorted_pareto_sols[y_order, 1]
     z_delta = np.zeros((n, n), dtype=float)
     z_delta[y_order, np.arange(n)] = reference_point[2] - sorted_pareto_sols[y_order, 2]
     z_delta = np.maximum.accumulate(np.maximum.accumulate(z_delta, axis=0), axis=1)
     # The x axis is already sorted, so no need to compress this coordinate.
     x_vals = sorted_pareto_sols[:, 0]
+    y_vals = sorted_pareto_sols[y_order, 1]
     x_delta = np.concatenate([x_vals[1:], reference_point[:1]]) - x_vals
     y_delta = np.concatenate([y_vals[1:], reference_point[1:2]]) - y_vals
-    # NOTE(nabenabe): `np.vdot(A, B)` is a faster calculation of `np.sum(A * B)`.
+    # NOTE(nabenabe): Below is a faster calculation of `np.sum(A * B)`.
     return np.dot(np.dot(z_delta, y_delta), x_delta)
 
 
