@@ -34,7 +34,7 @@ def _compute_3d(sorted_pareto_sols: np.ndarray, reference_point: np.ndarray) -> 
     y_vals = sorted_pareto_sols[y_order, 1]
     x_delta = np.concatenate([x_vals[1:], reference_point[:1]]) - x_vals
     y_delta = np.concatenate([y_vals[1:], reference_point[1:2]]) - y_vals
-    # NOTE(nabenabe): Below is a faster calculation of `np.sum(A * B)`.
+    # NOTE(nabenabe): Below is the faster alternative of `np.sum(dx[:, None] * dy * dz)`.
     return np.dot(np.dot(z_delta, y_delta), x_delta)
 
 
