@@ -47,9 +47,10 @@ def _compute_3d(sorted_pareto_sols: np.ndarray, reference_point: np.ndarray) -> 
     """
     assert sorted_pareto_sols.shape[1] == reference_point.shape[0] == 3
     n = sorted_pareto_sols.shape[0]
-    y_indices, y_vals = _compress_coordinate(sorted_pareto_sols[:, 1])
+    y_order = np.argsort(sorted_pareto_sols[:, 1])
+    y_vals = sorted_pareto_sols[y_order, 1]
     z_delta = np.zeros((n, n), dtype=float)
-    z_delta[np.arange(n), y_indices] = reference_point[2] - sorted_pareto_sols[:, 2]
+    z_delta[y_order, np.arange(n)] = reference_point[2] - sorted_pareto_sols[y_order, 2]
     z_delta = np.maximum.accumulate(np.maximum.accumulate(z_delta, axis=0), axis=1)
     # The x axis is already sorted, so no need to compress this coordinate.
     x_vals = sorted_pareto_sols[:, 0]
