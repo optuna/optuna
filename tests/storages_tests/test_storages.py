@@ -603,7 +603,7 @@ def _test_set_and_get_trial_param_for_floats(storage: BaseStorage) -> None:
         float_distribution = FloatDistribution(low=value, high=value)
         categorical_distribution = CategoricalDistribution(choices=(value,))
         for distribution in (float_distribution, categorical_distribution):
-            # NOTE: suggest_float does not generate infinite values.
+            # NOTE: suggest_float does not generate infinite values and NaN.
             if isinstance(distribution, FloatDistribution) and not math.isfinite(value):
                 continue
             param_name = distribution.__class__.__name__ + key
