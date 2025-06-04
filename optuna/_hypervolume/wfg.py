@@ -56,7 +56,7 @@ def _compute_3d(sorted_pareto_sols: np.ndarray, reference_point: np.ndarray) -> 
     x_delta = np.concatenate([x_vals[1:], reference_point[:1]]) - x_vals
     y_delta = np.concatenate([y_vals[1:], reference_point[1:2]]) - y_vals
     # NOTE(nabenabe): `np.vdot(A, B)` is a faster calculation of `np.sum(A * B)`.
-    return np.vdot(x_delta[:, np.newaxis] * y_delta, z_delta)
+    return np.dot(np.dot(z_delta, y_delta), x_delta)
 
 
 def _compute_hv(sorted_loss_vals: np.ndarray, reference_point: np.ndarray) -> float:
