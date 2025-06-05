@@ -58,6 +58,17 @@ def _lazy_contribs_update(
     hv_selected = optuna._hypervolume.compute_hypervolume(
         selected_vecs[:-1], reference_point, assume_pareto=True
     )
+
+    # Since contribs manages the upper bound of contribution for each point,
+    # it can be updated by the difference HV with the selected point and the next candidate.
+    # Note: H(T v {j}) - H(T) <= H({t} v {j}) - H({t}) = H({j}) - H({t} ^ {j}).
+    # Here, t is the last selected point and j is the candidate. The inequality comes from
+    # submodularity and the equality comes from the inclusion-exclusion principle.
+    single_volume = np.abs(np.prod(pareto_loss_values - reference_point[np.newaxis, :], axis=1))
+    intersection = np.maximum(selected_vecs[-2:-1, :], pareto_loss_values)
+    intersection_volume = np.abs(np.prod(intersection - reference_point[np.newaxis, :], axis=1))
+    contribs = np.minimum(contribs, single_volume - intersection_volume)
+
     max_contrib = 0.0
     index_from_larger_upper_bound_contrib = np.argsort(-contribs)
     for i in index_from_larger_upper_bound_contrib:
