@@ -289,13 +289,14 @@ class Study:
         """Return the best trial in the study.
 
         Args:
-            deepcopy: Flag to control whether to apply copy.deepcopy() to the trial.
-                     If False, returns the trial without deep copying for better performance.
-                     Note that if you set this to False, you shouldn't mutate any fields
-                     of the returned trial.
+            deepcopy:
+                Flag to control whether to apply ``copy.deepcopy()`` to the trial.
+                If :obj:`False`, returns the trial without deep copying for better performance.
+                Note that if you set this to :obj:`False`, you shouldn't mutate any fields
+                of the returned trial.
 
         Returns:
-            A FrozenTrial object of the best trial.
+            A :class:`~optuna.trial.FrozenTrial` object of the best trial.
         """
         if self._is_multi_objective():
             raise RuntimeError(
