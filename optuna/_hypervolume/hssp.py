@@ -45,6 +45,7 @@ def _lazy_contribs_update(
     pareto_loss_values: np.ndarray,
     selected_vecs: np.ndarray,
     reference_point: np.ndarray,
+    hv_selected: float,
 ) -> np.ndarray:
     """Lazy update the hypervolume contributions.
 
@@ -55,9 +56,6 @@ def _lazy_contribs_update(
     H(S' v {j}) - H(S'), we start to update from i with a higher upper bound so that we can
     skip more HV calculations.
     """
-    hv_selected = optuna._hypervolume.compute_hypervolume(
-        selected_vecs[:-1], reference_point, assume_pareto=True
-    )
     max_contrib = 0.0
     index_from_larger_upper_bound_contrib = np.argsort(-contribs)
     for i in index_from_larger_upper_bound_contrib:
@@ -98,8 +96,10 @@ def _solve_hssp_on_unique_loss_vals(
     selected_indices = np.zeros(subset_size, dtype=int)
     selected_vecs = np.empty((subset_size, n_objectives))
     indices = np.arange(n_solutions)
+    hv = 0
     for k in range(subset_size):
         max_index = int(np.argmax(contribs))
+        hv += contribs[max_index]
         selected_indices[k] = indices[max_index]
         selected_vecs[k] = rank_i_loss_vals[max_index].copy()
         keep = np.ones(contribs.size, dtype=bool)
@@ -112,7 +112,7 @@ def _solve_hssp_on_unique_loss_vals(
             break
 
         contribs = _lazy_contribs_update(
-            contribs, rank_i_loss_vals, selected_vecs[: k + 2], reference_point
+            contribs, rank_i_loss_vals, selected_vecs[: k + 2], reference_point, hv
         )
 
     return rank_i_indices[selected_indices]
