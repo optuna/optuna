@@ -130,7 +130,7 @@ from optuna.trial import Trial
 import threading
 
 
-def objective_1(trial: Trial):
+def objective(trial: Trial):
     print(f"Running trial {trial.number=} in {threading.current_thread().name}")
     x = trial.suggest_float("x", -10, 10)
     return (x - 2) ** 2
@@ -141,7 +141,7 @@ study = optuna.create_study(
     storage=JournalStorage(JournalFileBackend(file_path="./journal.log")),
     load_if_exists=True,
 )
-study.optimize(objective_1, n_trials=20, n_jobs=4)
+study.optimize(objective, n_trials=20, n_jobs=4)
 
 
 ################################################################################
@@ -169,8 +169,13 @@ from optuna.storages import JournalStorage
 from optuna.storages.journal import JournalFileBackend
 import os
 
+import multiprocessing as mp
 
-def objective_2(trial):
+
+mp.set_start_method("fork")
+
+
+def objective(trial):
     print(f"Running trial {trial.number=} in process {os.getpid()}")
     x = trial.suggest_float("x", -10, 10)
     return (x - 2) ** 2
@@ -182,7 +187,7 @@ def run_optimization(_):
         storage=JournalStorage(JournalFileBackend(file_path="./journal.log")),
         load_if_exists=True,
     )
-    study.optimize(objective_2, n_trials=3)
+    study.optimize(objective, n_trials=3)
 
 
 with Pool(processes=4) as pool:
