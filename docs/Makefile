@@ -34,5 +34,6 @@ clean:
 	rm -f ../tutorial/**/*.log
 	rm -rf ../tutorial/20_recipes/artifacts
 	rm -f ../tutorial/20_recipes/journal.log
+	rm -f ../tutorial/10_key_features/journal.log
 	rm -rf ../tutorial/20_recipes/tmp
 	rm -f ../tutorial/20_recipes/best_atoms.png

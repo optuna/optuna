@@ -57,6 +57,7 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
     "sphinx.ext.githubpages",
+    "sphinx.ext.graphviz",
     "sphinx_copybutton",
     "sphinx_gallery.gen_gallery"
 ]
