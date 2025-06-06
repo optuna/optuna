@@ -104,6 +104,30 @@ def test_get_timeline_info(trial_sys_attrs: dict[str, Any] | None, infeasible: b
         assert bar.infeasible == infeasible
 
 
+@pytest.mark.parametrize(
+    "n_recent_trials, expected_count",
+    [
+        (None, 4),
+        (2, 2),
+        (100, 4),
+    ],
+)
+def test_get_timeline_info_n_recent_trials(
+    n_recent_trials: int | None, expected_count: int
+) -> None:
+    states = [TrialState.COMPLETE, TrialState.PRUNED, TrialState.FAIL, TrialState.RUNNING]
+    study = _create_study(states)
+    info = _get_timeline_info(study, n_recent_trials=n_recent_trials)
+
+    assert len(info.bars) == expected_count
+
+    if n_recent_trials is not None and n_recent_trials > 0 and expected_count > 0:
+        all_trials = study.get_trials(deepcopy=False)
+        expected_trials = all_trials[-expected_count:]
+        for bar, trial in zip(info.bars, expected_trials):
+            assert bar.number == trial.number
+
+
 def test_get_timeline_info_negative_elapsed_time(capsys: _pytest.capture.CaptureFixture) -> None:
     # We need to reconstruct our default handler to properly capture stderr.
     optuna.logging._reset_library_root_logger()
@@ -128,24 +152,44 @@ def test_get_timeline_info_negative_elapsed_time(capsys: _pytest.capture.Capture
 
 @parametrize_plot_timeline
 @pytest.mark.parametrize(
-    "trial_states",
+    "trial_states, n_recent_trials",
     [
-        [],
-        [TrialState.COMPLETE, TrialState.PRUNED, TrialState.FAIL, TrialState.RUNNING],
-        [TrialState.RUNNING, TrialState.FAIL, TrialState.PRUNED, TrialState.COMPLETE],
+        ([], None),
+        ([TrialState.COMPLETE, TrialState.PRUNED, TrialState.FAIL, TrialState.RUNNING], None),
+        ([TrialState.RUNNING, TrialState.FAIL, TrialState.PRUNED, TrialState.COMPLETE], None),
+        ([TrialState.COMPLETE, TrialState.PRUNED, TrialState.FAIL, TrialState.RUNNING], 2),
+        ([TrialState.RUNNING, TrialState.FAIL, TrialState.PRUNED, TrialState.COMPLETE], 1),
+        ([TrialState.COMPLETE, TrialState.PRUNED, TrialState.FAIL], 5),  # More than available.
     ],
 )
 def test_get_timeline_plot(
-    plot_timeline: Callable[..., Any], trial_states: list[TrialState]
+    plot_timeline: Callable[..., Any],
+    trial_states: list[TrialState],
+    n_recent_trials: int | None,
 ) -> None:
     study = _create_study(trial_states)
-    figure = plot_timeline(study)
+    figure = plot_timeline(study, n_recent_trials=n_recent_trials)
 
     if isinstance(figure, go.Figure):
         figure.write_image(BytesIO())
     else:
         plt.savefig(BytesIO())
         plt.close()
+
+
+@parametrize_plot_timeline
+@pytest.mark.parametrize(
+    "n_recent_trials",
+    [0, -1, -10],
+)
+def test_plot_timeline_n_recent_trials_invalid(
+    plot_timeline: Callable[..., Any],
+    n_recent_trials: int | None,
+) -> None:
+    states = [TrialState.COMPLETE, TrialState.PRUNED, TrialState.FAIL, TrialState.RUNNING]
+    study = _create_study(states)
+    with pytest.raises(ValueError):
+        plot_timeline(study, n_recent_trials=n_recent_trials)
 
 
 @parametrize_plot_timeline
