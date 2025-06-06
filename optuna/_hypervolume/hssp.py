@@ -64,7 +64,7 @@ def _lazy_contribs_update(
     # unselected index. Then, H(T v {j}) - H(T) <= H({t} v {j}) - H({t}) holds where the inequality
     # comes from submodularity. We use the inclusion-exclusion principle to calculate the RHS.
     single_volume = np.prod(reference_point - pareto_loss_values, axis=1)
-    intersection = np.maximum(selected_vecs[-2, :], pareto_loss_values)
+    intersection = np.maximum(selected_vecs[-2], pareto_loss_values)
     intersection_volume = np.prod(reference_point - intersection, axis=1)
     contribs = np.minimum(contribs, single_volume - intersection_volume)
 
