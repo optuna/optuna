@@ -123,6 +123,8 @@ This change will make multi-threading a good option, especially for parallel opt
 
 """
 
+# %%
+
 import optuna
 from optuna.storages import JournalStorage
 from optuna.storages.journal import JournalFileBackend
@@ -144,7 +146,7 @@ study = optuna.create_study(
 study.optimize(objective, n_trials=20, n_jobs=4)
 
 
-################################################################################
+# %%
 #
 # .. _multi-process-optimization:
 #
@@ -168,11 +170,6 @@ from multiprocessing import Pool
 from optuna.storages import JournalStorage
 from optuna.storages.journal import JournalFileBackend
 import os
-
-import multiprocessing as mp
-
-
-mp.set_start_method("fork")
 
 
 def objective(trial):
