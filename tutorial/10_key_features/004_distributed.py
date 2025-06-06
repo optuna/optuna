@@ -146,7 +146,7 @@ study = optuna.create_study(
 study.optimize(objective, n_trials=20, n_jobs=4)
 
 
-# %%
+################################################################################
 #
 # .. _multi-process-optimization:
 #
@@ -164,33 +164,50 @@ study.optimize(objective, n_trials=20, n_jobs=4)
 #
 # The following example shows how to use :class:`~optuna.storages.JournalStorage`
 # for multi-process optimization with ``multiprocessing`` module.
-
-import optuna
-from multiprocessing import Pool
-from optuna.storages import JournalStorage
-from optuna.storages.journal import JournalFileBackend
-import os
-
-
-def objective(trial):
-    print(f"Running trial {trial.number=} in process {os.getpid()}")
-    x = trial.suggest_float("x", -10, 10)
-    return (x - 2) ** 2
-
-
-def run_optimization(_):
-    study = optuna.create_study(
-        study_name="journal_storage_multiprocess",
-        storage=JournalStorage(JournalFileBackend(file_path="./journal.log")),
-        load_if_exists=True,
-    )
-    study.optimize(objective, n_trials=3)
-
-
-with Pool(processes=4) as pool:
-    pool.map(run_optimization, range(12))
-
-################################################################################
+#
+# .. code-block:: python
+#
+#    import optuna
+#    from multiprocessing import Pool
+#    from optuna.storages import JournalStorage
+#    from optuna.storages.journal import JournalFileBackend
+#    import os
+#
+#
+#    def objective(trial):
+#        print(f"Running trial {trial.number=} in process {os.getpid()}")
+#        x = trial.suggest_float("x", -10, 10)
+#        return (x - 2) ** 2
+#
+#
+#    def run_optimization(_):
+#        study = optuna.create_study(
+#            study_name="journal_storage_multiprocess",
+#            storage=JournalStorage(JournalFileBackend(file_path="./journal.log")),
+#            load_if_exists=True,
+#        )
+#        study.optimize(objective, n_trials=3)
+#
+#    if __name__ == "__main__":
+#        with Pool(processes=4) as pool:
+#            pool.map(run_optimization, range(12))
+#
+#
+# Out:
+#
+# .. code-block:: console
+#
+#    $ python3 multiprocess_example.py
+#    Running trial trial.number=1 in process 4605
+#    Running trial trial.number=2 in process 4604
+#    Running trial trial.number=3 in process 4607
+#    Running trial trial.number=4 in process 4606
+#    Running trial trial.number=5 in process 4605
+#    Running trial trial.number=6 in process 4607
+#    Running trial trial.number=7 in process 4604
+#    Running trial trial.number=8 in process 4605
+#    ...
+#
 # .. Note
 #
 #    You can use :class:`~optuna.storages.journal.JournalRedisBackend`
@@ -281,6 +298,8 @@ with Pool(processes=4) as pool:
 #    storage = get_storage("mysql+pymysql://username:password@127.0.0.1:3306/example")
 #    run_grpc_proxy_server(storage, host="localhost", port=13000)
 #
+#
+# Out:
 #
 # .. code-block:: console
 #
