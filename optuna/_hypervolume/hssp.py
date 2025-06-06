@@ -59,11 +59,10 @@ def _lazy_contribs_update(
         selected_vecs[:-1], reference_point, assume_pareto=True
     )
 
-    # Since contribs manages the upper bound of contribution for each point,
-    # it can be updated by the difference HV with the selected point and the next candidate.
-    # Note: H(T v {j}) - H(T) <= H({t} v {j}) - H({t}) = H({j}) - H({t} ^ {j}).
-    # Here, t is the last selected point and j is the candidate. The inequality comes from
-    # submodularity and the equality comes from the inclusion-exclusion principle.
+    # The HV difference only using the latest selected point and a candidate is a simple, yet
+    # obvious, contribution upper bound. Denote t as the latest selected index and j as an
+    # unselected index. Then, H(T v {j}) - H(T) <= H({t} v {j}) - H({t}) holds where the inequality
+    # comes from submodularity. We use the inclusion-exclusion principle to calculate the RHS.
     single_volume = np.prod(reference_point - pareto_loss_values, axis=1)
     intersection = np.maximum(selected_vecs[-2, :], pareto_loss_values)
     intersection_volume = np.prod(reference_point - intersection, axis=1)
