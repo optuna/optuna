@@ -36,6 +36,7 @@ from optuna.study._multi_objective import _get_pareto_front_trials
 from optuna.study._optimize import _optimize
 from optuna.study._study_direction import StudyDirection
 from optuna.study._study_summary import StudySummary  # NOQA
+from optuna.study._tell import _get_frozen_trial
 from optuna.study._tell import _tell_with_warning
 from optuna.trial import create_trial
 from optuna.trial import TrialState
@@ -654,14 +655,14 @@ class Study:
             A returned trial is deep copied thus user can modify it as needed.
         """
 
-        frozen_trial, _ = _tell_with_warning(
+        _tell_with_warning(
             study=self,
             trial=trial,
             value_or_values=values,
             state=state,
             skip_if_finished=skip_if_finished,
         )
-        return copy.deepcopy(frozen_trial)
+        return copy.deepcopy(_get_frozen_trial(self, trial))
 
     def set_user_attr(self, key: str, value: Any) -> None:
         """Set a user attribute to the study.
@@ -1110,33 +1111,34 @@ class Study:
 
         return False
 
-    def _log_completed_trial(self, trial: FrozenTrial) -> None:
+    def _log_completed_trial(
+        self, values: list[float], number: int, params: dict[str, Any]
+    ) -> None:
         if not _logger.isEnabledFor(logging.INFO):
             return
 
         metric_names = self.metric_names
 
-        if len(trial.values) > 1:
+        if len(values) > 1:
             trial_values: list[float] | dict[str, float]
             if metric_names is None:
-                trial_values = trial.values
+                trial_values = values
             else:
-                trial_values = {name: value for name, value in zip(metric_names, trial.values)}
+                trial_values = {name: value for name, value in zip(metric_names, values)}
             _logger.info(
                 "Trial {} finished with values: {} and parameters: {}.".format(
-                    trial.number, trial_values, trial.params
+                    number, trial_values, params
                 )
             )
-        elif len(trial.values) == 1:
+        elif len(values) == 1:
             trial_value: float | dict[str, float]
             if metric_names is None:
-                trial_value = trial.values[0]
+                trial_value = values[0]
             else:
-                trial_value = {metric_names[0]: trial.values[0]}
+                trial_value = {metric_names[0]: values[0]}
 
             message = (
-                f"Trial {trial.number} finished with value: {trial_value} and parameters: "
-                f"{trial.params}."
+                f"Trial {number} finished with value: {trial_value} and parameters: " f"{params}."
             )
             try:
                 best_trial = self.best_trial
