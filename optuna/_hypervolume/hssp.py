@@ -64,7 +64,7 @@ def _lazy_contribs_update(
     # Note: H(T v {j}) - H(T) <= H({t} v {j}) - H({t}) = H({j}) - H({t} ^ {j}).
     # Here, t is the last selected point and j is the candidate. The inequality comes from
     # submodularity and the equality comes from the inclusion-exclusion principle.
-    single_volume = np.abs(np.prod(pareto_loss_values - reference_point[np.newaxis, :], axis=1))
+    single_volume = np.prod(reference_point - pareto_loss_values, axis=1)
     intersection = np.maximum(selected_vecs[-2, :], pareto_loss_values)
     intersection_volume = np.prod(reference_point - intersection, axis=1)
     contribs = np.minimum(contribs, single_volume - intersection_volume)
