@@ -228,7 +228,11 @@ class FrozenTrial(BaseTrial):
     def suggest_discrete_uniform(self, name: str, low: float, high: float, q: float) -> float:
         return self.suggest_float(name, low, high, step=q)
 
-    @convert_positional_args(previous_positional_arg_names=_SUGGEST_INT_POSITIONAL_ARGS)
+    @convert_positional_args(
+        previous_positional_arg_names=_SUGGEST_INT_POSITIONAL_ARGS,
+        deprecated_version="3.5.0",
+        removed_version="5.0.0",
+    )
     def suggest_int(
         self, name: str, low: int, high: int, *, step: int = 1, log: bool = False
     ) -> int:
