@@ -4,15 +4,15 @@
 Easy Parallelization
 ====================
 
-Optuna supports multiple ways to run distributed optimization.
+Optuna supports multiple ways to run parallel optimization.
 
 #. :ref:`Multi-thread optimization<multi-thread-optimization>`:
 
-    * You can run multiple trials in parallel within a single process using the ``n_jobs`` parameter in :func:`~optuna.create_study()`.
+    * You can run multiple trials in parallel within a single process using the ``n_jobs`` parameter in :meth:`~optuna.study.Study.optimize()`.
 
 #. :ref:`Multi-process optimization<multi-process-optimization>`:
 
-    * You can run multiple processes sharing the same storage backend, such as RDB or Redis.
+    * You can run multiple processes sharing the same storage backend, such as RDB or a file.
 
 #. :ref:`Multi-node optimization<multi-node-optimization>`:
 
@@ -115,7 +115,7 @@ Multi-thread Optimization
 
 
 You can run multiple trials in parallel just by setting the ``n_jobs``
-parameter in :func:`~optuna.create_study()`.
+parameter in :meth:`~optuna.study.Study.optimize()`.
 
 Multi-thread optimization has traditionally been inefficient in Python due to the Global Interpreter Lock (GIL).
 However, starting from Python 3.14 (pending official release), the GIL is expected to be removed.
@@ -124,7 +124,8 @@ This change will make multi-threading a good option, especially for parallel opt
 """
 
 import optuna
-from optuna.storages.journal import JournalStorage, JournalFileBackend
+from optuna.storages import JournalStorage
+from optuna.storages.journal import JournalFileBackend
 from optuna.trial import Trial
 import threading
 
@@ -135,13 +136,12 @@ def objective_1(trial: Trial):
     return (x - 2) ** 2
 
 
-if __name__ == "__main__":
-    study = optuna.create_study(
-        study_name="journal_storage_multiprocess",
-        storage=JournalStorage(JournalFileBackend(file_path="./journal.log")),
-        load_if_exists=True,
-    )
-    study.optimize(objective_1, n_trials=20, n_jobs=4)
+study = optuna.create_study(
+    study_name="journal_storage_multithread",
+    storage=JournalStorage(JournalFileBackend(file_path="./journal.log")),
+    load_if_exists=True,
+)
+study.optimize(objective_1, n_trials=20, n_jobs=4)
 
 
 ################################################################################
@@ -160,12 +160,13 @@ if __name__ == "__main__":
 # Since :class:`~optuna.storages.InMemoryStorage` is not designed to be shared across processes,
 # it cannot be used for multi-process optimization.
 #
-# The following example shows how to use :class:`~optuna.storages.journal.JournalStorage`
+# The following example shows how to use :class:`~optuna.storages.JournalStorage`
 # for multi-process optimization with ``multiprocessing`` module.
 
 import optuna
 from multiprocessing import Pool
-from optuna.storages.journal import JournalStorage, JournalFileBackend
+from optuna.storages import JournalStorage
+from optuna.storages.journal import JournalFileBackend
 import os
 
 
@@ -184,9 +185,8 @@ def run_optimization(_):
     study.optimize(objective_2, n_trials=3)
 
 
-if __name__ == "__main__":
-    with Pool(processes=4) as pool:
-        pool.map(run_optimization, range(12))
+with Pool(processes=4) as pool:
+    pool.map(run_optimization, range(12))
 
 ################################################################################
 # .. Note
@@ -200,7 +200,7 @@ if __name__ == "__main__":
 # Multi-node Optimization
 # -----------------------
 #
-# Since :class:`~optuna.storages.JournalFileBackend` uses the host filesystem,
+# Since :class:`~optuna.storages.journal.JournalFileBackend` uses file locks on the local filesystem, it operates safely for multiple processes on the same host. However, if accessed simultaneously from multiple machines via NFS (or similar), the file locks may not work correctly, which could lead to race conditions.
 # it is likely to cause race conditions when accessed by multiple machines.
 #
 # Therefore, for multi-node optimization, it is recommended to use :class:`~optuna.storages.RDBStorage`.
@@ -304,6 +304,8 @@ if __name__ == "__main__":
 #    if __name__ == "__main__":
 #        storage = GrpcStorageProxy(host="localhost", port=13000)
 #        study = optuna.create_study(
-#            study_name="grpc_proxy_multinode", load_if_exists=True, storage=storage
+#            study_name="grpc_proxy_multinode",
+#            storage=storage,
+#            load_if_exists=True,
 #        )
 #        study.optimize(objective, n_trials=50)
