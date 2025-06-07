@@ -63,6 +63,14 @@ def warn_and_convert_inf(values: np.ndarray) -> np.ndarray:
 class Matern52Kernel(torch.autograd.Function):
     @staticmethod
     def forward(ctx: Any, squared_distance: torch.Tensor) -> torch.Tensor:
+        """
+        This method calculates `exp(sqrt5d) * (1/3 * sqrt5d ** 2 + sqrt5d + 1)` where
+        `sqrt5d = sqrt(5 * squared_distance)`.
+
+        Please note that automatic differentiation by PyTorch does not work well at
+        `squared_distance = 0` due to zero division, so we manually save the derivative, i.e.,
+        `-5/6 * (1 + sqrt5d) * exp(-sqrt5d)` for the exact derivative calculation.
+        """
         sqrt5d = torch.sqrt(5 * squared_distance)
         exp_part = torch.exp(-sqrt5d)
         val = exp_part * ((5 / 3) * squared_distance + sqrt5d + 1)
@@ -77,15 +85,6 @@ class Matern52Kernel(torch.autograd.Function):
         # then deriv := df/dx, grad := dg/df, and deriv * grad = df/dx * dg/df = dg/dx.
         (deriv,) = ctx.saved_tensors
         return deriv * grad
-
-
-def matern52_kernel_from_squared_distance(squared_distance: torch.Tensor) -> torch.Tensor:
-    # sqrt5d = sqrt(5 * squared_distance)
-    # exp(sqrt5d) * (1/3 * sqrt5d ** 2 + sqrt5d + 1)
-    #
-    # We cannot let PyTorch differentiate the above expression because
-    # the gradient runs into 0/0 at squared_distance=0.
-    return Matern52Kernel.apply(squared_distance)  # type: ignore
 
 
 @dataclass(frozen=True)
@@ -107,8 +106,8 @@ def kernel(
     of (..., n_A, len(params)) and (..., n_B, len(params)).
 
     If x1 and x2 have the shape of (len(params), ), kernel(x1, x2) is computed as:
-        kernel_scale * matern52_kernel_from_squared_distance(
-            d2(x1, x2) * inverse_squared_lengthscales
+        kernel_scale * Matern52Kernel.apply(
+            d2(x1, x2) @ inverse_squared_lengthscales
         )
     where if x1[i] is continuous, d2(x1, x2)[i] = (x1[i] - x2[i]) ** 2 and if x1[i] is categorical,
     d2(x1, x2)[i] = int(x1[i] != x2[i]).
@@ -117,12 +116,7 @@ def kernel(
     d2 = (X1[..., :, None, :] - X2[..., None, :, :]) ** 2
     d2[..., is_categorical] = (d2[..., is_categorical] > 0.0).type(torch.float64)
     d2 = (d2 * kernel_params.inverse_squared_lengthscales).sum(dim=-1)
-    return matern52_kernel_from_squared_distance(d2) * kernel_params.kernel_scale
-
-
-def kernel_at_zero_distance(kernel_params: KernelParamsTensor) -> torch.Tensor:
-    # kernel(x, x) = kernel_scale
-    return kernel_params.kernel_scale
+    return Matern52Kernel.apply(d2) * kernel_params.kernel_scale  # type: ignore
 
 
 def posterior(
@@ -134,7 +128,7 @@ def posterior(
     x: torch.Tensor,
 ) -> tuple[torch.Tensor, torch.Tensor]:  # (mean: (...,), var: (...,))
     cov_fx_fX = kernel(is_categorical, kernel_params, x[..., None, :], X)[..., 0, :]
-    cov_fx_fx = kernel_at_zero_distance(kernel_params)
+    cov_fx_fx = kernel_params.kernel_scale  # kernel(x, x) = kernel_scale
 
     # mean = cov_fx_fX @ inv(cov_fX_fX + noise * I) @ Y
     # var = cov_fx_fx - cov_fx_fX @ inv(cov_fX_fX + noise * I) @ cov_fx_fX.T
@@ -142,7 +136,7 @@ def posterior(
     mean = cov_fx_fX @ cov_Y_Y_inv_Y
     var = cov_fx_fx - (cov_fx_fX * (cov_fx_fX @ cov_Y_Y_inv)).sum(dim=-1)
     # We need to clamp the variance to avoid negative values due to numerical errors.
-    return (mean, torch.clamp(var, min=0.0))
+    return mean, torch.clamp(var, min=0.0)
 
 
 def marginal_log_likelihood(
