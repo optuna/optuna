@@ -775,3 +775,32 @@ However, if it is necessary to remove artifacts from a Python script, users can 
         for artifact_meta in get_all_artifact_meta(study):
             # Remove the artifacts uploaded to ``base_path``.
             artifact_store.remove(artifact_meta.artifact_id)
+
+How can I resolve case sensitivity issues with MySQL?
+------------------------------------------------------
+
+By default, MySQL performs case-insensitive string comparisons.
+However, Optuna treats string parameters in a case-sensitive manner.
+This can lead to conflicts when parameter names differ only by case.
+
+For example,
+
+.. code-block:: python
+
+    def objective(trial):
+        a = trial.suggest_int("a", 0, 10)
+        A = trial.suggest_int("A", 0, 10)
+        return a + A
+
+In this case, "a" and "A" are treated as distinct by Optuna, but MySQL considers them the same due to its default collation settings.
+As a result, an error may occur when trying to register these parameters in the database.
+
+To address this issue, there are some workarounds.
+
+1. Use a different storage backend.
+    Please consider using PostgreSQL or SQLite, which supports case-sensitive handling.
+2. Rename the parameters to avoid case conflicts.
+    For example, use "a" and "b" instead of "a" and "A".
+3. Change MySQL’s collation settings to be case-sensitive.
+    You can configure case sensitivity at the database, table, or column level.
+    For more details, refer to `the MySQL documentation <https://dev.mysql.com/doc/refman/9.3/en/charset-syntax.html>`__.
