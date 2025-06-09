@@ -108,7 +108,7 @@ jobs:
 
     - name: Install DB bindings
       run: |
-        pip install --progress-bar off PyMySQL cryptography psycopg2-binary redis
+        pip install --progress-bar off PyMySQL cryptography psycopg2-binary psycopg redis
 
     - name: Output installed packages
       run: |
