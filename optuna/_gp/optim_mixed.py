@@ -304,7 +304,7 @@ def optimize_acqf_mixed(
     probs = np.exp(f_vals - f_vals[max_i])
     probs[max_i] = 0.0  # We already picked the best param, so remove it from roulette.
     probs /= probs.sum()
-    n_non_zero_probs_improvement = np.count_nonzero(probs > 0.0)
+    n_non_zero_probs_improvement = int(np.count_nonzero(probs > 0.0))
     # n_additional_warmstart becomes smaller when study starts to converge.
     n_additional_warmstart = min(
         n_local_search - len(warmstart_normalized_params_array) - 1, n_non_zero_probs_improvement
