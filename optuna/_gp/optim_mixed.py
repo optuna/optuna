@@ -307,8 +307,7 @@ def optimize_acqf_mixed(
     n_non_zero_probs_improvement = np.count_nonzero(probs > 0.0)
     # n_additional_warmstart becomes smaller when study starts to converge.
     n_additional_warmstart = min(
-        n_local_search - len(warmstart_normalized_params_array) - 1,
-        int(n_non_zero_probs_improvement),
+        n_local_search - len(warmstart_normalized_params_array) - 1, n_non_zero_probs_improvement
     )
     if n_additional_warmstart == n_non_zero_probs_improvement:
         _logger.warning("Study already converged, so the number of local search is reduced.")
