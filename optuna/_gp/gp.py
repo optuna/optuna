@@ -69,7 +69,7 @@ class Matern52Kernel(torch.autograd.Function):
 
         Please note that automatic differentiation by PyTorch does not work well at
         `squared_distance = 0` due to zero division, so we manually save the derivative, i.e.,
-        `-5/6 * (1 + sqrt5d) * exp(-sqrt5d)` for the exact derivative calculation.
+        `-5/6 * (1 + sqrt5d) * exp(-sqrt5d)`, for the exact derivative calculation.
         """
         sqrt5d = torch.sqrt(5 * squared_distance)
         exp_part = torch.exp(-sqrt5d)
