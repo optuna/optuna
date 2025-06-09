@@ -101,14 +101,14 @@ def _fast_non_domination_rank(
 
     # First, we calculate the domination rank for feasible trials.
     ranks[is_feasible] = _calculate_nondomination_rank(loss_values[is_feasible], n_below=n_below)
-    n_below -= np.count_nonzero(is_feasible)
+    n_below -= int(np.count_nonzero(is_feasible))
 
     # Second, we calculate the domination rank for infeasible trials.
     top_rank_infeasible = np.max(ranks[is_feasible], initial=-1) + 1
     ranks[is_infeasible] = top_rank_infeasible + _calculate_nondomination_rank(
         penalty[is_infeasible][:, np.newaxis], n_below=n_below
     )
-    n_below -= np.count_nonzero(is_infeasible)
+    n_below -= int(np.count_nonzero(is_infeasible))
 
     # Third, we calculate the domination rank for trials with no penalty information.
     top_rank_penalty_nan = np.max(ranks[~is_penalty_nan], initial=-1) + 1
