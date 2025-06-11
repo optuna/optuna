@@ -29,6 +29,9 @@ jobs:
       run: |
         python -m pip install -U pip
         pip install --progress-bar off -U .[checking]
+        # TODO(c-bata): Remove the version constraint on blackdoc
+        # See https://github.com/optuna/optuna/issues/6146 for details.
+        pip install --progress-bar off "blackdoc<0.3.10"
 
     - name: Output installed packages
       run: |
