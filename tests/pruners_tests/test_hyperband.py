@@ -240,3 +240,22 @@ def test_hyperband_pruner_and_grid_sampler() -> None:
 
     trials = study.trials
     assert len(trials) == 9
+
+
+def test_hyperband_pruner_and_brute_force_sampler() -> None:
+    def objective(trial: optuna.trial.Trial) -> int:
+        x = trial.suggest_int("x", 0, 2)
+        y = trial.suggest_int("y", 0, 2)
+        for i in range(10):
+            trial.report(step=i, value=i * (x + y) / 10)
+            if trial.should_prune():
+                raise optuna.TrialPruned
+        return x + y
+
+    sampler = optuna.samplers.BruteForceSampler()
+    pruner = optuna.pruners.HyperbandPruner()
+    study = optuna.create_study(sampler=sampler, pruner=pruner)
+    study.optimize(objective)
+
+    trials = study.trials
+    assert len(trials) == 9

@@ -199,7 +199,11 @@ class BruteForceSampler(BaseSampler):
     ) -> Any:
         exclude_running = not self._avoid_premature_stop
 
-        trials = study.get_trials(
+        # We directly query the storage to get trials here instead of `study.get_trials`,
+        # since some pruners such as `HyperbandPruner` use the study transformed
+        # to filter trials. See https://github.com/optuna/optuna/issues/2327 for details.
+        trials = study._storage.get_all_trials(
+            study._study_id,
             deepcopy=False,
             states=(
                 TrialState.COMPLETE,
@@ -231,7 +235,11 @@ class BruteForceSampler(BaseSampler):
     ) -> None:
         exclude_running = not self._avoid_premature_stop
 
-        trials = study.get_trials(
+        # We directly query the storage to get trials here instead of `study.get_trials`,
+        # since some pruners such as `HyperbandPruner` use the study transformed
+        # to filter trials. See https://github.com/optuna/optuna/issues/2327 for details.
+        trials = study._storage.get_all_trials(
+            study._study_id,
             deepcopy=False,
             states=(
                 TrialState.COMPLETE,

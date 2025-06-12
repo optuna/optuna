@@ -6,11 +6,36 @@ from optuna.study._multi_objective import _is_pareto_front
 
 
 def _compute_2d(sorted_pareto_sols: np.ndarray, reference_point: np.ndarray) -> float:
-    assert sorted_pareto_sols.shape[1] == 2 and reference_point.shape[0] == 2
-    rect_diag_y = np.append(reference_point[1], sorted_pareto_sols[:-1, 1])
+    assert sorted_pareto_sols.shape[1] == reference_point.shape[0] == 2
+    rect_diag_y = np.concatenate([reference_point[1:], sorted_pareto_sols[:-1, 1]])
     edge_length_x = reference_point[0] - sorted_pareto_sols[:, 0]
     edge_length_y = rect_diag_y - sorted_pareto_sols[:, 1]
     return edge_length_x @ edge_length_y
+
+
+def _compute_3d(sorted_pareto_sols: np.ndarray, reference_point: np.ndarray) -> float:
+    """
+    Compute hypervolume in 3D. Time complexity is O(N^2) where N is sorted_pareto_sols.shape[0].
+    If X, Y, Z coordinates are permutations of 0, 1, ..., N-1 and reference_point is (N, N, N), the
+    hypervolume is calculated as the number of voxels (x, y, z) dominated by at least one point.
+    If we fix x and y, this number is equal to the minimum of z' over all points (x', y', z')
+    satisfying x' <= x and y' <= y. This can be efficiently computed using cumulative minimum
+    (`np.minimum.accumulate`). Non-permutation coordinates can be transformed into permutation
+    coordinates by using coordinate compression.
+    """
+    assert sorted_pareto_sols.shape[1] == reference_point.shape[0] == 3
+    n = sorted_pareto_sols.shape[0]
+    y_order = np.argsort(sorted_pareto_sols[:, 1])
+    z_delta = np.zeros((n, n), dtype=float)
+    z_delta[y_order, np.arange(n)] = reference_point[2] - sorted_pareto_sols[y_order, 2]
+    z_delta = np.maximum.accumulate(np.maximum.accumulate(z_delta, axis=0), axis=1)
+    # The x axis is already sorted, so no need to compress this coordinate.
+    x_vals = sorted_pareto_sols[:, 0]
+    y_vals = sorted_pareto_sols[y_order, 1]
+    x_delta = np.concatenate([x_vals[1:], reference_point[:1]]) - x_vals
+    y_delta = np.concatenate([y_vals[1:], reference_point[1:2]]) - y_vals
+    # NOTE(nabenabe): Below is the faster alternative of `np.sum(dx[:, None] * dy * dz)`.
+    return np.dot(np.dot(z_delta, y_delta), x_delta)
 
 
 def _compute_hv(sorted_loss_vals: np.ndarray, reference_point: np.ndarray) -> float:
@@ -125,6 +150,13 @@ def compute_hypervolume(
 
     if reference_point.shape[0] == 2:
         hv = _compute_2d(sorted_pareto_sols, reference_point)
+    elif reference_point.shape[0] == 3:
+        # NOTE: For 3D points, we always prefer _compute_3d to _compute_hv because the time
+        # complexity of _compute_3d is O(N^2), while that of _compute_nd is \\Omega(N^3)
+        # - It calls _compute_exclusive_hv with i points for i = 0, 1, ..., N-1
+        # - _compute_exclusive_hv calls _is_pareto_front, which is quadratic
+        #   with the number of points
+        hv = _compute_3d(sorted_pareto_sols, reference_point)
     else:
         hv = _compute_hv(sorted_pareto_sols, reference_point)
 

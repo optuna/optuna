@@ -105,7 +105,7 @@ def test_set_value() -> None:
 def test_set_values() -> None:
     trial = _create_trial()
     trial.values = (0.1, 0.2)
-    assert trial.values == [0.1, 0.2]  # type: ignore[comparison-overlap]
+    assert trial.values == [0.1, 0.2]
 
     trial = _create_trial()
     trial.values = [0.1, 0.2]

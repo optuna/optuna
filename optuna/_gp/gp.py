@@ -56,7 +56,7 @@ def warn_and_convert_inf(values: np.ndarray) -> np.ndarray:
 
 class Matern52Kernel(torch.autograd.Function):
     @staticmethod
-    def forward(ctx: Any, squared_distance: torch.Tensor) -> torch.Tensor:  # type: ignore
+    def forward(ctx: Any, squared_distance: torch.Tensor) -> torch.Tensor:
         sqrt5d = torch.sqrt(5 * squared_distance)
         exp_part = torch.exp(-sqrt5d)
         val = exp_part * ((5 / 3) * squared_distance + sqrt5d + 1)
@@ -66,7 +66,7 @@ class Matern52Kernel(torch.autograd.Function):
         return val
 
     @staticmethod
-    def backward(ctx: Any, grad: torch.Tensor) -> torch.Tensor:  # type: ignore
+    def backward(ctx: Any, grad: torch.Tensor) -> torch.Tensor:
         # Let x be squared_distance, f(x) be forward(ctx, x), and g(f) be a provided function,
         # then deriv := df/dx, grad := dg/df, and deriv * grad = df/dx * dg/df = dg/dx.
         (deriv,) = ctx.saved_tensors
