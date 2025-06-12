@@ -21,7 +21,6 @@ class _ScottParzenEstimator(_ParzenEstimator):
         param_name: str,
         dist: IntDistribution | CategoricalDistribution,
         counts: np.ndarray,
-        consider_prior: bool,
         prior_weight: float,
     ):
         assert isinstance(dist, (CategoricalDistribution, IntDistribution))
@@ -36,7 +35,6 @@ class _ScottParzenEstimator(_ParzenEstimator):
             observations={param_name: np.arange(self._n_steps)[counts > 0.0]},
             search_space={param_name: dist},
             parameters=_ParzenEstimatorParameters(
-                consider_prior=consider_prior,
                 prior_weight=prior_weight,
                 consider_magic_clip=False,
                 consider_endpoints=False,
@@ -75,9 +73,8 @@ class _ScottParzenEstimator(_ParzenEstimator):
         # To avoid numerical errors. 0.5/1.64 means 1.64sigma (=90%) will fit in the target grid.
         sigma_min = 0.5 / 1.64
         sigmas = np.full_like(mus, max(sigma_est, sigma_min), dtype=np.float64)
-        if parameters.consider_prior:
-            mus = np.append(mus, [0.5 * (low + high)])
-            sigmas = np.append(sigmas, [1.0 * (high - low + 1)])
+        mus = np.append(mus, [0.5 * (low + high)])
+        sigmas = np.append(sigmas, [1.0 * (high - low + 1)])
 
         return _BatchedDiscreteTruncNormDistributions(
             mu=mus, sigma=sigmas, low=0, high=self.n_steps - 1, step=1
@@ -106,8 +103,8 @@ def _get_grids_and_grid_indices_of_trials(
         n_steps = min(round((dist.high - dist.low) / dist.step) + 1, n_steps)
 
     scaler = np.log if dist.log else np.asarray
-    grids = np.linspace(scaler(dist.low), scaler(dist.high), n_steps)  # type: ignore[operator]
-    params = scaler([t.params[param_name] for t in trials])  # type: ignore[operator]
+    grids = np.linspace(scaler(dist.low), scaler(dist.high), n_steps)
+    params = scaler([t.params[param_name] for t in trials])
     step_size = grids[1] - grids[0]
     # grids[indices[n] - 1] < param - step_size / 2 <= grids[indices[n]]
     indices = np.searchsorted(grids, params - step_size / 2)
@@ -144,7 +141,6 @@ def _build_parzen_estimator(
     dist: BaseDistribution,
     trials: list[FrozenTrial],
     n_steps: int,
-    consider_prior: bool,
     prior_weight: float,
 ) -> _ScottParzenEstimator:
     rounded_dist: IntDistribution | CategoricalDistribution
@@ -158,6 +154,4 @@ def _build_parzen_estimator(
         assert False, f"Got an unknown dist with the type {type(dist)}."
 
     # counts.astype(float) is necessary for weight calculation in ParzenEstimator.
-    return _ScottParzenEstimator(
-        param_name, rounded_dist, counts.astype(np.float64), consider_prior, prior_weight
-    )
+    return _ScottParzenEstimator(param_name, rounded_dist, counts.astype(np.float64), prior_weight)

@@ -23,6 +23,7 @@ import uuid
 import optuna
 from optuna import distributions
 from optuna import version
+from optuna._experimental import warn_experimental_argument
 from optuna._imports import _LazyImport
 from optuna._typing import JSONSerializable
 from optuna.storages._base import BaseStorage
@@ -141,6 +142,9 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
             ``heartbeat_interval`` must be :obj:`None` or a positive integer.
 
             .. note::
+                Heartbeat mechanism is experimental. API would change in the future.
+
+            .. note::
                 The heartbeat is supposed to be used with :meth:`~optuna.study.Study.optimize`.
                 If you use :meth:`~optuna.study.Study.ask` and
                 :meth:`~optuna.study.Study.tell` instead, it will not work.
@@ -206,8 +210,11 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         self.engine_kwargs = engine_kwargs or {}
         self.url = self._fill_storage_url_template(url)
         self.skip_compatibility_check = skip_compatibility_check
-        if heartbeat_interval is not None and heartbeat_interval <= 0:
-            raise ValueError("The value of `heartbeat_interval` should be a positive integer.")
+        if heartbeat_interval is not None:
+            if heartbeat_interval <= 0:
+                raise ValueError("The value of `heartbeat_interval` should be a positive integer.")
+            else:
+                warn_experimental_argument("heartbeat_interval")
         if grace_period is not None and grace_period <= 0:
             raise ValueError("The value of `grace_period` should be a positive integer.")
         self.heartbeat_interval = heartbeat_interval

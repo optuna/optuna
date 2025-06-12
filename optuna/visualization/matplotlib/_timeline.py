@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from optuna._experimental import experimental_func
 from optuna.study import Study
 from optuna.trial import TrialState
@@ -9,6 +11,7 @@ from optuna.visualization.matplotlib._matplotlib_imports import _imports
 
 if _imports.is_successful():
     from optuna.visualization.matplotlib._matplotlib_imports import Axes
+    from optuna.visualization.matplotlib._matplotlib_imports import DateFormatter
     from optuna.visualization.matplotlib._matplotlib_imports import matplotlib
     from optuna.visualization.matplotlib._matplotlib_imports import plt
 
@@ -17,7 +20,7 @@ _INFEASIBLE_KEY = "INFEASIBLE"
 
 
 @experimental_func("3.2.0")
-def plot_timeline(study: Study) -> "Axes":
+def plot_timeline(study: Study, n_recent_trials: int | None = None) -> "Axes":
     """Plot the timeline of a study.
 
     .. seealso::
@@ -27,12 +30,23 @@ def plot_timeline(study: Study) -> "Axes":
         study:
             A :class:`~optuna.study.Study` object whose trials are plotted with
             their lifetime.
+        n_recent_trials:
+            The number of recent trials to plot. If :obj:`None`, all trials are plotted.
+            If specified, only the most recent ``n_recent_trials`` will be displayed.
+            Must be a positive integer.
 
     Returns:
-        A :class:`matplotlib.axes.Axes` object.
+        A :class:`plotly.graph_objects.Figure` object.
+
+    Raises:
+        ValueError: if ``n_recent_trials`` is 0 or negative.
     """
+
+    if n_recent_trials is not None and n_recent_trials <= 0:
+        raise ValueError("n_recent_trials must be a positive integer or None.")
+
     _imports.check()
-    info = _get_timeline_info(study)
+    info = _get_timeline_info(study, n_recent_trials)
     return _get_timeline_plot(info)
 
 
@@ -62,10 +76,14 @@ def _get_timeline_plot(info: _TimelineInfo) -> "Axes":
     if len(info.bars) == 0:
         return ax
 
+    # According to the `ax.barh` docstring, using list[timedelta] as width and list[datetime] as
+    # left is supported, but mypy does not recognize it. Please refer to the following link for
+    # more details:
+    # https://github.com/matplotlib/matplotlib/blob/v3.10.1/lib/matplotlib/axes/_axes.py#L2701-L2836
     ax.barh(
         y=[b.number for b in info.bars],
-        width=[b.complete - b.start for b in info.bars],
-        left=[b.start for b in info.bars],
+        width=[b.complete - b.start for b in info.bars],  # type: ignore[arg-type]
+        left=[b.start for b in info.bars],  # type: ignore[arg-type]
         color=[_cm[_get_state_name(b)] for b in info.bars],
     )
 
@@ -83,8 +101,13 @@ def _get_timeline_plot(info: _TimelineInfo) -> "Axes":
     last_complete_time = max([b.complete for b in info.bars])
     margin = (last_complete_time - first_start_time) * 0.05
 
-    ax.set_xlim(right=last_complete_time + margin, left=first_start_time - margin)
+    # Officially, ax.set_xlim expects arguments right and left to be float,
+    # but ax.barh() accepts datetime, so we leave the type as datetime.
+    ax.set_xlim(
+        right=last_complete_time + margin,  # type: ignore[arg-type]
+        left=first_start_time - margin,  # type: ignore[arg-type]
+    )
     ax.yaxis.set_major_locator(matplotlib.ticker.MaxNLocator(integer=True))
-    ax.xaxis.set_major_formatter(matplotlib.dates.DateFormatter("%H:%M:%S"))
+    ax.xaxis.set_major_formatter(DateFormatter("%H:%M:%S"))  # type: ignore[no-untyped-call]
     plt.gcf().autofmt_xdate()
     return ax

@@ -235,7 +235,11 @@ class Trial(BaseTrial):
 
         return self.suggest_float(name, low, high, step=q)
 
-    @convert_positional_args(previous_positional_arg_names=_SUGGEST_INT_POSITIONAL_ARGS)
+    @convert_positional_args(
+        previous_positional_arg_names=_SUGGEST_INT_POSITIONAL_ARGS,
+        deprecated_version="3.5.0",
+        removed_version="5.0.0",
+    )
     def suggest_int(
         self, name: str, low: int, high: int, *, step: int = 1, log: bool = False
     ) -> int:
@@ -689,9 +693,7 @@ class Trial(BaseTrial):
     def _get_latest_trial(self) -> FrozenTrial:
         # TODO(eukaryo): Remove this method after `system_attrs` property is removed.
         latest_trial = copy.copy(self._cached_frozen_trial)
-        latest_trial.system_attrs = _LazyTrialSystemAttrs(  # type: ignore[assignment]
-            self._trial_id, self.storage
-        )
+        latest_trial.system_attrs = _LazyTrialSystemAttrs(self._trial_id, self.storage)
         return latest_trial
 
     @property

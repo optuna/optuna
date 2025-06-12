@@ -15,6 +15,14 @@ from optuna.storages.journal import JournalRedisBackend
 from optuna.study import StudyDirection
 from optuna.trial import TrialState
 
+from .test_storages import _test_set_and_get_study_system_attrs_for_floats
+from .test_storages import _test_set_and_get_study_user_attrs_for_floats
+from .test_storages import _test_set_and_get_trial_param_for_floats
+from .test_storages import _test_set_and_get_trial_system_attr_for_floats
+from .test_storages import _test_set_and_get_trial_user_attr_for_floats
+from .test_storages import _test_set_trial_intermediate_value_for_floats
+from .test_storages import _test_set_trial_state_values_for_floats
+
 
 _STUDY_NAME = "_test_multiprocess"
 
@@ -211,3 +219,31 @@ def test_get_best_trial(direction: StudyDirection, values: Sequence[float]) -> N
     )
     expected_value = max(values) if direction == StudyDirection.MAXIMIZE else min(values)
     assert study.best_value == expected_value
+
+
+def test_set_and_get_study_user_attrs_for_floats() -> None:
+    _test_set_and_get_study_user_attrs_for_floats(get_storage())
+
+
+def test_set_and_get_study_system_attrs_for_floats() -> None:
+    _test_set_and_get_study_system_attrs_for_floats(get_storage())
+
+
+def test_set_trial_state_values_for_floats() -> None:
+    _test_set_trial_state_values_for_floats(get_storage())
+
+
+def test_set_and_get_trial_param_for_floats() -> None:
+    _test_set_and_get_trial_param_for_floats(get_storage())
+
+
+def test_set_trial_intermediate_value_for_floats() -> None:
+    _test_set_trial_intermediate_value_for_floats(get_storage())
+
+
+def test_set_and_get_trial_user_attr_for_floats() -> None:
+    _test_set_and_get_trial_user_attr_for_floats(get_storage())
+
+
+def test_set_and_get_trial_system_attr_for_floats() -> None:
+    _test_set_and_get_trial_system_attr_for_floats(get_storage())

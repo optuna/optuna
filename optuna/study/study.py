@@ -152,30 +152,7 @@ class Study:
             method.
 
         """
-
-        if self._is_multi_objective():
-            raise RuntimeError(
-                "A single best trial cannot be retrieved from a multi-objective study. Consider "
-                "using Study.best_trials to retrieve a list containing the best trials."
-            )
-
-        best_trial = self._storage.get_best_trial(self._study_id)
-
-        # If the trial with the best value is infeasible, select the best trial from all feasible
-        # trials. Note that the behavior is undefined when constrained optimization without the
-        # violation value in the best-valued trial.
-        constraints = best_trial.system_attrs.get(_CONSTRAINTS_KEY)
-        if constraints is not None and any([x > 0.0 for x in constraints]):
-            complete_trials = self.get_trials(deepcopy=False, states=[TrialState.COMPLETE])
-            feasible_trials = _get_feasible_trials(complete_trials)
-            if len(feasible_trials) == 0:
-                raise ValueError("No feasible trials are completed yet.")
-            if self.direction == StudyDirection.MAXIMIZE:
-                best_trial = max(feasible_trials, key=lambda t: cast(float, t.value))
-            else:
-                best_trial = min(feasible_trials, key=lambda t: cast(float, t.value))
-
-        return copy.deepcopy(best_trial)
+        return self._get_best_trial(deepcopy=True)
 
     @property
     def best_trials(self) -> list[FrozenTrial]:
@@ -307,6 +284,43 @@ class Study:
             return copy.deepcopy(filtered_trials) if deepcopy else filtered_trials
 
         return self._storage.get_all_trials(self._study_id, deepcopy=deepcopy, states=states)
+
+    def _get_best_trial(self, deepcopy: bool) -> FrozenTrial:
+        """Return the best trial in the study.
+
+        Args:
+            deepcopy:
+                Flag to control whether to apply ``copy.deepcopy()`` to the trial.
+                If :obj:`False`, returns the trial without deep copying for better performance.
+                Note that if you set this to :obj:`False`, you shouldn't mutate any fields
+                of the returned trial.
+
+        Returns:
+            A :class:`~optuna.trial.FrozenTrial` object of the best trial.
+        """
+        if self._is_multi_objective():
+            raise RuntimeError(
+                "A single best trial cannot be retrieved from a multi-objective study. Consider "
+                "using Study.best_trials to retrieve a list containing the best trials."
+            )
+
+        best_trial = self._storage.get_best_trial(self._study_id)
+
+        # If the trial with the best value is infeasible, select the best trial from all feasible
+        # trials. Note that the behavior is undefined when constrained optimization without the
+        # violation value in the best-valued trial.
+        constraints = best_trial.system_attrs.get(_CONSTRAINTS_KEY)
+        if constraints is not None and any([x > 0.0 for x in constraints]):
+            complete_trials = self.get_trials(deepcopy=False, states=[TrialState.COMPLETE])
+            feasible_trials = _get_feasible_trials(complete_trials)
+            if len(feasible_trials) == 0:
+                raise ValueError("No feasible trials are completed yet.")
+            if self.direction == StudyDirection.MAXIMIZE:
+                best_trial = max(feasible_trials, key=lambda t: cast(float, t.value))
+            else:
+                best_trial = min(feasible_trials, key=lambda t: cast(float, t.value))
+
+        return copy.deepcopy(best_trial) if deepcopy else best_trial
 
     @property
     def user_attrs(self) -> dict[str, Any]:
@@ -654,13 +668,14 @@ class Study:
             A returned trial is deep copied thus user can modify it as needed.
         """
 
-        return _tell_with_warning(
+        frozen_trial, _ = _tell_with_warning(
             study=self,
             trial=trial,
             value_or_values=values,
             state=state,
             skip_if_finished=skip_if_finished,
         )
+        return copy.deepcopy(frozen_trial)
 
     def set_user_attr(self, key: str, value: Any) -> None:
         """Set a user attribute to the study.
@@ -1138,7 +1153,7 @@ class Study:
                 f"{trial.params}."
             )
             try:
-                best_trial = self.best_trial
+                best_trial = self._get_best_trial(deepcopy=False)
                 message += f" Best is trial {best_trial.number} with value: {best_trial.value}."
             except ValueError:
                 # If no feasible trials are completed yet, study.best_trial raises ValueError.
@@ -1157,6 +1172,8 @@ class Study:
         "direction",
         "load_if_exists",
     ],
+    deprecated_version="3.0.0",
+    removed_version="5.0.0",
 )
 def create_study(
     *,
@@ -1306,6 +1323,8 @@ def create_study(
         "sampler",
         "pruner",
     ],
+    deprecated_version="3.0.0",
+    removed_version="5.0.0",
 )
 def load_study(
     *,
@@ -1393,6 +1412,8 @@ def load_study(
         "study_name",
         "storage",
     ],
+    deprecated_version="3.0.0",
+    removed_version="5.0.0",
 )
 def delete_study(
     *,
@@ -1454,6 +1475,8 @@ def delete_study(
         "to_study_name",
     ],
     warning_stacklevel=3,
+    deprecated_version="3.0.0",
+    removed_version="5.0.0",
 )
 def copy_study(
     *,

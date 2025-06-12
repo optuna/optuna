@@ -13,6 +13,7 @@ from optuna.visualization.matplotlib._matplotlib_imports import _imports
 
 if _imports.is_successful():
     from optuna.visualization.matplotlib._matplotlib_imports import Axes
+    from optuna.visualization.matplotlib._matplotlib_imports import Axes3D
     from optuna.visualization.matplotlib._matplotlib_imports import plt
 
 
@@ -143,7 +144,7 @@ def _get_pareto_front_3d(info: _ParetoFrontInfo) -> "Axes":
     # Set up the graph style.
     plt.style.use("ggplot")  # Use ggplot style sheet for similar outputs to plotly.
     fig = plt.figure()
-    ax = fig.add_subplot(projection="3d")
+    ax: Axes3D = fig.add_subplot(projection="3d")
     ax.set_title("Pareto-front Plot")
     cmap = plt.get_cmap("tab10")  # Use tab10 colormap for similar outputs to plotly.
 

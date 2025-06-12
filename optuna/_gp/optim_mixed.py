@@ -48,7 +48,7 @@ def _gradient_ascent(
     As the domain of `x` is [0, 1], that of `z` becomes [0, 1/l].
     """
     if len(continuous_indices) == 0:
-        return (initial_params, initial_fval, False)
+        return initial_params, initial_fval, False
     normalized_params = initial_params.copy()
 
     def negative_acqf_with_grad(scaled_x: np.ndarray) -> tuple[float, np.ndarray]:
@@ -57,7 +57,7 @@ def _gradient_ascent(
         (fval, grad) = eval_acqf_with_grad(acqf_params, normalized_params)
         # Flip sign because scipy minimizes functions.
         # Let the scaled acqf be g(x) and the acqf be f(sx), then dg/dx = df/dx * s.
-        return (-fval, -grad[continuous_indices] * lengthscales)
+        return -fval, -grad[continuous_indices] * lengthscales
 
     scaled_cont_x_opt, neg_fval_opt, info = so.fmin_l_bfgs_b(
         func=negative_acqf_with_grad,
@@ -70,9 +70,9 @@ def _gradient_ascent(
     if -neg_fval_opt > initial_fval and info["nit"] > 0:  # Improved.
         # `nit` is the number of iterations.
         normalized_params[continuous_indices] = scaled_cont_x_opt * lengthscales
-        return (normalized_params, -neg_fval_opt, True)
+        return normalized_params, -neg_fval_opt, True
 
-    return (initial_params, initial_fval, False)  # No improvement.
+    return initial_params, initial_fval, False  # No improvement.
 
 
 def _exhaustive_search(
@@ -90,9 +90,9 @@ def _exhaustive_search(
     best_idx = np.argmax(fvals)
 
     if fvals[best_idx] > initial_fval:  # Improved.
-        return (all_params[best_idx, :], fvals[best_idx], True)
+        return all_params[best_idx, :], fvals[best_idx], True
 
-    return (initial_params, initial_fval, False)  # No improvement.
+    return initial_params, initial_fval, False  # No improvement.
 
 
 def _discrete_line_search(
@@ -105,7 +105,7 @@ def _discrete_line_search(
 ) -> tuple[np.ndarray, float, bool]:
     if len(grids) == 1:
         # Do not optimize anything when there's only one choice.
-        return (initial_params, initial_fval, False)
+        return initial_params, initial_fval, False
 
     def find_nearest_index(x: float) -> int:
         i = int(np.clip(np.searchsorted(grids, x), 1, len(grids) - 1))
@@ -157,9 +157,9 @@ def _discrete_line_search(
     # We check both conditions because of numerical errors.
     if opt_idx != current_choice_i and fval_opt > initial_fval:
         normalized_params[param_idx] = grids[opt_idx]
-        return (normalized_params, fval_opt, True)
+        return normalized_params, fval_opt, True
 
-    return (initial_params, initial_fval, False)  # No improvement.
+    return initial_params, initial_fval, False  # No improvement.
 
 
 def _local_search_discrete(
@@ -240,7 +240,7 @@ def local_search_mixed(
     for _ in range(max_iter):
         if last_changed_param == CONTINUOUS:
             # Parameters not changed since last time.
-            return (best_normalized_params, best_fval)
+            return best_normalized_params, best_fval
         (best_normalized_params, best_fval, updated) = _gradient_ascent(
             acqf_params,
             best_normalized_params,
@@ -255,7 +255,7 @@ def local_search_mixed(
         for i, choices, xtol in zip(discrete_indices, choices_of_discrete_params, discrete_xtols):
             if last_changed_param == i:
                 # Parameters not changed since last time.
-                return (best_normalized_params, best_fval)
+                return best_normalized_params, best_fval
             (best_normalized_params, best_fval, updated) = _local_search_discrete(
                 acqf_params, best_normalized_params, best_fval, i, choices, xtol
             )
@@ -264,10 +264,10 @@ def local_search_mixed(
 
         if last_changed_param is None:
             # Parameters not changed from the beginning.
-            return (best_normalized_params, best_fval)
+            return best_normalized_params, best_fval
 
     _logger.warning("local_search_mixed: Local search did not converge.")
-    return (best_normalized_params, best_fval)
+    return best_normalized_params, best_fval
 
 
 def optimize_acqf_mixed(
@@ -298,11 +298,13 @@ def optimize_acqf_mixed(
 
     max_i = np.argmax(f_vals)
 
+    # TODO(nabenabe): Benchmark the BoTorch roulette selection as well.
+    # https://github.com/pytorch/botorch/blob/v0.14.0/botorch/optim/initializers.py#L942
     # We use a modified roulette wheel selection to pick the initial param for each local search.
     probs = np.exp(f_vals - f_vals[max_i])
     probs[max_i] = 0.0  # We already picked the best param, so remove it from roulette.
     probs /= probs.sum()
-    n_non_zero_probs_improvement = np.count_nonzero(probs > 0.0)
+    n_non_zero_probs_improvement = int(np.count_nonzero(probs > 0.0))
     # n_additional_warmstart becomes smaller when study starts to converge.
     n_additional_warmstart = min(
         n_local_search - len(warmstart_normalized_params_array) - 1, n_non_zero_probs_improvement

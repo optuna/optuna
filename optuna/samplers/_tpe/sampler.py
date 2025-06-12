@@ -11,6 +11,7 @@ import warnings
 import numpy as np
 
 from optuna import _deprecated
+from optuna._convert_positional_args import convert_positional_args
 from optuna._experimental import warn_experimental_argument
 from optuna._hypervolume import compute_hypervolume
 from optuna._hypervolume.hssp import _solve_hssp
@@ -128,6 +129,7 @@ class TPESampler(BaseSampler):
                 Deprecated in v4.3.0. ``consider_prior`` argument will be removed in the future.
                 The removal of this feature is currently scheduled for v6.0.0,
                 but this schedule is subject to change.
+                From v4.3.0 onward, ``consider_prior`` automatically falls back to ``True``.
                 See https://github.com/optuna/optuna/releases/tag/v4.3.0.
         prior_weight:
             The weight of the prior. This argument is used in
@@ -272,8 +274,25 @@ class TPESampler(BaseSampler):
                 See https://github.com/optuna/optuna/releases/tag/v3.4.0.
     """
 
+    @convert_positional_args(
+        previous_positional_arg_names=[
+            "self",
+            "consider_prior",
+            "prior_weight",
+            "consider_magic_clip",
+            "consider_endpoints",
+            "n_startup_trials",
+            "n_ei_candidates",
+            "gamma",
+            "weights",
+            "seed",
+        ],
+        deprecated_version="4.4.0",
+        removed_version="6.0.0",
+    )
     def __init__(
         self,
+        *,
         consider_prior: bool = True,
         prior_weight: float = 1.0,
         consider_magic_clip: bool = True,
@@ -283,7 +302,6 @@ class TPESampler(BaseSampler):
         gamma: Callable[[int], int] = default_gamma,
         weights: Callable[[int], np.ndarray] = default_weights,
         seed: int | None = None,
-        *,
         multivariate: bool = False,
         group: bool = False,
         warn_independent_sampling: bool = True,
@@ -297,16 +315,18 @@ class TPESampler(BaseSampler):
             msg = _deprecated._DEPRECATION_WARNING_TEMPLATE.format(
                 name="`consider_prior`", d_ver="4.3.0", r_ver="6.0.0"
             )
-            warnings.warn(msg, FutureWarning)
+            warnings.warn(
+                f"{msg} From v4.3.0 onward, `consider_prior` automatically falls back to `True`.",
+                FutureWarning,
+            )
 
         self._parzen_estimator_parameters = _ParzenEstimatorParameters(
-            consider_prior,
-            prior_weight,
-            consider_magic_clip,
-            consider_endpoints,
-            weights,
-            multivariate,
-            categorical_distance_func or {},
+            prior_weight=prior_weight,
+            consider_magic_clip=consider_magic_clip,
+            consider_endpoints=consider_endpoints,
+            weights=weights,
+            multivariate=multivariate,
+            categorical_distance_func=categorical_distance_func or {},
         )
         self._n_startup_trials = n_startup_trials
         self._n_ei_candidates = n_ei_candidates
@@ -773,7 +793,7 @@ def _calculate_weights_below_for_multi_objective(
     loo_mat = ~np.eye(pareto_sols.shape[0], dtype=bool)  # Leave-one-out bool matrix.
     contribs = np.zeros(n_below_feasible, dtype=float)
     contribs[on_front] = hv - np.array(
-        [compute_hypervolume(pareto_sols[loo], ref_point) for loo in loo_mat]
+        [compute_hypervolume(pareto_sols[loo], ref_point, assume_pareto=True) for loo in loo_mat]
     )
     weights_below[is_feasible] = np.maximum(contribs / max(np.max(contribs), EPS), EPS)
     return weights_below

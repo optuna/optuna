@@ -36,7 +36,7 @@ try:
     _Column = mapped_column
 except ImportError:
     # TODO(Shinichi): Remove this after dropping support for SQLAlchemy<2.0.
-    from sqlalchemy import Column as _Column  # type: ignore[assignment, no-redef]
+    from sqlalchemy import Column as _Column  # type: ignore[assignment]
 
 # Don't modify this version number anymore.
 # The schema management functionality has been moved to alembic.
@@ -421,11 +421,11 @@ class TrialValueModel(BaseModel):
     @classmethod
     def value_to_stored_repr(cls, value: float) -> tuple[float | None, TrialValueType]:
         if value == float("inf"):
-            return (None, cls.TrialValueType.INF_POS)
+            return None, cls.TrialValueType.INF_POS
         elif value == float("-inf"):
-            return (None, cls.TrialValueType.INF_NEG)
+            return None, cls.TrialValueType.INF_NEG
         else:
-            return (value, cls.TrialValueType.FINITE)
+            return value, cls.TrialValueType.FINITE
 
     @classmethod
     def stored_repr_to_value(cls, value: float | None, float_type: TrialValueType) -> float:
@@ -486,13 +486,13 @@ class TrialIntermediateValueModel(BaseModel):
         cls, value: float
     ) -> tuple[float | None, TrialIntermediateValueType]:
         if math.isnan(value):
-            return (None, cls.TrialIntermediateValueType.NAN)
+            return None, cls.TrialIntermediateValueType.NAN
         elif value == float("inf"):
-            return (None, cls.TrialIntermediateValueType.INF_POS)
+            return None, cls.TrialIntermediateValueType.INF_POS
         elif value == float("-inf"):
-            return (None, cls.TrialIntermediateValueType.INF_NEG)
+            return None, cls.TrialIntermediateValueType.INF_NEG
         else:
-            return (value, cls.TrialIntermediateValueType.FINITE)
+            return value, cls.TrialIntermediateValueType.FINITE
 
     @classmethod
     def stored_repr_to_intermediate_value(

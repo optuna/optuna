@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-import copy
 import math
 from typing import TYPE_CHECKING
 import warnings
@@ -16,10 +15,6 @@ from optuna.trial import TrialState
 if TYPE_CHECKING:
     from optuna import Study
     from optuna import Trial
-
-
-# This is used for propagating warning message to Study.optimize.
-STUDY_TELL_WARNING_KEY = "STUDY_TELL_WARNING"
 
 
 _logger = logging.get_logger(__name__)
@@ -91,7 +86,7 @@ def _tell_with_warning(
     state: TrialState | None = None,
     skip_if_finished: bool = False,
     suppress_warning: bool = False,
-) -> FrozenTrial:
+) -> tuple[FrozenTrial, str | None]:
     """Internal method of :func:`~optuna.study.Study.tell`.
 
     Refer to the document for :func:`~optuna.study.Study.tell` for the reference.
@@ -115,7 +110,7 @@ def _tell_with_warning(
             f"{value_or_values} and state {state} since trial was already finished. "
             f"Finished trial has values {frozen_trial.values} and state {frozen_trial.state}."
         )
-        return copy.deepcopy(frozen_trial)
+        return frozen_trial, None
     elif frozen_trial.state != TrialState.RUNNING:
         raise ValueError(f"Cannot tell a {frozen_trial.state.name} trial.")
 
@@ -130,7 +125,7 @@ def _tell_with_warning(
 
     _check_state_and_values(state, values)
 
-    warning_message = None
+    values_conversion_failure_message = None
 
     if state == TrialState.COMPLETE:
         assert values is not None
@@ -162,8 +157,7 @@ def _tell_with_warning(
             values = None
             if not suppress_warning:
                 warnings.warn(values_conversion_failure_message)
-            else:
-                warning_message = values_conversion_failure_message
+                values_conversion_failure_message = None
 
     assert state is not None
 
@@ -180,8 +174,6 @@ def _tell_with_warning(
     finally:
         study._storage.set_trial_state_values(frozen_trial._trial_id, state, values)
 
-    frozen_trial = copy.deepcopy(study._storage.get_trial(frozen_trial._trial_id))
+    frozen_trial = study._storage.get_trial(frozen_trial._trial_id)
 
-    if warning_message is not None:
-        frozen_trial._system_attrs[STUDY_TELL_WARNING_KEY] = warning_message
-    return frozen_trial
+    return frozen_trial, values_conversion_failure_message

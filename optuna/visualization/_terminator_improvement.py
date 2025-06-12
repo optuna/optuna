@@ -185,7 +185,7 @@ def _get_y_range(info: _ImprovementInfo, min_n_trials: int) -> tuple[float, floa
         max_value = max(max_value, max(info.errors))
 
     padding = (max_value - min_value) * PADDING_RATIO_Y
-    return (min_value - padding, max_value + padding)
+    return min_value - padding, max_value + padding
 
 
 def _get_improvement_plot(info: _ImprovementInfo, min_n_trials: int) -> "go.Figure":

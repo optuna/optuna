@@ -175,8 +175,9 @@ def test_plot_parallel_coordinate_customized_target_name() -> None:
     figure = plotly_plot_parallel_coordinate(study, target_name="Target Name")
     assert figure.data[0]["dimensions"][0]["label"] == "Target Name"
 
-    figure = matplotlib.plot_parallel_coordinate(study, target_name="Target Name")
-    assert figure.get_figure().axes[1].get_ylabel() == "Target Name"
+    figure = matplotlib.plot_parallel_coordinate(study, target_name="Target Name").get_figure()
+    assert figure is not None
+    assert figure.axes[1].get_ylabel() == "Target Name"
 
 
 @parametrize_plot_parallel_coordinate

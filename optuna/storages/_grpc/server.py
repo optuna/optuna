@@ -30,7 +30,7 @@ def make_server(
     server = grpc.server(thread_pool or ThreadPoolExecutor(max_workers=10))
     api_pb2_grpc.add_StorageServiceServicer_to_server(
         grpc_servicer.OptunaStorageProxyService(storage), server
-    )  # type: ignore
+    )
     server.add_insecure_port(f"{host}:{port}")
     return server
 
@@ -69,6 +69,13 @@ def run_grpc_proxy_server(
         thread_pool:
             Thread pool to use for the server. If :obj:`None`, a default thread pool
             with 10 workers will be used.
+
+    .. warning::
+
+        Currently, gRPC storage proxy does not support the
+        :class:`~optuna.storages.JournalStorage`. This issue is tracked in
+        https://github.com/optuna/optuna/issues/6084. Please use
+        :class:`~optuna.storages.RDBStorage` instead.
     """
     server = make_server(storage, host, port, thread_pool)
     server.start()
