@@ -58,6 +58,16 @@ def _lazy_contribs_update(
     hv_selected = optuna._hypervolume.compute_hypervolume(
         selected_vecs[:-1], reference_point, assume_pareto=True
     )
+
+    # The HV difference only using the latest selected point and a candidate is a simple, yet
+    # obvious, contribution upper bound. Denote t as the latest selected index and j as an
+    # unselected index. Then, H(T v {j}) - H(T) <= H({t} v {j}) - H({t}) holds where the inequality
+    # comes from submodularity. We use the inclusion-exclusion principle to calculate the RHS.
+    single_volume = np.prod(reference_point - pareto_loss_values, axis=1)
+    intersection = np.maximum(selected_vecs[-2], pareto_loss_values)
+    intersection_volume = np.prod(reference_point - intersection, axis=1)
+    contribs = np.minimum(contribs, single_volume - intersection_volume)
+
     max_contrib = 0.0
     index_from_larger_upper_bound_contrib = np.argsort(-contribs)
     for i in index_from_larger_upper_bound_contrib:
