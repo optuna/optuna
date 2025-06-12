@@ -17,9 +17,10 @@ class SuccessiveHalvingPruner(BasePruner):
     `Asynchronous Successive Halving <https://proceedings.mlsys.org/paper_files/paper/2020/file/
     a06f20b349c6cf09a6b171c71b88bbfc-Paper.pdf>`__ for detailed descriptions.
 
-    The pruner has selective tolerance for NaN values if subsequent steps produce valid numerical
-    results. Consecutive NaN values across multiple steps can result in immediate
-    trial termination.
+    The pruner handles NaN values in the following manner:
+        1. Only valid numeric trials are continued, the trials returning NaN are marked as fail.
+        2.  Intermediate NaN values are ignored during the trials. Trials are not pruned solely
+            due to NaN, unless their intermediate values are not promising.
 
     Note that, this class does not take care of the parameter for the maximum
     resource, referred to as :math:`R` in the paper. The maximum resource allocated to a trial is
