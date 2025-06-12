@@ -64,7 +64,7 @@ class Matern52Kernel(torch.autograd.Function):
     @staticmethod
     def forward(ctx: Any, squared_distance: torch.Tensor) -> torch.Tensor:
         """
-        This method calculates `exp(sqrt5d) * (1/3 * sqrt5d ** 2 + sqrt5d + 1)` where
+        This method calculates `exp(-sqrt5d) * (1/3 * sqrt5d ** 2 + sqrt5d + 1)` where
         `sqrt5d = sqrt(5 * squared_distance)`.
 
         Please note that automatic differentiation by PyTorch does not work well at
