@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 import math
-from typing import Any
 from typing import TYPE_CHECKING
 import warnings
 
@@ -87,7 +86,7 @@ def _tell_with_warning(
     state: TrialState | None = None,
     skip_if_finished: bool = False,
     suppress_warning: bool = False,
-) -> tuple[TrialState, list[float] | None, dict[str, Any], str | None]:
+) -> tuple[TrialState, list[float] | None, str | None]:
     """Internal method of :func:`~optuna.study.Study.tell`.
 
     Refer to the document for :func:`~optuna.study.Study.tell` for the reference.
@@ -111,7 +110,7 @@ def _tell_with_warning(
             f"{value_or_values} and state {state} since trial was already finished. "
             f"Finished trial has values {frozen_trial.values} and state {frozen_trial.state}."
         )
-        return frozen_trial.state, frozen_trial.values, frozen_trial.params, None
+        return frozen_trial.state, frozen_trial.values, None
     elif frozen_trial.state != TrialState.RUNNING:
         raise ValueError(f"Cannot tell a {frozen_trial.state.name} trial.")
 
@@ -175,4 +174,4 @@ def _tell_with_warning(
     finally:
         study._storage.set_trial_state_values(frozen_trial._trial_id, state, values)
 
-    return state, values, frozen_trial.params, values_conversion_failure_message
+    return state, values, values_conversion_failure_message

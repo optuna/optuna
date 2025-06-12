@@ -210,7 +210,7 @@ def _run_trial(
 
     # `_tell_with_warning` may raise during trial post-processing.
     try:
-        updated_state, values, params, warning_message = _tell_with_warning(
+        updated_state, values, warning_message = _tell_with_warning(
             study=study,
             trial=trial,
             value_or_values=value_or_values,
@@ -221,20 +221,19 @@ def _run_trial(
         frozen_trial = study._storage.get_trial(trial._trial_id)
         updated_state = frozen_trial.state
         values = frozen_trial.values
-        params = frozen_trial.params
         warning_message = None
         raise
     finally:
         if updated_state == TrialState.COMPLETE:
             assert values is not None
-            study._log_completed_trial(values, trial.number, params)
+            study._log_completed_trial(values, trial.number, trial.params)
         elif updated_state == TrialState.PRUNED:
             _logger.info("Trial {} pruned. {}".format(trial.number, str(func_err)))
         elif updated_state == TrialState.FAIL:
             if func_err is not None:
                 _log_failed_trial(
                     trial.number,
-                    params,
+                    trial.params,
                     repr(func_err),
                     exc_info=func_err_fail_exc_info,
                     value_or_values=value_or_values,
@@ -242,7 +241,7 @@ def _run_trial(
             elif warning_message is not None:
                 _log_failed_trial(
                     trial.number,
-                    params,
+                    trial.params,
                     warning_message,
                     value_or_values=value_or_values,
                 )
