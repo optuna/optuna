@@ -89,7 +89,7 @@ class Matern52Kernel(torch.autograd.Function):
 
 @dataclass(frozen=True)
 class KernelParamsTensor:
-    # TODO(nabenabe): Rename KernelParamsTensor to more appropriate name such GP regressor.
+    # TODO(nabenabe): Rename KernelParamsTensor to more appropriate name such as GP regressor.
     # Kernel parameters to fit.
     inverse_squared_lengthscales: torch.Tensor  # (len(params), )
     kernel_scale: torch.Tensor  # Scalar
