@@ -19,7 +19,6 @@ is_categorical:
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 import math
 from typing import Any
 from typing import TYPE_CHECKING
@@ -87,13 +86,17 @@ class Matern52Kernel(torch.autograd.Function):
         return deriv * grad
 
 
-@dataclass(frozen=True)
-class KernelParamsTensor:
-    # TODO(nabenabe): Rename KernelParamsTensor to more appropriate name such as GP regressor.
-    # Kernel parameters to fit.
-    inverse_squared_lengthscales: torch.Tensor  # (len(params), )
-    kernel_scale: torch.Tensor  # Scalar
-    noise_var: torch.Tensor  # Scalar
+class GPRegressor:
+    def __init__(
+        self,
+        inverse_squared_lengthscales: torch.Tensor,  # (len(params), )
+        kernel_scale: torch.Tensor,  # Scalar
+        noise_var: torch.Tensor,  # Scalar
+    ) -> None:
+        # TODO(nabenabe): Rename the attributes to private with `_`.
+        self.inverse_squared_lengthscales = inverse_squared_lengthscales
+        self.kernel_scale = kernel_scale
+        self.noise_var = noise_var
 
     def kernel(
         self, is_categorical: torch.Tensor, X1: torch.Tensor, X2: torch.Tensor
@@ -163,12 +166,12 @@ def _fit_kernel_params(
     X: np.ndarray,
     Y: np.ndarray,
     is_categorical: np.ndarray,
-    log_prior: Callable[[KernelParamsTensor], torch.Tensor],
+    log_prior: Callable[[GPRegressor], torch.Tensor],
     minimum_noise: float,
     deterministic_objective: bool,
-    initial_kernel_params: KernelParamsTensor,
+    gpr_cache: GPRegressor,
     gtol: float,
-) -> KernelParamsTensor:
+) -> GPRegressor:
     n_params = X.shape[1]
 
     # We apply log transform to enforce the positivity of the kernel parameters.
@@ -178,11 +181,11 @@ def _fit_kernel_params(
     # pathological behavior of maximum likelihood estimation.
     initial_raw_params = np.concatenate(
         [
-            np.log(initial_kernel_params.inverse_squared_lengthscales.detach().numpy()),
+            np.log(gpr_cache.inverse_squared_lengthscales.detach().numpy()),
             [
-                np.log(initial_kernel_params.kernel_scale.item()),
+                np.log(gpr_cache.kernel_scale.item()),
                 # We add 0.01 * minimum_noise to initial noise_var to avoid instability.
-                np.log(initial_kernel_params.noise_var.item() - 0.99 * minimum_noise),
+                np.log(gpr_cache.noise_var.item() - 0.99 * minimum_noise),
             ],
         ]
     )
@@ -191,7 +194,7 @@ def _fit_kernel_params(
         raw_params_tensor = torch.from_numpy(raw_params)
         raw_params_tensor.requires_grad_(True)
         with torch.enable_grad():  # type: ignore[no-untyped-call]
-            params = KernelParamsTensor(
+            gpr = GPRegressor(
                 inverse_squared_lengthscales=torch.exp(raw_params_tensor[:n_params]),
                 kernel_scale=torch.exp(raw_params_tensor[n_params]),
                 noise_var=(
@@ -200,9 +203,9 @@ def _fit_kernel_params(
                     else torch.exp(raw_params_tensor[n_params + 1]) + minimum_noise
                 ),
             )
-            loss = -params.marginal_log_likelihood(
+            loss = -gpr.marginal_log_likelihood(
                 torch.from_numpy(X), torch.from_numpy(Y), torch.from_numpy(is_categorical)
-            ) - log_prior(params)
+            ) - log_prior(gpr)
             loss.backward()  # type: ignore
             # scipy.minimize requires all the gradients to be zero for termination.
             raw_noise_var_grad = raw_params_tensor.grad[n_params + 1]  # type: ignore
@@ -223,7 +226,7 @@ def _fit_kernel_params(
 
     raw_params_opt_tensor = torch.from_numpy(res.x)
 
-    res = KernelParamsTensor(
+    return GPRegressor(
         inverse_squared_lengthscales=torch.exp(raw_params_opt_tensor[:n_params]),
         kernel_scale=torch.exp(raw_params_opt_tensor[n_params]),
         noise_var=(
@@ -232,32 +235,31 @@ def _fit_kernel_params(
             else minimum_noise + torch.exp(raw_params_opt_tensor[n_params + 1])
         ),
     )
-    return res
 
 
 def fit_kernel_params(
     X: np.ndarray,
     Y: np.ndarray,
     is_categorical: np.ndarray,
-    log_prior: Callable[[KernelParamsTensor], torch.Tensor],
+    log_prior: Callable[[GPRegressor], torch.Tensor],
     minimum_noise: float,
     deterministic_objective: bool,
-    initial_kernel_params: KernelParamsTensor | None = None,
+    gpr_cache: GPRegressor | None = None,
     gtol: float = 1e-2,
-) -> KernelParamsTensor:
-    default_initial_kernel_params = KernelParamsTensor(
+) -> GPRegressor:
+    default_gpr_cache = GPRegressor(
         inverse_squared_lengthscales=torch.ones(X.shape[1], dtype=torch.float64),
         kernel_scale=torch.tensor(1.0, dtype=torch.float64),
         noise_var=torch.tensor(1.0, dtype=torch.float64),
     )
-    if initial_kernel_params is None:
-        initial_kernel_params = default_initial_kernel_params
+    if gpr_cache is None:
+        gpr_cache = default_gpr_cache
 
     error = None
-    # First try optimizing the kernel params with the provided initial_kernel_params,
-    # but if it fails, rerun the optimization with the default initial_kernel_params.
+    # First try optimizing the kernel params with the provided kernel parameters in gpr_cache,
+    # but if it fails, rerun the optimization with the default kernel parameters above.
     # This increases the robustness of the optimization.
-    for init_kernel_params in [initial_kernel_params, default_initial_kernel_params]:
+    for gpr_cache_to_use in [gpr_cache, default_gpr_cache]:
         try:
             return _fit_kernel_params(
                 X=X,
@@ -265,7 +267,7 @@ def fit_kernel_params(
                 is_categorical=is_categorical,
                 log_prior=log_prior,
                 minimum_noise=minimum_noise,
-                initial_kernel_params=init_kernel_params,
+                gpr_cache=gpr_cache_to_use,
                 deterministic_objective=deterministic_objective,
                 gtol=gtol,
             )
@@ -273,7 +275,7 @@ def fit_kernel_params(
             error = e
 
     logger.warning(
-        f"The optimization of kernel_params failed: \n{error}\n"
-        "The default initial kernel params will be used instead."
+        f"The optimization of kernel parameters failed: \n{error}\n"
+        "The default initial kernel parameters will be used instead."
     )
-    return default_initial_kernel_params
+    return default_gpr_cache

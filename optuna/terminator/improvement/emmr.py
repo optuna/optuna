@@ -152,23 +152,23 @@ class EMMREvaluator(BaseImprovementEvaluator):
 
         assert len(standarized_score_vals) == len(normalized_params)
 
-        kernel_params_t1 = gp.fit_kernel_params(  # Fit kernel with up to (t-1)-th observation
+        gpr_t1 = gp.fit_kernel_params(  # Fit kernel with up to (t-1)-th observation
             X=normalized_params[..., :-1, :],
             Y=standarized_score_vals[:-1],
             is_categorical=(search_space.scale_types == gp_search_space.ScaleType.CATEGORICAL),
             log_prior=prior.default_log_prior,
             minimum_noise=prior.DEFAULT_MINIMUM_NOISE_VAR,
-            initial_kernel_params=None,
+            gpr_cache=None,
             deterministic_objective=self._deterministic,
         )
 
-        kernel_params_t = gp.fit_kernel_params(  # Fit kernel with up to t-th observation
+        gpr_t = gp.fit_kernel_params(  # Fit kernel with up to t-th observation
             X=normalized_params,
             Y=standarized_score_vals,
             is_categorical=(search_space.scale_types == gp_search_space.ScaleType.CATEGORICAL),
             log_prior=prior.default_log_prior,
             minimum_noise=prior.DEFAULT_MINIMUM_NOISE_VAR,
-            initial_kernel_params=kernel_params_t1,
+            gpr_cache=gpr_t1,
             deterministic_objective=self._deterministic,
         )
 
@@ -181,7 +181,7 @@ class EMMREvaluator(BaseImprovementEvaluator):
             search_space,
             normalized_params,
             standarized_score_vals,
-            kernel_params_t,
+            gpr_t,
             theta_t_star_index,
             theta_t1_star_index,
         )
@@ -191,8 +191,8 @@ class EMMREvaluator(BaseImprovementEvaluator):
             normalized_params[:-1, :],
             standarized_score_vals[:-1],
             normalized_params[-1, :],
-            kernel_params_t,
-            # Use kernel_params_t instead of kernel_params_t1.
+            gpr_t,
+            # Use gpr_t instead of gpr_t1.
             # Use "t" under the assumption that "t" and "t1" are approximately the same.
             # This is because kernel should same when computing KLD.
             # For detailed information, please see section 4.4 of the paper:
@@ -203,26 +203,26 @@ class EMMREvaluator(BaseImprovementEvaluator):
             normalized_params,
             standarized_score_vals,
             theta_t1_star,
-            kernel_params_t,
+            gpr_t,
         )
         mu_t_theta_t_star, variance_t_theta_t_star = _compute_gp_posterior(
             search_space,
             normalized_params,
             standarized_score_vals,
             theta_t_star,
-            kernel_params_t,
+            gpr_t,
         )
         mu_t1_theta_t1_star, _ = _compute_gp_posterior(
             search_space,
             normalized_params[:-1, :],
             standarized_score_vals[:-1],
             theta_t1_star,
-            kernel_params_t1,
+            gpr_t1,
         )
 
         y_t = standarized_score_vals[-1]
         kappa_t1 = _compute_standardized_regret_bound(
-            kernel_params_t1,
+            gpr_t1,
             search_space,
             normalized_params[:-1, :],
             standarized_score_vals[:-1],
@@ -277,17 +277,17 @@ def _compute_gp_posterior(
     X: np.ndarray,
     Y: np.ndarray,
     x_params: np.ndarray,
-    kernel_params: gp.KernelParamsTensor,
+    gpr: gp.GPRegressor,
 ) -> tuple[float, float]:  # mean, var
 
     acqf_params = acqf.create_acqf_params(
         acqf_type=acqf.AcquisitionFunctionType.LOG_EI,
-        kernel_params=kernel_params,
+        gpr=gpr,
         search_space=search_space,
         X=X,  # normalized_params[..., :-1, :],
         Y=Y,  # standarized_score_vals[:-1],
     )
-    mean_tensor, var_tensor = acqf_params.kernel_params.posterior(
+    mean_tensor, var_tensor = acqf_params.gpr.posterior(
         torch.from_numpy(acqf_params.X),
         torch.from_numpy(
             acqf_params.search_space.scale_types == gp_search_space.ScaleType.CATEGORICAL
@@ -303,7 +303,7 @@ def _compute_gp_posterior(
 
 
 def _posterior_of_batched_theta(
-    kernel_params: gp.KernelParamsTensor,
+    gpr: gp.GPRegressor,
     X: torch.Tensor,  # [len(trials), len(params)]
     is_categorical: torch.Tensor,  # bool[len(params)]
     cov_Y_Y_inv: torch.Tensor,  # [len(trials), len(trials)]
@@ -320,12 +320,12 @@ def _posterior_of_batched_theta(
     assert cov_Y_Y_inv.shape == (len_trials, len_trials)
     assert cov_Y_Y_inv_Y.shape == (len_trials,)
 
-    cov_ftheta_fX = kernel_params.kernel(is_categorical, theta[..., None, :], X)[..., 0, :]
+    cov_ftheta_fX = gpr.kernel(is_categorical, theta[..., None, :], X)[..., 0, :]
     assert cov_ftheta_fX.shape == (len_batch, len_trials)
-    cov_ftheta_ftheta = kernel_params.kernel(is_categorical, theta[..., None, :], theta)[..., 0, :]
+    cov_ftheta_ftheta = gpr.kernel(is_categorical, theta[..., None, :], theta)[..., 0, :]
     assert cov_ftheta_ftheta.shape == (len_batch, len_batch)
 
-    assert torch.allclose(cov_ftheta_ftheta.diag(), kernel_params.kernel_scale)
+    assert torch.allclose(cov_ftheta_ftheta.diag(), gpr.kernel_scale)
     assert torch.allclose(cov_ftheta_ftheta, cov_ftheta_ftheta.T)
 
     mean = cov_ftheta_fX @ cov_Y_Y_inv_Y
@@ -341,7 +341,7 @@ def _compute_gp_posterior_cov_two_thetas(
     search_space: gp_search_space.SearchSpace,
     normalized_params: np.ndarray,
     standarized_score_vals: np.ndarray,
-    kernel_params: gp.KernelParamsTensor,
+    gpr: gp.GPRegressor,
     theta1_index: int,
     theta2_index: int,
 ) -> float:  # cov
@@ -352,21 +352,21 @@ def _compute_gp_posterior_cov_two_thetas(
             normalized_params,
             standarized_score_vals,
             normalized_params[theta1_index],
-            kernel_params,
+            gpr,
         )[1]
 
     assert normalized_params.shape[0] == standarized_score_vals.shape[0]
 
     acqf_params = acqf.create_acqf_params(
         acqf_type=acqf.AcquisitionFunctionType.LOG_EI,
-        kernel_params=kernel_params,
+        gpr=gpr,
         search_space=search_space,
         X=normalized_params,
         Y=standarized_score_vals,
     )
 
     _, var = _posterior_of_batched_theta(
-        acqf_params.kernel_params,
+        acqf_params.gpr,
         torch.from_numpy(acqf_params.X),
         torch.from_numpy(
             acqf_params.search_space.scale_types == gp_search_space.ScaleType.CATEGORICAL
