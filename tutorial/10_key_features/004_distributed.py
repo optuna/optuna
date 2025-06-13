@@ -139,9 +139,7 @@ def objective(trial: Trial):
 
 
 study = optuna.create_study(
-    study_name="journal_storage_multithread",
     storage=JournalStorage(JournalFileBackend(file_path="./journal.log")),
-    load_if_exists=True,
 )
 study.optimize(objective, n_trials=20, n_jobs=4)
 
@@ -184,7 +182,7 @@ study.optimize(objective, n_trials=20, n_jobs=4)
 #        study = optuna.create_study(
 #            study_name="journal_storage_multiprocess",
 #            storage=JournalStorage(JournalFileBackend(file_path="./journal.log")),
-#            load_if_exists=True,
+#            load_if_exists=True, # Useful for multi-process or multi-node optimization.
 #        )
 #        study.optimize(objective, n_trials=3)
 #
@@ -248,7 +246,7 @@ study.optimize(objective, n_trials=20, n_jobs=4)
 #        study = optuna.create_study(
 #            study_name="distributed_test",
 #            storage="mysql://username:password@127.0.0.1:3306/example",
-#            load_if_exists=True, # Useful for multi-process or multi-node optimization.
+#            load_if_exists=True,
 #        )
 #        study.optimize(objective, n_trials=100)
 #
