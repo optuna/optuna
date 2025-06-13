@@ -157,12 +157,12 @@ class GPSampler(BaseSampler):
         self._independent_sampler = independent_sampler or optuna.samplers.RandomSampler(seed=seed)
         self._intersection_search_space = optuna.search_space.IntersectionSearchSpace()
         self._n_startup_trials = n_startup_trials
-        self._log_prior: Callable[[gp.KernelParamsTensor], torch.Tensor] = prior.default_log_prior
+        self._log_prior: Callable[[gp.GPRegressor], torch.Tensor] = prior.default_log_prior
         self._minimum_noise: float = prior.DEFAULT_MINIMUM_NOISE_VAR
         # We cache the kernel parameters for initial values of fitting the next time.
         # TODO(nabenabe): Make the cache lists system_attrs to make GPSampler stateless.
-        self._kernel_params_cache_list: list[gp.KernelParamsTensor] | None = None
-        self._constraints_kernel_params_cache: list[gp.KernelParamsTensor] | None = None
+        self._gprs_cache_list: list[gp.GPRegressor] | None = None
+        self._constraints_gprs_cache_list: list[gp.GPRegressor] | None = None
         self._deterministic = deterministic_objective
         self._constraints_func = constraints_func
 
@@ -216,36 +216,36 @@ class GPSampler(BaseSampler):
         normalized_params: np.ndarray,
     ) -> list[acqf.AcquisitionFunctionParams]:
         standardized_constraint_vals, means, stds = _standardize_values(constraint_vals)
-        if self._kernel_params_cache_list is not None and len(
-            self._kernel_params_cache_list[0].inverse_squared_lengthscales
+        if self._gprs_cache_list is not None and len(
+            self._gprs_cache_list[0].inverse_squared_lengthscales
         ) != len(internal_search_space.scale_types):
             # Clear cache if the search space changes.
-            self._constraints_kernel_params_cache = None
+            self._constraints_gprs_cache_list = None
 
         is_categorical = internal_search_space.scale_types == gp_search_space.ScaleType.CATEGORICAL
-        constraints_kernel_params = []
+        constraints_gprs = []
         constraints_acqf_params = []
         for i, (vals, mean, std) in enumerate(zip(standardized_constraint_vals.T, means, stds)):
             cache = (
-                self._constraints_kernel_params_cache[i]
-                if self._constraints_kernel_params_cache is not None
+                self._constraints_gprs_cache_list[i]
+                if self._constraints_gprs_cache_list is not None
                 else None
             )
-            kernel_params = gp.fit_kernel_params(
+            gpr = gp.fit_kernel_params(
                 X=normalized_params,
                 Y=vals,
                 is_categorical=is_categorical,
                 log_prior=self._log_prior,
                 minimum_noise=self._minimum_noise,
-                initial_kernel_params=cache,
+                last_gpr=cache,
                 deterministic_objective=self._deterministic,
             )
-            constraints_kernel_params.append(kernel_params)
+            constraints_gprs.append(gpr)
 
             constraints_acqf_params.append(
                 acqf.create_acqf_params(
                     acqf_type=acqf.AcquisitionFunctionType.LOG_PI,
-                    kernel_params=kernel_params,
+                    gpr=gpr,
                     search_space=internal_search_space,
                     X=normalized_params,
                     Y=vals,
@@ -254,7 +254,7 @@ class GPSampler(BaseSampler):
                 )
             )
 
-        self._constraints_kernel_params_cache = constraints_kernel_params
+        self._constraints_gprs_cache_list = constraints_gprs
 
         return constraints_acqf_params
 
@@ -285,41 +285,37 @@ class GPSampler(BaseSampler):
             _sign * np.array([trial.values for trial in trials])
         )
 
-        if self._kernel_params_cache_list is not None and len(
-            self._kernel_params_cache_list[0].inverse_squared_lengthscales
+        if self._gprs_cache_list is not None and len(
+            self._gprs_cache_list[0].inverse_squared_lengthscales
         ) != len(internal_search_space.scale_types):
             # Clear cache if the search space changes.
-            self._kernel_params_cache_list = None
+            self._gprs_cache_list = None
 
-        kernel_params_list = []
+        gprs_list = []
         n_objectives = standardized_score_vals.shape[-1]
         is_categorical = internal_search_space.scale_types == gp_search_space.ScaleType.CATEGORICAL
         for i in range(n_objectives):
-            cache = (
-                self._kernel_params_cache_list[i]
-                if self._kernel_params_cache_list is not None
-                else None
-            )
-            kernel_params_list.append(
+            cache = self._gprs_cache_list[i] if self._gprs_cache_list is not None else None
+            gprs_list.append(
                 gp.fit_kernel_params(
                     X=normalized_params,
                     Y=standardized_score_vals[:, i],
                     is_categorical=is_categorical,
                     log_prior=self._log_prior,
                     minimum_noise=self._minimum_noise,
-                    initial_kernel_params=cache,
+                    last_gpr=cache,
                     deterministic_objective=self._deterministic,
                 )
             )
-        self._kernel_params_cache_list = kernel_params_list
+        self._gprs_cache_list = gprs_list
 
         best_params: np.ndarray | None
         if self._constraints_func is None:
             if n_objectives == 1:
-                assert len(kernel_params_list) == 1
+                assert len(gprs_list) == 1
                 acqf_params = acqf.create_acqf_params(
                     acqf_type=acqf.AcquisitionFunctionType.LOG_EI,
-                    kernel_params=kernel_params_list[0],
+                    gpr=gprs_list[0],
                     search_space=internal_search_space,
                     X=normalized_params,
                     Y=standardized_score_vals[:, 0],
@@ -331,7 +327,7 @@ class GPSampler(BaseSampler):
                     acqf_params_for_objectives.append(
                         acqf.create_acqf_params(
                             acqf_type=acqf.AcquisitionFunctionType.LOG_EHVI,
-                            kernel_params=kernel_params_list[i],
+                            gpr=gprs_list[i],
                             search_space=internal_search_space,
                             X=normalized_params,
                             Y=standardized_score_vals[:, i],
@@ -352,21 +348,19 @@ class GPSampler(BaseSampler):
                 chosen_indices = self._rng.rng.choice(n_pareto_sols, size=size, replace=False)
                 best_params = pareto_params[chosen_indices]
         else:
-            assert (
-                n_objectives == len(kernel_params_list) == 1
-            ), "Multi-objective has not been supported."
+            assert n_objectives == len(gprs_list) == 1, "Multi-objective has not been supported."
             constraint_vals, is_feasible = _get_constraint_vals_and_feasibility(study, trials)
             is_all_infeasible = not np.any(is_feasible)
 
             # TODO(kAIto47802): If is_all_infeasible, the acquisition function for the objective
-            # function is ignored, so skipping the computation of kernel_params and acqf_params
+            # function is ignored, so skipping the computation of gpr and acqf_params
             # can improve speed.
             # TODO(kAIto47802): Consider the case where all trials are feasible. We can ignore
             # constraints in this case.
             max_Y = -np.inf if is_all_infeasible else np.max(standardized_score_vals[is_feasible])
             acqf_params = acqf.create_acqf_params(
                 acqf_type=acqf.AcquisitionFunctionType.LOG_EI,
-                kernel_params=kernel_params_list[0],
+                gpr=gprs_list[0],
                 search_space=internal_search_space,
                 X=normalized_params,
                 Y=standardized_score_vals[:, 0],

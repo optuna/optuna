@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from optuna._gp.gp import KernelParamsTensor
+from optuna._gp.gp import GPRegressor
 from optuna._gp.search_space import ScaleType
 from optuna._gp.search_space import SearchSpace
 from optuna._hypervolume import get_non_dominated_box_bounds
@@ -118,7 +118,7 @@ class AcquisitionFunctionType(IntEnum):
 @dataclass(frozen=True)
 class AcquisitionFunctionParams:
     acqf_type: AcquisitionFunctionType
-    kernel_params: KernelParamsTensor
+    gpr: GPRegressor
     X: np.ndarray
     search_space: SearchSpace
     cov_Y_Y_inv: np.ndarray
@@ -142,7 +142,7 @@ class ConstrainedAcquisitionFunctionParams(AcquisitionFunctionParams):
     ) -> ConstrainedAcquisitionFunctionParams:
         return cls(
             acqf_type=acqf_params.acqf_type,
-            kernel_params=acqf_params.kernel_params,
+            gpr=acqf_params.gpr,
             X=acqf_params.X,
             search_space=acqf_params.search_space,
             cov_Y_Y_inv=acqf_params.cov_Y_Y_inv,
@@ -188,13 +188,12 @@ class MultiObjectiveAcquisitionFunctionParams(AcquisitionFunctionParams):
         # inverse of squared mean lengthscales over all the objectives.
         mean_lengthscales = np.mean(
             [
-                1
-                / np.sqrt(acqf_params.kernel_params.inverse_squared_lengthscales.detach().numpy())
+                1 / np.sqrt(acqf_params.gpr.inverse_squared_lengthscales.detach().numpy())
                 for acqf_params in acqf_params_for_objectives
             ],
             axis=0,
         )
-        dummy_kernel_params = KernelParamsTensor(
+        dummy_gpr = GPRegressor(
             # inverse_squared_lengthscales is used in optim_mixed.py.
             # cf. https://github.com/optuna/optuna/blob/v4.3.0/optuna/_gp/optim_mixed.py#L200-L209
             inverse_squared_lengthscales=torch.from_numpy(1.0 / mean_lengthscales**2),
@@ -212,7 +211,7 @@ class MultiObjectiveAcquisitionFunctionParams(AcquisitionFunctionParams):
             non_dominated_box_lower_bounds=non_dominated_box_lower_bounds,
             non_dominated_box_upper_bounds=non_dominated_box_upper_bounds,
             fixed_samples=fixed_samples,
-            kernel_params=dummy_kernel_params,
+            gpr=dummy_gpr,
             # The variables below will not be used anywhere, so we simply set dummy values.
             cov_Y_Y_inv=np.empty(0),
             cov_Y_Y_inv_Y=np.empty(0),
@@ -223,7 +222,7 @@ class MultiObjectiveAcquisitionFunctionParams(AcquisitionFunctionParams):
 
 def create_acqf_params(
     acqf_type: AcquisitionFunctionType,
-    kernel_params: KernelParamsTensor,
+    gpr: GPRegressor,
     search_space: SearchSpace,
     X: np.ndarray,
     Y: np.ndarray,
@@ -234,14 +233,14 @@ def create_acqf_params(
     X_tensor = torch.from_numpy(X)
     is_categorical = torch.from_numpy(search_space.scale_types == ScaleType.CATEGORICAL)
     with torch.no_grad():
-        cov_Y_Y = kernel_params.kernel(is_categorical, X_tensor, X_tensor).detach().numpy()
+        cov_Y_Y = gpr.kernel(is_categorical, X_tensor, X_tensor).detach().numpy()
 
-    cov_Y_Y[np.diag_indices(X.shape[0])] += kernel_params.noise_var.item()
+    cov_Y_Y[np.diag_indices(X.shape[0])] += gpr.noise_var.item()
     cov_Y_Y_inv = np.linalg.inv(cov_Y_Y)
 
     return AcquisitionFunctionParams(
         acqf_type=acqf_type,
-        kernel_params=kernel_params,
+        gpr=gpr,
         X=X,
         search_space=search_space,
         cov_Y_Y_inv=cov_Y_Y_inv,
@@ -262,7 +261,7 @@ def _eval_ehvi(
     Y_post = []
     fixed_samples = ehvi_acqf_params.fixed_samples
     for i, acqf_params in enumerate(ehvi_acqf_params.acqf_params_for_objectives):
-        mean, var = acqf_params.kernel_params.posterior(
+        mean, var = acqf_params.gpr.posterior(
             X=X,
             is_categorical=is_categorical,
             cov_Y_Y_inv=torch.from_numpy(acqf_params.cov_Y_Y_inv),
@@ -291,7 +290,7 @@ def eval_acqf(acqf_params: AcquisitionFunctionParams, x: torch.Tensor) -> torch.
         assert isinstance(acqf_params, MultiObjectiveAcquisitionFunctionParams)
         return _eval_ehvi(ehvi_acqf_params=acqf_params, x=x)
 
-    mean, var = acqf_params.kernel_params.posterior(
+    mean, var = acqf_params.gpr.posterior(
         torch.from_numpy(acqf_params.X),
         torch.from_numpy(acqf_params.search_space.scale_types == ScaleType.CATEGORICAL),
         torch.from_numpy(acqf_params.cov_Y_Y_inv),
