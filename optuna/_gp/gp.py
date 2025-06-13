@@ -279,4 +279,3 @@ def fit_kernel_params(
         "The default initial kernel parameters will be used instead."
     )
     return default_gpr_cache
-
