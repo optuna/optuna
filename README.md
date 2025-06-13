@@ -74,18 +74,20 @@ optimization *studies*.
 [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://colab.research.google.com/github/optuna/optuna-examples/blob/main/quickstart.ipynb)
 
 ```python
-import ...
+import optuna
+import sklearn
+
 
 # Define an objective function to be minimized.
 def objective(trial):
 
     # Invoke suggest methods of a Trial object to generate hyperparameters.
-    regressor_name = trial.suggest_categorical('regressor', ['SVR', 'RandomForest'])
-    if regressor_name == 'SVR':
-        svr_c = trial.suggest_float('svr_c', 1e-10, 1e10, log=True)
+    regressor_name = trial.suggest_categorical("regressor", ["SVR", "RandomForest"])
+    if regressor_name == "SVR":
+        svr_c = trial.suggest_float("svr_c", 1e-10, 1e10, log=True)
         regressor_obj = sklearn.svm.SVR(C=svr_c)
     else:
-        rf_max_depth = trial.suggest_int('rf_max_depth', 2, 32)
+        rf_max_depth = trial.suggest_int("rf_max_depth", 2, 32)
         regressor_obj = sklearn.ensemble.RandomForestRegressor(max_depth=rf_max_depth)
 
     X, y = sklearn.datasets.fetch_california_housing(return_X_y=True)
@@ -97,6 +99,7 @@ def objective(trial):
     error = sklearn.metrics.mean_squared_error(y_val, y_pred)
 
     return error  # An objective value linked with the Trial object.
+
 
 study = optuna.create_study()  # Create a new study.
 study.optimize(objective, n_trials=100)  # Invoke optimization of the objective function.
@@ -180,7 +183,7 @@ import optuna
 def objective(trial):
     x1 = trial.suggest_float("x1", -100, 100)
     x2 = trial.suggest_float("x2", -100, 100)
-    return x1 ** 2 + 0.01 * x2 ** 2
+    return x1**2 + 0.01 * x2**2
 
 
 study = optuna.create_study(storage="sqlite:///db.sqlite3")  # Create a new study with database.
