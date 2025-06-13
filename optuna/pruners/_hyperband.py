@@ -25,7 +25,7 @@ class HyperbandPruner(BasePruner):
     by trying different :math:`n` values for a fixed budget.
 
     The pruner handles NaN values in the following manner:
-        1. If the final objective  values are NaN, the trial will not be pruned.
+        1. If the final objective values are NaN, the trial will not be pruned.
         2. If NaN values are reported at intermediate values, the trial is pruned.
 
     .. note::
