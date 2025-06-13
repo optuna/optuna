@@ -214,8 +214,8 @@ study.optimize(objective, n_trials=20, n_jobs=4)
 #
 # .. _multi-node-optimization:
 #
-# Multi-node Optimization
-# -----------------------
+# Multi-node Optimization with RDBStorage
+# ---------------------------------------
 #
 # Since :class:`~optuna.storages.journal.JournalFileBackend` uses file locks on the local filesystem, it operates safely for multiple processes on the same host. However, if accessed simultaneously from multiple machines via NFS (or similar), the file locks may not work correctly, which could lead to race conditions.
 # it is likely to cause race conditions when accessed by multiple machines.
@@ -274,8 +274,8 @@ study.optimize(objective, n_trials=20, n_jobs=4)
 #
 # .. _grpc-storage-proxy:
 #
-# GRPC Proxy Storage
-# ------------------
+# Multi-node Optimization with GrpcStorageProxy
+# ---------------------------------------------
 #
 # However, if you are running thousands of process nodes, an RDB server may not be able to handle the load.
 # In that case, you can use :class:`~optuna.storages.GrpcStorageProxy`
