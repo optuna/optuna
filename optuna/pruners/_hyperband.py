@@ -24,6 +24,10 @@ class HyperbandPruner(BasePruner):
     `Hyperband <http://www.jmlr.org/papers/volume18/16-558/16-558.pdf>`__ attacks this trade-off
     by trying different :math:`n` values for a fixed budget.
 
+    The pruner handles NaN values in the following manner:
+        1. If the final objective values are NaN, the trial will not be pruned.
+        2. If NaN values are reported at intermediate values, the trial is pruned.
+
     .. note::
         * In the Hyperband paper, the counterpart of :class:`~optuna.samplers.RandomSampler`
           is used.
