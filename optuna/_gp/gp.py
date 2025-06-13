@@ -89,80 +89,74 @@ class Matern52Kernel(torch.autograd.Function):
 
 @dataclass(frozen=True)
 class KernelParamsTensor:
+    # TODO(nabenabe): Rename KernelParamsTensor to more appropriate name such as GP regressor.
     # Kernel parameters to fit.
     inverse_squared_lengthscales: torch.Tensor  # (len(params), )
     kernel_scale: torch.Tensor  # Scalar
     noise_var: torch.Tensor  # Scalar
 
+    def kernel(
+        self, is_categorical: torch.Tensor, X1: torch.Tensor, X2: torch.Tensor
+    ) -> torch.Tensor:
+        """
+        Return the kernel matrix with the shape of (..., n_A, n_B) given X1 and X2 each with the
+        shapes of (..., n_A, len(params)) and (..., n_B, len(params)).
 
-def kernel(
-    is_categorical: torch.Tensor,
-    kernel_params: KernelParamsTensor,
-    X1: torch.Tensor,
-    X2: torch.Tensor,
-) -> torch.Tensor:
-    """
-    Return the kernel matrix with the shape of (..., n_A, n_B) given X1 and X2 each with the shapes
-    of (..., n_A, len(params)) and (..., n_B, len(params)).
+        If x1 and x2 have the shape of (len(params), ), kernel(x1, x2) is computed as:
+            kernel_scale * Matern52Kernel.apply(
+                d2(x1, x2) @ inverse_squared_lengthscales
+            )
+        where if x1[i] is continuous, d2(x1, x2)[i] = (x1[i] - x2[i]) ** 2 and if x1[i] is
+        categorical, d2(x1, x2)[i] = int(x1[i] != x2[i]).
+        Note that the distance for categorical parameters is the Hamming distance.
+        """
+        d2 = (X1[..., :, None, :] - X2[..., None, :, :]) ** 2
+        d2[..., is_categorical] = (d2[..., is_categorical] > 0.0).type(torch.float64)
+        d2 = (d2 * self.inverse_squared_lengthscales).sum(dim=-1)
+        return Matern52Kernel.apply(d2) * self.kernel_scale  # type: ignore
 
-    If x1 and x2 have the shape of (len(params), ), kernel(x1, x2) is computed as:
-        kernel_scale * Matern52Kernel.apply(
-            d2(x1, x2) @ inverse_squared_lengthscales
+    def posterior(
+        self,
+        X: torch.Tensor,
+        is_categorical: torch.Tensor,
+        cov_Y_Y_inv: torch.Tensor,
+        cov_Y_Y_inv_Y: torch.Tensor,
+        x: torch.Tensor,
+    ) -> tuple[torch.Tensor, torch.Tensor]:  # (mean: (...,), var: (...,))
+        cov_fx_fX = self.kernel(is_categorical, x[..., None, :], X)[..., 0, :]
+        cov_fx_fx = self.kernel_scale  # kernel(x, x) = kernel_scale
+
+        # mean = cov_fx_fX @ inv(cov_fX_fX + noise * I) @ Y
+        # var = cov_fx_fx - cov_fx_fX @ inv(cov_fX_fX + noise * I) @ cov_fx_fX.T
+        # The shape of both mean and var is (..., ).
+        mean = cov_fx_fX @ cov_Y_Y_inv_Y
+        var = cov_fx_fx - (cov_fx_fX * (cov_fx_fX @ cov_Y_Y_inv)).sum(dim=-1)
+        # We need to clamp the variance to avoid negative values due to numerical errors.
+        return mean, torch.clamp(var, min=0.0)
+
+    def marginal_log_likelihood(
+        self, X: torch.Tensor, Y: torch.Tensor, is_categorical: torch.Tensor
+    ) -> torch.Tensor:  # Scalar
+        # -0.5 * log((2pi)^n |C|) - 0.5 * Y^T C^-1 Y, where C^-1 = cov_Y_Y_inv
+        # We apply the cholesky decomposition to efficiently compute log(|C|) and C^-1.
+
+        cov_fX_fX = self.kernel(is_categorical, X, X)
+
+        cov_Y_Y_chol = torch.linalg.cholesky(
+            cov_fX_fX + self.noise_var * torch.eye(X.shape[0], dtype=torch.float64)
         )
-    where if x1[i] is continuous, d2(x1, x2)[i] = (x1[i] - x2[i]) ** 2 and if x1[i] is categorical,
-    d2(x1, x2)[i] = int(x1[i] != x2[i]).
-    Note that the distance for categorical parameters is the Hamming distance.
-    """
-    d2 = (X1[..., :, None, :] - X2[..., None, :, :]) ** 2
-    d2[..., is_categorical] = (d2[..., is_categorical] > 0.0).type(torch.float64)
-    d2 = (d2 * kernel_params.inverse_squared_lengthscales).sum(dim=-1)
-    return Matern52Kernel.apply(d2) * kernel_params.kernel_scale  # type: ignore
-
-
-def posterior(
-    kernel_params: KernelParamsTensor,
-    X: torch.Tensor,
-    is_categorical: torch.Tensor,
-    cov_Y_Y_inv: torch.Tensor,
-    cov_Y_Y_inv_Y: torch.Tensor,
-    x: torch.Tensor,
-) -> tuple[torch.Tensor, torch.Tensor]:  # (mean: (...,), var: (...,))
-    cov_fx_fX = kernel(is_categorical, kernel_params, x[..., None, :], X)[..., 0, :]
-    cov_fx_fx = kernel_params.kernel_scale  # kernel(x, x) = kernel_scale
-
-    # mean = cov_fx_fX @ inv(cov_fX_fX + noise * I) @ Y
-    # var = cov_fx_fx - cov_fx_fX @ inv(cov_fX_fX + noise * I) @ cov_fx_fX.T
-    # The shape of both mean and var is (..., ).
-    mean = cov_fx_fX @ cov_Y_Y_inv_Y
-    var = cov_fx_fx - (cov_fx_fX * (cov_fx_fX @ cov_Y_Y_inv)).sum(dim=-1)
-    # We need to clamp the variance to avoid negative values due to numerical errors.
-    return mean, torch.clamp(var, min=0.0)
-
-
-def marginal_log_likelihood(
-    X: torch.Tensor,
-    Y: torch.Tensor,
-    is_categorical: torch.Tensor,
-    kernel_params: KernelParamsTensor,
-) -> torch.Tensor:  # Scalar
-    # -0.5 * log((2pi)^n |C|) - 0.5 * Y^T C^-1 Y, where C^-1 = cov_Y_Y_inv
-    # We apply the cholesky decomposition to efficiently compute log(|C|) and C^-1.
-
-    cov_fX_fX = kernel(is_categorical, kernel_params, X, X)
-
-    cov_Y_Y_chol = torch.linalg.cholesky(
-        cov_fX_fX + kernel_params.noise_var * torch.eye(X.shape[0], dtype=torch.float64)
-    )
-    # log |L| = 0.5 * log|L^T L| = 0.5 * log|C|
-    logdet = 2 * torch.log(torch.diag(cov_Y_Y_chol)).sum()
-    # cov_Y_Y_chol @ cov_Y_Y_chol_inv_Y = Y --> cov_Y_Y_chol_inv_Y = inv(cov_Y_Y_chol) @ Y
-    cov_Y_Y_chol_inv_Y = torch.linalg.solve_triangular(cov_Y_Y_chol, Y[:, None], upper=False)[:, 0]
-    return -0.5 * (
-        logdet
-        + X.shape[0] * math.log(2 * math.pi)
-        # Y^T C^-1 Y = Y^T inv(L^T L) Y --> cov_Y_Y_chol_inv_Y @ cov_Y_Y_chol_inv_Y
-        + (cov_Y_Y_chol_inv_Y @ cov_Y_Y_chol_inv_Y)
-    )
+        # log |L| = 0.5 * log|L^T L| = 0.5 * log|C|
+        logdet = 2 * torch.log(torch.diag(cov_Y_Y_chol)).sum()
+        # cov_Y_Y_chol @ cov_Y_Y_chol_inv_Y = Y --> cov_Y_Y_chol_inv_Y = inv(cov_Y_Y_chol) @ Y
+        cov_Y_Y_chol_inv_Y = torch.linalg.solve_triangular(cov_Y_Y_chol, Y[:, None], upper=False)[
+            :, 0
+        ]
+        return -0.5 * (
+            logdet
+            + X.shape[0] * math.log(2 * math.pi)
+            # Y^T C^-1 Y = Y^T inv(L^T L) Y --> cov_Y_Y_chol_inv_Y @ cov_Y_Y_chol_inv_Y
+            + (cov_Y_Y_chol_inv_Y @ cov_Y_Y_chol_inv_Y)
+        )
 
 
 def _fit_kernel_params(
@@ -206,8 +200,8 @@ def _fit_kernel_params(
                     else torch.exp(raw_params_tensor[n_params + 1]) + minimum_noise
                 ),
             )
-            loss = -marginal_log_likelihood(
-                torch.from_numpy(X), torch.from_numpy(Y), torch.from_numpy(is_categorical), params
+            loss = -params.marginal_log_likelihood(
+                torch.from_numpy(X), torch.from_numpy(Y), torch.from_numpy(is_categorical)
             ) - log_prior(params)
             loss.backward()  # type: ignore
             # scipy.minimize requires all the gradients to be zero for termination.
