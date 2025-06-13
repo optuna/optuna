@@ -98,7 +98,7 @@ def test_fit_kernel_params(
             is_categorical=is_categorical,
             log_prior=log_prior,
             minimum_noise=minimum_noise,
-            initial_gpr=initial_gpr,
+            gpr_cache=initial_gpr,
             deterministic_objective=deterministic_objective,
             gtol=gtol,
         )

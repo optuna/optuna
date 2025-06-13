@@ -169,7 +169,7 @@ def _fit_kernel_params(
     log_prior: Callable[[GPRegressor], torch.Tensor],
     minimum_noise: float,
     deterministic_objective: bool,
-    initial_gpr: GPRegressor,
+    gpr_cache: GPRegressor,
     gtol: float,
 ) -> GPRegressor:
     n_params = X.shape[1]
@@ -181,11 +181,11 @@ def _fit_kernel_params(
     # pathological behavior of maximum likelihood estimation.
     initial_raw_params = np.concatenate(
         [
-            np.log(initial_gpr.inverse_squared_lengthscales.detach().numpy()),
+            np.log(gpr_cache.inverse_squared_lengthscales.detach().numpy()),
             [
-                np.log(initial_gpr.kernel_scale.item()),
+                np.log(gpr_cache.kernel_scale.item()),
                 # We add 0.01 * minimum_noise to initial noise_var to avoid instability.
-                np.log(initial_gpr.noise_var.item() - 0.99 * minimum_noise),
+                np.log(gpr_cache.noise_var.item() - 0.99 * minimum_noise),
             ],
         ]
     )
@@ -244,22 +244,22 @@ def fit_kernel_params(
     log_prior: Callable[[GPRegressor], torch.Tensor],
     minimum_noise: float,
     deterministic_objective: bool,
-    last_gpr: GPRegressor | None = None,
+    gpr_cache: GPRegressor | None = None,
     gtol: float = 1e-2,
 ) -> GPRegressor:
-    default_initial_gpr = GPRegressor(
+    default_gpr_cache = GPRegressor(
         inverse_squared_lengthscales=torch.ones(X.shape[1], dtype=torch.float64),
         kernel_scale=torch.tensor(1.0, dtype=torch.float64),
         noise_var=torch.tensor(1.0, dtype=torch.float64),
     )
-    if last_gpr is None:
-        last_gpr = default_initial_gpr
+    if gpr_cache is None:
+        gpr_cache = default_gpr_cache
 
     error = None
-    # First try optimizing the kernel params with the provided kernel parameters in last_gpr,
+    # First try optimizing the kernel params with the provided kernel parameters in gpr_cache,
     # but if it fails, rerun the optimization with the default kernel parameters above.
     # This increases the robustness of the optimization.
-    for init_gpr in [last_gpr, default_initial_gpr]:
+    for gpr_cache_to_use in [gpr_cache, default_gpr_cache]:
         try:
             return _fit_kernel_params(
                 X=X,
@@ -267,7 +267,7 @@ def fit_kernel_params(
                 is_categorical=is_categorical,
                 log_prior=log_prior,
                 minimum_noise=minimum_noise,
-                initial_gpr=init_gpr,
+                gpr_cache=gpr_cache_to_use,
                 deterministic_objective=deterministic_objective,
                 gtol=gtol,
             )
@@ -278,4 +278,5 @@ def fit_kernel_params(
         f"The optimization of kernel parameters failed: \n{error}\n"
         "The default initial kernel parameters will be used instead."
     )
-    return default_initial_gpr
+    return default_gpr_cache
+

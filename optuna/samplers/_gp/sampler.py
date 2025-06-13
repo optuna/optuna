@@ -237,7 +237,7 @@ class GPSampler(BaseSampler):
                 is_categorical=is_categorical,
                 log_prior=self._log_prior,
                 minimum_noise=self._minimum_noise,
-                last_gpr=cache,
+                gpr_cache=cache,
                 deterministic_objective=self._deterministic,
             )
             constraints_gprs.append(gpr)
@@ -303,7 +303,7 @@ class GPSampler(BaseSampler):
                     is_categorical=is_categorical,
                     log_prior=self._log_prior,
                     minimum_noise=self._minimum_noise,
-                    last_gpr=cache,
+                    gpr_cache=cache,
                     deterministic_objective=self._deterministic,
                 )
             )

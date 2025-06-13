@@ -158,7 +158,7 @@ class EMMREvaluator(BaseImprovementEvaluator):
             is_categorical=(search_space.scale_types == gp_search_space.ScaleType.CATEGORICAL),
             log_prior=prior.default_log_prior,
             minimum_noise=prior.DEFAULT_MINIMUM_NOISE_VAR,
-            last_gpr=None,
+            gpr_cache=None,
             deterministic_objective=self._deterministic,
         )
 
@@ -168,7 +168,7 @@ class EMMREvaluator(BaseImprovementEvaluator):
             is_categorical=(search_space.scale_types == gp_search_space.ScaleType.CATEGORICAL),
             log_prior=prior.default_log_prior,
             minimum_noise=prior.DEFAULT_MINIMUM_NOISE_VAR,
-            last_gpr=gpr_t1,
+            gpr_cache=gpr_t1,
             deterministic_objective=self._deterministic,
         )
 
