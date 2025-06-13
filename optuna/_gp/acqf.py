@@ -7,9 +7,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from optuna._gp.gp import kernel
 from optuna._gp.gp import KernelParamsTensor
-from optuna._gp.gp import posterior
 from optuna._gp.search_space import ScaleType
 from optuna._gp.search_space import SearchSpace
 from optuna._hypervolume import get_non_dominated_box_bounds
@@ -236,7 +234,7 @@ def create_acqf_params(
     X_tensor = torch.from_numpy(X)
     is_categorical = torch.from_numpy(search_space.scale_types == ScaleType.CATEGORICAL)
     with torch.no_grad():
-        cov_Y_Y = kernel(is_categorical, kernel_params, X_tensor, X_tensor).detach().numpy()
+        cov_Y_Y = kernel_params.kernel(is_categorical, X_tensor, X_tensor).detach().numpy()
 
     cov_Y_Y[np.diag_indices(X.shape[0])] += kernel_params.noise_var.item()
     cov_Y_Y_inv = np.linalg.inv(cov_Y_Y)
@@ -264,8 +262,7 @@ def _eval_ehvi(
     Y_post = []
     fixed_samples = ehvi_acqf_params.fixed_samples
     for i, acqf_params in enumerate(ehvi_acqf_params.acqf_params_for_objectives):
-        mean, var = posterior(
-            kernel_params=acqf_params.kernel_params,
+        mean, var = acqf_params.kernel_params.posterior(
             X=X,
             is_categorical=is_categorical,
             cov_Y_Y_inv=torch.from_numpy(acqf_params.cov_Y_Y_inv),
@@ -294,8 +291,7 @@ def eval_acqf(acqf_params: AcquisitionFunctionParams, x: torch.Tensor) -> torch.
         assert isinstance(acqf_params, MultiObjectiveAcquisitionFunctionParams)
         return _eval_ehvi(ehvi_acqf_params=acqf_params, x=x)
 
-    mean, var = posterior(
-        acqf_params.kernel_params,
+    mean, var = acqf_params.kernel_params.posterior(
         torch.from_numpy(acqf_params.X),
         torch.from_numpy(acqf_params.search_space.scale_types == ScaleType.CATEGORICAL),
         torch.from_numpy(acqf_params.cov_Y_Y_inv),

@@ -287,8 +287,7 @@ def _compute_gp_posterior(
         X=X,  # normalized_params[..., :-1, :],
         Y=Y,  # standarized_score_vals[:-1],
     )
-    mean_tensor, var_tensor = gp.posterior(
-        acqf_params.kernel_params,
+    mean_tensor, var_tensor = acqf_params.kernel_params.posterior(
         torch.from_numpy(acqf_params.X),
         torch.from_numpy(
             acqf_params.search_space.scale_types == gp_search_space.ScaleType.CATEGORICAL
@@ -321,11 +320,9 @@ def _posterior_of_batched_theta(
     assert cov_Y_Y_inv.shape == (len_trials, len_trials)
     assert cov_Y_Y_inv_Y.shape == (len_trials,)
 
-    cov_ftheta_fX = gp.kernel(is_categorical, kernel_params, theta[..., None, :], X)[..., 0, :]
+    cov_ftheta_fX = kernel_params.kernel(is_categorical, theta[..., None, :], X)[..., 0, :]
     assert cov_ftheta_fX.shape == (len_batch, len_trials)
-    cov_ftheta_ftheta = gp.kernel(is_categorical, kernel_params, theta[..., None, :], theta)[
-        ..., 0, :
-    ]
+    cov_ftheta_ftheta = kernel_params.kernel(is_categorical, theta[..., None, :], theta)[..., 0, :]
     assert cov_ftheta_ftheta.shape == (len_batch, len_batch)
 
     assert torch.allclose(cov_ftheta_ftheta.diag(), kernel_params.kernel_scale)
