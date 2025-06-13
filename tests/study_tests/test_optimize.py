@@ -39,19 +39,22 @@ def test_run_trial(storage_mode: str, caplog: LogCaptureFixture) -> None:
         study = create_study(storage=storage)
 
         caplog.clear()
-        frozen_trial = _optimize._run_trial(study, lambda _: 1.0, catch=())
+        frozen_trial_id = _optimize._run_trial(study, lambda _: 1.0, catch=())
+        frozen_trial = study._storage.get_trial(frozen_trial_id)
         assert frozen_trial.state == TrialState.COMPLETE
         assert frozen_trial.value == 1.0
         assert "Trial 0 finished with value: 1.0 and parameters" in caplog.text
 
         caplog.clear()
-        frozen_trial = _optimize._run_trial(study, lambda _: float("inf"), catch=())
+        frozen_trial_id = _optimize._run_trial(study, lambda _: float("inf"), catch=())
+        frozen_trial = study._storage.get_trial(frozen_trial_id)
         assert frozen_trial.state == TrialState.COMPLETE
         assert frozen_trial.value == float("inf")
         assert "Trial 1 finished with value: inf and parameters" in caplog.text
 
         caplog.clear()
-        frozen_trial = _optimize._run_trial(study, lambda _: -float("inf"), catch=())
+        frozen_trial_id = _optimize._run_trial(study, lambda _: -float("inf"), catch=())
+        frozen_trial = study._storage.get_trial(frozen_trial_id)
         assert frozen_trial.state == TrialState.COMPLETE
         assert frozen_trial.value == -float("inf")
         assert "Trial 2 finished with value: -inf and parameters" in caplog.text
@@ -62,19 +65,23 @@ def test_run_trial_automatically_fail(storage_mode: str, caplog: LogCaptureFixtu
     with StorageSupplier(storage_mode) as storage:
         study = create_study(storage=storage)
 
-        frozen_trial = _optimize._run_trial(study, lambda _: float("nan"), catch=())
+        frozen_trial_id = _optimize._run_trial(study, lambda _: float("nan"), catch=())
+        frozen_trial = study._storage.get_trial(frozen_trial_id)
         assert frozen_trial.state == TrialState.FAIL
         assert frozen_trial.value is None
 
-        frozen_trial = _optimize._run_trial(study, lambda _: None, catch=())  # type: ignore[arg-type,return-value] # noqa: E501
+        frozen_trial_id = _optimize._run_trial(study, lambda _: None, catch=())  # type: ignore[arg-type,return-value] # noqa: E501
+        frozen_trial = study._storage.get_trial(frozen_trial_id)
         assert frozen_trial.state == TrialState.FAIL
         assert frozen_trial.value is None
 
-        frozen_trial = _optimize._run_trial(study, lambda _: object(), catch=())  # type: ignore[arg-type,return-value] # noqa: E501
+        frozen_trial_id = _optimize._run_trial(study, lambda _: object(), catch=())  # type: ignore[arg-type,return-value] # noqa: E501
+        frozen_trial = study._storage.get_trial(frozen_trial_id)
         assert frozen_trial.state == TrialState.FAIL
         assert frozen_trial.value is None
 
-        frozen_trial = _optimize._run_trial(study, lambda _: [0, 1], catch=())
+        frozen_trial_id = _optimize._run_trial(study, lambda _: [0, 1], catch=())
+        frozen_trial = study._storage.get_trial(frozen_trial_id)
         assert frozen_trial.state == TrialState.FAIL
         assert frozen_trial.value is None
 
@@ -93,19 +100,24 @@ def test_run_trial_pruned(storage_mode: str, caplog: LogCaptureFixture) -> None:
         study = create_study(storage=storage)
 
         caplog.clear()
-        frozen_trial = _optimize._run_trial(study, gen_func(), catch=())
+        frozen_trial_id = _optimize._run_trial(study, gen_func(), catch=())
+        frozen_trial = study._storage.get_trial(frozen_trial_id)
         assert frozen_trial.state == TrialState.PRUNED
         assert frozen_trial.value is None
         assert "Trial 0 pruned." in caplog.text
 
         caplog.clear()
-        frozen_trial = _optimize._run_trial(study, gen_func(intermediate=1), catch=())
+        frozen_trial_id = _optimize._run_trial(study, gen_func(intermediate=1), catch=())
+        frozen_trial = study._storage.get_trial(frozen_trial_id)
         assert frozen_trial.state == TrialState.PRUNED
         assert frozen_trial.value == 1
         assert "Trial 1 pruned." in caplog.text
 
         caplog.clear()
-        frozen_trial = _optimize._run_trial(study, gen_func(intermediate=float("nan")), catch=())
+        frozen_trial_id = _optimize._run_trial(
+            study, gen_func(intermediate=float("nan")), catch=()
+        )
+        frozen_trial = study._storage.get_trial(frozen_trial_id)
         assert frozen_trial.state == TrialState.PRUNED
         assert frozen_trial.value is None
         assert "Trial 2 pruned." in caplog.text
@@ -115,7 +127,8 @@ def test_run_trial_pruned(storage_mode: str, caplog: LogCaptureFixture) -> None:
 def test_run_trial_catch_exception(storage_mode: str) -> None:
     with StorageSupplier(storage_mode) as storage:
         study = create_study(storage=storage)
-        frozen_trial = _optimize._run_trial(study, fail_objective, catch=(ValueError,))
+        frozen_trial_id = _optimize._run_trial(study, fail_objective, catch=(ValueError,))
+        frozen_trial = study._storage.get_trial(frozen_trial_id)
         assert frozen_trial.state == TrialState.FAIL
 
 
