@@ -328,7 +328,7 @@ def _posterior_of_batched_theta(
     ]
     assert cov_ftheta_ftheta.shape == (len_batch, len_batch)
 
-    assert torch.allclose(cov_ftheta_ftheta.diag(), gp.kernel_at_zero_distance(kernel_params))
+    assert torch.allclose(cov_ftheta_ftheta.diag(), kernel_params.kernel_scale)
     assert torch.allclose(cov_ftheta_ftheta, cov_ftheta_ftheta.T)
 
     mean = cov_ftheta_fX @ cov_Y_Y_inv_Y

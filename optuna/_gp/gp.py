@@ -1,3 +1,22 @@
+"""Notations in this Gaussian process implementation
+
+X: Observed parameter values with the shape of (len(trials), len(params)).
+Y: Observed objective values with the shape of (len(trials), ).
+x: (Possibly batched) parameter value(s) to evaluate with the shape of (..., len(params)).
+cov_fX_fX: Kernel matrix X = V[f(X)] with the shape of (len(trials), len(trials)).
+cov_fx_fX: Kernel matrix Cov[f(x), f(X)] with the shape of (..., len(trials)).
+cov_fx_fx: Kernel scalar value x = V[f(x)]. This value is constant for the Matern 5/2 kernel.
+cov_Y_Y_inv:
+    The inverse of the covariance matrix (V[f(X) + noise])^-1 with the shape of
+    (len(trials), len(trials)).
+cov_Y_Y_inv_Y: `cov_Y_Y_inv @ Y` with the shape of (len(trials), ).
+max_Y: The maximum of Y (Note that we transform the objective values such that it is maximized.)
+d2: The squared distance between two points.
+is_categorical:
+    A boolean array with the shape of (len(params), ). If is_categorical[i] is True, the i-th
+    parameter is categorical.
+"""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -24,19 +43,6 @@ else:
 
 logger = get_logger(__name__)
 
-# This GP implementation uses the following notation:
-# X[len(trials), len(params)]: observed parameter values.
-# Y[len(trials)]: observed objective values.
-# x[(batch_len,) len(params)]: parameter value to evaluate. Possibly batched.
-# cov_fX_fX[len(trials), len(trials)]: kernel matrix of X = V[f(X)]
-# cov_fx_fX[(batch_len,) len(trials)]: kernel matrix of x and X = Cov[f(x), f(X)]
-# cov_fx_fx: kernel value (scalar) of x = V[f(x)].
-#     Since we use a Matern 5/2 kernel, we assume this value to be a constant.
-# cov_Y_Y_inv[len(trials), len(trials)]: inv of the covariance matrix of Y = (V[f(X) + noise])^-1
-# cov_Y_Y_inv_Y[len(trials)]: cov_Y_Y_inv @ Y
-# max_Y: maximum of Y (Note that we transform the objective values such that it is maximized.)
-# d2: squared distance between two points
-
 
 def warn_and_convert_inf(values: np.ndarray) -> np.ndarray:
     is_values_finite = np.isfinite(values)
@@ -57,6 +63,14 @@ def warn_and_convert_inf(values: np.ndarray) -> np.ndarray:
 class Matern52Kernel(torch.autograd.Function):
     @staticmethod
     def forward(ctx: Any, squared_distance: torch.Tensor) -> torch.Tensor:
+        """
+        This method calculates `exp(-sqrt5d) * (1/3 * sqrt5d ** 2 + sqrt5d + 1)` where
+        `sqrt5d = sqrt(5 * squared_distance)`.
+
+        Please note that automatic differentiation by PyTorch does not work well at
+        `squared_distance = 0` due to zero division, so we manually save the derivative, i.e.,
+        `-5/6 * (1 + sqrt5d) * exp(-sqrt5d)`, for the exact derivative calculation.
+        """
         sqrt5d = torch.sqrt(5 * squared_distance)
         exp_part = torch.exp(-sqrt5d)
         val = exp_part * ((5 / 3) * squared_distance + sqrt5d + 1)
@@ -73,73 +87,62 @@ class Matern52Kernel(torch.autograd.Function):
         return deriv * grad
 
 
-def matern52_kernel_from_squared_distance(squared_distance: torch.Tensor) -> torch.Tensor:
-    # sqrt5d = sqrt(5 * squared_distance)
-    # exp(sqrt5d) * (1/3 * sqrt5d ** 2 + sqrt5d + 1)
-    #
-    # We cannot let PyTorch differentiate the above expression because
-    # the gradient runs into 0/0 at squared_distance=0.
-    return Matern52Kernel.apply(squared_distance)  # type: ignore
-
-
 @dataclass(frozen=True)
 class KernelParamsTensor:
     # Kernel parameters to fit.
-    inverse_squared_lengthscales: torch.Tensor  # [len(params)]
+    inverse_squared_lengthscales: torch.Tensor  # (len(params), )
     kernel_scale: torch.Tensor  # Scalar
     noise_var: torch.Tensor  # Scalar
 
 
 def kernel(
-    is_categorical: torch.Tensor,  # [len(params)]
+    is_categorical: torch.Tensor,
     kernel_params: KernelParamsTensor,
-    X1: torch.Tensor,  # [...batch_shape, n_A, len(params)]
-    X2: torch.Tensor,  # [...batch_shape, n_B, len(params)]
-) -> torch.Tensor:  # [...batch_shape, n_A, n_B]
-    # kernel(x1, x2) = kernel_scale * matern52_kernel_from_squared_distance(
-    #                     d2(x1, x2) * inverse_squared_lengthscales)
-    # d2(x1, x2) = sum_i d2_i(x1_i, x2_i)
-    # d2_i(x1_i, x2_i) = (x1_i - x2_i) ** 2  # if x_i is continuous
-    # d2_i(x1_i, x2_i) = 1 if x1_i != x2_i else 0  # if x_i is categorical
+    X1: torch.Tensor,
+    X2: torch.Tensor,
+) -> torch.Tensor:
+    """
+    Return the kernel matrix with the shape of (..., n_A, n_B) given X1 and X2 each with the shapes
+    of (..., n_A, len(params)) and (..., n_B, len(params)).
 
+    If x1 and x2 have the shape of (len(params), ), kernel(x1, x2) is computed as:
+        kernel_scale * Matern52Kernel.apply(
+            d2(x1, x2) @ inverse_squared_lengthscales
+        )
+    where if x1[i] is continuous, d2(x1, x2)[i] = (x1[i] - x2[i]) ** 2 and if x1[i] is categorical,
+    d2(x1, x2)[i] = int(x1[i] != x2[i]).
+    Note that the distance for categorical parameters is the Hamming distance.
+    """
     d2 = (X1[..., :, None, :] - X2[..., None, :, :]) ** 2
-
-    # Use the Hamming distance for categorical parameters.
     d2[..., is_categorical] = (d2[..., is_categorical] > 0.0).type(torch.float64)
     d2 = (d2 * kernel_params.inverse_squared_lengthscales).sum(dim=-1)
-    return matern52_kernel_from_squared_distance(d2) * kernel_params.kernel_scale
-
-
-def kernel_at_zero_distance(
-    kernel_params: KernelParamsTensor,
-) -> torch.Tensor:  # [...batch_shape, n_A, n_B]
-    # kernel(x, x) = kernel_scale
-    return kernel_params.kernel_scale
+    return Matern52Kernel.apply(d2) * kernel_params.kernel_scale  # type: ignore
 
 
 def posterior(
     kernel_params: KernelParamsTensor,
-    X: torch.Tensor,  # [len(trials), len(params)]
-    is_categorical: torch.Tensor,  # bool[len(params)]
-    cov_Y_Y_inv: torch.Tensor,  # [len(trials), len(trials)]
-    cov_Y_Y_inv_Y: torch.Tensor,  # [len(trials)]
-    x: torch.Tensor,  # [(batch,) len(params)]
-) -> tuple[torch.Tensor, torch.Tensor]:  # (mean: [(batch,)], var: [(batch,)])
+    X: torch.Tensor,
+    is_categorical: torch.Tensor,
+    cov_Y_Y_inv: torch.Tensor,
+    cov_Y_Y_inv_Y: torch.Tensor,
+    x: torch.Tensor,
+) -> tuple[torch.Tensor, torch.Tensor]:  # (mean: (...,), var: (...,))
     cov_fx_fX = kernel(is_categorical, kernel_params, x[..., None, :], X)[..., 0, :]
-    cov_fx_fx = kernel_at_zero_distance(kernel_params)
+    cov_fx_fx = kernel_params.kernel_scale  # kernel(x, x) = kernel_scale
 
     # mean = cov_fx_fX @ inv(cov_fX_fX + noise * I) @ Y
     # var = cov_fx_fx - cov_fx_fX @ inv(cov_fX_fX + noise * I) @ cov_fx_fX.T
-    mean = cov_fx_fX @ cov_Y_Y_inv_Y  # [batch]
-    var = cov_fx_fx - (cov_fx_fX * (cov_fx_fX @ cov_Y_Y_inv)).sum(dim=-1)  # [batch]
+    # The shape of both mean and var is (..., ).
+    mean = cov_fx_fX @ cov_Y_Y_inv_Y
+    var = cov_fx_fx - (cov_fx_fX * (cov_fx_fX @ cov_Y_Y_inv)).sum(dim=-1)
     # We need to clamp the variance to avoid negative values due to numerical errors.
-    return (mean, torch.clamp(var, min=0.0))
+    return mean, torch.clamp(var, min=0.0)
 
 
 def marginal_log_likelihood(
-    X: torch.Tensor,  # [len(trials), len(params)]
-    Y: torch.Tensor,  # [len(trials)]
-    is_categorical: torch.Tensor,  # [len(params)]
+    X: torch.Tensor,
+    Y: torch.Tensor,
+    is_categorical: torch.Tensor,
     kernel_params: KernelParamsTensor,
 ) -> torch.Tensor:  # Scalar
     # -0.5 * log((2pi)^n |C|) - 0.5 * Y^T C^-1 Y, where C^-1 = cov_Y_Y_inv
@@ -163,9 +166,9 @@ def marginal_log_likelihood(
 
 
 def _fit_kernel_params(
-    X: np.ndarray,  # [len(trials), len(params)]
-    Y: np.ndarray,  # [len(trials)]
-    is_categorical: np.ndarray,  # [len(params)]
+    X: np.ndarray,
+    Y: np.ndarray,
+    is_categorical: np.ndarray,
     log_prior: Callable[[KernelParamsTensor], torch.Tensor],
     minimum_noise: float,
     deterministic_objective: bool,
