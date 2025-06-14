@@ -158,7 +158,7 @@ class EMMREvaluator(BaseImprovementEvaluator):
             is_categorical=(search_space.scale_types == gp_search_space.ScaleType.CATEGORICAL),
             log_prior=prior.default_log_prior,
             minimum_noise=prior.DEFAULT_MINIMUM_NOISE_VAR,
-            gpr_cache=None,
+            kernel_params_cache=None,
             deterministic_objective=self._deterministic,
         )
 
@@ -168,7 +168,7 @@ class EMMREvaluator(BaseImprovementEvaluator):
             is_categorical=(search_space.scale_types == gp_search_space.ScaleType.CATEGORICAL),
             log_prior=prior.default_log_prior,
             minimum_noise=prior.DEFAULT_MINIMUM_NOISE_VAR,
-            gpr_cache=gpr_t1,
+            kernel_params_cache=gpr_t1.kernel_params.clone(),
             deterministic_objective=self._deterministic,
         )
 
@@ -320,7 +320,7 @@ def _posterior_of_batched_theta(
     cov_ftheta_ftheta = gpr.kernel(theta[..., None, :], theta)[..., 0, :]
     assert cov_ftheta_ftheta.shape == (len_batch, len_batch)
 
-    assert torch.allclose(cov_ftheta_ftheta.diag(), gpr.kernel_scale)
+    assert torch.allclose(cov_ftheta_ftheta.diag(), gpr.kernel_params.kernel_scale)
     assert torch.allclose(cov_ftheta_ftheta, cov_ftheta_ftheta.T)
 
     mean = cov_ftheta_fX @ cov_Y_Y_inv_Y

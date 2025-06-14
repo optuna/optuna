@@ -196,15 +196,13 @@ def local_search_mixed(
     steps = acqf_params.search_space.steps
 
     continuous_indices = np.where(steps == 0.0)[0]
-
-    inverse_squared_lengthscales = acqf_params.gpr.inverse_squared_lengthscales.detach().numpy()
     # This is a technique for speeding up optimization.
     # We use an isotropic kernel, so scaling the gradient will make
     # the hessian better-conditioned.
     # NOTE: Ideally, separating lengthscales should be used for the constraint functions,
     # but for simplicity, the ones from the objective function are being reused.
     # TODO(kAIto47802): Think of a better way to handle this.
-    lengthscales = 1 / np.sqrt(inverse_squared_lengthscales[continuous_indices])
+    lengthscales = acqf_params.gpr.length_scales[continuous_indices]
 
     # NOTE(nabenabe): MyPy Redefinition for NumPy v2.2.0. (Cast signed int to int)
     discrete_indices = np.where(steps > 0)[0].astype(int)

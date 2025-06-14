@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 from optuna._gp.gp import GPRegressor
+from optuna._gp.gp import KernelParamsTensor
 from optuna._gp.search_space import SearchSpace
 from optuna._hypervolume import get_non_dominated_box_bounds
 from optuna.study._multi_objective import _is_pareto_front
@@ -186,20 +187,16 @@ class MultiObjectiveAcquisitionFunctionParams(AcquisitionFunctionParams):
         # Since all the objectives are equally important, we simply use the mean of
         # inverse of squared mean lengthscales over all the objectives.
         mean_lengthscales = np.mean(
-            [
-                1 / np.sqrt(acqf_params.gpr.inverse_squared_lengthscales.detach().numpy())
-                for acqf_params in acqf_params_for_objectives
-            ],
-            axis=0,
+            [acqf_params.gpr.length_scales for acqf_params in acqf_params_for_objectives], axis=0
         )
+        kernel_params = torch.empty(len(mean_lengthscales) + 2, dtype=torch.float64)
+        # inverse_squared_lengthscales is used in optim_mixed.py.
+        # cf. https://github.com/optuna/optuna/blob/v4.3.0/optuna/_gp/optim_mixed.py#L200-L209
+        kernel_params[:-2] = torch.from_numpy(1.0 / mean_lengthscales**2)
         dummy_gpr = GPRegressor(
-            # inverse_squared_lengthscales is used in optim_mixed.py.
-            # cf. https://github.com/optuna/optuna/blob/v4.3.0/optuna/_gp/optim_mixed.py#L200-L209
-            inverse_squared_lengthscales=torch.from_numpy(1.0 / mean_lengthscales**2),
-            # These parameters will not be used anywhere.
+            kernel_params=KernelParamsTensor(kernel_params),
+            # Any other parameters will not be used anywhere.
             is_categorical=torch.empty(0),
-            kernel_scale=torch.empty(0),
-            noise_var=torch.empty(0),
         )
         repr_acqf_params = acqf_params_for_objectives[0]
         return cls(
@@ -234,7 +231,7 @@ def create_acqf_params(
     with torch.no_grad():
         cov_Y_Y = gpr.kernel(X_tensor, X_tensor).detach().numpy()
 
-    cov_Y_Y[np.diag_indices(X.shape[0])] += gpr.noise_var.item()
+    cov_Y_Y[np.diag_indices(X.shape[0])] += gpr.kernel_params.noise_var.item()
     cov_Y_Y_inv = np.linalg.inv(cov_Y_Y)
 
     return AcquisitionFunctionParams(

@@ -183,7 +183,7 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
             # TODO(contramundum53): Add option to specify this.
             deterministic_objective=False,
             # TODO(y0z): Add `kernel_params_cache` to speedup.
-            gpr_cache=None,
+            kernel_params_cache=None,
         )
 
         standardized_regret_bound = _compute_standardized_regret_bound(

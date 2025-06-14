@@ -11,6 +11,7 @@ from optuna._gp.acqf import create_acqf_params
 from optuna._gp.acqf import eval_acqf
 from optuna._gp.acqf import MultiObjectiveAcquisitionFunctionParams
 from optuna._gp.gp import GPRegressor
+from optuna._gp.gp import KernelParamsTensor
 from optuna._gp.search_space import ScaleType
 from optuna._gp.search_space import SearchSpace
 
@@ -34,11 +35,10 @@ def X() -> np.ndarray:
 
 @pytest.fixture
 def gpr() -> GPRegressor:
+    kernel_params = torch.tensor([2.0, 3.0, 4.0, 0.1], dtype=torch.float64)
     return GPRegressor(
         is_categorical=torch.tensor([False, False]),
-        inverse_squared_lengthscales=torch.tensor([2.0, 3.0], dtype=torch.float64),
-        kernel_scale=torch.tensor(4.0, dtype=torch.float64),
-        noise_var=torch.tensor(0.1, dtype=torch.float64),
+        kernel_params=KernelParamsTensor(kernel_params),
     )
 
 
