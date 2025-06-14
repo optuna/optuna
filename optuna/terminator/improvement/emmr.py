@@ -288,9 +288,6 @@ def _compute_gp_posterior(
         Y=Y,  # standarized_score_vals[:-1],
     )
     mean_tensor, var_tensor = acqf_params.gpr.posterior(
-        torch.from_numpy(acqf_params.X),
-        torch.from_numpy(acqf_params.cov_Y_Y_inv),
-        torch.from_numpy(acqf_params.cov_Y_Y_inv_Y),
         torch.from_numpy(x_params),  # best_params or normalized_params[..., -1, :]),
     )
     mean = mean_tensor.detach().numpy().flatten()
@@ -360,11 +357,12 @@ def _compute_gp_posterior_cov_two_thetas(
         Y=standarized_score_vals,
     )
 
+    assert acqf_params.gpr.cov_Y_Y_inv is not None and acqf_params.gpr.cov_Y_Y_inv_Y is not None
     _, var = _posterior_of_batched_theta(
         acqf_params.gpr,
-        torch.from_numpy(acqf_params.X),
-        torch.from_numpy(acqf_params.cov_Y_Y_inv),
-        torch.from_numpy(acqf_params.cov_Y_Y_inv_Y),
+        acqf_params.gpr.X_train,
+        acqf_params.gpr.cov_Y_Y_inv,
+        acqf_params.gpr.cov_Y_Y_inv_Y,
         torch.from_numpy(normalized_params[[theta1_index, theta2_index]]),
     )
     assert var.shape == (2, 2)

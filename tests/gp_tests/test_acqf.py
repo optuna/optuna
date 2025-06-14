@@ -16,6 +16,9 @@ from optuna._gp.search_space import ScaleType
 from optuna._gp.search_space import SearchSpace
 
 
+X_train = np.array([[0.1, 0.2], [0.2, 0.3], [0.3, 0.1]])
+
+
 def verify_eval_acqf(x: np.ndarray, acqf_params: AcquisitionFunctionParams) -> None:
     x_tensor = torch.from_numpy(x)
     x_tensor.requires_grad_(True)
@@ -30,16 +33,19 @@ def verify_eval_acqf(x: np.ndarray, acqf_params: AcquisitionFunctionParams) -> N
 
 @pytest.fixture
 def X() -> np.ndarray:
-    return np.array([[0.1, 0.2], [0.2, 0.3], [0.3, 0.1]])
+    return X_train
 
 
-@pytest.fixture
-def gpr() -> GPRegressor:
+def get_gpr(Y: np.ndarray) -> GPRegressor:
     kernel_params = torch.tensor([2.0, 3.0, 4.0, 0.1], dtype=torch.float64)
-    return GPRegressor(
+    gpr = GPRegressor(
+        X_train=torch.from_numpy(X_train),
+        Y_train=torch.from_numpy(Y),
         is_categorical=torch.tensor([False, False]),
         kernel_params=KernelParamsTensor(kernel_params),
     )
+    gpr.cache_matrix()
+    return gpr
 
 
 @pytest.fixture
@@ -81,14 +87,13 @@ def test_eval_acqf(
     acqf_type: AcquisitionFunctionType,
     beta: float | None,
     x: np.ndarray,
-    gpr: GPRegressor,
     search_space: SearchSpace,
     X: np.ndarray,
 ) -> None:
     Y = np.array([1.0, 2.0, 3.0])
     acqf_params = create_acqf_params(
         acqf_type=acqf_type,
-        gpr=gpr,
+        gpr=get_gpr(Y),
         search_space=search_space,
         X=X,
         Y=Y,
@@ -103,7 +108,6 @@ def test_eval_acqf(
 def test_eval_acqf_with_constraints(
     x: np.ndarray,
     additional_values: np.ndarray,
-    gpr: GPRegressor,
     search_space: SearchSpace,
     X: np.ndarray,
 ) -> None:
@@ -113,7 +117,7 @@ def test_eval_acqf_with_constraints(
     is_all_infeasible = not np.any(is_feasible)
     acqf_params = create_acqf_params(
         acqf_type=AcquisitionFunctionType.LOG_EI,
-        gpr=gpr,
+        gpr=get_gpr(Y),
         search_space=search_space,
         X=X,
         Y=Y,
@@ -123,7 +127,7 @@ def test_eval_acqf_with_constraints(
     constraints_acqf_params = [
         create_acqf_params(
             acqf_type=AcquisitionFunctionType.LOG_PI,
-            gpr=gpr,
+            gpr=get_gpr(vals),
             search_space=search_space,
             X=X,
             Y=vals,
@@ -143,7 +147,6 @@ def test_eval_acqf_with_constraints(
 def test_eval_multi_objective_acqf(
     x: np.ndarray,
     additional_values: np.ndarray,
-    gpr: GPRegressor,
     search_space: SearchSpace,
     X: np.ndarray,
 ) -> None:
@@ -154,7 +157,7 @@ def test_eval_multi_objective_acqf(
         acqf_params_for_objectives.append(
             create_acqf_params(
                 AcquisitionFunctionType.LOG_EHVI,
-                gpr=gpr,
+                gpr=get_gpr(Y[:, i]),
                 search_space=search_space,
                 X=X,
                 Y=Y[:, i],

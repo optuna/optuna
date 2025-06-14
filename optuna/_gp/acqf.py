@@ -121,8 +121,6 @@ class AcquisitionFunctionParams:
     gpr: GPRegressor
     X: np.ndarray
     search_space: SearchSpace
-    cov_Y_Y_inv: np.ndarray
-    cov_Y_Y_inv_Y: np.ndarray
     # TODO(kAIto47802): Want to change the name to a generic name like threshold,
     # since it is not actually in operation as max_Y
     max_Y: float
@@ -145,8 +143,6 @@ class ConstrainedAcquisitionFunctionParams(AcquisitionFunctionParams):
             gpr=acqf_params.gpr,
             X=acqf_params.X,
             search_space=acqf_params.search_space,
-            cov_Y_Y_inv=acqf_params.cov_Y_Y_inv,
-            cov_Y_Y_inv_Y=acqf_params.cov_Y_Y_inv_Y,
             max_Y=acqf_params.max_Y,
             beta=acqf_params.beta,
             acqf_stabilizing_noise=acqf_params.acqf_stabilizing_noise,
@@ -197,6 +193,8 @@ class MultiObjectiveAcquisitionFunctionParams(AcquisitionFunctionParams):
             kernel_params=KernelParamsTensor(kernel_params),
             # Any other parameters will not be used anywhere.
             is_categorical=torch.empty(0),
+            X_train=torch.empty(0),
+            Y_train=torch.empty(0),
         )
         repr_acqf_params = acqf_params_for_objectives[0]
         return cls(
@@ -210,8 +208,6 @@ class MultiObjectiveAcquisitionFunctionParams(AcquisitionFunctionParams):
             fixed_samples=fixed_samples,
             gpr=dummy_gpr,
             # The variables below will not be used anywhere, so we simply set dummy values.
-            cov_Y_Y_inv=np.empty(0),
-            cov_Y_Y_inv_Y=np.empty(0),
             max_Y=np.nan,
             beta=None,
         )
@@ -227,20 +223,11 @@ def create_acqf_params(
     beta: float | None = None,
     acqf_stabilizing_noise: float = 1e-12,
 ) -> AcquisitionFunctionParams:
-    X_tensor = torch.from_numpy(X)
-    with torch.no_grad():
-        cov_Y_Y = gpr.kernel(X_tensor, X_tensor).detach().numpy()
-
-    cov_Y_Y[np.diag_indices(X.shape[0])] += gpr.kernel_params.noise_var.item()
-    cov_Y_Y_inv = np.linalg.inv(cov_Y_Y)
-
     return AcquisitionFunctionParams(
         acqf_type=acqf_type,
         gpr=gpr,
         X=X,
         search_space=search_space,
-        cov_Y_Y_inv=cov_Y_Y_inv,
-        cov_Y_Y_inv_Y=cov_Y_Y_inv @ Y,
         max_Y=max_Y if max_Y is not None else np.max(Y),
         beta=beta,
         acqf_stabilizing_noise=acqf_stabilizing_noise,
@@ -250,16 +237,10 @@ def create_acqf_params(
 def _eval_ehvi(
     ehvi_acqf_params: MultiObjectiveAcquisitionFunctionParams, x: torch.Tensor
 ) -> torch.Tensor:
-    X = torch.from_numpy(ehvi_acqf_params.X)
     Y_post = []
     fixed_samples = ehvi_acqf_params.fixed_samples
     for i, acqf_params in enumerate(ehvi_acqf_params.acqf_params_for_objectives):
-        mean, var = acqf_params.gpr.posterior(
-            X=X,
-            cov_Y_Y_inv=torch.from_numpy(acqf_params.cov_Y_Y_inv),
-            cov_Y_Y_inv_Y=torch.from_numpy(acqf_params.cov_Y_Y_inv_Y),
-            x=x,
-        )
+        mean, var = acqf_params.gpr.posterior(x)
         stdev = torch.sqrt(var + ehvi_acqf_params.acqf_stabilizing_noise)
         # NOTE(nabenabe): By using fixed samples from the Sobol sequence, EHVI becomes
         # deterministic, making it possible to optimize the acqf by l-BFGS.
@@ -282,12 +263,7 @@ def eval_acqf(acqf_params: AcquisitionFunctionParams, x: torch.Tensor) -> torch.
         assert isinstance(acqf_params, MultiObjectiveAcquisitionFunctionParams)
         return _eval_ehvi(ehvi_acqf_params=acqf_params, x=x)
 
-    mean, var = acqf_params.gpr.posterior(
-        torch.from_numpy(acqf_params.X),
-        torch.from_numpy(acqf_params.cov_Y_Y_inv),
-        torch.from_numpy(acqf_params.cov_Y_Y_inv_Y),
-        x,
-    )
+    mean, var = acqf_params.gpr.posterior(x)
 
     if acqf_params.acqf_type == AcquisitionFunctionType.LOG_EI:
         # If there are no feasible trials, max_Y is set to -np.inf.
