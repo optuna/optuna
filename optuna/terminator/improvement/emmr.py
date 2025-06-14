@@ -289,9 +289,6 @@ def _compute_gp_posterior(
     )
     mean_tensor, var_tensor = acqf_params.gpr.posterior(
         torch.from_numpy(acqf_params.X),
-        torch.from_numpy(
-            acqf_params.search_space.scale_types == gp_search_space.ScaleType.CATEGORICAL
-        ),
         torch.from_numpy(acqf_params.cov_Y_Y_inv),
         torch.from_numpy(acqf_params.cov_Y_Y_inv_Y),
         torch.from_numpy(x_params),  # best_params or normalized_params[..., -1, :]),
@@ -305,7 +302,6 @@ def _compute_gp_posterior(
 def _posterior_of_batched_theta(
     gpr: gp.GPRegressor,
     X: torch.Tensor,  # [len(trials), len(params)]
-    is_categorical: torch.Tensor,  # bool[len(params)]
     cov_Y_Y_inv: torch.Tensor,  # [len(trials), len(trials)]
     cov_Y_Y_inv_Y: torch.Tensor,  # [len(trials)]
     theta: torch.Tensor,  # [batch, len(params)]
@@ -316,13 +312,12 @@ def _posterior_of_batched_theta(
     assert len(theta.shape) == 2
     len_batch = theta.shape[0]
     assert theta.shape == (len_batch, len_params)
-    assert is_categorical.shape == (len_params,)
     assert cov_Y_Y_inv.shape == (len_trials, len_trials)
     assert cov_Y_Y_inv_Y.shape == (len_trials,)
 
-    cov_ftheta_fX = gpr.kernel(is_categorical, theta[..., None, :], X)[..., 0, :]
+    cov_ftheta_fX = gpr.kernel(theta[..., None, :], X)[..., 0, :]
     assert cov_ftheta_fX.shape == (len_batch, len_trials)
-    cov_ftheta_ftheta = gpr.kernel(is_categorical, theta[..., None, :], theta)[..., 0, :]
+    cov_ftheta_ftheta = gpr.kernel(theta[..., None, :], theta)[..., 0, :]
     assert cov_ftheta_ftheta.shape == (len_batch, len_batch)
 
     assert torch.allclose(cov_ftheta_ftheta.diag(), gpr.kernel_scale)
@@ -368,9 +363,6 @@ def _compute_gp_posterior_cov_two_thetas(
     _, var = _posterior_of_batched_theta(
         acqf_params.gpr,
         torch.from_numpy(acqf_params.X),
-        torch.from_numpy(
-            acqf_params.search_space.scale_types == gp_search_space.ScaleType.CATEGORICAL
-        ),
         torch.from_numpy(acqf_params.cov_Y_Y_inv),
         torch.from_numpy(acqf_params.cov_Y_Y_inv_Y),
         torch.from_numpy(normalized_params[[theta1_index, theta2_index]]),

@@ -86,6 +86,7 @@ def test_fit_kernel_params(
         log_prior = prior.default_log_prior
         minimum_noise = prior.DEFAULT_MINIMUM_NOISE_VAR
         initial_gpr = GPRegressor(
+            is_categorical=torch.from_numpy(is_categorical),
             inverse_squared_lengthscales=torch.ones(X.shape[1], dtype=torch.float64),
             kernel_scale=torch.tensor(1.0, dtype=torch.float64),
             noise_var=torch.tensor(1.0, dtype=torch.float64),

@@ -35,6 +35,7 @@ def X() -> np.ndarray:
 @pytest.fixture
 def gpr() -> GPRegressor:
     return GPRegressor(
+        is_categorical=torch.tensor([False, False]),
         inverse_squared_lengthscales=torch.tensor([2.0, 3.0], dtype=torch.float64),
         kernel_scale=torch.tensor(4.0, dtype=torch.float64),
         noise_var=torch.tensor(0.1, dtype=torch.float64),

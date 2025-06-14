@@ -89,18 +89,18 @@ class Matern52Kernel(torch.autograd.Function):
 class GPRegressor:
     def __init__(
         self,
+        is_categorical: torch.Tensor,  # (len(params), )
         inverse_squared_lengthscales: torch.Tensor,  # (len(params), )
         kernel_scale: torch.Tensor,  # Scalar
         noise_var: torch.Tensor,  # Scalar
     ) -> None:
         # TODO(nabenabe): Rename the attributes to private with `_`.
+        self.is_categorical = is_categorical
         self.inverse_squared_lengthscales = inverse_squared_lengthscales
         self.kernel_scale = kernel_scale
         self.noise_var = noise_var
 
-    def kernel(
-        self, is_categorical: torch.Tensor, X1: torch.Tensor, X2: torch.Tensor
-    ) -> torch.Tensor:
+    def kernel(self, X1: torch.Tensor, X2: torch.Tensor) -> torch.Tensor:
         """
         Return the kernel matrix with the shape of (..., n_A, n_B) given X1 and X2 each with the
         shapes of (..., n_A, len(params)) and (..., n_B, len(params)).
@@ -114,19 +114,18 @@ class GPRegressor:
         Note that the distance for categorical parameters is the Hamming distance.
         """
         d2 = (X1[..., :, None, :] - X2[..., None, :, :]) ** 2
-        d2[..., is_categorical] = (d2[..., is_categorical] > 0.0).type(torch.float64)
+        d2[..., self.is_categorical] = (d2[..., self.is_categorical] > 0.0).type(torch.float64)
         d2 = (d2 * self.inverse_squared_lengthscales).sum(dim=-1)
         return Matern52Kernel.apply(d2) * self.kernel_scale  # type: ignore
 
     def posterior(
         self,
         X: torch.Tensor,
-        is_categorical: torch.Tensor,
         cov_Y_Y_inv: torch.Tensor,
         cov_Y_Y_inv_Y: torch.Tensor,
         x: torch.Tensor,
     ) -> tuple[torch.Tensor, torch.Tensor]:  # (mean: (...,), var: (...,))
-        cov_fx_fX = self.kernel(is_categorical, x[..., None, :], X)[..., 0, :]
+        cov_fx_fX = self.kernel(x[..., None, :], X)[..., 0, :]
         cov_fx_fx = self.kernel_scale  # kernel(x, x) = kernel_scale
 
         # mean = cov_fx_fX @ inv(cov_fX_fX + noise * I) @ Y
@@ -137,14 +136,11 @@ class GPRegressor:
         # We need to clamp the variance to avoid negative values due to numerical errors.
         return mean, torch.clamp(var, min=0.0)
 
-    def marginal_log_likelihood(
-        self, X: torch.Tensor, Y: torch.Tensor, is_categorical: torch.Tensor
-    ) -> torch.Tensor:  # Scalar
+    def marginal_log_likelihood(self, X: torch.Tensor, Y: torch.Tensor) -> torch.Tensor:  # Scalar
         # -0.5 * log((2pi)^n |C|) - 0.5 * Y^T C^-1 Y, where C^-1 = cov_Y_Y_inv
         # We apply the cholesky decomposition to efficiently compute log(|C|) and C^-1.
 
-        cov_fX_fX = self.kernel(is_categorical, X, X)
-
+        cov_fX_fX = self.kernel(X, X)
         cov_Y_Y_chol = torch.linalg.cholesky(
             cov_fX_fX + self.noise_var * torch.eye(X.shape[0], dtype=torch.float64)
         )
@@ -195,6 +191,7 @@ def _fit_kernel_params(
         raw_params_tensor.requires_grad_(True)
         with torch.enable_grad():  # type: ignore[no-untyped-call]
             gpr = GPRegressor(
+                is_categorical=torch.from_numpy(is_categorical),
                 inverse_squared_lengthscales=torch.exp(raw_params_tensor[:n_params]),
                 kernel_scale=torch.exp(raw_params_tensor[n_params]),
                 noise_var=(
@@ -204,7 +201,7 @@ def _fit_kernel_params(
                 ),
             )
             loss = -gpr.marginal_log_likelihood(
-                torch.from_numpy(X), torch.from_numpy(Y), torch.from_numpy(is_categorical)
+                torch.from_numpy(X), torch.from_numpy(Y)
             ) - log_prior(gpr)
             loss.backward()  # type: ignore
             # scipy.minimize requires all the gradients to be zero for termination.
@@ -227,6 +224,7 @@ def _fit_kernel_params(
     raw_params_opt_tensor = torch.from_numpy(res.x)
 
     return GPRegressor(
+        is_categorical=torch.from_numpy(is_categorical),
         inverse_squared_lengthscales=torch.exp(raw_params_opt_tensor[:n_params]),
         kernel_scale=torch.exp(raw_params_opt_tensor[n_params]),
         noise_var=(
@@ -248,6 +246,7 @@ def fit_kernel_params(
     gtol: float = 1e-2,
 ) -> GPRegressor:
     default_gpr_cache = GPRegressor(
+        is_categorical=torch.from_numpy(is_categorical),
         inverse_squared_lengthscales=torch.ones(X.shape[1], dtype=torch.float64),
         kernel_scale=torch.tensor(1.0, dtype=torch.float64),
         noise_var=torch.tensor(1.0, dtype=torch.float64),
