@@ -151,25 +151,27 @@ class EMMREvaluator(BaseImprovementEvaluator):
         )
 
         assert len(standarized_score_vals) == len(normalized_params)
-
-        gpr_t1 = gp.fit_kernel_params(  # Fit kernel with up to (t-1)-th observation
-            X=normalized_params[..., :-1, :],
-            Y=standarized_score_vals[:-1],
-            is_categorical=(search_space.scale_types == gp_search_space.ScaleType.CATEGORICAL),
-            log_prior=prior.default_log_prior,
-            minimum_noise=prior.DEFAULT_MINIMUM_NOISE_VAR,
-            kernel_params_cache=None,
-            deterministic_objective=self._deterministic,
+        is_categorical = torch.from_numpy(
+            search_space.scale_types == gp_search_space.ScaleType.CATEGORICAL
+        )
+        gpr_t1 = gp.GPRegressor(  # Fit kernel with up to (t-1)-th observation
+            X_train=torch.from_numpy(normalized_params[..., :-1, :]),
+            Y_train=torch.from_numpy(standarized_score_vals[:-1]),
+            is_categorical=is_categorical,
+            kernel_params=None,
+        )
+        gpr_t1.fit_kernel_params(
+            prior.default_log_prior, prior.DEFAULT_MINIMUM_NOISE_VAR, self._deterministic
         )
 
-        gpr_t = gp.fit_kernel_params(  # Fit kernel with up to t-th observation
-            X=normalized_params,
-            Y=standarized_score_vals,
-            is_categorical=(search_space.scale_types == gp_search_space.ScaleType.CATEGORICAL),
-            log_prior=prior.default_log_prior,
-            minimum_noise=prior.DEFAULT_MINIMUM_NOISE_VAR,
-            kernel_params_cache=gpr_t1.kernel_params.clone(),
-            deterministic_objective=self._deterministic,
+        gpr_t = gp.GPRegressor(  # Fit kernel with up to t-th observation
+            X_train=torch.from_numpy(normalized_params),
+            Y_train=torch.from_numpy(standarized_score_vals),
+            is_categorical=is_categorical,
+            kernel_params=gpr_t1.kernel_params.clone(),
+        )
+        gpr_t.fit_kernel_params(
+            prior.default_log_prior, prior.DEFAULT_MINIMUM_NOISE_VAR, self._deterministic
         )
 
         theta_t_star_index = int(np.argmax(standarized_score_vals))

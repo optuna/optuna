@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 import torch
 
-from optuna._gp.gp import _fit_kernel_params
+from optuna._gp.gp import GPRegressor
 from optuna._gp.gp import warn_and_convert_inf
 import optuna._gp.prior as prior
 
@@ -86,16 +86,13 @@ def test_fit_kernel_params(
         minimum_noise = prior.DEFAULT_MINIMUM_NOISE_VAR
         initial_kernel_params = torch.ones(X.shape[1] + 2, dtype=torch.float64)
         gtol: float = 1e-2
-        gpr = _fit_kernel_params(
-            X=X,
-            Y=Y,
-            is_categorical=is_categorical,
-            log_prior=log_prior,
-            minimum_noise=minimum_noise,
-            kernel_params_cache=initial_kernel_params,
-            deterministic_objective=deterministic_objective,
-            gtol=gtol,
+        gpr = GPRegressor(
+            X_train=torch.from_numpy(X),
+            Y_train=torch.from_numpy(Y),
+            is_categorical=torch.from_numpy(is_categorical),
+            kernel_params=initial_kernel_params,
         )
+        gpr._fit_kernel_params(log_prior, minimum_noise, deterministic_objective, gtol=gtol)
         assert (
             (gpr.kernel_params.inverse_squared_lengthscales != initial_kernel_params[:-2]).sum()
             + (gpr.kernel_params.kernel_scale != initial_kernel_params[-2]).sum()

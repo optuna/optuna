@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 from optuna._gp.gp import GPRegressor
-from optuna._gp.gp import KernelParamsTensor
 from optuna._gp.search_space import SearchSpace
 from optuna._hypervolume import get_non_dominated_box_bounds
 from optuna.study._multi_objective import _is_pareto_front
@@ -190,7 +189,7 @@ class MultiObjectiveAcquisitionFunctionParams(AcquisitionFunctionParams):
         # cf. https://github.com/optuna/optuna/blob/v4.3.0/optuna/_gp/optim_mixed.py#L200-L209
         kernel_params[:-2] = torch.from_numpy(1.0 / mean_lengthscales**2)
         dummy_gpr = GPRegressor(
-            kernel_params=KernelParamsTensor(kernel_params),
+            kernel_params=kernel_params,
             # Any other parameters will not be used anywhere.
             is_categorical=torch.empty(0),
             X_train=torch.empty(0),

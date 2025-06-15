@@ -222,7 +222,9 @@ class GPSampler(BaseSampler):
             # Clear cache if the search space changes.
             self._constraints_kernel_params_cache_list = None
 
-        is_categorical = internal_search_space.scale_types == gp_search_space.ScaleType.CATEGORICAL
+        is_categorical = torch.from_numpy(
+            internal_search_space.scale_types == gp_search_space.ScaleType.CATEGORICAL
+        )
         constraints_gprs = []
         constraints_acqf_params = []
         for i, (vals, mean, std) in enumerate(zip(standardized_constraint_vals.T, means, stds)):
@@ -231,15 +233,13 @@ class GPSampler(BaseSampler):
                 if self._constraints_kernel_params_cache_list is not None
                 else None
             )
-            gpr = gp.fit_kernel_params(
-                X=normalized_params,
-                Y=vals,
-                is_categorical=is_categorical,
-                log_prior=self._log_prior,
-                minimum_noise=self._minimum_noise,
-                kernel_params_cache=cache,
-                deterministic_objective=self._deterministic,
+            gpr = gp.GPRegressor(
+                is_categorical,
+                X_train=torch.from_numpy(normalized_params),
+                Y_train=torch.from_numpy(vals),
+                kernel_params=cache,
             )
+            gpr.fit_kernel_params(self._log_prior, self._minimum_noise, self._deterministic)
             constraints_gprs.append(gpr)
 
             constraints_acqf_params.append(
@@ -295,26 +295,24 @@ class GPSampler(BaseSampler):
 
         gprs_list = []
         n_objectives = standardized_score_vals.shape[-1]
-        is_categorical = internal_search_space.scale_types == gp_search_space.ScaleType.CATEGORICAL
+        is_categorical = torch.from_numpy(
+            internal_search_space.scale_types == gp_search_space.ScaleType.CATEGORICAL
+        )
         for i in range(n_objectives):
             cache = (
                 self._kernel_params_cache_list[i]
                 if self._kernel_params_cache_list is not None
                 else None
             )
-            gprs_list.append(
-                gp.fit_kernel_params(
-                    X=normalized_params,
-                    Y=standardized_score_vals[:, i],
-                    is_categorical=is_categorical,
-                    log_prior=self._log_prior,
-                    minimum_noise=self._minimum_noise,
-                    kernel_params_cache=cache,
-                    deterministic_objective=self._deterministic,
-                )
+            gpr = gp.GPRegressor(
+                is_categorical,
+                X_train=torch.from_numpy(normalized_params),
+                Y_train=torch.from_numpy(standardized_score_vals[:, i]),
+                kernel_params=cache,
             )
+            gpr.fit_kernel_params(self._log_prior, self._minimum_noise, self._deterministic)
+            gprs_list.append(gpr)
         self._kernel_params_cache_list = [gpr.kernel_params.clone() for gpr in gprs_list]
-
         best_params: np.ndarray | None
         if self._constraints_func is None:
             if n_objectives == 1:

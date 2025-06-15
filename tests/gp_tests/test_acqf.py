@@ -11,7 +11,6 @@ from optuna._gp.acqf import create_acqf_params
 from optuna._gp.acqf import eval_acqf
 from optuna._gp.acqf import MultiObjectiveAcquisitionFunctionParams
 from optuna._gp.gp import GPRegressor
-from optuna._gp.gp import KernelParamsTensor
 from optuna._gp.search_space import ScaleType
 from optuna._gp.search_space import SearchSpace
 
@@ -42,7 +41,7 @@ def get_gpr(Y: np.ndarray) -> GPRegressor:
         X_train=torch.from_numpy(X_train),
         Y_train=torch.from_numpy(Y),
         is_categorical=torch.tensor([False, False]),
-        kernel_params=KernelParamsTensor(kernel_params),
+        kernel_params=kernel_params,
     )
     gpr.cache_matrix()
     return gpr

@@ -6,6 +6,7 @@ import warnings
 from _pytest.logging import LogCaptureFixture
 import numpy as np
 import pytest
+import torch
 
 import optuna
 import optuna._gp.acqf as acqf
@@ -30,10 +31,12 @@ def test_after_convergence(caplog: LogCaptureFixture) -> None:
         bounds=np.array([[0.0, 1.0]]),
         steps=np.zeros(1, dtype=float),
     )
-    gpr = optuna._gp.gp.fit_kernel_params(
-        X=X[:, np.newaxis],
-        Y=score_vals,
-        is_categorical=np.array([False]),
+    gpr = optuna._gp.gp.GPRegressor(
+        X_train=torch.from_numpy(X[:, np.newaxis]),
+        Y_train=torch.from_numpy(score_vals),
+        is_categorical=torch.tensor([False]),
+    )
+    gpr.fit_kernel_params(
         log_prior=prior.default_log_prior,
         minimum_noise=prior.DEFAULT_MINIMUM_NOISE_VAR,
         deterministic_objective=False,
