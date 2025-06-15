@@ -213,9 +213,7 @@ def create_acqf_params(
     acqf_type: AcquisitionFunctionType,
     gpr: GPRegressor,
     search_space: SearchSpace,
-    X: np.ndarray,
-    Y: np.ndarray,
-    max_Y: float | None = None,
+    max_Y: float,
     beta: float | None = None,
     acqf_stabilizing_noise: float = 1e-12,
 ) -> AcquisitionFunctionParams:
@@ -223,7 +221,7 @@ def create_acqf_params(
         acqf_type=acqf_type,
         gpr=gpr,
         search_space=search_space,
-        max_Y=max_Y if max_Y is not None else np.max(Y),
+        max_Y=max_Y,
         beta=beta,
         acqf_stabilizing_noise=acqf_stabilizing_noise,
     )

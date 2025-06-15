@@ -21,7 +21,7 @@ if TYPE_CHECKING:
     from optuna._gp import gp
     from optuna._gp import optim_sample
     from optuna._gp import prior
-    from optuna._gp import search_space as gp_search_space
+    from optuna._gp import search_space as search_space_module
 else:
     from optuna._imports import _LazyImport
 
@@ -52,7 +52,7 @@ def _get_beta(n_params: int, n_trials: int, delta: float = 0.1) -> float:
 
 def _compute_standardized_regret_bound(
     gpr: gp.GPRegressor,
-    search_space: gp_search_space.SearchSpace,
+    search_space: search_space_module.SearchSpace,
     normalized_top_n_params: np.ndarray,
     standarized_top_n_values: np.ndarray,
     delta: float = 0.1,
@@ -75,9 +75,8 @@ def _compute_standardized_regret_bound(
         acqf_type=acqf.AcquisitionFunctionType.UCB,
         gpr=gpr,
         search_space=search_space,
-        X=normalized_top_n_params,
-        Y=standarized_top_n_values,
         beta=beta,
+        max_Y=np.nan,  # Not used.
     )
     # UCB over the search space. (Original: LCB over the search space. See Change 1 above.)
     standardized_ucb_value = max(
@@ -92,9 +91,8 @@ def _compute_standardized_regret_bound(
         acqf_type=acqf.AcquisitionFunctionType.LCB,
         gpr=gpr,
         search_space=search_space,
-        X=normalized_top_n_params,
-        Y=standarized_top_n_values,
         beta=beta,
+        max_Y=np.nan,  # Not used.
     )
     # LCB over the top trials. (Original: UCB over the top trials. See Change 2 above.)
     standardized_lcb_value = np.max(
@@ -169,8 +167,10 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
         # _gp module assumes that optimization direction is maximization
         sign = -1 if study_direction == StudyDirection.MINIMIZE else 1
         values = np.array([t.value for t in complete_trials]) * sign
-        search_space, normalized_params = gp_search_space.get_search_space_and_normalized_params(
-            complete_trials, optuna_search_space
+        search_space, normalized_params = (
+            search_space_module.get_search_space_and_normalized_params(
+                complete_trials, optuna_search_space
+            )
         )
         normalized_top_n_params, top_n_values = self._get_top_n(normalized_params, values)
         top_n_values_mean = top_n_values.mean()
@@ -179,7 +179,7 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
 
         gpr = gp.GPRegressor(
             is_categorical=torch.from_numpy(
-                search_space.scale_types == gp_search_space.ScaleType.CATEGORICAL
+                search_space.scale_types == search_space_module.ScaleType.CATEGORICAL
             ),
             X_train=torch.from_numpy(normalized_top_n_params),
             y_train=torch.from_numpy(standarized_top_n_values),

@@ -12,7 +12,7 @@ import optuna
 import optuna._gp.acqf as acqf
 import optuna._gp.optim_mixed as optim_mixed
 import optuna._gp.prior as prior
-import optuna._gp.search_space as gp_search_space
+import optuna._gp.search_space as search_space_module
 from optuna.samplers import GPSampler
 from optuna.samplers._base import _CONSTRAINTS_KEY
 from optuna.trial import FrozenTrial
@@ -26,8 +26,8 @@ def test_after_convergence(caplog: LogCaptureFixture) -> None:
     X_optimal = [0.0] * 10
     X = np.array(X_uniform + X_uniform_near_optimal + X_optimal)
     score_vals = -(X - np.mean(X)) / np.std(X)
-    search_space = gp_search_space.SearchSpace(
-        scale_types=np.array([gp_search_space.ScaleType.LINEAR]),
+    search_space = search_space_module.SearchSpace(
+        scale_types=np.array([search_space_module.ScaleType.LINEAR]),
         bounds=np.array([[0.0, 1.0]]),
         steps=np.zeros(1, dtype=float),
     )
@@ -45,8 +45,7 @@ def test_after_convergence(caplog: LogCaptureFixture) -> None:
         acqf_type=acqf.AcquisitionFunctionType.LOG_EI,
         gpr=gpr,
         search_space=search_space,
-        X=X[:, np.newaxis],
-        Y=score_vals,
+        max_Y=np.max(score_vals),
     )
     caplog.clear()
     optuna.logging.enable_propagation()

@@ -25,7 +25,7 @@ if TYPE_CHECKING:
     from optuna._gp import acqf
     from optuna._gp import gp
     from optuna._gp import prior
-    from optuna._gp import search_space as gp_search_space
+    from optuna._gp import search_space as search_space_module
 else:
     from optuna._imports import _LazyImport
 
@@ -128,8 +128,10 @@ class EMMREvaluator(BaseImprovementEvaluator):
         if len(complete_trials) < self.min_n_trials:
             return sys.float_info.max * MARGIN_FOR_NUMARICAL_STABILITY  # Do not terminate.
 
-        search_space, normalized_params = gp_search_space.get_search_space_and_normalized_params(
-            complete_trials, optuna_search_space
+        search_space, normalized_params = (
+            search_space_module.get_search_space_and_normalized_params(
+                complete_trials, optuna_search_space
+            )
         )
         if len(search_space.scale_types) == 0:
             warnings.warn(
@@ -152,7 +154,7 @@ class EMMREvaluator(BaseImprovementEvaluator):
 
         assert len(standarized_score_vals) == len(normalized_params)
         is_categorical = torch.from_numpy(
-            search_space.scale_types == gp_search_space.ScaleType.CATEGORICAL
+            search_space.scale_types == search_space_module.ScaleType.CATEGORICAL
         )
         gpr_t1 = gp.GPRegressor(  # Fit kernel with up to (t-1)-th observation
             X_train=torch.from_numpy(normalized_params[..., :-1, :]),
@@ -275,7 +277,7 @@ class EMMREvaluator(BaseImprovementEvaluator):
 
 
 def _compute_gp_posterior(
-    search_space: gp_search_space.SearchSpace,
+    search_space: search_space_module.SearchSpace,
     X: np.ndarray,
     Y: np.ndarray,
     x_params: np.ndarray,
@@ -286,8 +288,7 @@ def _compute_gp_posterior(
         acqf_type=acqf.AcquisitionFunctionType.LOG_EI,
         gpr=gpr,
         search_space=search_space,
-        X=X,  # normalized_params[..., :-1, :],
-        Y=Y,  # standarized_score_vals[:-1],
+        max_Y=np.max(Y),
     )
     mean_tensor, var_tensor = acqf_params.gpr.posterior(
         torch.from_numpy(x_params),  # best_params or normalized_params[..., -1, :]),
@@ -332,7 +333,7 @@ def _posterior_of_batched_theta(
 
 
 def _compute_gp_posterior_cov_two_thetas(
-    search_space: gp_search_space.SearchSpace,
+    search_space: search_space_module.SearchSpace,
     normalized_params: np.ndarray,
     standarized_score_vals: np.ndarray,
     gpr: gp.GPRegressor,
@@ -355,8 +356,7 @@ def _compute_gp_posterior_cov_two_thetas(
         acqf_type=acqf.AcquisitionFunctionType.LOG_EI,
         gpr=gpr,
         search_space=search_space,
-        X=normalized_params,
-        Y=standarized_score_vals,
+        max_Y=np.max(standarized_score_vals),
     )
 
     assert acqf_params.gpr._cov_Y_Y_inv is not None and acqf_params.gpr._cov_Y_Y_inv_Y is not None

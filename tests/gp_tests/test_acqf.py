@@ -94,8 +94,7 @@ def test_eval_acqf(
         acqf_type=acqf_type,
         gpr=get_gpr(Y),
         search_space=search_space,
-        X=X,
-        Y=Y,
+        max_Y=np.max(Y),
         beta=beta,
         acqf_stabilizing_noise=0.0,
     )
@@ -118,8 +117,6 @@ def test_eval_acqf_with_constraints(
         acqf_type=AcquisitionFunctionType.LOG_EI,
         gpr=get_gpr(Y),
         search_space=search_space,
-        X=X,
-        Y=Y,
         max_Y=-np.inf if is_all_infeasible else np.max(Y[is_feasible]),
         acqf_stabilizing_noise=0.0,
     )
@@ -128,8 +125,6 @@ def test_eval_acqf_with_constraints(
             acqf_type=AcquisitionFunctionType.LOG_PI,
             gpr=get_gpr(vals),
             search_space=search_space,
-            X=X,
-            Y=vals,
             acqf_stabilizing_noise=0.0,
             max_Y=0.0,
         )
@@ -158,9 +153,8 @@ def test_eval_multi_objective_acqf(
                 AcquisitionFunctionType.LOG_EHVI,
                 gpr=get_gpr(Y[:, i]),
                 search_space=search_space,
-                X=X,
-                Y=Y[:, i],
                 acqf_stabilizing_noise=0.0,
+                max_Y=np.nan,  # Not used.
             )
         )
 
