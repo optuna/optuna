@@ -145,7 +145,7 @@ class GPRegressor:
         self.is_categorical = is_categorical
         self.kernel_params = KernelParamsTensor(
             raw_kernel_params=(
-                torch.ones(X_train.shape[1], dtype=torch.float64)
+                torch.ones(X_train.shape[1] + 2, dtype=torch.float64)
                 if kernel_params is None
                 else kernel_params
             )
