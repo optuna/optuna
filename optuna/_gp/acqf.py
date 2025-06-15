@@ -222,7 +222,6 @@ def create_acqf_params(
     return AcquisitionFunctionParams(
         acqf_type=acqf_type,
         gpr=gpr,
-        X=X,
         search_space=search_space,
         max_Y=max_Y if max_Y is not None else np.max(Y),
         beta=beta,
