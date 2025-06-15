@@ -43,7 +43,7 @@ def get_gpr(Y: np.ndarray) -> GPRegressor:
         is_categorical=torch.tensor([False, False]),
         kernel_params=kernel_params,
     )
-    gpr.cache_matrix()
+    gpr._cache_matrix()
     return gpr
 
 

@@ -155,12 +155,12 @@ class GPRegressor:
         self.cov_Y_Y_inv: torch.Tensor | None = None
         self.cov_Y_Y_inv_Y: torch.Tensor | None = None
 
-    def update_kernel_params(self, kernel_params: KernelParamsTensor) -> None:
+    def _update_kernel_params(self, kernel_params: KernelParamsTensor) -> None:
         self.kernel_params = kernel_params
 
-    def cache_matrix(self) -> None:
+    def _cache_matrix(self) -> None:
         with torch.no_grad():
-            cov_Y_Y = self.kernel(self.X_train, self.X_train).detach().numpy()
+            cov_Y_Y = self._kernel(self.X_train, self.X_train).detach().numpy()
 
         cov_Y_Y[np.diag_indices(self.X_train.shape[0])] += self.kernel_params.noise_var.item()
         cov_Y_Y_inv = np.linalg.inv(cov_Y_Y)
@@ -173,7 +173,7 @@ class GPRegressor:
     def length_scales(self) -> np.ndarray:
         return 1.0 / np.sqrt(self.kernel_params.inverse_squared_lengthscales.detach().numpy())
 
-    def kernel(self, X1: torch.Tensor, X2: torch.Tensor) -> torch.Tensor:
+    def _kernel(self, X1: torch.Tensor, X2: torch.Tensor) -> torch.Tensor:
         """
         Return the kernel matrix with the shape of (..., n_A, n_B) given X1 and X2 each with the
         shapes of (..., n_A, len(params)) and (..., n_B, len(params)).
@@ -194,7 +194,7 @@ class GPRegressor:
     def posterior(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         # The shape of mean and var is x.shape[:-1].
         assert self.cov_Y_Y_inv is not None and self.cov_Y_Y_inv_Y is not None, "Call cache_matrix"
-        cov_fx_fX = self.kernel(x[..., None, :], self.X_train)[..., 0, :]
+        cov_fx_fX = self._kernel(x[..., None, :], self.X_train)[..., 0, :]
         cov_fx_fx = self.kernel_params.kernel_scale  # kernel(x, x) = kernel_scale
 
         # mean = cov_fx_fX @ inv(cov_fX_fX + noise * I) @ Y
@@ -205,11 +205,11 @@ class GPRegressor:
         # We need to clamp the variance to avoid negative values due to numerical errors.
         return mean, torch.clamp(var, min=0.0)
 
-    def marginal_log_likelihood(self) -> torch.Tensor:  # Scalar
+    def _marginal_log_likelihood(self) -> torch.Tensor:  # Scalar
         # -0.5 * log((2pi)^n |C|) - 0.5 * Y^T C^-1 Y, where C^-1 = cov_Y_Y_inv
         # We apply the cholesky decomposition to efficiently compute log(|C|) and C^-1.
 
-        cov_fX_fX = self.kernel(self.X_train, self.X_train)
+        cov_fX_fX = self._kernel(self.X_train, self.X_train)
         n_points = self.X_train.shape[0]
         cov_Y_Y_chol = torch.linalg.cholesky(
             cov_fX_fX + self.kernel_params.noise_var * torch.eye(n_points, dtype=torch.float64)
@@ -240,8 +240,8 @@ class GPRegressor:
                 kernel_params = KernelParamsTensor.from_raw_params(
                     raw_params_tensor, minimum_noise, deterministic_objective
                 )
-                self.update_kernel_params(kernel_params)
-                loss = -self.marginal_log_likelihood() - log_prior(self.kernel_params)
+                self._update_kernel_params(kernel_params)
+                loss = -self._marginal_log_likelihood() - log_prior(self.kernel_params)
                 loss.backward()  # type: ignore
                 # scipy.minimize requires all the gradients to be zero for termination.
                 raw_noise_var_grad = raw_params_tensor.grad[-1]  # type: ignore
@@ -263,8 +263,8 @@ class GPRegressor:
         kernel_params_opt = KernelParamsTensor.from_raw_params(
             torch.from_numpy(res.x), minimum_noise, deterministic_objective
         )
-        self.update_kernel_params(kernel_params_opt)
-        self.cache_matrix()
+        self._update_kernel_params(kernel_params_opt)
+        self._cache_matrix()
 
     def fit_kernel_params(
         self,
@@ -285,11 +285,11 @@ class GPRegressor:
                 return
             except RuntimeError as e:
                 error = e
-                self.update_kernel_params(KernelParamsTensor(default_kernel_params.clone()))
+                self._update_kernel_params(KernelParamsTensor(default_kernel_params.clone()))
 
         logger.warning(
             f"The optimization of kernel parameters failed: \n{error}\n"
             "The default initial kernel parameters will be used instead."
         )
-        self.update_kernel_params(KernelParamsTensor(default_kernel_params.clone()))
-        self.cache_matrix()
+        self._update_kernel_params(KernelParamsTensor(default_kernel_params.clone()))
+        self._cache_matrix()
