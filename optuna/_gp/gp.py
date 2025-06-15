@@ -133,7 +133,7 @@ class GPRegressor:
         self,
         is_categorical: torch.Tensor,  # (len(params), )
         X_train: torch.Tensor,  # (n_trials, len(params))
-        Y_train: torch.Tensor,  # (n_trials, )
+        y_train: torch.Tensor,  # (n_trials, )
         kernel_params: torch.Tensor | None = None,
     ) -> None:
         assert (
@@ -141,8 +141,7 @@ class GPRegressor:
             or len(X_train) == 0
             or kernel_params.shape == (X_train.shape[1] + 2,)
         )
-        # TODO(nabenabe): Rename the attributes to private with `_`.
-        self.is_categorical = is_categorical
+        self._is_categorical = is_categorical
         self.kernel_params = KernelParamsTensor(
             raw_kernel_params=(
                 torch.ones(X_train.shape[1] + 2, dtype=torch.float64)
@@ -150,24 +149,24 @@ class GPRegressor:
                 else kernel_params
             )
         )
-        self.X_train = X_train
-        self.Y_train = Y_train
-        self.cov_Y_Y_inv: torch.Tensor | None = None
-        self.cov_Y_Y_inv_Y: torch.Tensor | None = None
+        self._X_train = X_train
+        self._y_train = y_train
+        self._cov_Y_Y_inv: torch.Tensor | None = None
+        self._cov_Y_Y_inv_Y: torch.Tensor | None = None
 
     def _update_kernel_params(self, kernel_params: KernelParamsTensor) -> None:
         self.kernel_params = kernel_params
 
     def _cache_matrix(self) -> None:
         with torch.no_grad():
-            cov_Y_Y = self._kernel(self.X_train, self.X_train).detach().numpy()
+            cov_Y_Y = self._kernel(self._X_train, self._X_train).detach().numpy()
 
-        cov_Y_Y[np.diag_indices(self.X_train.shape[0])] += self.kernel_params.noise_var.item()
+        cov_Y_Y[np.diag_indices(self._X_train.shape[0])] += self.kernel_params.noise_var.item()
         cov_Y_Y_inv = np.linalg.inv(cov_Y_Y)
-        cov_Y_Y_inv_Y = cov_Y_Y_inv @ self.Y_train.detach().numpy()
+        cov_Y_Y_inv_Y = cov_Y_Y_inv @ self._y_train.detach().numpy()
         # NOTE(nabenabe): Here we use NumPy to guarantee the reproducibility from the past.
-        self.cov_Y_Y_inv = torch.from_numpy(cov_Y_Y_inv)
-        self.cov_Y_Y_inv_Y = torch.from_numpy(cov_Y_Y_inv_Y)
+        self._cov_Y_Y_inv = torch.from_numpy(cov_Y_Y_inv)
+        self._cov_Y_Y_inv_Y = torch.from_numpy(cov_Y_Y_inv_Y)
 
     @property
     def length_scales(self) -> np.ndarray:
@@ -187,30 +186,31 @@ class GPRegressor:
         Note that the distance for categorical parameters is the Hamming distance.
         """
         d2 = (X1[..., :, None, :] - X2[..., None, :, :]) ** 2
-        d2[..., self.is_categorical] = (d2[..., self.is_categorical] > 0.0).type(torch.float64)
+        d2[..., self._is_categorical] = (d2[..., self._is_categorical] > 0.0).type(torch.float64)
         d2 = (d2 * self.kernel_params.inverse_squared_lengthscales).sum(dim=-1)
         return Matern52Kernel.apply(d2) * self.kernel_params.kernel_scale  # type: ignore
 
     def posterior(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         # The shape of mean and var is x.shape[:-1].
-        assert self.cov_Y_Y_inv is not None and self.cov_Y_Y_inv_Y is not None, "Call cache_matrix"
-        cov_fx_fX = self._kernel(x[..., None, :], self.X_train)[..., 0, :]
+        assert (
+            self._cov_Y_Y_inv is not None and self._cov_Y_Y_inv_Y is not None
+        ), "Call cache_matrix before calling posterior."
+        cov_fx_fX = self._kernel(x[..., None, :], self._X_train)[..., 0, :]
         cov_fx_fx = self.kernel_params.kernel_scale  # kernel(x, x) = kernel_scale
 
         # mean = cov_fx_fX @ inv(cov_fX_fX + noise * I) @ Y
         # var = cov_fx_fx - cov_fx_fX @ inv(cov_fX_fX + noise * I) @ cov_fx_fX.T
         # The shape of both mean and var is (..., ).
-        mean = cov_fx_fX @ self.cov_Y_Y_inv_Y
-        var = cov_fx_fx - (cov_fx_fX * (cov_fx_fX @ self.cov_Y_Y_inv)).sum(dim=-1)
+        mean = cov_fx_fX @ self._cov_Y_Y_inv_Y
+        var = cov_fx_fx - (cov_fx_fX * (cov_fx_fX @ self._cov_Y_Y_inv)).sum(dim=-1)
         # We need to clamp the variance to avoid negative values due to numerical errors.
         return mean, torch.clamp(var, min=0.0)
 
     def _marginal_log_likelihood(self) -> torch.Tensor:  # Scalar
         # -0.5 * log((2pi)^n |C|) - 0.5 * Y^T C^-1 Y, where C^-1 = cov_Y_Y_inv
         # We apply the cholesky decomposition to efficiently compute log(|C|) and C^-1.
-
-        cov_fX_fX = self._kernel(self.X_train, self.X_train)
-        n_points = self.X_train.shape[0]
+        cov_fX_fX = self._kernel(self._X_train, self._X_train)
+        n_points = self._X_train.shape[0]
         cov_Y_Y_chol = torch.linalg.cholesky(
             cov_fX_fX + self.kernel_params.noise_var * torch.eye(n_points, dtype=torch.float64)
         )
@@ -218,7 +218,7 @@ class GPRegressor:
         logdet = 2 * torch.log(torch.diag(cov_Y_Y_chol)).sum()
         # cov_Y_Y_chol @ cov_Y_Y_chol_inv_Y = Y --> cov_Y_Y_chol_inv_Y = inv(cov_Y_Y_chol) @ Y
         cov_Y_Y_chol_inv_Y = torch.linalg.solve_triangular(
-            cov_Y_Y_chol, self.Y_train[:, None], upper=False
+            cov_Y_Y_chol, self._y_train[:, None], upper=False
         )[:, 0]
         return -0.5 * (
             logdet
@@ -277,7 +277,7 @@ class GPRegressor:
         First try optimizing the kernel params with the provided kernel parameters in cache, but if
         it fails, rerun the optimization with the default kernel parameters for the robustness.
         """
-        default_kernel_params = torch.ones(self.X_train.shape[1] + 2, dtype=torch.float64)
+        default_kernel_params = torch.ones(self._X_train.shape[1] + 2, dtype=torch.float64)
         error = None
         for _ in range(2):
             try:

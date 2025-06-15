@@ -88,7 +88,7 @@ def test_fit_kernel_params(
         gtol: float = 1e-2
         gpr = GPRegressor(
             X_train=torch.from_numpy(X),
-            Y_train=torch.from_numpy(Y),
+            y_train=torch.from_numpy(Y),
             is_categorical=torch.from_numpy(is_categorical),
             kernel_params=initial_kernel_params,
         )

@@ -33,7 +33,7 @@ def test_after_convergence(caplog: LogCaptureFixture) -> None:
     )
     gpr = optuna._gp.gp.GPRegressor(
         X_train=torch.from_numpy(X[:, np.newaxis]),
-        Y_train=torch.from_numpy(score_vals),
+        y_train=torch.from_numpy(score_vals),
         is_categorical=torch.tensor([False]),
     )
     gpr.fit_kernel_params(

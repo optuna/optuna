@@ -182,7 +182,7 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
                 search_space.scale_types == gp_search_space.ScaleType.CATEGORICAL
             ),
             X_train=torch.from_numpy(normalized_top_n_params),
-            Y_train=torch.from_numpy(standarized_top_n_values),
+            y_train=torch.from_numpy(standarized_top_n_values),
             # TODO(y0z): Add `kernel_params_cache` to speedup.
             kernel_params=None,
         )

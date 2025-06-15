@@ -39,7 +39,7 @@ def get_gpr(Y: np.ndarray) -> GPRegressor:
     kernel_params = torch.tensor([2.0, 3.0, 4.0, 0.1], dtype=torch.float64)
     gpr = GPRegressor(
         X_train=torch.from_numpy(X_train),
-        Y_train=torch.from_numpy(Y),
+        y_train=torch.from_numpy(Y),
         is_categorical=torch.tensor([False, False]),
         kernel_params=kernel_params,
     )

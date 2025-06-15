@@ -191,7 +191,7 @@ class MultiObjectiveAcquisitionFunctionParams(AcquisitionFunctionParams):
             # Any other parameters will not be used anywhere.
             is_categorical=torch.empty(0),
             X_train=torch.empty(0),
-            Y_train=torch.empty(0),
+            y_train=torch.empty(0),
         )
         repr_acqf_params = acqf_params_for_objectives[0]
         return cls(

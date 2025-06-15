@@ -236,7 +236,7 @@ class GPSampler(BaseSampler):
             gpr = gp.GPRegressor(
                 is_categorical,
                 X_train=torch.from_numpy(normalized_params),
-                Y_train=torch.from_numpy(vals),
+                y_train=torch.from_numpy(vals),
                 kernel_params=cache,
             )
             gpr.fit_kernel_params(self._log_prior, self._minimum_noise, self._deterministic)
@@ -307,7 +307,7 @@ class GPSampler(BaseSampler):
             gpr = gp.GPRegressor(
                 is_categorical,
                 X_train=torch.from_numpy(normalized_params),
-                Y_train=torch.from_numpy(standardized_score_vals[:, i]),
+                y_train=torch.from_numpy(standardized_score_vals[:, i]),
                 kernel_params=cache,
             )
             gpr.fit_kernel_params(self._log_prior, self._minimum_noise, self._deterministic)
