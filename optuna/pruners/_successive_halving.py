@@ -19,7 +19,7 @@ class SuccessiveHalvingPruner(BasePruner):
 
     The pruner handles NaN values in the following manner:
         1. Only valid numeric trials are continued, the trials returning NaN are marked as fail.
-        2.  Intermediate NaN values are ignored during the trials. Trials are not pruned solely
+        2. Intermediate NaN values are ignored during the trials. Trials are not pruned solely
             due to NaN, unless their intermediate values are not promising.
         3. At each rung where intermediate results are reported, it compares the current trial
         performance to that of other trials. If the trial value is not in the top performers based
