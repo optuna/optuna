@@ -197,9 +197,7 @@ def local_search_mixed(
 
     continuous_indices = np.where(steps == 0.0)[0]
 
-    inverse_squared_lengthscales = (
-        acqf_params.kernel_params.inverse_squared_lengthscales.detach().numpy()
-    )
+    inverse_squared_lengthscales = acqf_params.gpr.inverse_squared_lengthscales.detach().numpy()
     # This is a technique for speeding up optimization.
     # We use an isotropic kernel, so scaling the gradient will make
     # the hessian better-conditioned.

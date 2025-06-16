@@ -4,88 +4,327 @@
 Easy Parallelization
 ====================
 
-It's straightforward to parallelize :func:`optuna.study.Study.optimize`.
+Optuna supports multiple ways to run parallel optimization.
 
-If you want to manually execute Optuna optimization:
+#. :ref:`Multi-thread optimization<multi-thread-optimization>`:
 
-    1. start an RDB server (this example uses MySQL)
-    2. create a study with ``--storage`` argument
-    3. share the study among multiple nodes and processes
+    * You can run multiple trials in parallel within a single process using the ``n_jobs`` parameter in :meth:`~optuna.study.Study.optimize()`.
 
-Of course, you can use Kubernetes as in `the kubernetes examples <https://github.com/optuna/optuna-examples/tree/main/kubernetes>`__.
+#. :ref:`Multi-process optimization<multi-process-optimization>`:
 
-To just see how parallel optimization works in Optuna, check the below video.
+    * You can run multiple processes sharing the same storage backend, such as RDB or a file.
 
-.. raw:: html
+#. :ref:`Multi-node optimization<multi-node-optimization>`:
 
-    <iframe width="560" height="315" src="https://www.youtube-nocookie.com/embed/J_aymk4YXhg?start=427" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+    * You can run the same optimization study on multiple machines.
+
+    * If you need to perform optimization across thousands of processing nodes, you can use :class:`~optuna.storages.GrpcStorageProxy` to run distributed optimization on multiple machines.
+
+The following diagram shows which strategy is suitable for which use case.
+
+.. graphviz::
+
+    digraph storage_selector {
+        rankdir=LR;
+        node [shape=box];
+
+        { rank=same; multithread; single_node; many_nodes; grpc_storage; }
+
+        multithread [label=<
+            <TABLE BORDER="0" CELLBORDER="0" CELLALIGN="LEFT">
+                <TR><TD>Multi-thread or Multi-process?</TD></TR>
+            </TABLE>
+        >];
+
+        single_node [label=<
+            <TABLE BORDER="0" CELLBORDER="0" CELLALIGN="LEFT">
+                <TR><TD>Single node/<BR/>Multi-node?</TD></TR>
+            </TABLE>
+        >];
+
+        many_nodes  [label=<
+            <TABLE BORDER="0" CELLBORDER="0" CELLALIGN="LEFT">
+                <TR><TD>Do you need<BR/>a very large number of nodes?</TD></TR>
+            </TABLE>
+        >];
+
+        multithread_storages [
+            shape=box,
+            style=rounded,
+            href="#multi-thread-optimization",
+            label=<
+                <TABLE BORDER="0" CELLBORDER="0" CELLALIGN="LEFT">
+                    <TR><TD><U>InMemoryStorage</U></TD></TR>
+                    <TR><TD><U>JournalStorage</U></TD></TR>
+                </TABLE>
+            >
+        ];
+
+        singlenode_storages [
+            shape=box,
+            style=rounded,
+            href="#multi-process-optimization",
+            label=<
+                <TABLE BORDER="0" CELLBORDER="0" CELLALIGN="LEFT">
+                    <TR><TD><U>JournalStorage</U></TD></TR>
+                    <TR><TD><U>RDBStorage</U></TD></TR>
+                </TABLE>
+            >
+        ]
+
+        rdb_storage [
+            shape=box,
+            style=rounded,
+            href="#multi-node-optimization",
+            label=<
+                <TABLE BORDER="0" CELLBORDER="0" CELLALIGN="LEFT">
+                    <TR><TD><U>RDBStorage</U></TD></TR>
+                </TABLE>
+            >
+        ]
+
+        grpc_storage [
+            shape=box,
+            style=rounded,
+            href="#grpc-storage-proxy",
+            label=<
+                <TABLE BORDER="0" CELLBORDER="0" CELLALIGN="LEFT">
+                    <TR><TD><U>GrpcStorageProxy</U></TD></TR>
+                </TABLE>
+            >
+        ]
+
+        multithread -> multithread_storages [label="Multi-thread"];
+        multithread -> single_node [label="Multi-process"];
+        single_node -> singlenode_storages [label="Single node"];
+        single_node -> many_nodes [label="Multi-node"];
+        many_nodes -> rdb_storage [label="No"];
+        many_nodes -> grpc_storage [label="Yes"];
+    }
+
+.. _multi-thread-optimization:
+
+Multi-thread Optimization
+-------------------------
+
+.. Note::
+    **Recommended backends**:
+        - :class:`~optuna.storages.InMemoryStorage`
+        - :class:`~optuna.storages.JournalStorage`
+        - :class:`~optuna.storages.RDBStorage`
 
 
-Create a Study
---------------
+You can run multiple trials in parallel just by setting the ``n_jobs``
+parameter in :meth:`~optuna.study.Study.optimize()`.
 
-You can create a study using ``optuna create-study`` command.
-Alternatively, in Python script you can use :func:`optuna.create_study`.
-
-
-.. code-block:: bash
-
-    $ mysql -u root -e "CREATE DATABASE IF NOT EXISTS example"
-    $ optuna create-study --study-name "distributed-example" --storage "mysql://root@localhost/example"
-    [I 2020-07-21 13:43:39,642] A new study created with name: distributed-example
-
-
-Then, write an optimization script. Let's assume that ``foo.py`` contains the following code.
-
-.. code-block:: python
-
-    import optuna
-
-
-    def objective(trial):
-        x = trial.suggest_float("x", -10, 10)
-        return (x - 2) ** 2
-
-
-    if __name__ == "__main__":
-        study = optuna.load_study(
-            study_name="distributed-example", storage="mysql://root@localhost/example"
-        )
-        study.optimize(objective, n_trials=100)
-
-
-Share the Study among Multiple Nodes and Processes
---------------------------------------------------
-
-Finally, run the shared study from multiple processes.
-For example, run ``Process 1`` in a terminal, and do ``Process 2`` in another one.
-They get parameter suggestions based on shared trials' history.
-
-Process 1:
-
-.. code-block:: bash
-
-    $ python foo.py
-    [I 2020-07-21 13:45:02,973] Trial 0 finished with value: 45.35553104173011 and parameters: {'x': 8.73465151598285}. Best is trial 0 with value: 45.35553104173011.
-    [I 2020-07-21 13:45:04,013] Trial 2 finished with value: 4.6002397305938905 and parameters: {'x': 4.144816945707463}. Best is trial 1 with value: 0.028194513284051464.
-    ...
-
-Process 2 (the same command as process 1):
-
-.. code-block:: bash
-
-    $ python foo.py
-    [I 2020-07-21 13:45:03,748] Trial 1 finished with value: 0.028194513284051464 and parameters: {'x': 1.8320877810162361}. Best is trial 1 with value: 0.028194513284051464.
-    [I 2020-07-21 13:45:05,783] Trial 3 finished with value: 24.45966755098074 and parameters: {'x': 6.945671597566982}. Best is trial 1 with value: 0.028194513284051464.
-    ...
-
-.. note::
-    ``n_trials`` is the number of trials each process will run, not the total number of trials across all processes. For example, the script given above runs 100 trials for each process, 100 trials * 2 processes = 200 trials. :class:`optuna.study.MaxTrialsCallback` can ensure how many times trials will be performed across all processes.
-
-.. note::
-    We do not recommend SQLite for distributed optimizations at scale because it may cause deadlocks and serious performance issues. Please consider to use another database engine like PostgreSQL or MySQL.
-
-.. note::
-    Please avoid putting the SQLite database on NFS when running distributed optimizations. See also: https://www.sqlite.org/faq.html#q5
+Multi-thread optimization has traditionally been inefficient in Python due to the Global Interpreter Lock (GIL).
+However, starting from Python 3.14 (pending official release), the GIL is expected to be removed.
+This change will make multi-threading a good option, especially for parallel optimization.
 
 """
+
+# %%
+
+import optuna
+from optuna.storages import JournalStorage
+from optuna.storages.journal import JournalFileBackend
+from optuna.trial import Trial
+import threading
+
+
+def objective(trial: Trial):
+    print(f"Running trial {trial.number=} in {threading.current_thread().name}")
+    x = trial.suggest_float("x", -10, 10)
+    return (x - 2) ** 2
+
+
+study = optuna.create_study(
+    storage=JournalStorage(JournalFileBackend(file_path="./journal.log")),
+)
+study.optimize(objective, n_trials=20, n_jobs=4)
+
+
+################################################################################
+#
+# .. _multi-process-optimization:
+#
+# Multi-process Optimization with JournalStorage
+# ----------------------------------------------
+#
+# .. Note::
+#    **Recommended backends**:
+#         - :class:`~optuna.storages.JournalStorage`
+#         - :class:`~optuna.storages.RDBStorage`
+#
+# You can run multiple processes for optimization by using shared storage.
+# Since :class:`~optuna.storages.InMemoryStorage` is not designed to be shared across processes,
+# it cannot be used for multi-process optimization.
+#
+# The following example shows how to use :class:`~optuna.storages.JournalStorage`
+# for multi-process optimization with ``multiprocessing`` module.
+#
+# .. code-block:: python
+#
+#    import optuna
+#    from multiprocessing import Pool
+#    from optuna.storages import JournalStorage
+#    from optuna.storages.journal import JournalFileBackend
+#    import os
+#
+#
+#    def objective(trial):
+#        print(f"Running trial {trial.number=} in process {os.getpid()}")
+#        x = trial.suggest_float("x", -10, 10)
+#        return (x - 2) ** 2
+#
+#
+#    def run_optimization(_):
+#        study = optuna.create_study(
+#            study_name="journal_storage_multiprocess",
+#            storage=JournalStorage(JournalFileBackend(file_path="./journal.log")),
+#            load_if_exists=True, # Useful for multi-process or multi-node optimization.
+#        )
+#        study.optimize(objective, n_trials=3)
+#
+#    if __name__ == "__main__":
+#        with Pool(processes=4) as pool:
+#            pool.map(run_optimization, range(12))
+#
+#
+# Out:
+#
+# .. code-block:: console
+#
+#    $ python3 multiprocess_example.py
+#    Running trial trial.number=1 in process 4605
+#    Running trial trial.number=2 in process 4604
+#    Running trial trial.number=3 in process 4607
+#    Running trial trial.number=4 in process 4606
+#    Running trial trial.number=5 in process 4605
+#    Running trial trial.number=6 in process 4607
+#    Running trial trial.number=7 in process 4604
+#    Running trial trial.number=8 in process 4605
+#    ...
+#
+# .. Note
+#
+#    You can use :class:`~optuna.storages.journal.JournalRedisBackend`
+#    as the backend for :class:`~optuna.storages.journal.JournalStorage`,
+#    so that you can avoid race conditions caused by the host filesystem.
+#
+# .. _multi-node-optimization:
+#
+# Multi-node Optimization with RDBStorage
+# ---------------------------------------
+#
+# Since :class:`~optuna.storages.journal.JournalFileBackend` uses file locks on the local filesystem, it operates safely for multiple processes on the same host. However, if accessed simultaneously from multiple machines via NFS (or similar), the file locks may not work correctly, which could lead to race conditions.
+# it is likely to cause race conditions when accessed by multiple machines.
+#
+# Therefore, for multi-node optimization, it is recommended to use :class:`~optuna.storages.RDBStorage`.
+# You can use MySQL, PostgreSQL, or other RDB backends.
+#
+# For example, when using MySQL, you need to set up a MySQL server and create a database for Optuna.
+#
+# .. code-block:: bash
+#
+#    $ mysql -u username -e "CREATE DATABASE IF NOT EXISTS example"
+#
+# Then, you can use this MySQL database as a storage backend by setting the
+# MySQL URL as the value of the ``storage`` parameter in :func:`~optuna.create_study()`.
+#
+# .. code-block:: python
+#
+#    import optuna
+#
+#
+#    def objective(trial):
+#        x = trial.suggest_float("x", -10, 10)
+#        return (x - 2) ** 2
+#
+#
+#    if __name__ == "__main__":
+#        study = optuna.create_study(
+#            study_name="distributed_test",
+#            storage="mysql://username:password@127.0.0.1:3306/example",
+#            load_if_exists=True,
+#        )
+#        study.optimize(objective, n_trials=100)
+#
+#
+# You can run this example on multiple machines
+#
+# Machine 1:
+#
+# .. code-block:: console
+#
+#    $ python3 distributed_example.py
+#    [I 2025-06-03 14:07:45,306] A new study created in RDB with name: distributed_test
+#    [I 2025-06-03 14:08:45,450] Trial 0 finished with value: 12.694308312865278 and parameters: {'x': -1.5629072837873959}. Best is trial 0 with value: 12.694308312865278.
+#    [I 2025-06-03 14:09:45,482] Trial 2 finished with value: 121.80632032697125 and parameters: {'x': -9.036590067904635}. Best is trial 0 with value: 12.694308312865278.
+#
+#
+# Machine 2:
+#
+# .. code-block:: console
+#
+#    $ python3 distributed_example.py
+#    [I 2025-06-03 14:07:49,318] Using an existing study with name 'distributed_test' instead of creating a new one.
+#    [I 2025-06-03 14:08:49,442] Trial 1 finished with value: 0.21258674253407828 and parameters: {'x': 1.5389287012466746}. Best is trial 31 with value: 9.19159178106083e-05.
+#    [I 2025-06-03 14:09:49,480] Trial 3 finished with value: 0.24343413718999274 and parameters: {'x': 2.493390451052706}. Best is trial 31 with value: 9.19159178106083e-05.
+#
+# .. _grpc-storage-proxy:
+#
+# Multi-node Optimization with GrpcStorageProxy
+# ---------------------------------------------
+#
+# However, if you are running thousands of process nodes, an RDB server may not be able to handle the load.
+# In that case, you can use :class:`~optuna.storages.GrpcStorageProxy`
+# to distribute the server load.
+#
+# :class:`~optuna.storages.GrpcStorageProxy` is a proxy storage layer that internally uses :class:`~optuna.storages.RDBStorage` as its backend.
+# It can efficiently handle high-throughput concurrent requests from multiple machines.
+#
+# The following example shows how to use :class:`~optuna.storages.GrpcStorageProxy`.
+# Since :class:`~optuna.storages.GrpcStorageProxy` is a proxy storage,
+# you need to run a gRPC server with :class:`~optuna.storages.RDBStorage` backend first.
+#
+# .. code-block:: python
+#
+#    from optuna.storages import run_grpc_proxy_server
+#    from optuna.storages import get_storage
+#
+#    storage = get_storage("mysql+pymysql://username:password@127.0.0.1:3306/example")
+#    run_grpc_proxy_server(storage, host="localhost", port=13000)
+#
+#
+# Out:
+#
+# .. code-block:: console
+#
+#    $ python3 grpc_proxy_server.py
+#    [I 2025-06-03 13:57:38,328] Server started at localhost:13000
+#    [I 2025-06-03 13:57:38,328] Listening...
+#
+#
+# Then, on each machine, you can run the following code to connect to the gRPC proxy storage.
+#
+# .. code-block:: python
+#
+#    import optuna
+#
+#    from optuna.storages import GrpcStorageProxy
+#
+#
+#    def objective(trial):
+#        x = trial.suggest_float("x", -10, 10)
+#        return (x - 2) ** 2
+#
+#
+#    if __name__ == "__main__":
+#        storage = GrpcStorageProxy(host="localhost", port=13000)
+#        study = optuna.create_study(
+#            study_name="grpc_proxy_multinode",
+#            storage=storage,
+#            load_if_exists=True,
+#        )
+#        study.optimize(objective, n_trials=50)

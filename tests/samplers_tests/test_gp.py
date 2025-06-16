@@ -30,7 +30,7 @@ def test_after_convergence(caplog: LogCaptureFixture) -> None:
         bounds=np.array([[0.0, 1.0]]),
         steps=np.zeros(1, dtype=float),
     )
-    kernel_params = optuna._gp.gp.fit_kernel_params(
+    gpr = optuna._gp.gp.fit_kernel_params(
         X=X[:, np.newaxis],
         Y=score_vals,
         is_categorical=np.array([False]),
@@ -40,7 +40,7 @@ def test_after_convergence(caplog: LogCaptureFixture) -> None:
     )
     acqf_params = acqf.create_acqf_params(
         acqf_type=acqf.AcquisitionFunctionType.LOG_EI,
-        kernel_params=kernel_params,
+        gpr=gpr,
         search_space=search_space,
         X=X[:, np.newaxis],
         Y=score_vals,
