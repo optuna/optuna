@@ -80,6 +80,11 @@ jobs:
           pip install --pre torch --index-url https://download.pytorch.org/whl/nightly/cpu
         fi
 
+        if [ "${{ matrix.python-version }}" = "3.8" ] ; then
+          # TODO(nabe): Remove this line once Python 3.8 is dropped.
+          pip install --upgrade "fakeredis[lua]<2.30.0"
+        fi
+
     - name: Output installed packages
       run: |
         pip freeze --all
