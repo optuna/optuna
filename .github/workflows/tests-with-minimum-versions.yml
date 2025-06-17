@@ -66,6 +66,11 @@ jobs:
         pip install --progress-bar off .[test] --extra-index-url https://download.pytorch.org/whl/cpu
         pip install --progress-bar off .[optional] --extra-index-url https://download.pytorch.org/whl/cpu
 
+        if [ "${{ matrix.python-version }}" = "3.8" ] ; then
+          # TODO(nabe): Remove this line once Python 3.8 is dropped.
+          pip install --upgrade "fakeredis[lua]<2.30.0"
+        fi
+
     - name: Install dependencies with minimum versions
       run: |
         # Install dependencies with minimum versions.
