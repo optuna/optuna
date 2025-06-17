@@ -95,7 +95,7 @@ optional = [
 ]
 test = [
   "coverage",
-  "fakeredis[lua]<2.30.0",  # TODO(nabenabe): Remove the version constraint once Optuna drops Python 3.8.
+  "fakeredis[lua]",
   "kaleido<0.4",  # TODO(nzw0301): Remove the version constraint by installing browser separately.
   "moto",
   "pytest",
