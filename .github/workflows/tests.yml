@@ -82,7 +82,7 @@ jobs:
 
         if [ "${{ matrix.python-version }}" = "3.8" ] ; then
           # TODO(nabe): Remove this line once Python 3.8 is dropped.
-          pip install --force-reinstall --upgrade "fakeredis[lua]<3.20.0"
+          pip install --upgrade "fakeredis[lua]<2.30.0"
         fi
 
     - name: Output installed packages
