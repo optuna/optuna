@@ -83,6 +83,7 @@ def test_experimental_func_decorator_with_static_method() -> None:
     assert _Sample._static_method.__qualname__ in str(warning.message), warning.message
     assert version in str(warning.message), warning.message
 
+
 def test_experimental_instance_method_decorator() -> None:
     version = "1.1.0"
     decorator_experimental = _experimental.experimental_func(version)
