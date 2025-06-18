@@ -199,7 +199,7 @@ def local_search_mixed(
     # NOTE: Ideally, separating lengthscales should be used for the constraint functions,
     # but for simplicity, the ones from the objective function are being reused.
     # TODO(kAIto47802): Think of a better way to handle this.
-    lengthscales = acqf.length_scales
+    lengthscales = acqf.length_scales[continuous_indices]
 
     # NOTE(nabenabe): MyPy Redefinition for NumPy v2.2.0. (Cast signed int to int)
     discrete_indices = np.where(steps > 0)[0].astype(int)
