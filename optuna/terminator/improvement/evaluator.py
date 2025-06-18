@@ -18,6 +18,7 @@ if TYPE_CHECKING:
 
     from optuna._gp import acqf as acqf_module
     from optuna._gp import gp
+    from optuna._gp import optim_sample
     from optuna._gp import prior
     from optuna._gp import search_space as gp_search_space
 else:
@@ -71,7 +72,7 @@ def _compute_standardized_regret_bound(
     # UCB over the search space. (Original: LCB over the search space. See Change 1 above.)
     standardized_ucb_value = max(
         ucb_acqf.eval_acqf_no_grad(normalized_top_n_params).max(),
-        ucb_acqf.optimize_acqf_sample(n_samples=optimize_n_samples, rng=rng)[1],
+        optim_sample.optimize_acqf_sample(ucb_acqf, n_samples=optimize_n_samples, rng=rng)[1],
     )
 
     # calculate min_lcb

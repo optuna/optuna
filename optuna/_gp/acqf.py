@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 from optuna._gp.gp import GPRegressor
-from optuna._gp.search_space import sample_normalized_params
 from optuna._gp.search_space import SearchSpace
 from optuna._hypervolume import get_non_dominated_box_bounds
 from optuna.study._multi_objective import _is_pareto_front
@@ -93,15 +92,6 @@ class BaseAcquisitionFunc(ABC):
     def __init__(self, length_scales: np.ndarray, search_space: SearchSpace) -> None:
         self.length_scales = length_scales
         self.search_space = search_space
-
-    def optimize_acqf_sample(
-        self, *, n_samples: int = 2048, rng: np.random.RandomState | None = None
-    ) -> tuple[np.ndarray, float]:
-        # Normalized parameter values are sampled.
-        xs = sample_normalized_params(n_samples, self.search_space, rng=rng)
-        res = self.eval_acqf_no_grad(xs)
-        best_i = np.argmax(res)
-        return xs[best_i, :], res[best_i]
 
     @abstractmethod
     def eval_acqf(self, x: torch.Tensor) -> torch.Tensor:
