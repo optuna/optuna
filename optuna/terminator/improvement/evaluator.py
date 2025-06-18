@@ -16,9 +16,8 @@ from optuna.trial import TrialState
 
 if TYPE_CHECKING:
 
-    from optuna._gp import acqf
+    from optuna._gp import acqf as acqf_module
     from optuna._gp import gp
-    from optuna._gp import optim_sample
     from optuna._gp import prior
     from optuna._gp import search_space as gp_search_space
 else:
@@ -26,7 +25,7 @@ else:
 
     gp = _LazyImport("optuna._gp.gp")
     optim_sample = _LazyImport("optuna._gp.optim_sample")
-    acqf = _LazyImport("optuna._gp.acqf")
+    acqf_module = _LazyImport("optuna._gp.acqf")
     prior = _LazyImport("optuna._gp.prior")
     gp_search_space = _LazyImport("optuna._gp.search_space")
 
@@ -68,35 +67,17 @@ def _compute_standardized_regret_bound(
 
     # calculate max_ucb
     beta = _get_beta(n_params, n_trials, delta)
-    ucb_acqf_params = acqf.create_acqf_params(
-        acqf_type=acqf.AcquisitionFunctionType.UCB,
-        gpr=gpr,
-        search_space=search_space,
-        X=normalized_top_n_params,
-        Y=standarized_top_n_values,
-        beta=beta,
-    )
+    ucb_acqf = acqf_module.UCB(gpr, search_space, beta)
     # UCB over the search space. (Original: LCB over the search space. See Change 1 above.)
     standardized_ucb_value = max(
-        acqf.eval_acqf_no_grad(ucb_acqf_params, normalized_top_n_params).max(),
-        optim_sample.optimize_acqf_sample(ucb_acqf_params, n_samples=optimize_n_samples, rng=rng)[
-            1
-        ],
+        ucb_acqf.eval_acqf_no_grad(normalized_top_n_params).max(),
+        ucb_acqf.optimize_acqf_sample(n_samples=optimize_n_samples, rng=rng)[1],
     )
 
     # calculate min_lcb
-    lcb_acqf_params = acqf.create_acqf_params(
-        acqf_type=acqf.AcquisitionFunctionType.LCB,
-        gpr=gpr,
-        search_space=search_space,
-        X=normalized_top_n_params,
-        Y=standarized_top_n_values,
-        beta=beta,
-    )
+    lcb_acqf = acqf_module.LCB(gpr=gpr, search_space=search_space, beta=beta)
     # LCB over the top trials. (Original: UCB over the top trials. See Change 2 above.)
-    standardized_lcb_value = np.max(
-        acqf.eval_acqf_no_grad(lcb_acqf_params, normalized_top_n_params)
-    )
+    standardized_lcb_value = np.max(lcb_acqf.eval_acqf_no_grad(normalized_top_n_params))
 
     # max(UCB) - max(LCB). (Original: min(UCB) - min(LCB). See Change 3 above.)
     return standardized_ucb_value - standardized_lcb_value  # standardized regret bound

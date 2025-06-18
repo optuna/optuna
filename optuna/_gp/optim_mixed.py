@@ -5,9 +5,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from optuna._gp.acqf import AcquisitionFunctionParams
-from optuna._gp.acqf import eval_acqf_no_grad
-from optuna._gp.acqf import eval_acqf_with_grad
+from optuna._gp.acqf import BaseAcquisitionFunc
 from optuna._gp.search_space import normalize_one_param
 from optuna._gp.search_space import sample_normalized_params
 from optuna._gp.search_space import ScaleType
@@ -25,7 +23,7 @@ _logger = get_logger(__name__)
 
 
 def _gradient_ascent(
-    acqf_params: AcquisitionFunctionParams,
+    acqf: BaseAcquisitionFunc,
     initial_params: np.ndarray,
     initial_fval: float,
     continuous_indices: np.ndarray,
@@ -54,7 +52,7 @@ def _gradient_ascent(
     def negative_acqf_with_grad(scaled_x: np.ndarray) -> tuple[float, np.ndarray]:
         # Scale back to the original domain, i.e. [0, 1], from [0, 1/s].
         normalized_params[continuous_indices] = scaled_x * lengthscales
-        (fval, grad) = eval_acqf_with_grad(acqf_params, normalized_params)
+        (fval, grad) = acqf.eval_acqf_with_grad(normalized_params)
         # Flip sign because scipy minimizes functions.
         # Let the scaled acqf be g(x) and the acqf be f(sx), then dg/dx = df/dx * s.
         return -fval, -grad[continuous_indices] * lengthscales
@@ -76,7 +74,7 @@ def _gradient_ascent(
 
 
 def _exhaustive_search(
-    acqf_params: AcquisitionFunctionParams,
+    acqf: BaseAcquisitionFunc,
     initial_params: np.ndarray,
     initial_fval: float,
     param_idx: int,
@@ -86,7 +84,7 @@ def _exhaustive_search(
 
     all_params = np.repeat(initial_params[None, :], len(choices_except_current), axis=0)
     all_params[:, param_idx] = choices_except_current
-    fvals = eval_acqf_no_grad(acqf_params, all_params)
+    fvals = acqf.eval_acqf_no_grad(all_params)
     best_idx = np.argmax(fvals)
 
     if fvals[best_idx] > initial_fval:  # Improved.
@@ -96,7 +94,7 @@ def _exhaustive_search(
 
 
 def _discrete_line_search(
-    acqf_params: AcquisitionFunctionParams,
+    acqf: BaseAcquisitionFunc,
     initial_params: np.ndarray,
     initial_fval: float,
     param_idx: int,
@@ -126,7 +124,7 @@ def _discrete_line_search(
         normalized_params[param_idx] = grids[i]
 
         # Flip sign because scipy minimizes functions.
-        negval = -float(eval_acqf_no_grad(acqf_params, normalized_params))
+        negval = -float(acqf.eval_acqf_no_grad(normalized_params))
         negative_fval_cache[i] = negval
         return negval
 
@@ -163,7 +161,7 @@ def _discrete_line_search(
 
 
 def _local_search_discrete(
-    acqf_params: AcquisitionFunctionParams,
+    acqf: BaseAcquisitionFunc,
     initial_params: np.ndarray,
     initial_fval: float,
     param_idx: int,
@@ -175,36 +173,33 @@ def _local_search_discrete(
     # This is faster and better than the line search.
     MAX_INT_EXHAUSTIVE_SEARCH_PARAMS = 16
 
-    scale_type = acqf_params.search_space.scale_types[param_idx]
+    scale_type = acqf.search_space.scale_types[param_idx]
     if scale_type == ScaleType.CATEGORICAL or len(choices) <= MAX_INT_EXHAUSTIVE_SEARCH_PARAMS:
-        return _exhaustive_search(acqf_params, initial_params, initial_fval, param_idx, choices)
+        return _exhaustive_search(acqf, initial_params, initial_fval, param_idx, choices)
     else:
-        return _discrete_line_search(
-            acqf_params, initial_params, initial_fval, param_idx, choices, xtol
-        )
+        return _discrete_line_search(acqf, initial_params, initial_fval, param_idx, choices, xtol)
 
 
 def local_search_mixed(
-    acqf_params: AcquisitionFunctionParams,
+    acqf: BaseAcquisitionFunc,
     initial_normalized_params: np.ndarray,
     *,
     tol: float = 1e-4,
     max_iter: int = 100,
 ) -> tuple[np.ndarray, float]:
-    scale_types = acqf_params.search_space.scale_types
-    bounds = acqf_params.search_space.bounds
-    steps = acqf_params.search_space.steps
+    scale_types = acqf.search_space.scale_types
+    bounds = acqf.search_space.bounds
+    steps = acqf.search_space.steps
 
     continuous_indices = np.where(steps == 0.0)[0]
 
-    inverse_squared_lengthscales = acqf_params.gpr.inverse_squared_lengthscales.detach().numpy()
     # This is a technique for speeding up optimization.
     # We use an isotropic kernel, so scaling the gradient will make
     # the hessian better-conditioned.
     # NOTE: Ideally, separating lengthscales should be used for the constraint functions,
     # but for simplicity, the ones from the objective function are being reused.
     # TODO(kAIto47802): Think of a better way to handle this.
-    lengthscales = 1 / np.sqrt(inverse_squared_lengthscales[continuous_indices])
+    lengthscales = acqf.length_scales
 
     # NOTE(nabenabe): MyPy Redefinition for NumPy v2.2.0. (Cast signed int to int)
     discrete_indices = np.where(steps > 0)[0].astype(int)
@@ -230,7 +225,7 @@ def local_search_mixed(
     ]
 
     best_normalized_params = initial_normalized_params.copy()
-    best_fval = float(eval_acqf_no_grad(acqf_params, best_normalized_params))
+    best_fval = float(acqf.eval_acqf_no_grad(best_normalized_params))
 
     CONTINUOUS = -1
     last_changed_param: int | None = None
@@ -240,7 +235,7 @@ def local_search_mixed(
             # Parameters not changed since last time.
             return best_normalized_params, best_fval
         (best_normalized_params, best_fval, updated) = _gradient_ascent(
-            acqf_params,
+            acqf,
             best_normalized_params,
             best_fval,
             continuous_indices,
@@ -255,7 +250,7 @@ def local_search_mixed(
                 # Parameters not changed since last time.
                 return best_normalized_params, best_fval
             (best_normalized_params, best_fval, updated) = _local_search_discrete(
-                acqf_params, best_normalized_params, best_fval, i, choices, xtol
+                acqf, best_normalized_params, best_fval, i, choices, xtol
             )
             if updated:
                 last_changed_param = i
@@ -269,7 +264,7 @@ def local_search_mixed(
 
 
 def optimize_acqf_mixed(
-    acqf_params: AcquisitionFunctionParams,
+    acqf: BaseAcquisitionFunc,
     *,
     warmstart_normalized_params_array: np.ndarray | None = None,
     n_preliminary_samples: int = 2048,
@@ -280,7 +275,7 @@ def optimize_acqf_mixed(
 
     rng = rng or np.random.RandomState()
 
-    dim = acqf_params.search_space.scale_types.shape[0]
+    dim = acqf.search_space.scale_types.shape[0]
     if warmstart_normalized_params_array is None:
         warmstart_normalized_params_array = np.empty((0, dim))
 
@@ -288,10 +283,10 @@ def optimize_acqf_mixed(
         len(warmstart_normalized_params_array) <= n_local_search - 1
     ), "We must choose at least 1 best sampled point + given_initial_xs as start points."
 
-    sampled_xs = sample_normalized_params(n_preliminary_samples, acqf_params.search_space, rng=rng)
+    sampled_xs = sample_normalized_params(n_preliminary_samples, acqf.search_space, rng=rng)
 
     # Evaluate all values at initial samples
-    f_vals = eval_acqf_no_grad(acqf_params, sampled_xs)
+    f_vals = acqf.eval_acqf_no_grad(sampled_xs)
     assert isinstance(f_vals, np.ndarray)
 
     max_i = np.argmax(f_vals)
@@ -320,7 +315,7 @@ def optimize_acqf_mixed(
     best_f = float(f_vals[max_i])
 
     for x_warmstart in np.vstack([sampled_xs[chosen_idxs, :], warmstart_normalized_params_array]):
-        x, f = local_search_mixed(acqf_params, x_warmstart, tol=tol)
+        x, f = local_search_mixed(acqf, x_warmstart, tol=tol)
         if f > best_f:
             best_x = x
             best_f = f
