@@ -780,8 +780,7 @@ How can I resolve case sensitivity issues with MySQL?
 -----------------------------------------------------
 
 By default, MySQL performs case-insensitive string comparisons.
-However, Optuna treats string parameters in a case-sensitive manner.
-This can lead to conflicts when parameter names differ only by case.
+However, Optuna treats string parameters in a case-sensitive manner, leading to conflicts in MySQL if parameter names differ only by case.
 
 For example,
 
