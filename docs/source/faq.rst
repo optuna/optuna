@@ -792,7 +792,7 @@ For example,
         return a + A
 
 In this case, Optuna treats `a` and `A` distinctively while MySQL does not due to its default collation settings.
-As a result, an error may occur when trying to register these parameters in the database.
+As a result, only one of the parameters will be registered in MySQL.
 
 To address this issue, there are some workarounds.
 
