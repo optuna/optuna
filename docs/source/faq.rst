@@ -802,4 +802,4 @@ The following workarounds should be considered:
     For example, use `a` and `b` instead of `a` and `A`.
 3. Change MySQL’s collation settings to be case-sensitive.
     You can configure case sensitivity at the database, table, or column level.
-    For more details, refer to `the MySQL documentation <https://dev.mysql.com/doc/refman/9.3/en/charset-syntax.html>`__.
+    We defer to `the MySQL documentation <https://dev.mysql.com/doc/refman/9.3/en/charset-syntax.html>`__ for more details.
