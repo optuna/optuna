@@ -794,7 +794,7 @@ For example,
 In this case, Optuna treats `a` and `A` distinctively while MySQL does not due to its default collation settings.
 As a result, only one of the parameters will be registered in MySQL.
 
-To address this issue, there are some workarounds.
+The following workarounds should be considered:
 
 1. Use a different storage backend.
     Please consider using PostgreSQL or SQLite, which supports case-sensitive handling.
