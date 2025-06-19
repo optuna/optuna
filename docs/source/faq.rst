@@ -799,7 +799,7 @@ The following workarounds should be considered:
 1. Use a different storage backend.
     Please consider using PostgreSQL or SQLite, which supports case-sensitive handling.
 2. Rename the parameters to avoid case conflicts.
-    For example, use "a" and "b" instead of "a" and "A".
+    For example, use `a` and `b` instead of `a` and `A`.
 3. Change MySQL’s collation settings to be case-sensitive.
     You can configure case sensitivity at the database, table, or column level.
     For more details, refer to `the MySQL documentation <https://dev.mysql.com/doc/refman/9.3/en/charset-syntax.html>`__.
