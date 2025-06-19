@@ -106,9 +106,14 @@ jobs:
         pip install --progress-bar off .[test] --extra-index-url https://download.pytorch.org/whl/cpu
         pip install --progress-bar off .[optional] --extra-index-url https://download.pytorch.org/whl/cpu
 
+        if [ "${{ matrix.python-version }}" = "3.8" ] ; then
+          # TODO(nabe): Remove this line once Python 3.8 is dropped.
+          pip install --upgrade "fakeredis[lua]<2.30.0"
+        fi
+
     - name: Install DB bindings
       run: |
-        pip install --progress-bar off PyMySQL cryptography psycopg2-binary redis
+        pip install --progress-bar off PyMySQL cryptography psycopg2-binary psycopg redis
 
     - name: Output installed packages
       run: |
@@ -126,12 +131,19 @@ jobs:
         OMP_NUM_THREADS: 1
         TEST_DB_URL: mysql+pymysql://user:test@127.0.0.1/optunatest
 
-    - name: Tests PostgreSQL
+    - name: Tests PostgreSQL with psycopg2
       run: |
         pytest tests/storages_tests/test_with_server.py
       env:
         OMP_NUM_THREADS: 1
         TEST_DB_URL: postgresql+psycopg2://user:test@127.0.0.1/optunatest
+
+    - name: Tests PostgreSQL with psycopg3
+      run: |
+        pytest tests/storages_tests/test_with_server.py
+      env:
+        OMP_NUM_THREADS: 1
+        TEST_DB_URL: postgresql+psycopg://user:test@127.0.0.1/optunatest
 
     - name: Tests Journal Redis
       run: |

@@ -198,8 +198,18 @@ class TrialModel(BaseModel):
             .order_by(
                 desc(
                     case(
-                        {"INF_NEG": -1, "FINITE": 0, "INF_POS": 1},
-                        value=TrialValueModel.value_type,
+                        (
+                            TrialValueModel.value_type == TrialValueModel.TrialValueType.INF_NEG,
+                            -1,
+                        ),
+                        (
+                            TrialValueModel.value_type == TrialValueModel.TrialValueType.FINITE,
+                            0,
+                        ),
+                        (
+                            TrialValueModel.value_type == TrialValueModel.TrialValueType.INF_POS,
+                            1,
+                        ),
                     )
                 ),
                 desc(TrialValueModel.value),
@@ -223,11 +233,21 @@ class TrialModel(BaseModel):
             .order_by(
                 asc(
                     case(
-                        {"INF_NEG": -1, "FINITE": 0, "INF_POS": 1},
-                        value=TrialValueModel.value_type,
+                        (
+                            TrialValueModel.value_type == TrialValueModel.TrialValueType.INF_NEG,
+                            -1,
+                        ),
+                        (
+                            TrialValueModel.value_type == TrialValueModel.TrialValueType.FINITE,
+                            0,
+                        ),
+                        (
+                            TrialValueModel.value_type == TrialValueModel.TrialValueType.INF_POS,
+                            1,
+                        ),
                     )
                 ),
-                asc(TrialValueModel.value),
+                asc(TrialValueModel.value),  # Note: asc here
             )
             .limit(1)
             .one_or_none()
@@ -421,11 +441,11 @@ class TrialValueModel(BaseModel):
     @classmethod
     def value_to_stored_repr(cls, value: float) -> tuple[float | None, TrialValueType]:
         if value == float("inf"):
-            return (None, cls.TrialValueType.INF_POS)
+            return None, cls.TrialValueType.INF_POS
         elif value == float("-inf"):
-            return (None, cls.TrialValueType.INF_NEG)
+            return None, cls.TrialValueType.INF_NEG
         else:
-            return (value, cls.TrialValueType.FINITE)
+            return value, cls.TrialValueType.FINITE
 
     @classmethod
     def stored_repr_to_value(cls, value: float | None, float_type: TrialValueType) -> float:
@@ -486,13 +506,13 @@ class TrialIntermediateValueModel(BaseModel):
         cls, value: float
     ) -> tuple[float | None, TrialIntermediateValueType]:
         if math.isnan(value):
-            return (None, cls.TrialIntermediateValueType.NAN)
+            return None, cls.TrialIntermediateValueType.NAN
         elif value == float("inf"):
-            return (None, cls.TrialIntermediateValueType.INF_POS)
+            return None, cls.TrialIntermediateValueType.INF_POS
         elif value == float("-inf"):
-            return (None, cls.TrialIntermediateValueType.INF_NEG)
+            return None, cls.TrialIntermediateValueType.INF_NEG
         else:
-            return (value, cls.TrialIntermediateValueType.FINITE)
+            return value, cls.TrialIntermediateValueType.FINITE
 
     @classmethod
     def stored_repr_to_intermediate_value(

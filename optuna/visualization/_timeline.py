@@ -30,19 +30,30 @@ class _TimelineInfo(NamedTuple):
     bars: list[_TimelineBarInfo]
 
 
-def plot_timeline(study: Study) -> "go.Figure":
+def plot_timeline(study: Study, n_recent_trials: int | None = None) -> "go.Figure":
     """Plot the timeline of a study.
 
     Args:
         study:
             A :class:`~optuna.study.Study` object whose trials are plotted with
             their lifetime.
+        n_recent_trials:
+            The number of recent trials to plot. If :obj:`None`, all trials are plotted.
+            If specified, only the most recent ``n_recent_trials`` will be displayed.
+            Must be a positive integer.
 
     Returns:
         A :class:`plotly.graph_objects.Figure` object.
+
+    Raises:
+        ValueError: if ``n_recent_trials`` is 0 or negative.
     """
+
+    if n_recent_trials is not None and n_recent_trials <= 0:
+        raise ValueError("n_recent_trials must be a positive integer or None.")
+
     _imports.check()
-    info = _get_timeline_info(study)
+    info = _get_timeline_info(study, n_recent_trials=n_recent_trials)
     return _get_timeline_plot(info)
 
 
@@ -80,12 +91,17 @@ def _is_running_trials_in_study(study: Study, max_run_duration: datetime.timedel
     )
 
 
-def _get_timeline_info(study: Study) -> _TimelineInfo:
+def _get_timeline_info(study: Study, n_recent_trials: int | None = None) -> _TimelineInfo:
     bars = []
 
     max_datetime = _get_max_datetime_complete(study)
     timedelta_for_small_bar = datetime.timedelta(seconds=1)
-    for trial in study.get_trials(deepcopy=False):
+
+    trials = study.get_trials(deepcopy=False)
+    if n_recent_trials is not None:
+        trials = trials[-n_recent_trials:]
+
+    for trial in trials:
         datetime_start = trial.datetime_start or max_datetime
         datetime_complete = (
             max_datetime + timedelta_for_small_bar

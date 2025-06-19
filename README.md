@@ -33,12 +33,12 @@ Please take a few minutes to fill in this survey, and let us know how you use Op
 All questions are optional. 🙇‍♂️ https://forms.gle/wVwLCQ9g6st6AXuq9
 
 <!-- TODO: when you add a new line, please delete the oldest line -->
+* **Jun 16, 2025**: Optuna 4.4.0 has been released! Check out [the release blog](https://medium.com/optuna/announcing-optuna-4-4-ece661493126).
 * **May 26, 2025**: Optuna 5.0 roadmap has been published! See [the blog](https://medium.com/optuna/optuna-v5-roadmap-ac7d6935a878) for more details.
 * **Apr 14, 2025**: Optuna 4.3.0 are out! Check out [the release note](https://github.com/optuna/optuna/releases/tag/v4.3.0) for details.
 * **Mar 24, 2025**: A new article [Distributed Optimization in Optuna and gRPC Storage Proxy](https://medium.com/optuna/distributed-optimization-in-optuna-and-grpc-storage-proxy-08db83f1d608) has been published.
 * **Mar 11, 2025**: A new article [[Optuna v4.2] Gaussian Process-Based Sampler Can Now Handle Inequality Constraints](https://medium.com/optuna/optuna-v4-2-gaussian-process-based-sampler-can-now-handle-inequality-constraints-a4f68e8ee810) has been published.
 * **Feb 17, 2025**: A new article [SMAC3 Registered on OptunaHub](https://medium.com/optuna/smac3-registered-on-optunahub-4fb9e90855cb) has been published.
-* **Jan 22, 2025**: A new article [OptunaHub Benchmarks: A New Feature to Use/Register Various Benchmark Problems](https://medium.com/optuna/optunahub-benchmarks-a-new-feature-to-use-register-various-benchmark-problems-694401524ce0) has been published.
 
 ## :fire: Key Features
 
@@ -74,18 +74,20 @@ optimization *studies*.
 [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://colab.research.google.com/github/optuna/optuna-examples/blob/main/quickstart.ipynb)
 
 ```python
-import ...
+import optuna
+import sklearn
+
 
 # Define an objective function to be minimized.
 def objective(trial):
 
     # Invoke suggest methods of a Trial object to generate hyperparameters.
-    regressor_name = trial.suggest_categorical('regressor', ['SVR', 'RandomForest'])
-    if regressor_name == 'SVR':
-        svr_c = trial.suggest_float('svr_c', 1e-10, 1e10, log=True)
+    regressor_name = trial.suggest_categorical("regressor", ["SVR", "RandomForest"])
+    if regressor_name == "SVR":
+        svr_c = trial.suggest_float("svr_c", 1e-10, 1e10, log=True)
         regressor_obj = sklearn.svm.SVR(C=svr_c)
     else:
-        rf_max_depth = trial.suggest_int('rf_max_depth', 2, 32)
+        rf_max_depth = trial.suggest_int("rf_max_depth", 2, 32)
         regressor_obj = sklearn.ensemble.RandomForestRegressor(max_depth=rf_max_depth)
 
     X, y = sklearn.datasets.fetch_california_housing(return_X_y=True)
@@ -97,6 +99,7 @@ def objective(trial):
     error = sklearn.metrics.mean_squared_error(y_val, y_pred)
 
     return error  # An objective value linked with the Trial object.
+
 
 study = optuna.create_study()  # Create a new study.
 study.optimize(objective, n_trials=100)  # Invoke optimization of the objective function.
@@ -180,7 +183,7 @@ import optuna
 def objective(trial):
     x1 = trial.suggest_float("x1", -100, 100)
     x2 = trial.suggest_float("x2", -100, 100)
-    return x1 ** 2 + 0.01 * x2 ** 2
+    return x1**2 + 0.01 * x2**2
 
 
 study = optuna.create_study(storage="sqlite:///db.sqlite3")  # Create a new study with database.

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from typing import Any
-from unittest.mock import call
 from unittest.mock import MagicMock
 from unittest.mock import Mock
 from unittest.mock import patch
@@ -182,9 +181,9 @@ def test_get_population(args: dict[str, Any]) -> None:
     [
         {
             "study_system_attrs": {
-                BaseGASamplerTestSampler._get_parent_cache_key_prefix() + "1": [0, 1, 2]
+                BaseGASamplerTestSampler._get_parent_cache_key_prefix() + "1": [3, 4, 5]
             },
-            "parent_population": [0, 1, 2],
+            "parent_population": [3, 4, 5],
             "generation": 1,
             "cache": True,
         },
@@ -215,6 +214,13 @@ def test_get_parent_population(args: dict[str, Any]) -> None:
 
     mock_study = MagicMock()
     mock_study._storage.get_study_system_attrs.return_value = args["study_system_attrs"]
+    if args["cache"]:
+        mock_study._get_trials.return_value = [
+            MagicMock(_trial_id=i)
+            for i in args["study_system_attrs"][
+                BaseGASamplerTestSampler._get_parent_cache_key_prefix() + "1"
+            ]
+        ]
 
     with patch.object(
         BaseGASamplerTestSampler,
@@ -233,9 +239,9 @@ def test_get_parent_population(args: dict[str, Any]) -> None:
     mock_study._storage.get_study_system_attrs.assert_called_once_with(mock_study._study_id)
 
     if args["cache"]:
-        mock_study._get_trials.assert_has_calls(
-            [call(deepcopy=False)] + [call().__getitem__(i) for i in args["parent_population"]]
-        )
+        assert return_value == mock_study._get_trials.return_value
+        assert mock_select_parent.call_count == 0
+        mock_study._get_trials.assert_called_once_with(deepcopy=False)
     else:
         mock_select_parent.assert_called_once_with(mock_study, args["generation"])
         mock_study._storage.set_study_system_attr.assert_called_once_with(

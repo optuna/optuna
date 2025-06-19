@@ -48,7 +48,7 @@ def _get_beta(n_params: int, n_trials: int, delta: float = 0.1) -> float:
 
 
 def _compute_standardized_regret_bound(
-    kernel_params: gp.KernelParamsTensor,
+    gpr: gp.GPRegressor,
     search_space: gp_search_space.SearchSpace,
     normalized_top_n_params: np.ndarray,
     standarized_top_n_values: np.ndarray,
@@ -70,7 +70,7 @@ def _compute_standardized_regret_bound(
     beta = _get_beta(n_params, n_trials, delta)
     ucb_acqf_params = acqf.create_acqf_params(
         acqf_type=acqf.AcquisitionFunctionType.UCB,
-        kernel_params=kernel_params,
+        gpr=gpr,
         search_space=search_space,
         X=normalized_top_n_params,
         Y=standarized_top_n_values,
@@ -87,7 +87,7 @@ def _compute_standardized_regret_bound(
     # calculate min_lcb
     lcb_acqf_params = acqf.create_acqf_params(
         acqf_type=acqf.AcquisitionFunctionType.LCB,
-        kernel_params=kernel_params,
+        gpr=gpr,
         search_space=search_space,
         X=normalized_top_n_params,
         Y=standarized_top_n_values,
@@ -174,7 +174,7 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
         top_n_values_std = max(1e-10, top_n_values.std())
         standarized_top_n_values = (top_n_values - top_n_values_mean) / top_n_values_std
 
-        kernel_params = gp.fit_kernel_params(
+        gpr = gp.fit_kernel_params(
             X=normalized_top_n_params,
             Y=standarized_top_n_values,
             is_categorical=(search_space.scale_types == gp_search_space.ScaleType.CATEGORICAL),
@@ -183,11 +183,11 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
             # TODO(contramundum53): Add option to specify this.
             deterministic_objective=False,
             # TODO(y0z): Add `kernel_params_cache` to speedup.
-            initial_kernel_params=None,
+            gpr_cache=None,
         )
 
         standardized_regret_bound = _compute_standardized_regret_bound(
-            kernel_params,
+            gpr,
             search_space,
             normalized_top_n_params,
             standarized_top_n_values,
@@ -215,10 +215,10 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
 class BestValueStagnationEvaluator(BaseImprovementEvaluator):
     """Evaluates the stagnation period of the best value in an optimization process.
 
-    This class is initialized with a maximum stagnation period (`max_stagnation_trials`)
+    This class is initialized with a maximum stagnation period (``max_stagnation_trials``)
     and is designed to evaluate the remaining trials before reaching this maximum period
     of allowed stagnation. If this remaining trials reach zero, the trial terminates.
-    Therefore, the default error evaluator is instantiated by StaticErrorEvaluator(const=0).
+    Therefore, the default error evaluator is instantiated by ``StaticErrorEvaluator(const=0)``.
 
     Args:
         max_stagnation_trials:

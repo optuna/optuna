@@ -776,6 +776,13 @@ However, if it is necessary to remove artifacts from a Python script, users can 
             # Remove the artifacts uploaded to ``base_path``.
             artifact_store.remove(artifact_meta.artifact_id)
 
+Can I specify parameter starting points before optimization?
+------------------------------------------------------------
+
+Yes, it's possible.
+
+For a more comprehensive guide, refer to the `Specify Hyperparameters Manually <https://optuna.readthedocs.io/en/stable/tutorial/20_recipes/008_specify_params.html>`_.
+
 How can I resolve case sensitivity issues with MySQL?
 -----------------------------------------------------
 
