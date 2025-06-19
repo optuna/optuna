@@ -791,7 +791,7 @@ For example,
         A = trial.suggest_int("A", 0, 10)
         return a + A
 
-In this case, "a" and "A" are treated as distinct by Optuna, but MySQL considers them the same due to its default collation settings.
+In this case, Optuna treats `a` and `A` distinctively while MySQL does not due to its default collation settings.
 As a result, an error may occur when trying to register these parameters in the database.
 
 To address this issue, there are some workarounds.
