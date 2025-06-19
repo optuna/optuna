@@ -777,7 +777,7 @@ However, if it is necessary to remove artifacts from a Python script, users can 
             artifact_store.remove(artifact_meta.artifact_id)
 
 How can I resolve case sensitivity issues with MySQL?
-------------------------------------------------------
+-----------------------------------------------------
 
 By default, MySQL performs case-insensitive string comparisons.
 However, Optuna treats string parameters in a case-sensitive manner.
