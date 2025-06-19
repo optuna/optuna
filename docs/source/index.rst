@@ -99,6 +99,21 @@ Feature requests and bug reports are welcome!
 
    Please check out the `getting started <https://optuna-dashboard.readthedocs.io/en/stable/getting-started.html>`__ section of Optuna Dashboard's official documentation.
 
+OptunaHub
+---------
+
+`OptunaHub <https://hub.optuna.org/>`__ is a platform of third-party packages designed for Optuna.
+It provides a collection of packages that are not included in the official Optuna distribution.
+Users can also share their owon packages on OptunaHub.
+You can check the official documentation of OptunaHub `here <https://optuna.github.io/optunahub/>`__.
+
+``optunahub`` can be installed via pip:
+
+.. code-block:: console
+
+   $ pip install optunahub
+
+
 Communication
 -------------
 
