@@ -47,13 +47,13 @@ SQLITE3_TIMEOUT = 300
 
 class FindFreePortLockFile:
     if sys.platform == "win32":
-        _lock_path = os.path.join(
+        _lock_path: str = os.path.join(
             os.environ.get("PROGRAMDATA", "C:\\ProgramData"),
             "optuna",
             "optuna_find_free_port.lock",
         )
     else:
-        _lock_path = "/tmp/optuna_find_free_port.lock"
+        _lock_path: str = "/tmp/optuna_find_free_port.lock"
 
     def __init__(self) -> None:
         os.makedirs(os.path.dirname(self._lock_path), exist_ok=True)
@@ -70,7 +70,12 @@ class FindFreePortLockFile:
             fcntl.flock(self._lockfile, fcntl.LOCK_EX)
         return self
 
-    def __exit__(self, exc_type, exc_value, traceback) -> None:
+    def __exit__(
+        self,
+        exc_type: type[BaseException],
+        exc_val: BaseException,
+        exc_tb: TracebackType,
+    ) -> None:
         if sys.platform == "win32":
             import msvcrt
 
