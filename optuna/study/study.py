@@ -36,6 +36,7 @@ from optuna.study._multi_objective import _get_pareto_front_trials
 from optuna.study._optimize import _optimize
 from optuna.study._study_direction import StudyDirection
 from optuna.study._study_summary import StudySummary  # NOQA
+from optuna.study._tell import _get_frozen_trial
 from optuna.study._tell import _tell_with_warning
 from optuna.trial import create_trial
 from optuna.trial import TrialState
@@ -675,9 +676,7 @@ class Study:
             state=state,
             skip_if_finished=skip_if_finished,
         )
-        return copy.deepcopy(
-            self._storage.get_trial(trial if isinstance(trial, int) else trial._trial_id)
-        )
+        return copy.deepcopy(_get_frozen_trial(self, trial))
 
     def set_user_attr(self, key: str, value: Any) -> None:
         """Set a user attribute to the study.
