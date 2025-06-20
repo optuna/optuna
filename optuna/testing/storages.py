@@ -7,6 +7,8 @@ from types import TracebackType
 from typing import Any
 from typing import IO
 from typing import TYPE_CHECKING
+import os
+import sys
 
 import fakeredis
 
@@ -43,7 +45,47 @@ STORAGE_MODES_HEARTBEAT = [
 
 SQLITE3_TIMEOUT = 300
 
-FIND_FREE_PORT_LOCK_FILE = "/tmp/optuna_find_free_port.lock"
+
+class FindFreePortLockFile:
+    def __init__(self) -> None:
+        if sys.platform == "win32":
+            self._lock_path = os.path.join(
+                os.environ.get("PROGRAMDATA", "C:\\ProgramData"),
+                "optuna",
+                "optuna_find_free_port.lock",
+            )
+        else:
+            self._lock_path = "/tmp/optuna_find_free_port.lock"
+
+        os.makedirs(os.path.dirname(self._lock_path), exist_ok=True)
+        self._lockfile = open(self._lock_path, "w")
+
+    def __enter__(self) -> "FindFreePortLockFile":
+        if sys.platform == "win32":
+            import msvcrt
+
+            msvcrt.locking(self._lockfile.fileno(), msvcrt.LK_LOCK, 1)
+        else:
+            import fcntl
+
+            fcntl.flock(self._lockfile, fcntl.LOCK_EX)
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback) -> None:
+        if sys.platform == "win32":
+            import msvcrt
+
+            msvcrt.locking(self._lockfile.fileno(), msvcrt.LK_UNLCK, 1)
+        else:
+            import fcntl
+
+            fcntl.flock(self._lockfile, fcntl.LOCK_UN)
+
+        self._lockfile.close()
+        try:
+            os.remove(self._lock_path)
+        except FileNotFoundError:
+            pass
 
 
 class StorageSupplier:
@@ -90,14 +132,18 @@ class StorageSupplier:
             )
             return optuna.storages.JournalStorage(journal_redis_storage)
         elif self.storage_specifier == "grpc_journal_file":
-            self.tempfile = self.extra_args.get("file", NamedTemporaryFilePool().tempfile())
+            self.tempfile = self.extra_args.get(
+                "file", NamedTemporaryFilePool().tempfile()
+            )
             assert self.tempfile is not None
             storage = optuna.storages.JournalStorage(
                 optuna.storages.journal.JournalFileBackend(self.tempfile.name)
             )
             return self._create_proxy(storage)
         elif "journal" in self.storage_specifier:
-            self.tempfile = self.extra_args.get("file", NamedTemporaryFilePool().tempfile())
+            self.tempfile = self.extra_args.get(
+                "file", NamedTemporaryFilePool().tempfile()
+            )
             assert self.tempfile is not None
             file_storage = JournalFileBackend(self.tempfile.name)
             return optuna.storages.JournalStorage(file_storage)
@@ -112,18 +158,16 @@ class StorageSupplier:
             assert False
 
     def _create_proxy(self, storage: BaseStorage) -> GrpcStorageProxy:
-        with open(FIND_FREE_PORT_LOCK_FILE, "w") as lockfile:
-            fcntl.flock(lockfile, fcntl.LOCK_EX)
-            try:
-                port = _find_free_port()
-                self.server = optuna.storages._grpc.server.make_server(storage, "localhost", port)
-                self.thread = threading.Thread(target=self.server.start)
-                self.thread.start()
-                self.proxy = GrpcStorageProxy(host="localhost", port=port)
-                self.proxy.wait_server_ready(timeout=60)
-                return self.proxy
-            finally:
-                fcntl.flock(lockfile, fcntl.LOCK_UN)
+        with FindFreePortLockFile():
+            port = _find_free_port()
+            self.server = optuna.storages._grpc.server.make_server(
+                storage, "localhost", port
+            )
+            self.thread = threading.Thread(target=self.server.start)
+            self.thread.start()
+            self.proxy = GrpcStorageProxy(host="localhost", port=port)
+            self.proxy.wait_server_ready(timeout=60)
+            return self.proxy
 
     def __exit__(
         self,
