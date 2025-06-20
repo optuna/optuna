@@ -107,6 +107,9 @@ OptunaHub provides a collection of packages that are not included in the officia
 Users can also share their own packages on it.
 You can check the official documentation of OptunaHub `here <https://optuna.github.io/optunahub/>`__.
 
+.. image:: ../image/optunahub-introduction.png
+  :width: 800px
+
 ``optunahub`` can be installed via pip:
 
 .. code-block:: console
