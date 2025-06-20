@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import fcntl
 import socket
 import threading
 from types import TracebackType
@@ -41,6 +42,8 @@ STORAGE_MODES_HEARTBEAT = [
 ]
 
 SQLITE3_TIMEOUT = 300
+
+FIND_FREE_PORT_LOCK_FILE = "/tmp/optuna_find_free_port.lock"
 
 
 class StorageSupplier:
@@ -109,16 +112,24 @@ class StorageSupplier:
             assert False
 
     def _create_proxy(self, storage: BaseStorage) -> GrpcStorageProxy:
-        port = _find_free_port()
-        self.server = optuna.storages._grpc.server.make_server(storage, "localhost", port)
-        self.thread = threading.Thread(target=self.server.start)
-        self.thread.start()
-        self.proxy = GrpcStorageProxy(host="localhost", port=port)
-        self.proxy.wait_server_ready(timeout=60)
-        return self.proxy
+        with open(FIND_FREE_PORT_LOCK_FILE, "w") as lockfile:
+            fcntl.flock(lockfile, fcntl.LOCK_EX)
+            try:
+                port = _find_free_port()
+                self.server = optuna.storages._grpc.server.make_server(storage, "localhost", port)
+                self.thread = threading.Thread(target=self.server.start)
+                self.thread.start()
+                self.proxy = GrpcStorageProxy(host="localhost", port=port)
+                self.proxy.wait_server_ready(timeout=60)
+                return self.proxy
+            finally:
+                fcntl.flock(lockfile, fcntl.LOCK_UN)
 
     def __exit__(
-        self, exc_type: type[BaseException], exc_val: BaseException, exc_tb: TracebackType
+        self,
+        exc_type: type[BaseException],
+        exc_val: BaseException,
+        exc_tb: TracebackType,
     ) -> None:
         if self.tempfile:
             self.tempfile.close()
