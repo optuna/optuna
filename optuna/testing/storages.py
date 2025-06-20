@@ -1,14 +1,13 @@
 from __future__ import annotations
 
-import fcntl
+import os
 import socket
+import sys
 import threading
 from types import TracebackType
 from typing import Any
 from typing import IO
 from typing import TYPE_CHECKING
-import os
-import sys
 
 import fakeredis
 
@@ -132,18 +131,14 @@ class StorageSupplier:
             )
             return optuna.storages.JournalStorage(journal_redis_storage)
         elif self.storage_specifier == "grpc_journal_file":
-            self.tempfile = self.extra_args.get(
-                "file", NamedTemporaryFilePool().tempfile()
-            )
+            self.tempfile = self.extra_args.get("file", NamedTemporaryFilePool().tempfile())
             assert self.tempfile is not None
             storage = optuna.storages.JournalStorage(
                 optuna.storages.journal.JournalFileBackend(self.tempfile.name)
             )
             return self._create_proxy(storage)
         elif "journal" in self.storage_specifier:
-            self.tempfile = self.extra_args.get(
-                "file", NamedTemporaryFilePool().tempfile()
-            )
+            self.tempfile = self.extra_args.get("file", NamedTemporaryFilePool().tempfile())
             assert self.tempfile is not None
             file_storage = JournalFileBackend(self.tempfile.name)
             return optuna.storages.JournalStorage(file_storage)
@@ -160,9 +155,7 @@ class StorageSupplier:
     def _create_proxy(self, storage: BaseStorage) -> GrpcStorageProxy:
         with FindFreePortLockFile():
             port = _find_free_port()
-            self.server = optuna.storages._grpc.server.make_server(
-                storage, "localhost", port
-            )
+            self.server = optuna.storages._grpc.server.make_server(storage, "localhost", port)
             self.thread = threading.Thread(target=self.server.start)
             self.thread.start()
             self.proxy = GrpcStorageProxy(host="localhost", port=port)
