@@ -102,6 +102,6 @@ jobs:
           target="not slow"
         fi
 
-        pytest tests -m "$target"
+        pytest tests -m "$target" -n 8
       env:
         SQLALCHEMY_WARN_20: 1
