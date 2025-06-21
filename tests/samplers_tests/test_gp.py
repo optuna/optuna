@@ -8,7 +8,7 @@ import numpy as np
 import pytest
 
 import optuna
-import optuna._gp.acqf as acqf
+import optuna._gp.acqf as acqf_module
 import optuna._gp.optim_mixed as optim_mixed
 import optuna._gp.prior as prior
 import optuna._gp.search_space as gp_search_space
@@ -38,12 +38,8 @@ def test_after_convergence(caplog: LogCaptureFixture) -> None:
         minimum_noise=prior.DEFAULT_MINIMUM_NOISE_VAR,
         deterministic_objective=False,
     )
-    acqf_params = acqf.create_acqf_params(
-        acqf_type=acqf.AcquisitionFunctionType.LOG_EI,
-        gpr=gpr,
-        search_space=search_space,
-        X=X[:, np.newaxis],
-        Y=score_vals,
+    acqf_params = acqf_module.LogEI(
+        gpr=gpr, search_space=search_space, threshold=np.max(score_vals)
     )
     caplog.clear()
     optuna.logging.enable_propagation()

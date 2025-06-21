@@ -24,7 +24,7 @@ if TYPE_CHECKING:
 
     import torch
 
-    import optuna._gp.acqf as acqf
+    import optuna._gp.acqf as acqf_module
     import optuna._gp.gp as gp
     import optuna._gp.optim_mixed as optim_mixed
     import optuna._gp.prior as prior
@@ -38,7 +38,7 @@ else:
     gp_search_space = _LazyImport("optuna._gp.search_space")
     gp = _LazyImport("optuna._gp.gp")
     optim_mixed = _LazyImport("optuna._gp.optim_mixed")
-    acqf = _LazyImport("optuna._gp.acqf")
+    acqf_module = _LazyImport("optuna._gp.acqf")
     prior = _LazyImport("optuna._gp.prior")
 
 
@@ -191,16 +191,14 @@ class GPSampler(BaseSampler):
         return search_space
 
     def _optimize_acqf(
-        self,
-        acqf_params: acqf.AcquisitionFunctionParams,
-        best_params: np.ndarray | None,
+        self, acqf: acqf_module.BaseAcquisitionFunc, best_params: np.ndarray | None
     ) -> np.ndarray:
         # Advanced users can override this method to change the optimization algorithm.
         # However, we do not make any effort to keep backward compatibility between versions.
         # Particularly, we may remove this function in future refactoring.
         assert best_params is None or len(best_params.shape) == 2
         normalized_params, _acqf_val = optim_mixed.optimize_acqf_mixed(
-            acqf_params,
+            acqf,
             warmstart_normalized_params_array=best_params,
             n_preliminary_samples=self._n_preliminary_samples,
             n_local_search=self._n_local_search,
@@ -209,12 +207,12 @@ class GPSampler(BaseSampler):
         )
         return normalized_params
 
-    def _get_constraints_acqf_params(
+    def _get_constraints_acqf_args(
         self,
         constraint_vals: np.ndarray,
         internal_search_space: gp_search_space.SearchSpace,
         normalized_params: np.ndarray,
-    ) -> list[acqf.AcquisitionFunctionParams]:
+    ) -> tuple[list[gp.GPRegressor], list[float]]:
         standardized_constraint_vals, means, stds = _standardize_values(constraint_vals)
         if self._gprs_cache_list is not None and len(
             self._gprs_cache_list[0].inverse_squared_lengthscales
@@ -224,8 +222,9 @@ class GPSampler(BaseSampler):
 
         is_categorical = internal_search_space.scale_types == gp_search_space.ScaleType.CATEGORICAL
         constraints_gprs = []
-        constraints_acqf_params = []
-        for i, (vals, mean, std) in enumerate(zip(standardized_constraint_vals.T, means, stds)):
+        constraints_threshold_list = []
+        constraints_threshold_list = (-means / np.maximum(EPS, stds)).tolist()
+        for i, vals in enumerate(standardized_constraint_vals.T):
             cache = (
                 self._constraints_gprs_cache_list[i]
                 if self._constraints_gprs_cache_list is not None
@@ -242,21 +241,8 @@ class GPSampler(BaseSampler):
             )
             constraints_gprs.append(gpr)
 
-            constraints_acqf_params.append(
-                acqf.create_acqf_params(
-                    acqf_type=acqf.AcquisitionFunctionType.LOG_PI,
-                    gpr=gpr,
-                    search_space=internal_search_space,
-                    X=normalized_params,
-                    Y=vals,
-                    # Since 0 is the threshold value, we use the normalized value of 0.
-                    max_Y=-mean / max(EPS, std),
-                )
-            )
-
         self._constraints_gprs_cache_list = constraints_gprs
-
-        return constraints_acqf_params
+        return constraints_gprs, constraints_threshold_list
 
     def sample_relative(
         self, study: Study, trial: FrozenTrial, search_space: dict[str, BaseDistribution]
@@ -310,32 +296,21 @@ class GPSampler(BaseSampler):
         self._gprs_cache_list = gprs_list
 
         best_params: np.ndarray | None
+        acqf: acqf_module.BaseAcquisitionFunc
         if self._constraints_func is None:
             if n_objectives == 1:
                 assert len(gprs_list) == 1
-                acqf_params = acqf.create_acqf_params(
-                    acqf_type=acqf.AcquisitionFunctionType.LOG_EI,
+                acqf = acqf_module.LogEI(
                     gpr=gprs_list[0],
                     search_space=internal_search_space,
-                    X=normalized_params,
-                    Y=standardized_score_vals[:, 0],
+                    threshold=standardized_score_vals[:, 0].max(),
                 )
                 best_params = normalized_params[np.argmax(standardized_score_vals), np.newaxis]
             else:
-                acqf_params_for_objectives = []
-                for i in range(n_objectives):
-                    acqf_params_for_objectives.append(
-                        acqf.create_acqf_params(
-                            acqf_type=acqf.AcquisitionFunctionType.LOG_EHVI,
-                            gpr=gprs_list[i],
-                            search_space=internal_search_space,
-                            X=normalized_params,
-                            Y=standardized_score_vals[:, i],
-                        )
-                    )
-                acqf_params = acqf.MultiObjectiveAcquisitionFunctionParams.from_acqf_params(
-                    acqf_params_for_objectives=acqf_params_for_objectives,
-                    Y=standardized_score_vals,
+                acqf = acqf_module.LogEHVI(
+                    gpr_list=gprs_list,
+                    search_space=internal_search_space,
+                    Y_train=torch.from_numpy(standardized_score_vals),
                     n_qmc_samples=128,  # NOTE(nabenabe): The BoTorch default value.
                     qmc_seed=self._rng.rng.randint(1 << 30),
                 )
@@ -353,24 +328,19 @@ class GPSampler(BaseSampler):
             is_all_infeasible = not np.any(is_feasible)
 
             # TODO(kAIto47802): If is_all_infeasible, the acquisition function for the objective
-            # function is ignored, so skipping the computation of gpr and acqf_params
-            # can improve speed.
+            # function is ignored, so skipping the computation of gpr can improve speed.
             # TODO(kAIto47802): Consider the case where all trials are feasible. We can ignore
             # constraints in this case.
             max_Y = -np.inf if is_all_infeasible else np.max(standardized_score_vals[is_feasible])
-            acqf_params = acqf.create_acqf_params(
-                acqf_type=acqf.AcquisitionFunctionType.LOG_EI,
-                gpr=gprs_list[0],
-                search_space=internal_search_space,
-                X=normalized_params,
-                Y=standardized_score_vals[:, 0],
-                max_Y=max_Y,
-            )
-            constraints_acqf_params = self._get_constraints_acqf_params(
+            constr_gpr_list, constr_threshold_list = self._get_constraints_acqf_args(
                 constraint_vals, internal_search_space, normalized_params
             )
-            acqf_params = acqf.ConstrainedAcquisitionFunctionParams.from_acqf_params(
-                acqf_params, constraints_acqf_params
+            acqf = acqf_module.ConstrainedLogEI(
+                gpr=gprs_list[0],
+                search_space=internal_search_space,
+                threshold=max_Y,
+                constraints_gpr_list=constr_gpr_list,
+                constraints_threshold_list=constr_threshold_list,
             )
             best_params = (
                 None
@@ -378,7 +348,7 @@ class GPSampler(BaseSampler):
                 else normalized_params[np.argmax(standardized_score_vals[is_feasible]), np.newaxis]
             )
 
-        normalized_param = self._optimize_acqf(acqf_params, best_params)
+        normalized_param = self._optimize_acqf(acqf, best_params)
         return gp_search_space.get_unnormalized_param(search_space, normalized_param)
 
     def sample_independent(
