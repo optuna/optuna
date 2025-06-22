@@ -102,7 +102,8 @@ def sample_normalized_params(
     # Without threading.Lock, ValueError exceptions are raised in Sobol engine as discussed in
     # https://github.com/optuna/optunahub-registry/pull/168#pullrequestreview-2404054969
     with _threading_lock:
-        qmc_engine = qmc.Sobol(dim, scramble=True, seed=rng.randint(np.iinfo(np.int32).max))
+        # See https://github.com/scipy/scipy-stubs/issues/644
+        qmc_engine = qmc.Sobol(dim, scramble=True, seed=rng.randint(np.iinfo(np.int32).max))  # type: ignore[call-arg]
     param_values = qmc_engine.random(n)
 
     for i in range(dim):
