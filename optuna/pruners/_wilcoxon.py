@@ -220,4 +220,6 @@ class WilcoxonPruner(BasePruner):
             # the average of the current trial's intermediate values.
             # For safety, WilcoxonPruner concludes not to prune it for now.
             return False
-        return p < self._p_threshold
+
+        # convert the `np.bool_` to a `builtins.bool`
+        return bool(p < self._p_threshold)
