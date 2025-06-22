@@ -60,7 +60,8 @@ def _gradient_ascent(
         return -fval, -grad[continuous_indices] * lengthscales
 
     scaled_cont_x_opt, neg_fval_opt, info = so.fmin_l_bfgs_b(
-        func=negative_acqf_with_grad,
+        # https://github.com/scipy/scipy-stubs/issues/645
+        func=negative_acqf_with_grad,  # type: ignore[arg-type]
         x0=normalized_params[continuous_indices] / lengthscales,
         bounds=[(0, 1 / s) for s in lengthscales],
         pgtol=math.sqrt(tol),
