@@ -9,7 +9,8 @@ import optuna.samplers._tpe._truncnorm as truncnorm_ours
 
 
 with try_import() as _imports:
-    from scipy.stats._continuous_distns import _log_gauss_mass as _log_gauss_mass_scipy
+    # https://github.com/scipy/scipy-stubs/issues/646
+    from scipy.stats._continuous_distns import _log_gauss_mass as _log_gauss_mass_scipy  # type: ignore[attr-defined]
 
 
 @pytest.mark.filterwarnings("ignore::RuntimeWarning")
