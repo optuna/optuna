@@ -14,6 +14,7 @@ from optuna.trial import FrozenTrial
 
 if TYPE_CHECKING:
     import scipy.stats as ss
+    from typing import Literal
 else:
     from optuna._imports import _LazyImport
 
@@ -197,6 +198,7 @@ class WilcoxonPruner(BasePruner):
         if len(diff_values) < max(2, self._n_startup_steps):
             return False
 
+        alt: Literal["less", "greater"]
         if study.direction == StudyDirection.MAXIMIZE:
             alt = "less"
             average_is_best = sum(best_step_values) / len(best_step_values) <= sum(
