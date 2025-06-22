@@ -13,8 +13,9 @@ from optuna.trial import FrozenTrial
 
 
 if TYPE_CHECKING:
-    import scipy.stats as ss
     from typing import Literal
+
+    import scipy.stats as ss
 else:
     from optuna._imports import _LazyImport
 
