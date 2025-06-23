@@ -31,6 +31,7 @@ from optuna.trial import TrialState
 _logger = optuna.logging.get_logger(__name__)
 
 NOT_FOUND_MSG = "Record does not exist."
+UNUPDATABLE_MSG = "Trial#{trial_number} has already finished and can not be updated."
 # A heuristic interval number to dump snapshots
 SNAPSHOT_INTERVAL = 100
 
@@ -320,13 +321,24 @@ class JournalStorage(BaseStorage):
             log["datetime_complete"] = datetime.datetime.now().isoformat(timespec="microseconds")
 
         with self._thread_lock:
+            if state == TrialState.RUNNING:
+                # NOTE(nabenabe): Sync with lock to check whether there are any trials added after
+                # this thread called ``get_all_trials``. ``trial`` with ``trial_id`` may already
+                # exist when using ``enqueue_trial`` and ``GrpcProxyStorage`` as we cannot
+                # guarantee different thread IDs for each process.
+                existing_trial = self._replay_result._trials.get(trial_id)
+                if existing_trial is not None and existing_trial.state != TrialState.WAITING:
+                    # NOTE(nabenabe): If another process is already evaluating the ``trial`` with
+                    # ``trial_id``, this ``trial`` cannot be updated by the new request of
+                    # ``GrpcProxyStorage``.
+                    if existing_trial.state.is_finished():
+                        raise UpdateFinishedTrialError(
+                            UNUPDATABLE_MSG.format(trial_number=existing_trial.number)
+                        )
+                    return False
             self._write_log(JournalOperation.SET_TRIAL_STATE_VALUES, log)
             self._sync_with_backend()
-
-            if state == TrialState.RUNNING and trial_id != self._replay_result.owned_trial_id:
-                return False
-            else:
-                return True
+            return state != TrialState.RUNNING or trial_id == self._replay_result.owned_trial_id
 
     def set_trial_intermediate_value(
         self, trial_id: int, step: int, intermediate_value: float
@@ -597,6 +609,7 @@ class JournalStorageReplayResult:
 
         state = TrialState(log["state"])
         if state == self._trials[trial_id].state and state == TrialState.RUNNING:
+            # Reject the operation as the popped trial is already run by another process.
             return
 
         trial = copy.copy(self._trials[trial_id])
@@ -652,9 +665,7 @@ class JournalStorageReplayResult:
         elif self._trials[trial_id].state.is_finished():
             if self._is_issued_by_this_worker(log):
                 raise UpdateFinishedTrialError(
-                    "Trial#{} has already finished and can not be updated.".format(
-                        self._trials[trial_id].number
-                    )
+                    UNUPDATABLE_MSG.format(trial_number=target_trial.number)
                 )
             return False
         else:
