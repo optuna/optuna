@@ -665,7 +665,7 @@ class JournalStorageReplayResult:
         elif self._trials[trial_id].state.is_finished():
             if self._is_issued_by_this_worker(log):
                 raise UpdateFinishedTrialError(
-                    UNUPDATABLE_MSG.format(trial_number=target_trial.number)
+                    UNUPDATABLE_MSG.format(trial_number=self._trials[trial_id].number)
                 )
             return False
         else:
