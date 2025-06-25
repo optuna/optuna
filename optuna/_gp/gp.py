@@ -27,6 +27,7 @@ import warnings
 import numpy as np
 
 from optuna.logging import get_logger
+from optuna._gp.utils import single_blas_thread_if_scipy_v1_15_or_newer
 
 
 if TYPE_CHECKING:
@@ -212,17 +213,18 @@ def _fit_kernel_params(
             assert not deterministic_objective or raw_noise_var_grad == 0
         return loss.item(), raw_params_tensor.grad.detach().numpy()  # type: ignore
 
-    # jac=True means loss_func returns the gradient for gradient descent.
-    res = so.minimize(
-        # Too small `gtol` causes instability in loss_func optimization.
-        loss_func,
-        initial_raw_params,
-        jac=True,
-        method="l-bfgs-b",
-        options={"gtol": gtol},
-    )
-    if not res.success:
-        raise RuntimeError(f"Optimization failed: {res.message}")
+    with single_blas_thread_if_scipy_v1_15_or_newer():
+        # jac=True means loss_func returns the gradient for gradient descent.
+        res = so.minimize(
+            # Too small `gtol` causes instability in loss_func optimization.
+            loss_func,
+            initial_raw_params,
+            jac=True,
+            method="l-bfgs-b",
+            options={"gtol": gtol},
+        )
+        if not res.success:
+            raise RuntimeError(f"Optimization failed: {res.message}")
 
     raw_params_opt_tensor = torch.from_numpy(res.x)
 
