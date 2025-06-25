@@ -63,17 +63,6 @@ def get_param_importances(
             assessment on.
             Defaults to
             :class:`~optuna.importance.FanovaImportanceEvaluator`.
-
-            .. note::
-                :class:`~optuna.importance.FanovaImportanceEvaluator` takes over 1 minute
-                when given a study that contains 1000+ trials. We published
-                `optuna-fast-fanova <https://github.com/optuna/optuna-fast-fanova>`__ library,
-                that is a Cython accelerated fANOVA implementation.
-                By using it, you can get hyperparameter importances within a few seconds.
-                If ``n_trials`` is more than 10000, the Cython implementation takes more than
-                a minute, so you can use :class:`~optuna.importance.PedAnovaImportanceEvaluator`
-                instead, enabling the evaluation to finish in a second.
-
         params:
             A list of names of parameters to assess.
             If :obj:`None`, all parameters that are present in all of the completed trials are
