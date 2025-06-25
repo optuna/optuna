@@ -41,6 +41,10 @@ else:
     acqf = _LazyImport("optuna._gp.acqf")
     prior = _LazyImport("optuna._gp.prior")
 
+import logging
+
+
+_logger = logging.getLogger(__name__)
 
 EPS = 1e-10
 
@@ -142,6 +146,9 @@ class GPSampler(BaseSampler):
             subject to change in future releases.
             Currently, the ``constraints_func`` option is not supported for multi-objective
             optimization.
+        warn_independent_sampling:
+            Whether to warn when parameters are sampled independently instead of using
+            the GP model. Defaults to :obj:`True`.
     """
 
     def __init__(
@@ -152,6 +159,7 @@ class GPSampler(BaseSampler):
         n_startup_trials: int = 10,
         deterministic_objective: bool = False,
         constraints_func: Callable[[FrozenTrial], Sequence[float]] | None = None,
+        warn_independent_sampling: bool = True,
     ) -> None:
         self._rng = LazyRandomState(seed)
         self._independent_sampler = independent_sampler or optuna.samplers.RandomSampler(seed=seed)
@@ -165,6 +173,7 @@ class GPSampler(BaseSampler):
         self._constraints_gprs_cache_list: list[gp.GPRegressor] | None = None
         self._deterministic = deterministic_objective
         self._constraints_func = constraints_func
+        self._warn_independent_sampling = warn_independent_sampling
 
         if constraints_func is not None:
             warn_experimental_argument("constraints_func")
@@ -174,6 +183,20 @@ class GPSampler(BaseSampler):
         # NOTE(nabenabe): ehvi in BoTorchSampler uses 20.
         self._n_local_search = 10
         self._tol = 1e-4
+
+    def _log_independent_sampling(self, trial: FrozenTrial, param_name: str) -> None:
+        """Log a warning when GPSampler falls back to independent sampling."""
+        _logger.warning(
+            "The parameter '{}' in trial#{} is sampled independently "
+            "by using `{}` instead of `GPSampler` "
+            "(optimization performance may be degraded). "
+            "`GPSampler` does not support dynamic search space. "
+            "You can suppress this warning by setting `warn_independent_sampling` "
+            "to `False` in the constructor of `GPSampler`, "
+            "if this independent sampling is intended behavior.".format(
+                param_name, trial.number, self._independent_sampler.__class__.__name__
+            )
+        )
 
     def reseed_rng(self) -> None:
         self._rng.rng.seed()
@@ -388,6 +411,12 @@ class GPSampler(BaseSampler):
         param_name: str,
         param_distribution: BaseDistribution,
     ) -> Any:
+        if self._warn_independent_sampling:
+            states = (TrialState.COMPLETE,)
+            trials = study._get_trials(deepcopy=False, states=states, use_cache=True)
+            if len(trials) >= self._n_startup_trials:
+                self._log_independent_sampling(trial, param_name)
+            self._warn_independent_sampling = False
         return self._independent_sampler.sample_independent(
             study, trial, param_name, param_distribution
         )
