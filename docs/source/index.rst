@@ -102,10 +102,9 @@ Feature requests and bug reports are welcome!
 OptunaHub
 ---------
 
-`OptunaHub <https://hub.optuna.org/>`__ is a platform for third-party packages designed for Optuna.
-OptunaHub provides a collection of packages that are not included in the official Optuna distribution.
-Users can also share their own packages on it.
-You can check the official documentation of OptunaHub `here <https://optuna.github.io/optunahub/>`__.
+`OptunaHub <https://hub.optuna.org/>`__ is a feature-sharing platform for Optuna.
+You can use the registered features and publish your packages.
+For more details, please refer to `the official documentation <https://optuna.github.io/optunahub/>`__.
 
 .. image:: ../image/optunahub-introduction.png
   :width: 800px
