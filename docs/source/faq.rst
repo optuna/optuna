@@ -782,3 +782,31 @@ Can I specify parameter starting points before optimization?
 Yes, it's possible.
 
 For a more comprehensive guide, refer to the `Specify Hyperparameters Manually <https://optuna.readthedocs.io/en/stable/tutorial/20_recipes/008_specify_params.html>`_.
+
+How can I resolve case sensitivity issues with MySQL?
+-----------------------------------------------------
+
+By default, MySQL performs case-insensitive string comparisons.
+However, Optuna treats strings in a case-sensitive manner, leading to conflicts in MySQL if parameter names differ only by case.
+
+For example,
+
+.. code-block:: python
+
+    def objective(trial):
+        a = trial.suggest_int("a", 0, 10)
+        A = trial.suggest_int("A", 0, 10)
+        return a + A
+
+In this case, Optuna treats `a` and `A` distinctively while MySQL does not due to its default collation settings.
+As a result, only one of the parameters will be registered in MySQL.
+
+The following workarounds should be considered:
+
+1. Use a different storage backend.
+    Please consider using PostgreSQL or SQLite, which supports case-sensitive handling.
+2. Rename the parameters to avoid case conflicts.
+    For example, use `a` and `b` instead of `a` and `A`.
+3. Change MySQL’s collation settings to be case-sensitive.
+    You can configure case sensitivity at the database, table, or column level.
+    We defer to `the MySQL documentation <https://dev.mysql.com/doc/refman/9.3/en/charset-syntax.html>`__ for more details.

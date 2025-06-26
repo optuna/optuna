@@ -2,9 +2,12 @@ from __future__ import annotations
 
 import importlib
 import types
-from types import TracebackType
 from typing import Any
+from typing import TYPE_CHECKING
 
+
+if TYPE_CHECKING:
+    from types import TracebackType
 
 _INTEGRATION_IMPORT_ERROR_TEMPLATE = (
     "\nCould not find `optuna-integration` for `{0}`.\n"
