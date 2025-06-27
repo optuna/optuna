@@ -342,6 +342,7 @@ class GPSampler(BaseSampler):
                 constraints_gpr_list=constr_gpr_list,
                 constraints_threshold_list=constr_threshold_list,
             )
+            assert normalized_params.shape[:-1] == y_with_neginf.shape
             best_params = (
                 None if np.isneginf(best_feasible_y) else normalized_params[i_opt, np.newaxis]
             )
