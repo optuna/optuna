@@ -6,9 +6,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 from optuna._gp.acqf import BaseAcquisitionFunc
-from optuna._gp.search_space import normalize_one_param
 from optuna._gp.search_space import sample_normalized_params
-from optuna._gp.search_space import ScaleType
 from optuna.logging import get_logger
 
 
@@ -173,8 +171,8 @@ def _local_search_discrete(
     # This is faster and better than the line search.
     MAX_INT_EXHAUSTIVE_SEARCH_PARAMS = 16
 
-    scale_type = acqf.search_space.scale_types[param_idx]
-    if scale_type == ScaleType.CATEGORICAL or len(choices) <= MAX_INT_EXHAUSTIVE_SEARCH_PARAMS:
+    is_categorical = acqf.search_space.is_categorical[param_idx]
+    if is_categorical or len(choices) <= MAX_INT_EXHAUSTIVE_SEARCH_PARAMS:
         return _exhaustive_search(acqf, initial_params, initial_fval, param_idx, choices)
     else:
         return _discrete_line_search(acqf, initial_params, initial_fval, param_idx, choices, xtol)
@@ -187,7 +185,6 @@ def local_search_mixed(
     tol: float = 1e-4,
     max_iter: int = 100,
 ) -> tuple[np.ndarray, float]:
-    scale_types = acqf.search_space.scale_types
     bounds = acqf.search_space.bounds
     steps = acqf.search_space.steps
 
@@ -203,20 +200,7 @@ def local_search_mixed(
 
     # NOTE(nabenabe): MyPy Redefinition for NumPy v2.2.0. (Cast signed int to int)
     discrete_indices = np.where(steps > 0)[0].astype(int)
-    choices_of_discrete_params = [
-        (
-            np.arange(bounds[i, 1])
-            if scale_types[i] == ScaleType.CATEGORICAL
-            else normalize_one_param(
-                param_value=np.arange(bounds[i, 0], bounds[i, 1] + 0.5 * steps[i], steps[i]),
-                scale_type=ScaleType(scale_types[i]),
-                bounds=(bounds[i, 0], bounds[i, 1]),
-                step=steps[i],
-            )
-        )
-        for i in discrete_indices
-    ]
-
+    choices_of_discrete_params = [acqf.search_space.choices(i) for i in discrete_indices]
     discrete_xtols = [
         # Terminate discrete optimizations once the change in x becomes smaller than this.
         # Basically, if the change is smaller than min(dx) / 4, it is useless to see more details.

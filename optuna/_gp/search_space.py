@@ -40,53 +40,63 @@ class SearchSpace:
     bounds: np.ndarray
     steps: np.ndarray
 
+    @property
+    def is_categorical(self) -> np.ndarray:
+        return self.scale_types == ScaleType.CATEGORICAL
 
-def unnormalize_one_param(
-    param_value: np.ndarray, scale_type: ScaleType, bounds: tuple[float, float], step: float
-) -> np.ndarray:
-    # param_value can be batched, or not.
-    if scale_type == ScaleType.CATEGORICAL:
-        return param_value
-    low, high = (bounds[0] - 0.5 * step, bounds[1] + 0.5 * step)
-    if scale_type == ScaleType.LOG:
-        low, high = (math.log(low), math.log(high))
-    param_value = param_value * (high - low) + low
-    if scale_type == ScaleType.LOG:
-        param_value = np.exp(param_value)
-    return param_value
+    def _is_log(self, param_idx: int) -> bool:
+        return self.scale_types[param_idx] == ScaleType.LOG
 
+    def choices(self, param_idx: int) -> np.ndarray:
+        low, high = self.bounds[param_idx]
+        if self.scale_types[param_idx] == ScaleType.CATEGORICAL:
+            return np.arange(high)
 
-def normalize_one_param(
-    param_value: np.ndarray, scale_type: ScaleType, bounds: tuple[float, float], step: float
-) -> np.ndarray:
-    # param_value can be batched, or not.
-    if scale_type == ScaleType.CATEGORICAL:
-        return param_value
-    low, high = (bounds[0] - 0.5 * step, bounds[1] + 0.5 * step)
-    if scale_type == ScaleType.LOG:
-        low, high = (math.log(low), math.log(high))
-        param_value = np.log(param_value)
-    if high == low:
-        return np.full_like(param_value, 0.5)
-    param_value = (param_value - low) / (high - low)
-    return param_value
+        _, modified_high = self._get_modified_bounds(param_idx)
+        return self.normalize_params(np.arange(low, modified_high, steps[i]), param_idx)
 
+    def _get_modified_bounds(self, param_idx: int) -> tuple[float, float]:
+        is_log = self.scale_types[param_idx] == ScaleType.LOG
+        low = self.bounds[param_idx, 0] - 0.5 * self.steps[param_idx]
+        high = self.bounds[param_idx, 1] + 0.5 * self.steps[param_idx]
+        if is_log:
+            return math.log(low), math.log(high)
 
-def round_one_normalized_param(
-    param_value: np.ndarray, scale_type: ScaleType, bounds: tuple[float, float], step: float
-) -> np.ndarray:
-    assert scale_type != ScaleType.CATEGORICAL
-    if step == 0.0:
-        return param_value
+        return low, high
 
-    param_value = unnormalize_one_param(param_value, scale_type, bounds, step)
-    param_value = np.clip(
-        (param_value - bounds[0] + 0.5 * step) // step * step + bounds[0],
-        bounds[0],
-        bounds[1],
-    )
-    param_value = normalize_one_param(param_value, scale_type, bounds, step)
-    return param_value
+    def unnormalize_params(self, params: np.ndarray, param_idx: int) -> np.ndarray:
+        if self.scale_types[param_idx] == ScaleType.CATEGORICAL:
+            return params
+
+        low, high = self._get_modified_bounds(param_idx)
+        scaled_params = params * (high - low) + low
+        is_log = self.scale_types[param_idx] == ScaleType.LOG
+        return np.exp(scaled_params) if is_log else scaled_params
+
+    def normalize_params(self, params: np.ndarray, param_idx: int) -> np.ndarray:
+        if self.scale_types[param_idx] == ScaleType.CATEGORICAL:
+            return params
+
+        low, high = self._get_modified_bounds(param_idx)
+        if high == low:
+            return np.full_like(params, 0.5)
+
+        is_log = self.scale_types[param_idx] == ScaleType.LOG
+        scaled_params = np.log(params) if is_log else params
+        return (scaled_params - low) / (high - low)
+
+    def round_normalized_param(self, params: np.ndarray, param_idx: int) -> np.ndarray:
+        assert self.scale_types[param_idx] != ScaleType.CATEGORICAL
+        step = self.steps[param_idx]
+        if step == 0.0:
+            return params
+        unnormalized_params = self.unnormalize_params(params, param_idx)
+        low, high = self.bounds[param_idx]
+        modified_low, _ = self._get_modified_bounds(param_idx)
+        return self.normalize_params(
+            params=np.clip((unnormalized_params - modified_low) // step * step + low, low, high),
+            param_idx=param_idx,
+        )
 
 
 def sample_normalized_params(
@@ -94,7 +104,7 @@ def sample_normalized_params(
 ) -> np.ndarray:
     rng = rng or np.random.RandomState()
     dim = search_space.scale_types.shape[0]
-    scale_types = search_space.scale_types
+    is_categorical = search_space.is_categorical
     bounds = search_space.bounds
     steps = search_space.steps
 
@@ -106,50 +116,49 @@ def sample_normalized_params(
     param_values = qmc_engine.random(n)
 
     for i in range(dim):
-        if scale_types[i] == ScaleType.CATEGORICAL:
+        if is_categorical[i]:
             param_values[:, i] = np.floor(param_values[:, i] * bounds[i, 1])
         elif steps[i] != 0.0:
-            param_values[:, i] = round_one_normalized_param(
-                param_values[:, i], scale_types[i], (bounds[i, 0], bounds[i, 1]), steps[i]
-            )
+            param_values[:, i] = search_space.round_normalized_param(param_values[:, i], i)
     return param_values
 
 
-def get_search_space_and_normalized_params(
-    trials: list[FrozenTrial],
+def _get_gp_search_space_from_optuna_search_space(
     optuna_search_space: dict[str, BaseDistribution],
-) -> tuple[SearchSpace, np.ndarray]:
+) -> SearchSpace:
     scale_types = np.zeros(len(optuna_search_space), dtype=np.int64)
     bounds = np.zeros((len(optuna_search_space), 2), dtype=np.float64)
     steps = np.zeros(len(optuna_search_space), dtype=np.float64)
-    values = np.zeros((len(trials), len(optuna_search_space)), dtype=np.float64)
-    for i, (param, distribution) in enumerate(optuna_search_space.items()):
+    for i, (name, distribution) in enumerate(optuna_search_space.items()):
         if isinstance(distribution, CategoricalDistribution):
             scale_types[i] = ScaleType.CATEGORICAL
             bounds[i, :] = (0.0, len(distribution.choices))
             steps[i] = 1.0
-            values[:, i] = np.array(
-                [distribution.to_internal_repr(trial.params[param]) for trial in trials]
-            )
         else:
-            assert isinstance(
-                distribution,
-                (
-                    FloatDistribution,
-                    IntDistribution,
-                ),
-            )
+            assert isinstance(distribution, (FloatDistribution, IntDistribution))
             scale_types[i] = ScaleType.LOG if distribution.log else ScaleType.LINEAR
             steps[i] = 0.0 if distribution.step is None else distribution.step
             bounds[i, :] = (distribution.low, distribution.high)
 
-            values[:, i] = normalize_one_param(
-                np.array([trial.params[param] for trial in trials]),
-                scale_types[i],
-                (bounds[i, 0], bounds[i, 1]),
-                steps[i],
+    return SearchSpace(scale_types=scale_types, bounds=bounds, steps=steps)
+
+
+def get_search_space_and_normalized_params(
+    trials: list[FrozenTrial], optuna_search_space: dict[str, BaseDistribution]
+) -> tuple[SearchSpace, np.ndarray]:
+    gp_search_space = _get_gp_search_space_from_optuna_search_space(optuna_search_space)
+    params = np.zeros((len(trials), len(optuna_search_space)), dtype=np.float64)
+    for i, (name, distribution) in enumerate(optuna_search_space.items()):
+        if isinstance(distribution, CategoricalDistribution):
+            params[:, i] = np.array(
+                [distribution.to_internal_repr(trial.params[name]) for trial in trials]
             )
-    return SearchSpace(scale_types, bounds, steps), values
+        else:
+            assert isinstance(distribution, (FloatDistribution, IntDistribution))
+            params[:, i] = gp_search_space.normalize_params(
+                np.array([trial.params[name] for trial in trials]), param_idx=i
+            )
+    return gp_search_space, params
 
 
 def get_unnormalized_param(
@@ -157,23 +166,15 @@ def get_unnormalized_param(
     normalized_param: np.ndarray,
 ) -> dict[str, Any]:
     ret = {}
+    gp_search_space = _get_gp_search_space_from_optuna_search_space(optuna_search_space)
     for i, (param, distribution) in enumerate(optuna_search_space.items()):
         if isinstance(distribution, CategoricalDistribution):
             ret[param] = distribution.to_external_repr(normalized_param[i])
         else:
-            assert isinstance(
-                distribution,
-                (
-                    FloatDistribution,
-                    IntDistribution,
-                ),
-            )
-            scale_type = ScaleType.LOG if distribution.log else ScaleType.LINEAR
-            step = 0.0 if distribution.step is None else distribution.step
-            bounds = (distribution.low, distribution.high)
+            assert isinstance(distribution, (FloatDistribution, IntDistribution))
             param_value = float(
                 np.clip(
-                    unnormalize_one_param(normalized_param[i], scale_type, bounds, step),
+                    gp_search_space.unnormalize_params(normalized_param, i),
                     distribution.low,
                     distribution.high,
                 )
