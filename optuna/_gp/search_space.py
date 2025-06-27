@@ -40,6 +40,7 @@ class SearchSpace:
     bounds: np.ndarray
     steps: np.ndarray
 
+    @property
     def is_categorical(self) -> np.ndarray:
         return self.scale_types == ScaleType.CATEGORICAL
 
