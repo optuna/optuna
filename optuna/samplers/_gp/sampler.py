@@ -334,15 +334,16 @@ class GPSampler(BaseSampler):
                 constraint_vals, internal_search_space, normalized_params
             )
             i_opt = np.argmax(y_with_neginf)
+            best_feasible_y = y_with_neginf[i_opt]
             acqf = acqf_module.ConstrainedLogEI(
                 gpr=gprs_list[0],
                 search_space=internal_search_space,
-                threshold=y_with_neginf[i_opt],
+                threshold=best_feasible_y,
                 constraints_gpr_list=constr_gpr_list,
                 constraints_threshold_list=constr_threshold_list,
             )
             best_params = (
-                None if np.isneginf(y_with_neginf[i_opt]) else normalized_params[i_opt, np.newaxis]
+                None if np.isneginf(best_feasible_y) else normalized_params[i_opt, np.newaxis]
             )
 
         normalized_param = self._optimize_acqf(acqf, best_params)
