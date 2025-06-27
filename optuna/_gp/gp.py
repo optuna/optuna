@@ -223,8 +223,8 @@ def _fit_kernel_params(
             method="l-bfgs-b",
             options={"gtol": gtol},
         )
-        if not res.success:
-            raise RuntimeError(f"Optimization failed: {res.message}")
+    if not res.success:
+        raise RuntimeError(f"Optimization failed: {res.message}")
 
     raw_params_opt_tensor = torch.from_numpy(res.x)
 
