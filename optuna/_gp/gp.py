@@ -1,15 +1,15 @@
 """Notations in this Gaussian process implementation
 
-X: Observed parameter values with the shape of (len(trials), len(params)).
-Y: Observed objective values with the shape of (len(trials), ).
+X_train: Observed parameter values with the shape of (len(trials), len(params)).
+y_train: Observed objective values with the shape of (len(trials), ).
 x: (Possibly batched) parameter value(s) to evaluate with the shape of (..., len(params)).
 cov_fX_fX: Kernel matrix X = V[f(X)] with the shape of (len(trials), len(trials)).
 cov_fx_fX: Kernel matrix Cov[f(x), f(X)] with the shape of (..., len(trials)).
 cov_fx_fx: Kernel scalar value x = V[f(x)]. This value is constant for the Matern 5/2 kernel.
 cov_Y_Y_inv:
-    The inverse of the covariance matrix (V[f(X) + noise])^-1 with the shape of
+    The inverse of the covariance matrix (V[f(X) + noise_var])^-1 with the shape of
     (len(trials), len(trials)).
-cov_Y_Y_inv_Y: `cov_Y_Y_inv @ Y` with the shape of (len(trials), ).
+cov_Y_Y_inv_Y: `cov_Y_Y_inv @ y` with the shape of (len(trials), ).
 max_Y: The maximum of Y (Note that we transform the objective values such that it is maximized.)
 d2: The squared distance between two points.
 is_categorical:
@@ -73,7 +73,7 @@ class Matern52Kernel(torch.autograd.Function):
         sqrt5d = torch.sqrt(5 * squared_distance)
         exp_part = torch.exp(-sqrt5d)
         val = exp_part * ((5 / 3) * squared_distance + sqrt5d + 1)
-        # Notice that the derivative is taken w.r.t. d^2, but not w.r.t. d.
+        # Notice that the derivative is taken w.r.t. d**2, but not w.r.t. d.
         deriv = (-5 / 6) * (sqrt5d + 1) * exp_part
         ctx.save_for_backward(deriv)
         return val
@@ -155,24 +155,22 @@ class GPRegressor:
         return mean, torch.clamp(var, min=0.0)
 
     def marginal_log_likelihood(self) -> torch.Tensor:  # Scalar
-        # -0.5 * log((2pi)^n |C|) - 0.5 * Y^T C^-1 Y, where C^-1 = cov_Y_Y_inv
-        # We apply the cholesky decomposition to efficiently compute log(|C|) and C^-1.
-
+        # -0.5 * log((2*pi)**n * det(C)) - 0.5 * y.T @ inv(C) @ y, where inv(C) = cov_Y_Y_inv.
+        # We apply the cholesky decomposition to efficiently compute log(det(C)) and inv(C).
         cov_fX_fX = self.kernel(self._X_train, self._X_train)
-
         cov_Y_Y_chol = torch.linalg.cholesky(
             cov_fX_fX + self.noise_var * torch.eye(self._X_train.shape[0], dtype=torch.float64)
         )
-        # log |L| = 0.5 * log|L^T L| = 0.5 * log|C|
+        # log(det(L)) = 0.5 * log(det(L.T @ L)) = 0.5 * log(det(C))
         logdet = 2 * torch.log(torch.diag(cov_Y_Y_chol)).sum()
-        # cov_Y_Y_chol @ cov_Y_Y_chol_inv_Y = Y --> cov_Y_Y_chol_inv_Y = inv(cov_Y_Y_chol) @ Y
+        # cov_Y_Y_chol @ cov_Y_Y_chol_inv_Y = y --> cov_Y_Y_chol_inv_Y = inv(cov_Y_Y_chol) @ y
         cov_Y_Y_chol_inv_Y = torch.linalg.solve_triangular(
             cov_Y_Y_chol, self._y_train[:, None], upper=False
         )[:, 0]
         return -0.5 * (
             logdet
             + self._X_train.shape[0] * math.log(2 * math.pi)
-            # Y^T C^-1 Y = Y^T inv(L^T L) Y --> cov_Y_Y_chol_inv_Y @ cov_Y_Y_chol_inv_Y
+            # y.T @ inv(C) @ y = y.T @ inv(L.T @ L) @ y --> cov_Y_Y_chol_inv_Y @ cov_Y_Y_chol_inv_Y
             + (cov_Y_Y_chol_inv_Y @ cov_Y_Y_chol_inv_Y)
         )
 
