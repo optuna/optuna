@@ -40,6 +40,9 @@ class SearchSpace:
     bounds: np.ndarray
     steps: np.ndarray
 
+    def is_categorical(self) -> np.ndarray:
+        return self.scale_types == ScaleType.CATEGORICAL
+
 
 def unnormalize_one_param(
     param_value: np.ndarray, scale_type: ScaleType, bounds: tuple[float, float], step: float

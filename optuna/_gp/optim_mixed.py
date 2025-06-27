@@ -173,8 +173,8 @@ def _local_search_discrete(
     # This is faster and better than the line search.
     MAX_INT_EXHAUSTIVE_SEARCH_PARAMS = 16
 
-    scale_type = acqf.search_space.scale_types[param_idx]
-    if scale_type == ScaleType.CATEGORICAL or len(choices) <= MAX_INT_EXHAUSTIVE_SEARCH_PARAMS:
+    is_categorical = acqf.search_space.is_categorical[param_idx]
+    if is_categorical or len(choices) <= MAX_INT_EXHAUSTIVE_SEARCH_PARAMS:
         return _exhaustive_search(acqf, initial_params, initial_fval, param_idx, choices)
     else:
         return _discrete_line_search(acqf, initial_params, initial_fval, param_idx, choices, xtol)
@@ -203,10 +203,11 @@ def local_search_mixed(
 
     # NOTE(nabenabe): MyPy Redefinition for NumPy v2.2.0. (Cast signed int to int)
     discrete_indices = np.where(steps > 0)[0].astype(int)
+    is_categorical = acqf.search_space.is_categorical
     choices_of_discrete_params = [
         (
             np.arange(bounds[i, 1])
-            if scale_types[i] == ScaleType.CATEGORICAL
+            if is_categorical[i]
             else normalize_one_param(
                 param_value=np.arange(bounds[i, 0], bounds[i, 1] + 0.5 * steps[i], steps[i]),
                 scale_type=ScaleType(scale_types[i]),
