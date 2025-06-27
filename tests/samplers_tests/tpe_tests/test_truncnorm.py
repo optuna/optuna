@@ -9,7 +9,11 @@ import optuna.samplers._tpe._truncnorm as truncnorm_ours
 
 
 with try_import() as _imports:
-    from scipy.stats._continuous_distns import _log_gauss_mass as _log_gauss_mass_scipy
+    # the `type: ignore` is needed because of https://github.com/scipy/scipy-stubs/issues/646
+    # the `isort: skip` is needed for flake8 compatibility
+    from scipy.stats._continuous_distns import (  # type: ignore[attr-defined]  # isort: skip
+        _log_gauss_mass as _log_gauss_mass_scipy,
+    )
 
 
 @pytest.mark.filterwarnings("ignore::RuntimeWarning")
