@@ -325,27 +325,24 @@ class GPSampler(BaseSampler):
         else:
             assert n_objectives == len(gprs_list) == 1, "Multi-objective has not been supported."
             constraint_vals, is_feasible = _get_constraint_vals_and_feasibility(study, trials)
-            is_all_infeasible = not np.any(is_feasible)
-
-            # TODO(kAIto47802): If is_all_infeasible, the acquisition function for the objective
-            # function is ignored, so skipping the computation of gpr can improve speed.
+            y_with_neginf = np.where(is_feasible, standardized_score_vals[:, 0], -np.inf)
+            # TODO(kAIto47802): If all trials are infeasible, the acquisition function for the
+            # objective function can be ignored, so skipping the computation of gpr can speed up.
             # TODO(kAIto47802): Consider the case where all trials are feasible. We can ignore
             # constraints in this case.
-            max_Y = -np.inf if is_all_infeasible else np.max(standardized_score_vals[is_feasible])
             constr_gpr_list, constr_threshold_list = self._get_constraints_acqf_args(
                 constraint_vals, internal_search_space, normalized_params
             )
+            i_opt = np.argmax(y_with_neginf)
             acqf = acqf_module.ConstrainedLogEI(
                 gpr=gprs_list[0],
                 search_space=internal_search_space,
-                threshold=max_Y,
+                threshold=y_with_neginf[i_opt],
                 constraints_gpr_list=constr_gpr_list,
                 constraints_threshold_list=constr_threshold_list,
             )
             best_params = (
-                None
-                if is_all_infeasible
-                else normalized_params[np.argmax(standardized_score_vals[is_feasible]), np.newaxis]
+                None if np.isneginf(y_with_neginf[i_opt]) else normalized_params[i_opt, np.newaxis]
             )
 
         normalized_param = self._optimize_acqf(acqf, best_params)
