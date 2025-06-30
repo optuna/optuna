@@ -9,6 +9,7 @@ import warnings
 
 import numpy as np
 
+from optuna import logging
 from optuna.distributions import BaseDistribution
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
@@ -16,6 +17,9 @@ from optuna.trial import TrialState
 
 if TYPE_CHECKING:
     from optuna.study import Study
+
+
+_logger = logging.get_logger(__name__)
 
 
 class BaseSampler(abc.ABC):
@@ -223,6 +227,29 @@ class BaseSampler(abc.ABC):
                 "If the study is being used for multi-objective optimization, "
                 f"{self.__class__.__name__} cannot be used."
             )
+
+    def _log_independent_sampling(
+        self,
+        param_name: str,
+        trial_number: int,
+        independent_sampler_name: str,
+        fallback_reason: str,
+    ) -> None:
+        msg = (
+            "The parameter `{param_name}` in Trial#{trial_number} is sampled independently "
+            "using `{independent_sampler_name}` instead of `{sampler_name}`, potentially "
+            "degrading the optimization performance. This fallback happend because "
+            "{fallback_reason}. You can suppress this warning by setting "
+            "`warn_independent_sampling` to `False` in the constructor of `{sampler_name}` if "
+            "this independent sampling is intended behavior."
+        ).format(
+            param_name=param_name,
+            trial_number=trial_number,
+            independent_sampler_name=independent_sampler_name,
+            sampler_name=self.__class__.__name__,
+            fallback_reason=fallback_reason,
+        )
+        _logger.warning(msg)
 
 
 _CONSTRAINTS_KEY = "constraints"

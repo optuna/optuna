@@ -446,13 +446,13 @@ class TPESampler(BaseSampler):
         if self._warn_independent_sampling and self._multivariate:
             # Avoid independent warning at the first sampling of `param_name`.
             if any(param_name in trial.params for trial in trials):
-                _logger.warning(
-                    f"The parameter '{param_name}' in trial#{trial.number} is sampled "
-                    "independently instead of being sampled by multivariate TPE sampler. "
-                    "(optimization performance may be degraded). "
-                    "You can suppress this warning by setting `warn_independent_sampling` "
-                    "to `False` in the constructor of `TPESampler`, "
-                    "if this independent sampling is intended behavior."
+                self._log_independent_sampling(
+                    param_name=param_name,
+                    trial_number=trial.number,
+                    independent_sampler_name=self._random_sampler.__class__.__name__,
+                    fallback_reason=(
+                        "dynamic search space is not supported for `multivariate=True`"
+                    ),
                 )
 
         return self._sample(study, trial, {param_name: param_distribution})[param_name]

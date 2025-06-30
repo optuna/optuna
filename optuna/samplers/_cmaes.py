@@ -584,23 +584,18 @@ class CmaEsSampler(BaseSampler):
         if self._warn_independent_sampling:
             complete_trials = self._get_trials(study)
             if len(complete_trials) >= self._n_startup_trials:
-                self._log_independent_sampling(trial, param_name)
+                self._log_independent_sampling(
+                    param_name=param_name,
+                    trial_number=trial.number,
+                    independent_sampler_name=self._independent_sampler.__class__.__name__,
+                    fallback_reason=(
+                        "dynamic search space and `CategoricalDistribution` are not supported "
+                        "by `CmaEsSampler`"
+                    ),
+                )
 
         return self._independent_sampler.sample_independent(
             study, trial, param_name, param_distribution
-        )
-
-    def _log_independent_sampling(self, trial: FrozenTrial, param_name: str) -> None:
-        _logger.warning(
-            "The parameter '{}' in trial#{} is sampled independently "
-            "by using `{}` instead of `CmaEsSampler` "
-            "(optimization performance may be degraded). "
-            "`CmaEsSampler` does not support dynamic search space or `CategoricalDistribution`. "
-            "You can suppress this warning by setting `warn_independent_sampling` "
-            "to `False` in the constructor of `CmaEsSampler`, "
-            "if this independent sampling is intended behavior.".format(
-                param_name, trial.number, self._independent_sampler.__class__.__name__
-            )
         )
 
     def _get_trials(self, study: "optuna.Study") -> list[FrozenTrial]:
