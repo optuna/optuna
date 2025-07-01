@@ -13,6 +13,7 @@ from optuna.trial import Trial
 if TYPE_CHECKING:
     from optuna.storages import BaseStorage
 
+
 def get_all_artifact_meta(
     study_or_trial: Trial | FrozenTrial | Study, *, storage: BaseStorage | None = None
 ) -> list[ArtifactMeta]:
