@@ -45,50 +45,39 @@ STORAGE_MODES_HEARTBEAT = [
 SQLITE3_TIMEOUT = 300
 
 
-class FindFreePortLockFile:
-    if sys.platform == "win32":
-        _lock_path: str = os.path.join(
+from contextlib import contextmanager
+
+@contextmanager
+def _lock_to_search_for_free_port():
+    on_windows = sys.platform == "win32"
+    if on_windows:
+        lock_path: str = os.path.join(
             os.environ.get("PROGRAMDATA", "C:\\ProgramData"),
             "optuna",
             "optuna_find_free_port.lock",
         )
     else:
-        _lock_path: str = "/tmp/optuna_find_free_port.lock"
+        lock_path: str = f"/tmp/optuna_find_free_port.lock"
 
-    def __init__(self) -> None:
-        os.makedirs(os.path.dirname(self._lock_path), exist_ok=True)
-        self._lockfile = open(self._lock_path, "w")
+    os.makedirs(os.path.dirname(lock_path), exist_ok=True)
+    lockfile = open(lock_path, "w")
+    if on_windows:
+        import msvcrt
 
-    def __enter__(self) -> "FindFreePortLockFile":
-        if sys.platform == "win32":
-            import msvcrt
+        msvcrt.locking(lockfile.fileno(), msvcrt.LK_LOCK, 1)
+        yield
+        msvcrt.locking(lockfile.fileno(), msvcrt.LK_UNLCK, 1)
+    else:
+        import fcntl
 
-            msvcrt.locking(self._lockfile.fileno(), msvcrt.LK_LOCK, 1)
-        else:
-            import fcntl
+        fcntl.flock(lockfile, fcntl.LOCK_EX)
+        yield
+        fcntl.flock(lockfile, fcntl.LOCK_UN)
 
-            fcntl.flock(self._lockfile, fcntl.LOCK_EX)
-        return self
-
-    def __exit__(
-        self,
-        exc_type: type[BaseException],
-        exc_val: BaseException,
-        exc_tb: TracebackType,
-    ) -> None:
-        if sys.platform == "win32":
-            import msvcrt
-
-            msvcrt.locking(self._lockfile.fileno(), msvcrt.LK_UNLCK, 1)
-        else:
-            import fcntl
-
-            fcntl.flock(self._lockfile, fcntl.LOCK_UN)
-
-        self._lockfile.close()
+    lockfile.close()
 
 
-class StorageSupplier:
+class StorageSupplier(AbstractContextManager):
     def __init__(self, storage_specifier: str, **kwargs: Any) -> None:
         self.storage_specifier = storage_specifier
         self.extra_args = kwargs
@@ -164,10 +153,7 @@ class StorageSupplier:
             return self.proxy
 
     def __exit__(
-        self,
-        exc_type: type[BaseException],
-        exc_val: BaseException,
-        exc_tb: TracebackType,
+        self, exc_type: type[BaseException], exc_val: BaseException, exc_tb: TracebackType,
     ) -> None:
         if self.tempfile:
             self.tempfile.close()
