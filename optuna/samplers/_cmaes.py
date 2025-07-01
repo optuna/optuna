@@ -592,17 +592,18 @@ class CmaEsSampler(BaseSampler):
         )
 
     def _log_independent_sampling(self, trial: FrozenTrial, param_name: str) -> None:
-        msg = _INDEPENDENT_SAMPLING_WARNING_TEMPLATE.format(
-            param_name=param_name,
-            trial_number=trial.number,
-            independent_sampler_name=self._independent_sampler.__class__.__name__,
-            sampler_name=self.__class__.__name__,
-            fallback_reason=(
-                "dynamic search space and `CategoricalDistribution` are not supported "
-                "by `CmaEsSampler`"
-            ),
+        _logger.warning(
+            _INDEPENDENT_SAMPLING_WARNING_TEMPLATE.format(
+                param_name=param_name,
+                trial_number=trial.number,
+                independent_sampler_name=self._independent_sampler.__class__.__name__,
+                sampler_name=self.__class__.__name__,
+                fallback_reason=(
+                    "dynamic search space and `CategoricalDistribution` are not supported "
+                    "by `CmaEsSampler`"
+                ),
+            )
         )
-        _logger.warning(msg)
 
     def _get_trials(self, study: "optuna.Study") -> list[FrozenTrial]:
         complete_trials = []
