@@ -110,7 +110,7 @@ class StorageSupplier:
             assert False
 
     def _create_proxy(
-        self, storage: BaseStorage, thread_pool: ThreadPoolExecutor | None
+        self, storage: BaseStorage, thread_pool: ThreadPoolExecutor | None = None
     ) -> GrpcStorageProxy:
         port = _find_free_port()
         self.server = optuna.storages._grpc.server.make_server(
