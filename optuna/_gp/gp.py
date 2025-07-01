@@ -190,9 +190,8 @@ class GPRegressor:
         """
         n_points = self._X_train.shape[0]
         const = -0.5 * n_points * math.log(2 * math.pi)
-        cov_Y_Y = (
-            self.kernel(self._X_train, self._X_train)
-            + self.noise_var * torch.eye(n_points, dtype=torch.float64)
+        cov_Y_Y = self.kernel(self._X_train, self._X_train) + self.noise_var * torch.eye(
+            n_points, dtype=torch.float64
         )
         L = torch.linalg.cholesky(cov_Y_Y)
         logdet_part = -L.diagonal().log().sum()
