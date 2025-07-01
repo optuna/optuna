@@ -219,6 +219,19 @@ class QMCSampler(BaseSampler):
             "samples are taken from the same QMC sequence. "
         )
 
+    def _log_independent_sampling(self, trial: FrozenTrial, param_name: str) -> None:
+        msg = _INDEPENDENT_SAMPLING_WARNING_TEMPLATE.format(
+            param_name=param_name,
+            trial_number=trial.number,
+            independent_sampler_name=self._independent_sampler.__class__.__name__,
+            sampler_name=self.__class__.__name__,
+            fallback_reason=(
+                "dynamic search space and `CategoricalDistribution` are not supported "
+                "by `QMCSampler`"
+            ),
+        )
+        _logger.warning(msg)
+
     def sample_independent(
         self,
         study: Study,
@@ -228,17 +241,7 @@ class QMCSampler(BaseSampler):
     ) -> Any:
         if self._initial_search_space is not None:
             if self._warn_independent_sampling:
-                msg = _INDEPENDENT_SAMPLING_WARNING_TEMPLATE.format(
-                    param_name=param_name,
-                    trial_number=trial.number,
-                    independent_sampler_name=self._independent_sampler.__class__.__name__,
-                    sampler_name=self.__class__.__name__,
-                    fallback_reason=(
-                        "dynamic search space and `CategoricalDistribution` are not supported "
-                        "by `QMCSampler`"
-                    ),
-                )
-                _logger.warning(msg)
+                self._log_independent_sampling(trial, param_name)
 
         return self._independent_sampler.sample_independent(
             study, trial, param_name, param_distribution
