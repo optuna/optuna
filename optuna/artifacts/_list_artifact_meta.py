@@ -1,14 +1,17 @@
 from __future__ import annotations
 
 import json
+from typing import TYPE_CHECKING
 
 from optuna.artifacts._upload import ArtifactMeta
 from optuna.artifacts._upload import ARTIFACTS_ATTR_PREFIX
-from optuna.storages import BaseStorage
 from optuna.study import Study
 from optuna.trial import FrozenTrial
 from optuna.trial import Trial
 
+
+if TYPE_CHECKING:
+    from optuna.storages import BaseStorage
 
 def get_all_artifact_meta(
     study_or_trial: Trial | FrozenTrial | Study, *, storage: BaseStorage | None = None
