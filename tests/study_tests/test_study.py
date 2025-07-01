@@ -1676,6 +1676,9 @@ def test_pop_waiting_trial_thread_safe(storage_mode: str) -> None:
     num_enqueued = 30
     # NOTE(nabenabe): Fewer threads in gRPC increases the probability of thread collision on the
     # proxy side. See https://github.com/optuna/optuna/issues/6084
+    # However, only one thread guarantees no failure because each get_all_trials call in
+    # _pop_waiting_trial_id happens sequentially. This is why, theoretically speaking, the failure
+    # is likely to happen with two threads the most.
     storage_kwargs = (
         {"thread_pool": ThreadPoolExecutor(2)} if storage_mode == "grpc_journal_file" else {}
     )
