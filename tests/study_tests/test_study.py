@@ -1673,8 +1673,13 @@ def test_pop_waiting_trial_thread_safe(storage_mode: str) -> None:
     if storage_mode in ("sqlite", "cached_sqlite", "grpc_rdb"):
         pytest.skip("study._pop_waiting_trial is not thread-safe on SQLite3")
 
-    num_enqueued = 10
-    with StorageSupplier(storage_mode) as storage:
+    num_enqueued = 30
+    # NOTE(nabenabe): Fewer threads in gRPC increases the probability of thread collision on the
+    # proxy side. See https://github.com/optuna/optuna/issues/6084
+    storage_kwargs = (
+        {"thread_pool": ThreadPoolExecutor(2)} if storage_mode == "grpc_journal_file" else {}
+    )
+    with StorageSupplier(storage_mode, **storage_kwargs) as storage:
         study = create_study(storage=storage)
         for i in range(num_enqueued):
             study.enqueue_trial({"i": i})

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
 import socket
 import threading
 from types import TracebackType
@@ -92,7 +93,7 @@ class StorageSupplier:
             storage = optuna.storages.JournalStorage(
                 optuna.storages.journal.JournalFileBackend(self.tempfile.name)
             )
-            return self._create_proxy(storage)
+            return self._create_proxy(storage, thread_pool=self.extra_args.get("thread_pool"))
         elif "journal" in self.storage_specifier:
             self.tempfile = self.extra_args.get("file", NamedTemporaryFilePool().tempfile())
             assert self.tempfile is not None
@@ -108,9 +109,13 @@ class StorageSupplier:
         else:
             assert False
 
-    def _create_proxy(self, storage: BaseStorage) -> GrpcStorageProxy:
+    def _create_proxy(
+        self, storage: BaseStorage, thread_pool: ThreadPoolExecutor | None
+    ) -> GrpcStorageProxy:
         port = _find_free_port()
-        self.server = optuna.storages._grpc.server.make_server(storage, "localhost", port)
+        self.server = optuna.storages._grpc.server.make_server(
+            storage, "localhost", port, thread_pool=thread_pool
+        )
         self.thread = threading.Thread(target=self.server.start)
         self.thread.start()
         self.proxy = GrpcStorageProxy(host="localhost", port=port)
