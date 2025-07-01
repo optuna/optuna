@@ -447,16 +447,17 @@ class TPESampler(BaseSampler):
         if self._warn_independent_sampling and self._multivariate:
             # Avoid independent warning at the first sampling of `param_name`.
             if any(param_name in trial.params for trial in trials):
-                msg = _INDEPENDENT_SAMPLING_WARNING_TEMPLATE.format(
-                    param_name=param_name,
-                    trial_number=trial.number,
-                    independent_sampler_name=self._random_sampler.__class__.__name__,
-                    sampler_name=self.__class__.__name__,
-                    fallback_reason=(
-                        "dynamic search space is not supported for `multivariate=True`"
-                    ),
+                _logger.warning(
+                    _INDEPENDENT_SAMPLING_WARNING_TEMPLATE.format(
+                        param_name=param_name,
+                        trial_number=trial.number,
+                        independent_sampler_name=self._random_sampler.__class__.__name__,
+                        sampler_name=self.__class__.__name__,
+                        fallback_reason=(
+                            "dynamic search space is not supported for `multivariate=True`"
+                        ),
+                    )
                 )
-                _logger.warning(msg)
 
         return self._sample(study, trial, {param_name: param_distribution})[param_name]
 
