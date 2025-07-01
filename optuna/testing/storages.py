@@ -8,6 +8,7 @@ import sys
 import threading
 from types import TracebackType
 from typing import Any
+from typing import Generator
 from typing import IO
 from typing import TYPE_CHECKING
 
@@ -48,20 +49,19 @@ SQLITE3_TIMEOUT = 300
 
 
 @contextmanager
-def _lock_to_search_for_free_port():
-    on_windows = sys.platform == "win32"
-    if on_windows:
-        lock_path: str = os.path.join(
+def _lock_to_search_for_free_port() -> Generator[None, None, None]:
+    if sys.platform == "win32":
+        lock_path = os.path.join(
             os.environ.get("PROGRAMDATA", "C:\\ProgramData"),
             "optuna",
             "optuna_find_free_port.lock",
         )
     else:
-        lock_path: str = "/tmp/optuna_find_free_port.lock"
+        lock_path = "/tmp/optuna_find_free_port.lock"
 
     os.makedirs(os.path.dirname(lock_path), exist_ok=True)
     lockfile = open(lock_path, "w")
-    if on_windows:
+    if sys.platform == "win32":
         import msvcrt
 
         msvcrt.locking(lockfile.fileno(), msvcrt.LK_LOCK, 1)
