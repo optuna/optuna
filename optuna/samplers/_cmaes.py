@@ -22,6 +22,7 @@ from optuna.distributions import BaseDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
 from optuna.samplers import BaseSampler
+from optuna.samplers._base import _INDEPENDENT_SAMPLING_WARNING_TEMPLATE
 from optuna.samplers._lazy_random_state import LazyRandomState
 from optuna.search_space import IntersectionSearchSpace
 from optuna.study._study_direction import StudyDirection
@@ -584,15 +585,17 @@ class CmaEsSampler(BaseSampler):
         if self._warn_independent_sampling:
             complete_trials = self._get_trials(study)
             if len(complete_trials) >= self._n_startup_trials:
-                self._log_independent_sampling(
+                msg = _INDEPENDENT_SAMPLING_WARNING_TEMPLATE.format(
                     param_name=param_name,
                     trial_number=trial.number,
                     independent_sampler_name=self._independent_sampler.__class__.__name__,
+                    sampler_name=self.__class__.__name__,
                     fallback_reason=(
                         "dynamic search space and `CategoricalDistribution` are not supported "
                         "by `CmaEsSampler`"
                     ),
                 )
+                _logger.warning(msg)
 
         return self._independent_sampler.sample_independent(
             study, trial, param_name, param_distribution
