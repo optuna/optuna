@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from contextlib import AbstractContextManager
+from contextlib import contextmanager
 import os
 import socket
 import sys
@@ -45,8 +47,6 @@ STORAGE_MODES_HEARTBEAT = [
 SQLITE3_TIMEOUT = 300
 
 
-from contextlib import contextmanager
-
 @contextmanager
 def _lock_to_search_for_free_port():
     on_windows = sys.platform == "win32"
@@ -57,7 +57,7 @@ def _lock_to_search_for_free_port():
             "optuna_find_free_port.lock",
         )
     else:
-        lock_path: str = f"/tmp/optuna_find_free_port.lock"
+        lock_path: str = "/tmp/optuna_find_free_port.lock"
 
     os.makedirs(os.path.dirname(lock_path), exist_ok=True)
     lockfile = open(lock_path, "w")
@@ -143,7 +143,7 @@ class StorageSupplier(AbstractContextManager):
             assert False
 
     def _create_proxy(self, storage: BaseStorage) -> GrpcStorageProxy:
-        with FindFreePortLockFile():
+        with _lock_to_search_for_free_port():
             port = _find_free_port()
             self.server = optuna.storages._grpc.server.make_server(storage, "localhost", port)
             self.thread = threading.Thread(target=self.server.start)
@@ -153,7 +153,10 @@ class StorageSupplier(AbstractContextManager):
             return self.proxy
 
     def __exit__(
-        self, exc_type: type[BaseException], exc_val: BaseException, exc_tb: TracebackType,
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
     ) -> None:
         if self.tempfile:
             self.tempfile.close()
