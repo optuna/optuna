@@ -322,15 +322,16 @@ class JournalStorage(BaseStorage):
 
         with self._thread_lock:
             if state == TrialState.RUNNING:
-                # NOTE(nabenabe): Sync with lock to check whether there are any trials added after
-                # this thread called ``get_all_trials``. ``trial`` with ``trial_id`` may already
-                # exist when using ``enqueue_trial`` and ``GrpcProxyStorage`` as we cannot
-                # guarantee different thread IDs for each process.
+                # NOTE(nabenabe): This section is triggered only when we are using `enqueue_trial`
+                # and `GrpcProxyStorage` in distributed optimization setups. This section solves
+                # the issue https://github.com/optuna/optuna/issues/6084.
+                # When using gRPC, the current thread may already have popped the trial with
+                # trial_id for another process, leading to false positive in the return statement
+                # of trial_id == self._replay_result.owned_trial_id. To eliminate the false
+                # positive, we check whether another process is already evaluating the trial with
+                # trial_id. If True, it means this query does not update the trial state.
                 existing_trial = self._replay_result._trials.get(trial_id)
                 if existing_trial is not None and existing_trial.state != TrialState.WAITING:
-                    # NOTE(nabenabe): If another process is already evaluating the ``trial`` with
-                    # ``trial_id``, this ``trial`` cannot be updated by the new request of
-                    # ``GrpcProxyStorage``.
                     if existing_trial.state.is_finished():
                         raise UpdateFinishedTrialError(
                             UNUPDATABLE_MSG.format(trial_number=existing_trial.number)
