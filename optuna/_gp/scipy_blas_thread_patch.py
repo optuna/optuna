@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-import os
 from contextlib import contextmanager
+import os
 from typing import Generator
 
-import scipy
 from packaging.version import Version
+import scipy
 
 
 @contextmanager
