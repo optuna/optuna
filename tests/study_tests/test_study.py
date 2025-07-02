@@ -1669,31 +1669,23 @@ def test_tell_from_another_process() -> None:
 
 
 def _pop_waiting_trial_thread_safe(
-    storage_mode: str, n_enqueued: int, n_grpc_threads: int | None, n_jobs: int = 10
+    storage_mode: str, num_enqueued: int, **storage_kwargs: Any
 ) -> None:
-    # NOTE(nabenabe): Fewer threads in gRPC increases the probability of thread collision on the
-    # proxy side. See https://github.com/optuna/optuna/issues/6084
-    # However, only one thread guarantees no failure because each get_all_trials call in
-    # _pop_waiting_trial_id happens sequentially. This is why, theoretically speaking, the failure
-    # is likely to happen with two threads the most.
-    storage_kwargs = (
-        {"thread_pool": ThreadPoolExecutor(n_grpc_threads)} if n_grpc_threads is not None else {}
-    )
     with StorageSupplier(storage_mode, **storage_kwargs) as storage:
         study = create_study(storage=storage)
-        for i in range(n_enqueued):
+        for i in range(num_enqueued):
             study.enqueue_trial({"i": i})
 
         trial_id_set = set()
-        with ThreadPoolExecutor(n_jobs) as pool:
+        with ThreadPoolExecutor(10) as pool:
             futures = []
-            for i in range(n_enqueued):
+            for i in range(num_enqueued):
                 future = pool.submit(study._pop_waiting_trial_id)
                 futures.append(future)
 
             for future in as_completed(futures):
                 trial_id_set.add(future.result())
-        assert len(trial_id_set) == n_enqueued
+        assert len(trial_id_set) == num_enqueued
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
@@ -1701,13 +1693,21 @@ def test_pop_waiting_trial_thread_safe(storage_mode: str) -> None:
     if storage_mode in ("sqlite", "cached_sqlite", "grpc_rdb"):
         pytest.skip("study._pop_waiting_trial is not thread-safe on SQLite3")
 
-    n_grpc_threads = None if "grpc" not in storage_mode else 10
-    _pop_waiting_trial_thread_safe(storage_mode, n_grpc_threads=n_grpc_threads, n_enqueued=10)
+    _pop_waiting_trial_thread_safe(storage_mode, num_enqueued=10)
 
 
-def test_pop_waiting_trial_thread_safe_with_busy_grpc() -> None:
+@pytest.mark.parametrize("n_grpc_threads", [2, None])
+def test_pop_waiting_trial_thread_safe_in_journal_with_busy_grpc(
+    n_grpc_threads: int | None,
+) -> None:
+    # NOTE(nabenabe): Fewer threads in gRPC increases the probability of thread collision on the
+    # proxy side. See https://github.com/optuna/optuna/issues/6084
+    # However, only one thread guarantees no failure because each get_all_trials call in
+    # _pop_waiting_trial_id happens sequentially. This is why, theoretically speaking, the failure
+    # is likely to happen with two threads the most.
+    thread_pool = ThreadPoolExecutor(n_grpc_threads) if n_grpc_threads is not None else None
     _pop_waiting_trial_thread_safe(
-        storage_mode="grpc_journal_file", n_grpc_threads=2, n_enqueued=30
+        storage_mode="grpc_journal_file", num_enqueued=30, thread_pool=thread_pool
     )
 
 
