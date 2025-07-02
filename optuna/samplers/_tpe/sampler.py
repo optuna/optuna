@@ -42,6 +42,8 @@ if TYPE_CHECKING:
 EPS = 1e-12
 _logger = get_logger(__name__)
 
+_RELATIVE_PARAMS_KEY = "tpe:relative_params"
+
 
 def default_gamma(x: int) -> int:
     return min(int(np.ceil(0.1 * x)), 25)
@@ -409,9 +411,13 @@ class TPESampler(BaseSampler):
                     if not distribution.single():
                         search_space[name] = distribution
                 params.update(self._sample_relative(study, trial, search_space))
-            return params
         else:
-            return self._sample_relative(study, trial, search_space)
+            params = self._sample_relative(study, trial, search_space)
+
+        if search_space != {} and self._constant_liar:
+            # Store the results of relative sampling to make them available to other processes.
+            study._storage.set_trial_system_attr(trial._trial_id, _RELATIVE_PARAMS_KEY, params)
+        return params
 
     def _sample_relative(
         self, study: Study, trial: FrozenTrial, search_space: dict[str, BaseDistribution]
@@ -457,15 +463,23 @@ class TPESampler(BaseSampler):
 
         return self._sample(study, trial, {param_name: param_distribution})[param_name]
 
+    def _get_params(self, trial: FrozenTrial) -> dict[str, Any]:
+        if trial.state.is_finished():
+            return trial.params
+
+        params = trial.system_attrs.get(_RELATIVE_PARAMS_KEY, {})
+        params.update(trial.params)
+        return params
+
     def _get_internal_repr(
         self, trials: list[FrozenTrial], search_space: dict[str, BaseDistribution]
     ) -> dict[str, np.ndarray]:
         values: dict[str, list[float]] = {param_name: [] for param_name in search_space}
         for trial in trials:
-            if all((param_name in trial.params) for param_name in search_space):
-                for param_name in search_space:
-                    param = trial.params[param_name]
-                    distribution = trial.distributions[param_name]
+            params = self._get_params(trial)
+            if all((param_name in params) for param_name in search_space):
+                for param_name, distribution in search_space.items():
+                    param = params[param_name]
                     values[param_name].append(distribution.to_internal_repr(param))
         return {k: np.asarray(v) for k, v in values.items()}
 
@@ -515,9 +529,8 @@ class TPESampler(BaseSampler):
         if handle_below and study._is_multi_objective():
             param_mask_below = []
             for trial in trials:
-                param_mask_below.append(
-                    all((param_name in trial.params) for param_name in search_space)
-                )
+                params = self._get_params(trial)
+                param_mask_below.append(all((param_name in params) for param_name in search_space))
             weights_below = _calculate_weights_below_for_multi_objective(
                 study, trials, self._constraints_func
             )[param_mask_below]
