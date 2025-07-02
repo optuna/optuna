@@ -2,10 +2,14 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 import os
-from typing import Generator
+from typing import TYPE_CHECKING
 
 from packaging.version import Version
 import scipy
+
+
+if TYPE_CHECKING:
+    from typing import Generator
 
 
 @contextmanager
