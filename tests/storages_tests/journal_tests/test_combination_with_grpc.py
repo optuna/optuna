@@ -14,11 +14,7 @@ from optuna.testing.storages import StorageSupplier
 
 if TYPE_CHECKING:
     from concurrent.futures import Executor
-    from typing import Final
     from typing import Generator
-
-
-N_ENQUEUED: Final[int] = 30
 
 
 @contextmanager
@@ -30,7 +26,7 @@ def grpc_journal_file_context() -> Generator[optuna.Study]:
     # is likely to happen with two threads the most.
     with StorageSupplier("grpc_journal_file", thread_pool=ThreadPoolExecutor(2)) as storage:
         study = optuna.create_study(storage=storage)
-        for i in range(N_ENQUEUED):
+        for i in range(30):
             study.enqueue_trial({"i": i})
         yield study
 
@@ -48,13 +44,14 @@ def pop_waiting_trial(master_study: optuna.Study, port: int | None = None) -> in
 
 
 def _verify_racing_condition(pool: Executor, study: optuna.Study, port: int | None = None) -> None:
-    futures = [pool.submit(pop_waiting_trial, study, port) for _ in range(N_ENQUEUED)]
+    n_enqueued = len(study.trials)
+    futures = [pool.submit(pop_waiting_trial, study, port) for _ in range(n_enqueued)]
     trial_id_set = set()
     for future in as_completed(futures):
         trial_id = future.result()
         if trial_id is not None:
             trial_id_set.add(trial_id)
-    assert len(trial_id_set) == N_ENQUEUED
+    assert len(trial_id_set) == n_enqueued
 
 
 def test_pop_waiting_trial_multiprocess_safe() -> None:
