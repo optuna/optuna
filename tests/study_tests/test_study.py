@@ -1150,17 +1150,17 @@ def test_log_completed_trial_skip_storage_access() -> None:
     storage = study._storage
 
     with patch.object(storage, "get_best_trial", wraps=storage.get_best_trial) as mock_object:
-        study._log_completed_trial(frozen_trial)
+        study._log_completed_trial(frozen_trial.values, frozen_trial.number, frozen_trial.params)
         assert mock_object.call_count == 1
 
     logging.set_verbosity(logging.WARNING)
     with patch.object(storage, "get_best_trial", wraps=storage.get_best_trial) as mock_object:
-        study._log_completed_trial(frozen_trial)
+        study._log_completed_trial(frozen_trial.values, frozen_trial.number, frozen_trial.params)
         assert mock_object.call_count == 0
 
     logging.set_verbosity(logging.DEBUG)
     with patch.object(storage, "get_best_trial", wraps=storage.get_best_trial) as mock_object:
-        study._log_completed_trial(frozen_trial)
+        study._log_completed_trial(frozen_trial.values, frozen_trial.number, frozen_trial.params)
         assert mock_object.call_count == 1
 
 
@@ -1668,10 +1668,13 @@ def test_tell_from_another_process() -> None:
                 fut.result()
 
 
-def _pop_waiting_trial_thread_safe(
-    storage_mode: str, num_enqueued: int, **storage_kwargs: Any
-) -> None:
-    with StorageSupplier(storage_mode, **storage_kwargs) as storage:
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_pop_waiting_trial_thread_safe(storage_mode: str) -> None:
+    if storage_mode in ("sqlite", "cached_sqlite", "grpc_rdb"):
+        pytest.skip("study._pop_waiting_trial is not thread-safe on SQLite3")
+
+    num_enqueued = 10
+    with StorageSupplier(storage_mode) as storage:
         study = create_study(storage=storage)
         for i in range(num_enqueued):
             study.enqueue_trial({"i": i})
@@ -1686,29 +1689,6 @@ def _pop_waiting_trial_thread_safe(
             for future in as_completed(futures):
                 trial_id_set.add(future.result())
         assert len(trial_id_set) == num_enqueued
-
-
-@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-def test_pop_waiting_trial_thread_safe(storage_mode: str) -> None:
-    if storage_mode in ("sqlite", "cached_sqlite", "grpc_rdb"):
-        pytest.skip("study._pop_waiting_trial is not thread-safe on SQLite3")
-
-    _pop_waiting_trial_thread_safe(storage_mode, num_enqueued=10)
-
-
-@pytest.mark.parametrize("n_grpc_threads", [2, None])
-def test_pop_waiting_trial_thread_safe_in_journal_with_busy_grpc(
-    n_grpc_threads: int | None,
-) -> None:
-    # NOTE(nabenabe): Fewer threads in gRPC increases the probability of thread collision on the
-    # proxy side. See https://github.com/optuna/optuna/issues/6084
-    # However, only one thread guarantees no failure because each get_all_trials call in
-    # _pop_waiting_trial_id happens sequentially. This is why, theoretically speaking, the failure
-    # is likely to happen with two threads the most.
-    thread_pool = ThreadPoolExecutor(n_grpc_threads) if n_grpc_threads is not None else None
-    _pop_waiting_trial_thread_safe(
-        storage_mode="grpc_journal_file", num_enqueued=30, thread_pool=thread_pool
-    )
 
 
 def test_pop_waiting_trial_id_race_condition() -> None:
