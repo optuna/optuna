@@ -2,8 +2,11 @@ from __future__ import annotations
 
 import os
 import shutil
+from typing import TYPE_CHECKING
 
-from optuna.artifacts._protocol import ArtifactStore
+
+if TYPE_CHECKING:
+    from optuna.artifacts._protocol import ArtifactStore
 
 
 def download_artifact(*, artifact_store: ArtifactStore, file_path: str, artifact_id: str) -> None:
