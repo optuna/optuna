@@ -11,7 +11,7 @@ from optuna._gp.acqf import eval_acqf_with_grad
 from optuna._gp.search_space import normalize_one_param
 from optuna._gp.search_space import sample_normalized_params
 from optuna._gp.search_space import ScaleType
-from optuna._gp.utils import single_blas_thread_if_scipy_v1_15_or_newer
+from optuna._gp.scipy_blas_thread_patch import single_blas_thread_if_scipy_v1_15_or_newer
 from optuna.logging import get_logger
 
 
