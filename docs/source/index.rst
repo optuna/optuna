@@ -99,6 +99,23 @@ Feature requests and bug reports are welcome!
 
    Please check out the `getting started <https://optuna-dashboard.readthedocs.io/en/stable/getting-started.html>`__ section of Optuna Dashboard's official documentation.
 
+OptunaHub
+---------
+
+`OptunaHub <https://hub.optuna.org/>`__ is a feature-sharing platform for Optuna.
+You can use the registered features and publish your packages.
+For more details, please refer to `the official documentation <https://optuna.github.io/optunahub/>`__.
+
+.. image:: ../image/optunahub-introduction.png
+  :width: 800px
+
+``optunahub`` can be installed via pip:
+
+.. code-block:: console
+
+   $ pip install optunahub
+
+
 Communication
 -------------
 
