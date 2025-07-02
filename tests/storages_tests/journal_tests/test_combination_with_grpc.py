@@ -3,6 +3,7 @@ from __future__ import annotations
 from concurrent.futures import as_completed
 from concurrent.futures import ProcessPoolExecutor
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import contextmanager
 import multiprocessing
 from typing import TYPE_CHECKING
 
@@ -14,15 +15,24 @@ from optuna.testing.storages import StorageSupplier
 if TYPE_CHECKING:
     from concurrent.futures import Executor
     from typing import Final
+    from typing import Generator
 
 
-# NOTE(nabenabe): Fewer threads in gRPC increases the probability of thread collision on the proxy
-# side. See https://github.com/optuna/optuna/issues/6084
-# However, only one thread guarantees no failure because each get_all_trials call in
-# _pop_waiting_trial_id happens sequentially. This is why, theoretically speaking, the failure is
-# likely to happen with two threads the most.
 N_ENQUEUED: Final[int] = 30
-N_GRPC_THREADS: Final[int] = 2
+
+
+@contextmanager
+def grpc_journal_file_context() -> Generator[optuna.Study]:
+    # NOTE(nabenabe): Fewer threads in gRPC increases the probability of thread collision on the
+    # proxy side. See https://github.com/optuna/optuna/issues/6084
+    # However, only one thread guarantees no failure because each get_all_trials call in
+    # _pop_waiting_trial_id happens sequentially. This is why, theoretically speaking, the failure
+    # is likely to happen with two threads the most.
+    with StorageSupplier("grpc_journal_file", thread_pool=ThreadPoolExecutor(2)) as storage:
+        study = optuna.create_study(storage=storage)
+        for i in range(N_ENQUEUED):
+            study.enqueue_trial({"i": i})
+        yield study
 
 
 def pop_waiting_trial(master_study: optuna.Study, port: int | None = None) -> int | None:
@@ -48,13 +58,8 @@ def _verify_racing_condition(pool: Executor, study: optuna.Study, port: int | No
 
 
 def test_pop_waiting_trial_multiprocess_safe() -> None:
-    with StorageSupplier(
-        "grpc_journal_file", thread_pool=ThreadPoolExecutor(N_GRPC_THREADS)
-    ) as storage:
-        study = optuna.create_study(storage=storage)
-        for i in range(N_ENQUEUED):
-            study.enqueue_trial({"i": i})
-
+    with grpc_journal_file_context() as study:
+        storage = study._storage
         assert isinstance(storage, GrpcStorageProxy)
         port = storage._port
         mp_context = multiprocessing.get_context("spawn")
@@ -63,11 +68,6 @@ def test_pop_waiting_trial_multiprocess_safe() -> None:
 
 
 def test_pop_waiting_trial_thread_safe() -> None:
-    with StorageSupplier(
-        "grpc_journal_file", thread_pool=ThreadPoolExecutor(N_GRPC_THREADS)
-    ) as storage:
-        study = optuna.create_study(storage=storage)
-        for i in range(N_ENQUEUED):
-            study.enqueue_trial({"i": i})
+    with grpc_journal_file_context() as study:
         with ThreadPoolExecutor(10) as pool:
             _verify_racing_condition(pool, study)
