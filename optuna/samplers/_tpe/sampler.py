@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from collections.abc import Sequence
+import json
 import math
 from typing import Any
 from typing import cast
@@ -43,6 +44,8 @@ EPS = 1e-12
 _logger = get_logger(__name__)
 
 _RELATIVE_PARAMS_KEY = "tpe:relative_params"
+# The value of system_attrs must be less than 2046 characters on RDBStorage.
+_SYSTEM_ATTR_MAX_LENGTH = 2045
 
 
 def default_gamma(x: int) -> int:
@@ -416,7 +419,13 @@ class TPESampler(BaseSampler):
 
         if search_space != {} and self._constant_liar:
             # Store the results of relative sampling to make them available to other processes.
-            study._storage.set_trial_system_attr(trial._trial_id, _RELATIVE_PARAMS_KEY, params)
+            params_str = json.dumps(params)
+            for i in range(0, len(params_str), _SYSTEM_ATTR_MAX_LENGTH):
+                study._storage.set_trial_system_attr(
+                    trial._trial_id,
+                    f"{_RELATIVE_PARAMS_KEY}:{i // _SYSTEM_ATTR_MAX_LENGTH}",
+                    params_str[i : i + _SYSTEM_ATTR_MAX_LENGTH],
+                )
         return params
 
     def _sample_relative(
@@ -467,9 +476,18 @@ class TPESampler(BaseSampler):
         if trial.state.is_finished():
             return trial.params
 
-        params = trial.system_attrs.get(_RELATIVE_PARAMS_KEY, {})
-        params.update(trial.params)
-        return params
+        params_str = ""
+        i = 0
+        while params_str_i := trial.system_attrs.get(f"{_RELATIVE_PARAMS_KEY}:{i}"):
+            params_str += params_str_i
+            i += 1
+
+        if params_str == "":
+            return trial.params
+        else:
+            params = json.loads(params_str)
+            params.update(trial.params)
+            return params
 
     def _get_internal_repr(
         self, trials: list[FrozenTrial], search_space: dict[str, BaseDistribution]
