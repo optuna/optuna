@@ -5,6 +5,8 @@ from concurrent.futures import ProcessPoolExecutor
 from concurrent.futures import ThreadPoolExecutor
 import multiprocessing
 
+import pytest
+
 import optuna
 from optuna.storages import GrpcStorageProxy
 from optuna.testing.storages import StorageSupplier
@@ -19,14 +21,15 @@ def pop_waiting_trial(port: int, study_name: str) -> int | None:
     return popped_trial_id
 
 
-def test_pop_waiting_trial_multiprocess_safe() -> None:
+@pytest.mark.parametrize("n_grpc_threads", [2, 10])
+def test_pop_waiting_trial_multiprocess_safe(n_grpc_threads: int) -> None:
     num_enqueued = 30
     # NOTE(nabenabe): Fewer threads in gRPC increases the probability of thread collision on the
     # proxy side. See https://github.com/optuna/optuna/issues/6084
     # However, only one thread guarantees no failure because each get_all_trials call in
     # _pop_waiting_trial_id happens sequentially. This is why, theoretically speaking, the failure
     # is likely to happen with two threads the most.
-    thread_pool = ThreadPoolExecutor(2)
+    thread_pool = ThreadPoolExecutor(n_grpc_threads)
     with StorageSupplier("grpc_journal_file", thread_pool=thread_pool) as proxy:
         assert isinstance(proxy, GrpcStorageProxy)
         port = proxy._port
