@@ -418,7 +418,7 @@ class TPESampler(BaseSampler):
             params = self._sample_relative(study, trial, search_space)
 
         if search_space != {} and self._constant_liar:
-            # Store the results of relative sampling to make them available to other processes.
+            # Share the params obtained by the relative sampling with the other processes.
             params_str = json.dumps(params)
             for i in range(0, len(params_str), _SYSTEM_ATTR_MAX_LENGTH):
                 study._storage.set_trial_system_attr(
