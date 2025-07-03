@@ -159,7 +159,7 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
         gpr = gp.fit_kernel_params(
             X=normalized_top_n_params,
             Y=standarized_top_n_values,
-            is_categorical=(search_space.scale_types == gp_search_space.ScaleType.CATEGORICAL),
+            is_categorical=search_space.is_categorical,
             log_prior=self._log_prior,
             minimum_noise=self._minimum_noise,
             # TODO(contramundum53): Add option to specify this.

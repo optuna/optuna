@@ -20,7 +20,6 @@ import optuna
 from optuna import exceptions
 from optuna import logging
 from optuna import progress_bar as pbar_module
-from optuna import trial as trial_module
 from optuna.exceptions import ExperimentalWarning
 from optuna.storages._heartbeat import get_heartbeat_thread
 from optuna.storages._heartbeat import is_heartbeat_enabled
@@ -158,7 +157,7 @@ def _optimize_sequential(
                 break
 
         try:
-            frozen_trial = _run_trial(study, func, catch)
+            frozen_trial_id = _run_trial(study, func, catch)
         finally:
             # The following line mitigates memory problems that can be occurred in some
             # environments (e.g., services that use computing containers such as GitHub Actions).
@@ -168,6 +167,7 @@ def _optimize_sequential(
                 gc.collect()
 
         if callbacks is not None:
+            frozen_trial = study._storage.get_trial(frozen_trial_id)
             for callback in callbacks:
                 callback(study, copy.deepcopy(frozen_trial))
 
@@ -182,7 +182,7 @@ def _run_trial(
     study: "optuna.Study",
     func: "optuna.study.study.ObjectiveFuncType",
     catch: tuple[type[Exception], ...],
-) -> trial_module.FrozenTrial:
+) -> int:
     if is_heartbeat_enabled(study._storage):
         with warnings.catch_warnings():
             # Ignore ExperimentalWarning when using fail_stale_trials internally.
@@ -210,7 +210,7 @@ def _run_trial(
 
     # `_tell_with_warning` may raise during trial post-processing.
     try:
-        frozen_trial, warning_message = _tell_with_warning(
+        updated_state, values, warning_message = _tell_with_warning(
             study=study,
             trial=trial,
             value_or_values=value_or_values,
@@ -219,24 +219,29 @@ def _run_trial(
         )
     except Exception:
         frozen_trial = study._storage.get_trial(trial._trial_id)
+        updated_state = frozen_trial.state
+        values = frozen_trial.values
         warning_message = None
         raise
     finally:
-        if frozen_trial.state == TrialState.COMPLETE:
-            study._log_completed_trial(frozen_trial)
-        elif frozen_trial.state == TrialState.PRUNED:
-            _logger.info("Trial {} pruned. {}".format(frozen_trial.number, str(func_err)))
-        elif frozen_trial.state == TrialState.FAIL:
+        if updated_state == TrialState.COMPLETE:
+            assert values is not None
+            study._log_completed_trial(values, trial.number, trial.params)
+        elif updated_state == TrialState.PRUNED:
+            _logger.info("Trial {} pruned. {}".format(trial.number, str(func_err)))
+        elif updated_state == TrialState.FAIL:
             if func_err is not None:
                 _log_failed_trial(
-                    frozen_trial,
+                    trial.number,
+                    trial.params,
                     repr(func_err),
                     exc_info=func_err_fail_exc_info,
                     value_or_values=value_or_values,
                 )
             elif warning_message is not None:
                 _log_failed_trial(
-                    frozen_trial,
+                    trial.number,
+                    trial.params,
                     warning_message,
                     value_or_values=value_or_values,
                 )
@@ -246,25 +251,26 @@ def _run_trial(
             assert False, "Should not reach."
 
     if (
-        frozen_trial.state == TrialState.FAIL
+        updated_state == TrialState.FAIL
         and func_err is not None
         and not isinstance(func_err, catch)
     ):
         raise func_err
-    return frozen_trial
+    return trial._trial_id
 
 
 def _log_failed_trial(
-    trial: FrozenTrial,
+    trial_number: int,
+    trial_params: dict[str, Any],
     message: str | Warning,
     exc_info: Any = None,
     value_or_values: Any = None,
 ) -> None:
     _logger.warning(
         "Trial {} failed with parameters: {} because of the following error: {}.".format(
-            trial.number, trial.params, message
+            trial_number, trial_params, message
         ),
         exc_info=exc_info,
     )
 
-    _logger.warning("Trial {} failed with value {}.".format(trial.number, repr(value_or_values)))
+    _logger.warning("Trial {} failed with value {}.".format(trial_number, repr(value_or_values)))

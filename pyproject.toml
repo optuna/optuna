@@ -54,6 +54,7 @@ checking = [
   "isort",
   "mypy",
   "mypy_boto3_s3",
+  "scipy-stubs; python_version>='3.10'",
   "types-PyYAML",
   "types-redis",
   "types-setuptools",
@@ -99,6 +100,7 @@ test = [
   "kaleido<0.4",  # TODO(nzw0301): Remove the version constraint by installing browser separately.
   "moto",
   "pytest",
+  "pytest-xdist",
   "scipy>=1.9.2",
   "torch; python_version<='3.12'",  # TODO(gen740): Remove this line when 'torch', a dependency of 'optuna/_gp', supports Python 3.13
   "grpcio",  # optuna/storages/_grpc.
@@ -170,7 +172,7 @@ addopts = "--color=yes"
 filterwarnings = 'ignore::optuna.exceptions.ExperimentalWarning'
 markers = [
   "skip_coverage: marks tests are skipped when calculating the coverage",
-  "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+  "slow: marks tests as slow (deselect with '-m \"not slow\"')"
 ]
 
 [tool.mypy]

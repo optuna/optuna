@@ -1,9 +1,14 @@
 from __future__ import annotations
 
+from contextlib import AbstractContextManager
+from contextlib import contextmanager
+import os
 import socket
+import sys
 import threading
 from types import TracebackType
 from typing import Any
+from typing import Generator
 from typing import IO
 from typing import TYPE_CHECKING
 
@@ -43,7 +48,36 @@ STORAGE_MODES_HEARTBEAT = [
 SQLITE3_TIMEOUT = 300
 
 
-class StorageSupplier:
+@contextmanager
+def _lock_to_search_for_free_port() -> Generator[None, None, None]:
+    if sys.platform == "win32":
+        lock_path = os.path.join(
+            os.environ.get("PROGRAMDATA", "C:\\ProgramData"),
+            "optuna",
+            "optuna_find_free_port.lock",
+        )
+    else:
+        lock_path = "/tmp/optuna_find_free_port.lock"
+
+    os.makedirs(os.path.dirname(lock_path), exist_ok=True)
+    lockfile = open(lock_path, "w")
+    if sys.platform == "win32":
+        import msvcrt
+
+        msvcrt.locking(lockfile.fileno(), msvcrt.LK_LOCK, 1)
+        yield
+        msvcrt.locking(lockfile.fileno(), msvcrt.LK_UNLCK, 1)
+    else:
+        import fcntl
+
+        fcntl.flock(lockfile, fcntl.LOCK_EX)
+        yield
+        fcntl.flock(lockfile, fcntl.LOCK_UN)
+
+    lockfile.close()
+
+
+class StorageSupplier(AbstractContextManager):
     def __init__(self, storage_specifier: str, **kwargs: Any) -> None:
         self.storage_specifier = storage_specifier
         self.extra_args = kwargs
@@ -109,16 +143,20 @@ class StorageSupplier:
             assert False
 
     def _create_proxy(self, storage: BaseStorage) -> GrpcStorageProxy:
-        port = _find_free_port()
-        self.server = optuna.storages._grpc.server.make_server(storage, "localhost", port)
-        self.thread = threading.Thread(target=self.server.start)
-        self.thread.start()
-        self.proxy = GrpcStorageProxy(host="localhost", port=port)
-        self.proxy.wait_server_ready(timeout=60)
-        return self.proxy
+        with _lock_to_search_for_free_port():
+            port = _find_free_port()
+            self.server = optuna.storages._grpc.server.make_server(storage, "localhost", port)
+            self.thread = threading.Thread(target=self.server.start)
+            self.thread.start()
+            self.proxy = GrpcStorageProxy(host="localhost", port=port)
+            self.proxy.wait_server_ready(timeout=60)
+            return self.proxy
 
     def __exit__(
-        self, exc_type: type[BaseException], exc_val: BaseException, exc_tb: TracebackType
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
     ) -> None:
         if self.tempfile:
             self.tempfile.close()

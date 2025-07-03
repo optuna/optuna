@@ -1150,17 +1150,17 @@ def test_log_completed_trial_skip_storage_access() -> None:
     storage = study._storage
 
     with patch.object(storage, "get_best_trial", wraps=storage.get_best_trial) as mock_object:
-        study._log_completed_trial(frozen_trial)
+        study._log_completed_trial(frozen_trial.values, frozen_trial.number, frozen_trial.params)
         assert mock_object.call_count == 1
 
     logging.set_verbosity(logging.WARNING)
     with patch.object(storage, "get_best_trial", wraps=storage.get_best_trial) as mock_object:
-        study._log_completed_trial(frozen_trial)
+        study._log_completed_trial(frozen_trial.values, frozen_trial.number, frozen_trial.params)
         assert mock_object.call_count == 0
 
     logging.set_verbosity(logging.DEBUG)
     with patch.object(storage, "get_best_trial", wraps=storage.get_best_trial) as mock_object:
-        study._log_completed_trial(frozen_trial)
+        study._log_completed_trial(frozen_trial.values, frozen_trial.number, frozen_trial.params)
         assert mock_object.call_count == 1
 
 
@@ -1672,6 +1672,8 @@ def test_tell_from_another_process() -> None:
 def test_pop_waiting_trial_thread_safe(storage_mode: str) -> None:
     if storage_mode in ("sqlite", "cached_sqlite", "grpc_rdb"):
         pytest.skip("study._pop_waiting_trial is not thread-safe on SQLite3")
+    if storage_mode == "grpc_journal_file":
+        pytest.skip("gRPC journal file storage does not support multi-threading")
 
     num_enqueued = 10
     with StorageSupplier(storage_mode) as storage:
