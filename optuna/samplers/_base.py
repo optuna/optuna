@@ -18,6 +18,16 @@ if TYPE_CHECKING:
     from optuna.study import Study
 
 
+_INDEPENDENT_SAMPLING_WARNING_TEMPLATE = (
+    "The parameter `{param_name}` in Trial#{trial_number} is sampled independently "
+    "using `{independent_sampler_name}` instead of `{sampler_name}`, potentially "
+    "degrading the optimization performance. This fallback happend because "
+    "{fallback_reason}. You can suppress this warning by setting "
+    "`warn_independent_sampling` to `False` in the constructor of `{sampler_name}` if "
+    "this independent sampling is intended behavior."
+)
+
+
 class BaseSampler(abc.ABC):
     """Base class for samplers.
 
