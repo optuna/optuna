@@ -169,7 +169,7 @@ class GPRegressor:
         Assume that N = len(X) in this method.
 
         Mathematically, the closed form is given as:
-            -0.5 * log((2*pi)**n * det(C)) - 0.5 * y.T @ inv(C) @ y
+            -0.5 * log((2*pi)**N * det(C)) - 0.5 * y.T @ inv(C) @ y
             = -0.5 * log(det(C)) - 0.5 * y.T @ inv(C) @ y + const,
         where C = cov_Y_Y = cov_fX_fX + noise_var * I and inv(...) is the inverse operator.
 
