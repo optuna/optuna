@@ -108,6 +108,7 @@ For more details, please refer to `the official documentation <https://optuna.gi
 
 .. image:: ../image/optunahub-introduction.png
   :width: 800px
+  :target: https://hub.optuna.org/
 
 ``optunahub`` can be installed via pip:
 
