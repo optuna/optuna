@@ -33,7 +33,6 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
 import functools
 import math
 import sys
