@@ -1,3 +1,4 @@
+import math
 import sys
 
 import numpy as np
@@ -9,6 +10,7 @@ import optuna.samplers._tpe._truncnorm as truncnorm_ours
 
 
 with try_import() as _imports:
+    from scipy.special import ndtri_exp as ndtri_exp_scipy
     from scipy.stats._continuous_distns import _log_gauss_mass as _log_gauss_mass_scipy
 
 
@@ -55,3 +57,13 @@ def test_log_gass_mass(a: float, b: float) -> None:
     assert truncnorm_ours._log_gauss_mass(a_arr, b_arr) == pytest.approx(
         _log_gauss_mass_scipy(a_arr, b_arr), nan_ok=True
     ), f"_log_gauss_mass(a={a}, b={b})"
+
+
+@pytest.mark.skipif(
+    not _imports.is_successful(), reason="Failed to import SciPy's internal function."
+)
+def test_ndtri_exp_single() -> None:
+    for y in [-sys.float_info.min] + [-(10**i) for i in range(-300, 10)]:
+        x = truncnorm_ours._ndtri_exp_single(y)
+        ans = ndtri_exp_scipy(y).item()
+        assert math.isclose(x, ans), f"Failed with y={y}."
