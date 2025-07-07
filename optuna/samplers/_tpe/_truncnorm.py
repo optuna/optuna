@@ -180,7 +180,10 @@ def _ndtri_exp_single(y: float) -> float:
         --> x = sqrt(-2 * (y + 1/2 * log(2pi))
 
     For the moderate y, we use Eq. (13), i.e., standard logistic CDF, in the following paper:
-        - Approximating the Cumulative Distribution Function of the Normal Distribution.
+
+    - `Approximating the Cumulative Distribution Function of the Normal Distribution
+      <https://jsr.isrt.ac.bd/wp-content/uploads/41n1_5.pdf>`__
+
     The standard logistic CDF approximates ndtr(x) with:
         exp(y) = ndtr(x) \\simeq 1 / (1 + exp(-pi * x / sqrt(3)))
         --> exp(-y) \\simeq 1 + exp(-pi * x / sqrt(3))
