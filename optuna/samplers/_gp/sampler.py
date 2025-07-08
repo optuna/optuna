@@ -9,6 +9,7 @@ import optuna
 from optuna._experimental import experimental_class
 from optuna._experimental import warn_experimental_argument
 from optuna.samplers._base import _CONSTRAINTS_KEY
+from optuna.samplers._base import _INDEPENDENT_SAMPLING_WARNING_TEMPLATE
 from optuna.samplers._base import _process_constraints_after_trial
 from optuna.samplers._base import BaseSampler
 from optuna.samplers._lazy_random_state import LazyRandomState
@@ -188,18 +189,14 @@ class GPSampler(BaseSampler):
         self._tol = 1e-4
 
     def _log_independent_sampling(self, trial: FrozenTrial, param_name: str) -> None:
-        """Log a warning when GPSampler falls back to independent sampling."""
-        _logger.warning(
-            "The parameter '{}' in trial#{} is sampled independently "
-            "by using `{}` instead of `GPSampler` "
-            "(optimization performance may be degraded). "
-            "`GPSampler` does not support dynamic search space. "
-            "You can suppress this warning by setting `warn_independent_sampling` "
-            "to `False` in the constructor of `GPSampler`, "
-            "if this independent sampling is intended behavior.".format(
-                param_name, trial.number, self._independent_sampler.__class__.__name__
-            )
+        msg = _INDEPENDENT_SAMPLING_WARNING_TEMPLATE.format(
+            param_name=param_name,
+            trial_number=trial.number,
+            independent_sampler_name=self._independent_sampler.__class__.__name__,
+            sampler_name=self.__class__.__name__,
+            fallback_reason="dynamic search space is not supported by GPSampler",
         )
+        _logger.warning(msg)
 
     def reseed_rng(self) -> None:
         self._rng.rng.seed()
