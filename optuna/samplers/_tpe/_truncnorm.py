@@ -201,7 +201,6 @@ def _ndtri_exp_single(y: float) -> float:
     else:  # Case 3. Moderate y.
         x = -_ndtri_exp_approx_C * math.log(math.exp(-y) - 1)
 
-    log_ndtr_x = math.nan
     for _ in range(100):
         log_ndtr_x = _log_ndtr_single(x)
         log_norm_pdf_x = -0.5 * x**2 - _norm_pdf_logC
