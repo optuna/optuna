@@ -33,7 +33,6 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
 import functools
 import math
 import sys
@@ -45,6 +44,7 @@ from optuna.samplers._tpe._erf import erf
 
 _norm_pdf_C = math.sqrt(2 * math.pi)
 _norm_pdf_logC = math.log(_norm_pdf_C)
+_ndtri_exp_approx_C = math.sqrt(3) / math.pi
 
 
 def _log_sum(log_p: np.ndarray, log_q: np.ndarray) -> np.ndarray:
@@ -148,24 +148,70 @@ def _log_gauss_mass(a: np.ndarray, b: np.ndarray) -> np.ndarray:
     return np.real(out)  # discard ~0j
 
 
-def _bisect(f: Callable[[float], float], a: float, b: float, c: float) -> float:
-    if f(a) > c:
-        a, b = b, a
-    # In the algorithm, it is assumed that all of (a + b), (a * 2), and (b * 2) are finite.
-    for _ in range(100):
-        m = (a + b) / 2
-        if a == m or b == m:
-            return m
-        if f(m) < c:
-            a = m
-        else:
-            b = m
-    return (a + b) / 2
-
-
 def _ndtri_exp_single(y: float) -> float:
-    # TODO(amylase): Justify this constant
-    return _bisect(_log_ndtr_single, -100, +100, y)
+    """
+    Use the Newton method to efficiently find the root.
+
+    `ndtri_exp(y)` returns `x` such that `y = log_ndtr(x)`, meaning that the Newton method is
+    supposed to find the root of `f(x) := log_ndtr(x) - y = 0`.
+
+    Since `df/dx = d log_ndtr(x)/dx = (ndtr(x))'/ndtr(x) = norm_pdf(x)/ndtr(x)`, the Newton update
+    is x[n + 1] := x[n] - (log_ndtr(x) - y) * ndtr(x) / norm_pdf(x).
+
+    As an initial guess, we use the Gaussian tail asymptotic approximation:
+        1 - ndtr(x) \\simeq norm_pdf(x) / x
+        --> log(norm_pdf(x) / x) = -1/2 * x**2 - 1/2 * log(2pi) - log(x)
+
+    First recall that y is a non-positive value and y = log_ndtr(inf) = 0 and
+    y = log_ndtr(-inf) = -inf.
+
+    If abs(y) is very small, x is very large, meaning that x**2 >> log(x) and
+    ndtr(x) = exp(y) \\simeq 1 + y --> -y \\simeq 1 - ndtr(x). From this, we can calculate:
+        log(1 - ndtr(x)) \\simeq log(-y) \\simeq -1/2 * x**2 - 1/2 * log(2pi) - log(x).
+    Because x**2 >> log(x), we can ignore the second and third terms, leading to:
+        log(-y) \\simeq -1/2 * x**2 --> x \\simeq sqrt(-2 log(-y)).
+    where we take the positive `x` as abs(y) becomes very small only if x >> 0.
+    The second order approximation version is sqrt(-2 log(-y) - log(-2 log(-y))).
+
+    If abs(y) is very large, we use log_ndtr(x) \\simeq -1/2 * x**2 - 1/2 * log(2pi) - log(x).
+    To solve this equation analytically, we ignore the log term, yielding:
+        log_ndtr(x) = y \\simeq -1/2 * x**2 - 1/2 * log(2pi)
+        --> y + 1/2 * log(2pi) = -1/2 * x**2 --> x**2 = -2 * (y + 1/2 * log(2pi))
+        --> x = sqrt(-2 * (y + 1/2 * log(2pi))
+
+    For the moderate y, we use Eq. (13), i.e., standard logistic CDF, in the following paper:
+
+    - `Approximating the Cumulative Distribution Function of the Normal Distribution
+      <https://jsr.isrt.ac.bd/wp-content/uploads/41n1_5.pdf>`__
+
+    The standard logistic CDF approximates ndtr(x) with:
+        exp(y) = ndtr(x) \\simeq 1 / (1 + exp(-pi * x / sqrt(3)))
+        --> exp(-y) \\simeq 1 + exp(-pi * x / sqrt(3))
+        --> log(exp(-y) - 1) \\simeq -pi * x / sqrt(3)
+        --> x \\simeq -sqrt(3) / pi * log(exp(-y) - 1).
+    """
+    if y > -sys.float_info.min:
+        return math.inf if y <= 0 else math.nan
+
+    if y > -1e-2:  # Case 1. abs(y) << 1.
+        u = -2.0 * math.log(-y)
+        x = math.sqrt(u - math.log(u))
+    elif y < -5:  # Case 2. abs(y) >> 1.
+        x = -math.sqrt(-2.0 * (y + _norm_pdf_logC))
+    else:  # Case 3. Moderate y.
+        x = -_ndtri_exp_approx_C * math.log(math.exp(-y) - 1)
+
+    for _ in range(100):
+        log_ndtr_x = _log_ndtr_single(x)
+        log_norm_pdf_x = -0.5 * x**2 - _norm_pdf_logC
+        # NOTE(nabenabe): Use exp(log_ndtr_x - log_norm_pdf_x) instead of ndtr_x / norm_pdf_x for
+        # numerical stability.
+        dx = (log_ndtr_x - y) * math.exp(log_ndtr_x - log_norm_pdf_x)
+        x -= dx
+        if abs(dx) < 1e-8 * abs(x):  # Equivalent to np.isclose with atol=0.0 and rtol=1e-8.
+            break
+
+    return x
 
 
 def _ndtri_exp(y: np.ndarray) -> np.ndarray:
