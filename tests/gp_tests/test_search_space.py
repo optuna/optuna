@@ -4,11 +4,8 @@ import numpy as np
 import pytest
 
 import optuna
-from optuna._gp.search_space import get_search_space_and_normalized_params
-from optuna._gp.search_space import get_unnormalized_param
 from optuna._gp.search_space import normalize_one_param
 from optuna._gp.search_space import round_one_normalized_param
-from optuna._gp.search_space import sample_normalized_params
 from optuna._gp.search_space import ScaleType
 from optuna._gp.search_space import SearchSpace
 from optuna._gp.search_space import unnormalize_one_param
@@ -92,21 +89,15 @@ def test_round_one_normalized_param(
 
 def test_sample_normalized_params() -> None:
     search_space = SearchSpace(
-        scale_types=np.array(
-            [
-                ScaleType.LINEAR,
-                ScaleType.LINEAR,
-                ScaleType.LOG,
-                ScaleType.LOG,
-                ScaleType.CATEGORICAL,
-            ]
-        ),
-        bounds=np.array([(0.0, 10.0), (1.0, 10.0), (10.0, 100.0), (10.0, 100.0), (0.0, 5.0)]),
-        steps=np.array([0.0, 1.0, 0.0, 1.0, 1.0]),
+        {
+            "a": optuna.distributions.FloatDistribution(0.0, 10.0, False, None),
+            "b": optuna.distributions.IntDistribution(1, 10),
+            "c": optuna.distributions.FloatDistribution(10.0, 100.0, True, None),
+            "d": optuna.distributions.IntDistribution(10, 100, True),
+            "e": optuna.distributions.CategoricalDistribution(["v", "w", "x", "y", "z"]),
+        }
     )
-    samples = sample_normalized_params(
-        n=128, search_space=search_space, rng=np.random.RandomState(0)
-    )
+    samples = search_space.sample_normalized_params(n=128, rng=np.random.RandomState(0))
     assert samples.shape == (128, 5)
     assert np.all((samples[:, :4] >= 0.0) & (samples[:, :4] <= 1.0))
 
@@ -114,9 +105,9 @@ def test_sample_normalized_params() -> None:
     for i in integer_params:
         params = unnormalize_one_param(
             samples[:, i],
-            search_space.scale_types[i],
-            search_space.bounds[i],
-            search_space.steps[i],
+            search_space._scale_types[i],
+            search_space._bounds[i],
+            search_space._steps[i],
         )
         # assert params are close to integers
         assert np.allclose((params + 0.5) % 1.0, 0.5)
@@ -138,11 +129,10 @@ def test_get_search_space_and_normalized_params_no_categorical() -> None:
         )
     ]
 
-    search_space, normalized_params = get_search_space_and_normalized_params(
-        trials, optuna_search_space
-    )
+    search_space = SearchSpace(optuna_search_space)
+    normalized_params = search_space.get_normalized_params(trials)
     assert np.all(
-        search_space.scale_types
+        search_space._scale_types
         == np.array(
             [
                 ScaleType.LINEAR,
@@ -154,10 +144,10 @@ def test_get_search_space_and_normalized_params_no_categorical() -> None:
         )
     )
     assert np.all(
-        search_space.bounds
+        search_space._bounds
         == np.array([(0.0, 10.0), (0.0, 10.0), (1.0, 10.0), (1.0, 10.0), (0.0, 3.0)])
     )
-    assert np.all(search_space.steps == np.array([0.0, 1.0, 0.0, 1.0, 1.0]))
+    assert np.all(search_space._steps == np.array([0.0, 1.0, 0.0, 1.0, 1.0]))
 
     non_categorical_search_space = {
         param: dist
@@ -193,7 +183,8 @@ def test_get_untransform_search_space() -> None:
             0.0,
         ]
     )
-    params = get_unnormalized_param(optuna_search_space, normalized_values)
+    search_space = SearchSpace(optuna_search_space)
+    params = search_space.get_unnormalized_param(normalized_values)
 
     expected = {
         "a": 2.5,
