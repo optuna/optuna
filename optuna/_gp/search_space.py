@@ -34,15 +34,94 @@ class ScaleType(IntEnum):
     CATEGORICAL = 2
 
 
-@dataclass(frozen=True)
 class SearchSpace:
-    scale_types: np.ndarray
-    bounds: np.ndarray
-    steps: np.ndarray
+    def __init__(
+        self,
+        optuna_search_space: dict[str, BaseDistribution],
+    ) -> None:
+        self._optuna_search_space = optuna_search_space
+        self.scale_types = np.zeros(len(optuna_search_space), dtype=np.int64)
+        self.bounds = np.zeros((len(optuna_search_space), 2), dtype=np.float64)
+        self.steps = np.zeros(len(optuna_search_space), dtype=np.float64)
+        for i, distribution in enumerate(optuna_search_space.keys()):
+            if isinstance(distribution, CategoricalDistribution):
+                self.scale_types[i] = ScaleType.CATEGORICAL
+                self.bounds[i, :] = (0.0, len(distribution.choices))
+                self.steps[i] = 1.0
+            else:
+                assert isinstance(distribution, (FloatDistribution, IntDistribution))
+                self.scale_types[i] = ScaleType.LOG if distribution.log else ScaleType.LINEAR
+                self.bounds[i, :] = (distribution.low, distribution.high)
+                self.steps[i] = 0.0 if distribution.step is None else distribution.step
+        self.dim = len(optuna_search_space)
+        self.is_categorical = self.scale_types == ScaleType.CATEGORICAL
 
-    @property
-    def is_categorical(self) -> np.ndarray:
-        return self.scale_types == ScaleType.CATEGORICAL
+    def get_normalized_params(
+        self,
+        trials: list[FrozenTrial],
+    ) -> np.ndarray:
+        values = np.zeros((len(trials), len(self._optuna_search_space)), dtype=np.float64)
+        for i, (param, distribution) in enumerate(self._optuna_search_space.items()):
+            if isinstance(distribution, CategoricalDistribution):
+                values[:, i] = np.array(
+                    [distribution.to_internal_repr(trial.params[param]) for trial in trials]
+                )
+            else:
+                values[:, i] = normalize_one_param(
+                    np.array([trial.params[param] for trial in trials]),
+                    self.scale_types[i],
+                    (self.bounds[i, 0], self.bounds[i, 1]),
+                    self.steps[i],
+                )
+        return values
+
+    def get_unnormalized_param(
+        self,
+        normalized_param: np.ndarray,
+    ) -> dict[str, Any]:
+        ret = {}
+        for i, (param, distribution) in enumerate(self._optuna_search_space.items()):
+            if isinstance(distribution, CategoricalDistribution):
+                ret[param] = distribution.to_external_repr(normalized_param[i])
+            else:
+                assert isinstance(distribution, (FloatDistribution, IntDistribution))
+                scale_type = ScaleType.LOG if distribution.log else ScaleType.LINEAR
+                step = 0.0 if distribution.step is None else distribution.step
+                bounds = (distribution.low, distribution.high)
+                param_value = float(
+                    np.clip(
+                        unnormalize_one_param(normalized_param[i], scale_type, bounds, step),
+                        distribution.low,
+                        distribution.high,
+                    )
+                )
+                if isinstance(distribution, IntDistribution):
+                    param_value = round(param_value)
+                ret[param] = param_value
+        return ret
+
+    def sample_normalized_params(self, n: int, rng: np.random.RandomState | None) -> np.ndarray:
+        rng = rng or np.random.RandomState()
+        # Sobol engine likely shares its internal state among threads.
+        # Without threading.Lock, ValueError exceptions are raised in Sobol engine as discussed in
+        # https://github.com/optuna/optunahub-registry/pull/168#pullrequestreview-2404054969
+        with _threading_lock:
+            qmc_engine = qmc.Sobol(
+                self.dim, scramble=True, seed=rng.randint(np.iinfo(np.int32).max)
+            )
+        param_values = qmc_engine.random(n)
+
+        for i in range(self.dim):
+            if self.scale_types[i] == ScaleType.CATEGORICAL:
+                param_values[:, i] = np.floor(param_values[:, i] * self.bounds[i, 1])
+            elif self.steps[i] != 0.0:
+                param_values[:, i] = round_one_normalized_param(
+                    param_values[:, i],
+                    self.scale_types[i],
+                    (self.bounds[i, 0], self.bounds[i, 1]),
+                    self.steps[i],
+                )
+        return param_values
 
 
 def unnormalize_one_param(
@@ -91,98 +170,3 @@ def round_one_normalized_param(
     )
     param_value = normalize_one_param(param_value, scale_type, bounds, step)
     return param_value
-
-
-def sample_normalized_params(
-    n: int, search_space: SearchSpace, rng: np.random.RandomState | None
-) -> np.ndarray:
-    rng = rng or np.random.RandomState()
-    dim = search_space.scale_types.shape[0]
-    scale_types = search_space.scale_types
-    bounds = search_space.bounds
-    steps = search_space.steps
-
-    # Sobol engine likely shares its internal state among threads.
-    # Without threading.Lock, ValueError exceptions are raised in Sobol engine as discussed in
-    # https://github.com/optuna/optunahub-registry/pull/168#pullrequestreview-2404054969
-    with _threading_lock:
-        qmc_engine = qmc.Sobol(dim, scramble=True, seed=rng.randint(np.iinfo(np.int32).max))
-    param_values = qmc_engine.random(n)
-
-    for i in range(dim):
-        if scale_types[i] == ScaleType.CATEGORICAL:
-            param_values[:, i] = np.floor(param_values[:, i] * bounds[i, 1])
-        elif steps[i] != 0.0:
-            param_values[:, i] = round_one_normalized_param(
-                param_values[:, i], scale_types[i], (bounds[i, 0], bounds[i, 1]), steps[i]
-            )
-    return param_values
-
-
-def get_search_space_and_normalized_params(
-    trials: list[FrozenTrial],
-    optuna_search_space: dict[str, BaseDistribution],
-) -> tuple[SearchSpace, np.ndarray]:
-    scale_types = np.zeros(len(optuna_search_space), dtype=np.int64)
-    bounds = np.zeros((len(optuna_search_space), 2), dtype=np.float64)
-    steps = np.zeros(len(optuna_search_space), dtype=np.float64)
-    values = np.zeros((len(trials), len(optuna_search_space)), dtype=np.float64)
-    for i, (param, distribution) in enumerate(optuna_search_space.items()):
-        if isinstance(distribution, CategoricalDistribution):
-            scale_types[i] = ScaleType.CATEGORICAL
-            bounds[i, :] = (0.0, len(distribution.choices))
-            steps[i] = 1.0
-            values[:, i] = np.array(
-                [distribution.to_internal_repr(trial.params[param]) for trial in trials]
-            )
-        else:
-            assert isinstance(
-                distribution,
-                (
-                    FloatDistribution,
-                    IntDistribution,
-                ),
-            )
-            scale_types[i] = ScaleType.LOG if distribution.log else ScaleType.LINEAR
-            steps[i] = 0.0 if distribution.step is None else distribution.step
-            bounds[i, :] = (distribution.low, distribution.high)
-
-            values[:, i] = normalize_one_param(
-                np.array([trial.params[param] for trial in trials]),
-                scale_types[i],
-                (bounds[i, 0], bounds[i, 1]),
-                steps[i],
-            )
-    return SearchSpace(scale_types, bounds, steps), values
-
-
-def get_unnormalized_param(
-    optuna_search_space: dict[str, BaseDistribution],
-    normalized_param: np.ndarray,
-) -> dict[str, Any]:
-    ret = {}
-    for i, (param, distribution) in enumerate(optuna_search_space.items()):
-        if isinstance(distribution, CategoricalDistribution):
-            ret[param] = distribution.to_external_repr(normalized_param[i])
-        else:
-            assert isinstance(
-                distribution,
-                (
-                    FloatDistribution,
-                    IntDistribution,
-                ),
-            )
-            scale_type = ScaleType.LOG if distribution.log else ScaleType.LINEAR
-            step = 0.0 if distribution.step is None else distribution.step
-            bounds = (distribution.low, distribution.high)
-            param_value = float(
-                np.clip(
-                    unnormalize_one_param(normalized_param[i], scale_type, bounds, step),
-                    distribution.low,
-                    distribution.high,
-                )
-            )
-            if isinstance(distribution, IntDistribution):
-                param_value = round(param_value)
-            ret[param] = param_value
-    return ret
