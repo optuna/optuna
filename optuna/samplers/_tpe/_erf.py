@@ -14,6 +14,8 @@
 #  * ====================================================
 #  */
 
+import math
+
 import numpy as np
 from numpy.polynomial import Polynomial
 
@@ -105,81 +107,57 @@ sb7 = -2.24409524465858183362e01
 sb = Polynomial([one, sb1, sb2, sb3, sb4, sb5, sb6, sb7])
 
 
-def erf(x: np.ndarray) -> np.ndarray:
-    a = np.abs(x)
-
-    case_nan = np.isnan(x)
-    case_posinf = np.isposinf(x)
-    case_neginf = np.isneginf(x)
-    case_tiny = a < 2**-28
-    case_small1 = (2**-28 <= a) & (a < 0.84375)
-    case_small2 = (0.84375 <= a) & (a < 1.25)
-    case_med1 = (1.25 <= a) & (a < 1 / 0.35)
-    case_med2 = (1 / 0.35 <= a) & (a < 6)
-    case_big = a >= 6
-
-    def calc_case_tiny(x: np.ndarray) -> np.ndarray:
-        return x + efx * x
+def _erf_right(x_sorted: np.ndarray) -> np.ndarray:
+    # x_sorted must be a sorted 1D non-negative value array.
+    assert len(x_sorted.shape) == 1, "x_sorted must be flattened."
+    boundary_indices = np.searchsorted(x_sorted, [2**-28, 0.84375, 1.25, 6])
 
     def calc_case_small1(x: np.ndarray) -> np.ndarray:
         z = x * x
-        r = pp(z)
-        s = qq(z)
-        y = r / s
-        return x + x * y
+        return x * (1 + pp(z) / qq(z))
 
     def calc_case_small2(x: np.ndarray) -> np.ndarray:
-        s = np.abs(x) - one
-        P = pa(s)
-        Q = qa(s)
-        absout = erx + P / Q
-        return absout * np.sign(x)
+        s = x - one
+        return erx + pa(s) / qa(s)
 
-    def calc_case_med1(x: np.ndarray) -> np.ndarray:
-        sign = np.sign(x)
-        x = np.abs(x)
-        s = one / (x * x)
-        R = ra(s)
-        S = sa(s)
+    def calc_case_med(x: np.ndarray) -> np.ndarray:
+        x2 = x * x
+        s = one / x2
+        mid_idx = np.searchsorted(x, 1/0.35)
+        R = np.empty_like(s)
+        S = np.empty_like(s)
+        R[:mid_idx] = ra(s[:mid_idx])
+        R[mid_idx:] = rb(s[mid_idx:])
+        S[:mid_idx] = sa(s[:mid_idx])
+        S[mid_idx:] = sb(s[mid_idx:])
         # the following 3 lines are omitted for the following reasons:
         # (1) there are no easy way to implement SET_LOW_WORD equivalent method in NumPy
         # (2) we don't need very high accuracy in our use case.
         # z = x
         # SET_LOW_WORD(z, 0)
         # r = np.exp(-z * z - 0.5625) * np.exp((z - x) * (z + x) + R / S)
-        r = np.exp(-x * x - 0.5625) * np.exp(R / S)
-        return (one - r / x) * sign
+        r = np.exp(-x2 - 0.5625 + R / S)
+        return (one - r / x)
 
-    def calc_case_med2(x: np.ndarray) -> np.ndarray:
-        sign = np.sign(x)
-        x = np.abs(x)
-        s = one / (x * x)
-        R = rb(s)
-        S = sb(s)
-        # z = x
-        # SET_LOW_WORD(z, 0)
-        # r = np.exp(-z * z - 0.5625) * np.exp((z - x) * (z + x) + R / S)
-        r = np.exp(-x * x - 0.5625) * np.exp(R / S)
-        return (one - r / x) * sign
-
-    def calc_case_big(x: np.ndarray) -> np.ndarray:
-        return np.sign(x)
-
-    out = np.full_like(a, fill_value=np.nan, dtype=np.float64)
-    out[case_nan] = np.nan
-    out[case_posinf] = 1.0
-    out[case_neginf] = -1.0
-    if x[case_tiny].size:
-        out[case_tiny] = calc_case_tiny(x[case_tiny])
-    if x[case_small1].size:
-        out[case_small1] = calc_case_small1(x[case_small1])
-    if x[case_small2].size:
-        out[case_small2] = calc_case_small2(x[case_small2])
-    if x[case_med1].size:
-        out[case_med1] = calc_case_med1(x[case_med1])
-    if x[case_med2].size:
-        out[case_med2] = calc_case_med2(x[case_med2])
-    if x[case_big].size:
-        out[case_big] = calc_case_big(x[case_big])
+    out = np.where(np.isnan(x_sorted), np.nan, 1.0)  # Big values will receive 1.0.
+    if (tiny_end := boundary_indices[0]) > 0:
+        out[:tiny_end] = x_sorted[:tiny_end] * (1 + efx)
+    if (small1_end := boundary_indices[1]) - tiny_end > 0:
+        out[tiny_end:small1_end] = calc_case_small1(x_sorted[tiny_end:small1_end])
+    if (small2_end := boundary_indices[2]) - small1_end > 0:
+        out[small1_end:small2_end] = calc_case_small2(x_sorted[small1_end:small2_end])
+    if (med_end := boundary_indices[3]).size:
+        out[small2_end:med_end] = calc_case_med(x_sorted[small2_end:med_end])
 
     return out
+
+
+def erf(x: np.ndarray) -> np.ndarray:
+    if x.size < 2000:
+        return np.asarray([math.erf(v) for v in x.ravel()]).reshape(x.shape)
+
+    a = np.abs(x.ravel())
+    order = np.argsort(a)
+    rev = np.empty(a.size, dtype=int)
+    rev[order] = np.arange(a.size)
+    return np.sign(x) * _erf_right(a[order])[rev].reshape(x.shape)
