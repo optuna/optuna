@@ -26,7 +26,7 @@ def test_after_convergence(caplog: LogCaptureFixture) -> None:
     X = np.array(X_uniform + X_uniform_near_optimal + X_optimal)
     score_vals = -(X - np.mean(X)) / np.std(X)
     search_space = gp_search_space.SearchSpace(
-        {"a": optuna.distributions.FloatDistribution(0.0, 1.0, step=1.0)}
+        {"a": optuna.distributions.FloatDistribution(0.0, 1.0)}
     )
     gpr = optuna._gp.gp.fit_kernel_params(
         X=X[:, np.newaxis],
