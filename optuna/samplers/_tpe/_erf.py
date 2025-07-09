@@ -123,7 +123,7 @@ def _erf_right(x_sorted: np.ndarray) -> np.ndarray:
     def calc_case_med(x: np.ndarray) -> np.ndarray:
         x2 = x * x
         s = one / x2
-        mid_idx = np.searchsorted(x, 1/0.35)
+        mid_idx = np.searchsorted(x, 1 / 0.35)
         R = np.empty_like(s)
         S = np.empty_like(s)
         R[:mid_idx] = ra(s[:mid_idx])
@@ -137,7 +137,7 @@ def _erf_right(x_sorted: np.ndarray) -> np.ndarray:
         # SET_LOW_WORD(z, 0)
         # r = np.exp(-z * z - 0.5625) * np.exp((z - x) * (z + x) + R / S)
         r = np.exp(-x2 - 0.5625 + R / S)
-        return (one - r / x)
+        return one - r / x
 
     out = np.where(np.isnan(x_sorted), np.nan, 1.0)  # Big values will receive 1.0.
     if (tiny_end := boundary_indices[0]) > 0:
