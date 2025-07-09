@@ -123,6 +123,31 @@ class SearchSpace:
                 )
         return param_values
 
+    def get_discrete_and_continuous_indices(self) -> tuple[np.ndarray, np.ndarray]:
+        # NOTE(nabenabe): MyPy Redefinition for NumPy v2.2.0. (Cast signed int to int)
+        discrete_indices = np.where(self.steps > 0)[0].astype(int)
+        continuous_indices = np.where(self.steps == 0.0)[0].astype(int)
+        return discrete_indices, continuous_indices
+
+    def get_choices_of_discrete_params(self) -> list[np.ndarray]:
+        choices_of_discrete_params = [
+            (
+                np.arange(self.bounds[i, 1])
+                if self.is_categorical[i]
+                else normalize_one_param(
+                    param_value=np.arange(
+                        self.bounds[i, 0], self.bounds[i, 1] + 0.5 * self.steps[i], self.steps[i]
+                    ),
+                    scale_type=ScaleType(self.scale_types[i]),
+                    bounds=(self.bounds[i, 0], self.bounds[i, 1]),
+                    step=self.steps[i],
+                )
+            )
+            for i in range(self.dim)
+            if self.steps[i] > 0.0
+        ]
+        return choices_of_discrete_params
+
 
 def unnormalize_one_param(
     param_value: np.ndarray, scale_type: ScaleType, bounds: tuple[float, float], step: float
