@@ -265,3 +265,34 @@ class LogEHVI(BaseAcquisitionFunc):
             non_dominated_box_lower_bounds=self._non_dominated_box_lower_bounds,
             non_dominated_box_upper_bounds=self._non_dominated_box_upper_bounds,
         )
+
+
+class ConstrainedLogEHVI(BaseAcquisitionFunc):
+    def __init__(
+        self,
+        gpr_list: list[GPRegressor],
+        search_space: SearchSpace,
+        Y_train: torch.Tensor,
+        n_qmc_samples: int,
+        qmc_seed: int | None,
+        constraints_gpr_list: list[GPRegressor],
+        constraints_threshold_list: list[float],
+        stabilizing_noise: float = 1e-12,
+    ) -> None:
+        self._acqf = LogEHVI(
+            gpr_list, search_space, Y_train, n_qmc_samples, qmc_seed, stabilizing_noise
+        )
+        self._constraints_acqf_list = [
+            LogPI(_gpr, search_space, _threshold, stabilizing_noise)
+            for _gpr, _threshold in zip(constraints_gpr_list, constraints_threshold_list)
+        ]
+        # Since all the objectives are equally important, we simply use the mean of
+        # inverse of squared mean lengthscales over all the objectives.
+        # inverse_squared_lengthscales is used in optim_mixed.py.
+        # cf. https://github.com/optuna/optuna/blob/v4.3.0/optuna/_gp/optim_mixed.py#L200-L209
+        super().__init__(np.mean([gpr.length_scales for gpr in gpr_list], axis=0), search_space)
+
+    def eval_acqf(self, x: torch.Tensor) -> torch.Tensor:
+        return self._acqf.eval_acqf(x) + sum(
+            acqf.eval_acqf(x) for acqf in self._constraints_acqf_list
+        )
