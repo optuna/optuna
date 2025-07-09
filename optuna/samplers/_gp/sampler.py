@@ -214,9 +214,11 @@ class GPSampler(BaseSampler):
         normalized_params: np.ndarray,
     ) -> tuple[list[gp.GPRegressor], list[float]]:
         standardized_constraint_vals, means, stds = _standardize_values(constraint_vals)
-        if self._gprs_cache_list is not None and len(
-            self._gprs_cache_list[0].inverse_squared_lengthscales
-        ) != len(internal_search_space.scale_types):
+        if (
+            self._gprs_cache_list is not None
+            and len(self._gprs_cache_list[0].inverse_squared_lengthscales)
+            != internal_search_space.dim
+        ):
             # Clear cache if the search space changes.
             self._constraints_gprs_cache_list = None
 
@@ -261,19 +263,19 @@ class GPSampler(BaseSampler):
         if len(trials) < self._n_startup_trials:
             return {}
 
-        (
-            internal_search_space,
-            normalized_params,
-        ) = gp_search_space.get_search_space_and_normalized_params(trials, search_space)
+        internal_search_space = gp_search_space.SearchSpace(search_space)
+        normalized_params = internal_search_space.get_normalized_params(trials)
 
         _sign = np.array([-1.0 if d == StudyDirection.MINIMIZE else 1.0 for d in study.directions])
         standardized_score_vals, _, _ = _standardize_values(
             _sign * np.array([trial.values for trial in trials])
         )
 
-        if self._gprs_cache_list is not None and len(
-            self._gprs_cache_list[0].inverse_squared_lengthscales
-        ) != len(internal_search_space.scale_types):
+        if (
+            self._gprs_cache_list is not None
+            and len(self._gprs_cache_list[0].inverse_squared_lengthscales)
+            != internal_search_space.dim
+        ):
             # Clear cache if the search space changes.
             self._gprs_cache_list = None
 
@@ -348,7 +350,7 @@ class GPSampler(BaseSampler):
             )
 
         normalized_param = self._optimize_acqf(acqf, best_params)
-        return gp_search_space.get_unnormalized_param(search_space, normalized_param)
+        return internal_search_space.get_unnormalized_param(normalized_param)
 
     def sample_independent(
         self,
