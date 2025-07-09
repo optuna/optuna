@@ -256,9 +256,8 @@ def optimize_acqf_mixed(
 
     rng = rng or np.random.RandomState()
 
-    dim = acqf.search_space._scale_types.shape[0]
     if warmstart_normalized_params_array is None:
-        warmstart_normalized_params_array = np.empty((0, dim))
+        warmstart_normalized_params_array = np.empty((0, acqf.search_space.dim))
 
     assert (
         len(warmstart_normalized_params_array) <= n_local_search - 1
