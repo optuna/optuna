@@ -40,24 +40,24 @@ class SearchSpace:
         optuna_search_space: dict[str, BaseDistribution],
     ) -> None:
         self._optuna_search_space = optuna_search_space
-        self.scale_types = np.zeros(len(optuna_search_space), dtype=np.int64)
-        self.bounds = np.zeros((len(optuna_search_space), 2), dtype=np.float64)
-        self.steps = np.zeros(len(optuna_search_space), dtype=np.float64)
+        self._scale_types = np.zeros(len(optuna_search_space), dtype=np.int64)
+        self._bounds = np.zeros((len(optuna_search_space), 2), dtype=np.float64)
+        self._steps = np.zeros(len(optuna_search_space), dtype=np.float64)
         for i, distribution in enumerate(optuna_search_space.keys()):
             if isinstance(distribution, CategoricalDistribution):
-                self.scale_types[i] = ScaleType.CATEGORICAL
-                self.bounds[i, :] = (0.0, len(distribution.choices))
-                self.steps[i] = 1.0
+                self._scale_types[i] = ScaleType.CATEGORICAL
+                self._bounds[i, :] = (0.0, len(distribution.choices))
+                self._steps[i] = 1.0
             else:
                 assert isinstance(distribution, (FloatDistribution, IntDistribution))
-                self.scale_types[i] = ScaleType.LOG if distribution.log else ScaleType.LINEAR
-                self.bounds[i, :] = (distribution.low, distribution.high)
-                self.steps[i] = 0.0 if distribution.step is None else distribution.step
+                self._scale_types[i] = ScaleType.LOG if distribution.log else ScaleType.LINEAR
+                self._bounds[i, :] = (distribution.low, distribution.high)
+                self._steps[i] = 0.0 if distribution.step is None else distribution.step
         self.dim = len(optuna_search_space)
-        self.is_categorical = self.scale_types == ScaleType.CATEGORICAL
+        self.is_categorical = self._scale_types == ScaleType.CATEGORICAL
         # NOTE(nabenabe): MyPy Redefinition for NumPy v2.2.0. (Cast signed int to int)
-        self.discrete_indices = np.where(self.steps > 0)[0].astype(int)
-        self.continuous_indices = np.where(self.steps == 0.0)[0].astype(int)
+        self.discrete_indices = np.where(self._steps > 0)[0].astype(int)
+        self.continuous_indices = np.where(self._steps == 0.0)[0].astype(int)
 
     def get_normalized_params(
         self,
@@ -72,9 +72,9 @@ class SearchSpace:
             else:
                 values[:, i] = normalize_one_param(
                     np.array([trial.params[param] for trial in trials]),
-                    self.scale_types[i],
-                    (self.bounds[i, 0], self.bounds[i, 1]),
-                    self.steps[i],
+                    self._scale_types[i],
+                    (self._bounds[i, 0], self._bounds[i, 1]),
+                    self._steps[i],
                 )
         return values
 
@@ -115,29 +115,31 @@ class SearchSpace:
         param_values = qmc_engine.random(n)
 
         for i in range(self.dim):
-            if self.scale_types[i] == ScaleType.CATEGORICAL:
-                param_values[:, i] = np.floor(param_values[:, i] * self.bounds[i, 1])
-            elif self.steps[i] != 0.0:
+            if self._scale_types[i] == ScaleType.CATEGORICAL:
+                param_values[:, i] = np.floor(param_values[:, i] * self._bounds[i, 1])
+            elif self._steps[i] != 0.0:
                 param_values[:, i] = round_one_normalized_param(
                     param_values[:, i],
-                    self.scale_types[i],
-                    (self.bounds[i, 0], self.bounds[i, 1]),
-                    self.steps[i],
+                    self._scale_types[i],
+                    (self._bounds[i, 0], self._bounds[i, 1]),
+                    self._steps[i],
                 )
         return param_values
 
     def get_choices_of_discrete_params(self) -> list[np.ndarray]:
         choices_of_discrete_params = [
             (
-                np.arange(self.bounds[i, 1])
+                np.arange(self._bounds[i, 1])
                 if self.is_categorical[i]
                 else normalize_one_param(
                     param_value=np.arange(
-                        self.bounds[i, 0], self.bounds[i, 1] + 0.5 * self.steps[i], self.steps[i]
+                        self._bounds[i, 0],
+                        self._bounds[i, 1] + 0.5 * self._steps[i],
+                        self._steps[i],
                     ),
-                    scale_type=ScaleType(self.scale_types[i]),
-                    bounds=(self.bounds[i, 0], self.bounds[i, 1]),
-                    step=self.steps[i],
+                    scale_type=ScaleType(self._scale_types[i]),
+                    bounds=(self._bounds[i, 0], self._bounds[i, 1]),
+                    step=self._steps[i],
                 )
             )
             for i in self.discrete_indices
