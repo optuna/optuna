@@ -42,7 +42,7 @@ class SearchSpace:
         self._scale_types = np.zeros(len(optuna_search_space), dtype=np.int64)
         self._bounds = np.zeros((len(optuna_search_space), 2), dtype=np.float64)
         self._steps = np.zeros(len(optuna_search_space), dtype=np.float64)
-        for i, distribution in enumerate(optuna_search_space.keys()):
+        for i, distribution in enumerate(optuna_search_space.values()):
             if isinstance(distribution, CategoricalDistribution):
                 self._scale_types[i] = ScaleType.CATEGORICAL
                 self._bounds[i, :] = (0.0, len(distribution.choices))
