@@ -7,7 +7,6 @@ import numpy as np
 
 from optuna._gp.acqf import BaseAcquisitionFunc
 from optuna._gp.search_space import normalize_one_param
-from optuna._gp.search_space import sample_normalized_params
 from optuna._gp.search_space import ScaleType
 from optuna.logging import get_logger
 
@@ -267,7 +266,7 @@ def optimize_acqf_mixed(
         len(warmstart_normalized_params_array) <= n_local_search - 1
     ), "We must choose at least 1 best sampled point + given_initial_xs as start points."
 
-    sampled_xs = sample_normalized_params(n_preliminary_samples, acqf.search_space, rng=rng)
+    sampled_xs = acqf.search_space.sample_normalized_params(n_preliminary_samples, rng=rng)
 
     # Evaluate all values at initial samples
     f_vals = acqf.eval_acqf_no_grad(sampled_xs)
