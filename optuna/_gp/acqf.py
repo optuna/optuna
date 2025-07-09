@@ -279,6 +279,8 @@ class ConstrainedLogEHVI(BaseAcquisitionFunc):
         constraints_threshold_list: list[float],
         stabilizing_noise: float = 1e-12,
     ) -> None:
+        # NOTE(kAIto47802): It is sufficient to only passing the feasible objective values to `Y_train`
+        # TODO(kAIto47802): Rename `Y_train` to make it more clear that it only contains feasible values.
         self._acqf = LogEHVI(
             gpr_list, search_space, Y_train, n_qmc_samples, qmc_seed, stabilizing_noise
         )
@@ -293,6 +295,7 @@ class ConstrainedLogEHVI(BaseAcquisitionFunc):
         super().__init__(np.mean([gpr.length_scales for gpr in gpr_list], axis=0), search_space)
 
     def eval_acqf(self, x: torch.Tensor) -> torch.Tensor:
+        # TODO(kAIto47802): Return 0.0 if there are no feasible trials, as in LogEI.
         return self._acqf.eval_acqf(x) + sum(
             acqf.eval_acqf(x) for acqf in self._constraints_acqf_list
         )
