@@ -148,9 +148,8 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
         # _gp module assumes that optimization direction is maximization
         sign = -1 if study_direction == StudyDirection.MINIMIZE else 1
         values = np.array([t.value for t in complete_trials]) * sign
-        search_space, normalized_params = gp_search_space.get_search_space_and_normalized_params(
-            complete_trials, optuna_search_space
-        )
+        search_space = gp_search_space.SearchSpace(optuna_search_space)
+        normalized_params = search_space.get_normalized_params(complete_trials)
         normalized_top_n_params, top_n_values = self._get_top_n(normalized_params, values)
         top_n_values_mean = top_n_values.mean()
         top_n_values_std = max(1e-10, top_n_values.std())
