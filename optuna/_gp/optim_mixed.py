@@ -187,7 +187,7 @@ def local_search_mixed(
     tol: float = 1e-4,
     max_iter: int = 100,
 ) -> tuple[np.ndarray, float]:
-    discrete_indices, continuous_indices = acqf.search_space.get_discrete_and_continuous_indices()
+    continuous_indices = acqf.search_space.continuous_indices
 
     # This is a technique for speeding up optimization.
     # We use an isotropic kernel, so scaling the gradient will make
@@ -227,7 +227,9 @@ def local_search_mixed(
         if updated:
             last_changed_param = CONTINUOUS
 
-        for i, choices, xtol in zip(discrete_indices, choices_of_discrete_params, discrete_xtols):
+        for i, choices, xtol in zip(
+            acqf.search_space.discrete_indices, choices_of_discrete_params, discrete_xtols
+        ):
             if last_changed_param == i:
                 # Parameters not changed since last time.
                 return best_normalized_params, best_fval

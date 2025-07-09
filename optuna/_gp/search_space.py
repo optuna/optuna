@@ -55,6 +55,9 @@ class SearchSpace:
                 self.steps[i] = 0.0 if distribution.step is None else distribution.step
         self.dim = len(optuna_search_space)
         self.is_categorical = self.scale_types == ScaleType.CATEGORICAL
+        # NOTE(nabenabe): MyPy Redefinition for NumPy v2.2.0. (Cast signed int to int)
+        self.discrete_indices = np.where(self.steps > 0)[0].astype(int)
+        self.continuous_indices = np.where(self.steps == 0.0)[0].astype(int)
 
     def get_normalized_params(
         self,
@@ -123,12 +126,6 @@ class SearchSpace:
                 )
         return param_values
 
-    def get_discrete_and_continuous_indices(self) -> tuple[np.ndarray, np.ndarray]:
-        # NOTE(nabenabe): MyPy Redefinition for NumPy v2.2.0. (Cast signed int to int)
-        discrete_indices = np.where(self.steps > 0)[0].astype(int)
-        continuous_indices = np.where(self.steps == 0.0)[0].astype(int)
-        return discrete_indices, continuous_indices
-
     def get_choices_of_discrete_params(self) -> list[np.ndarray]:
         choices_of_discrete_params = [
             (
@@ -143,8 +140,7 @@ class SearchSpace:
                     step=self.steps[i],
                 )
             )
-            for i in range(self.dim)
-            if self.steps[i] > 0.0
+            for i in self.discrete_indices
         ]
         return choices_of_discrete_params
 
