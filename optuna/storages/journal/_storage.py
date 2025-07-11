@@ -322,6 +322,11 @@ class JournalStorage(BaseStorage):
 
         with self._thread_lock:
             if state == TrialState.RUNNING:
+                # NOTE(nabenabe): This sync is not necessary because the last
+                # set_trial_state_values call by the same thread always syncs before the true pop,
+                # but I keep it here to avoid the confusion. Anyways, this section isn't triggered
+                # that often because this section is only for enqueue_trial.
+                self._sync_with_backend()
                 # NOTE(nabenabe): This section is triggered only when we are using `enqueue_trial`
                 # and `GrpcProxyStorage` in distributed optimization setups and solves the issue
                 # https://github.com/optuna/optuna/issues/6084.
