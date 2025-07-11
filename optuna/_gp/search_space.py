@@ -53,6 +53,7 @@ class SearchSpace:
                 self._bounds[i, :] = (distribution.low, distribution.high)
                 self._steps[i] = 0.0 if distribution.step is None else distribution.step
         self.dim = len(optuna_search_space)
+        # TODO: Make it an index array.
         self.is_categorical = self._scale_types == ScaleType.CATEGORICAL
         # NOTE(nabenabe): MyPy Redefinition for NumPy v2.2.0. (Cast signed int to int)
         self.discrete_indices = np.where(self._steps > 0)[0].astype(int)
