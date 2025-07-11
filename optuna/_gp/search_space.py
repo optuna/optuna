@@ -70,7 +70,7 @@ class SearchSpace:
                     [distribution.to_internal_repr(trial.params[param]) for trial in trials]
                 )
             else:
-                values[:, i] = normalize_one_param(
+                values[:, i] = _normalize_one_param(
                     np.array([trial.params[param] for trial in trials]),
                     self._scale_types[i],
                     (self._bounds[i, 0], self._bounds[i, 1]),
@@ -93,7 +93,7 @@ class SearchSpace:
                 bounds = (distribution.low, distribution.high)
                 param_value = float(
                     np.clip(
-                        unnormalize_one_param(normalized_param[i], scale_type, bounds, step),
+                        _unnormalize_one_param(normalized_param[i], scale_type, bounds, step),
                         distribution.low,
                         distribution.high,
                     )
@@ -118,7 +118,7 @@ class SearchSpace:
             if self._scale_types[i] == ScaleType.CATEGORICAL:
                 param_values[:, i] = np.floor(param_values[:, i] * self._bounds[i, 1])
             elif self._steps[i] != 0.0:
-                param_values[:, i] = round_one_normalized_param(
+                param_values[:, i] = _round_one_normalized_param(
                     param_values[:, i],
                     self._scale_types[i],
                     (self._bounds[i, 0], self._bounds[i, 1]),
@@ -131,7 +131,7 @@ class SearchSpace:
             (
                 np.arange(self._bounds[i, 1])
                 if self.is_categorical[i]
-                else normalize_one_param(
+                else _normalize_one_param(
                     param_value=np.arange(
                         self._bounds[i, 0],
                         self._bounds[i, 1] + 0.5 * self._steps[i],
@@ -147,7 +147,7 @@ class SearchSpace:
         return choices_of_discrete_params
 
 
-def unnormalize_one_param(
+def _unnormalize_one_param(
     param_value: np.ndarray, scale_type: ScaleType, bounds: tuple[float, float], step: float
 ) -> np.ndarray:
     # param_value can be batched, or not.
@@ -162,7 +162,7 @@ def unnormalize_one_param(
     return param_value
 
 
-def normalize_one_param(
+def _normalize_one_param(
     param_value: np.ndarray, scale_type: ScaleType, bounds: tuple[float, float], step: float
 ) -> np.ndarray:
     # param_value can be batched, or not.
@@ -178,18 +178,18 @@ def normalize_one_param(
     return param_value
 
 
-def round_one_normalized_param(
+def _round_one_normalized_param(
     param_value: np.ndarray, scale_type: ScaleType, bounds: tuple[float, float], step: float
 ) -> np.ndarray:
     assert scale_type != ScaleType.CATEGORICAL
     if step == 0.0:
         return param_value
 
-    param_value = unnormalize_one_param(param_value, scale_type, bounds, step)
+    param_value = _unnormalize_one_param(param_value, scale_type, bounds, step)
     param_value = np.clip(
         (param_value - bounds[0] + 0.5 * step) // step * step + bounds[0],
         bounds[0],
         bounds[1],
     )
-    param_value = normalize_one_param(param_value, scale_type, bounds, step)
+    param_value = _normalize_one_param(param_value, scale_type, bounds, step)
     return param_value

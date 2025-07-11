@@ -4,11 +4,11 @@ import numpy as np
 import pytest
 
 import optuna
-from optuna._gp.search_space import normalize_one_param
-from optuna._gp.search_space import round_one_normalized_param
+from optuna._gp.search_space import _normalize_one_param
+from optuna._gp.search_space import _round_one_normalized_param
 from optuna._gp.search_space import ScaleType
 from optuna._gp.search_space import SearchSpace
-from optuna._gp.search_space import unnormalize_one_param
+from optuna._gp.search_space import _unnormalize_one_param
 from optuna._transform import _SearchSpaceTransform
 
 
@@ -38,7 +38,7 @@ def test_normalize_unnormalize_one_param(
     normalized: float,
 ) -> None:
     assert np.isclose(
-        normalize_one_param(
+        _normalize_one_param(
             np.array(unnormalized),
             scale_type,
             bounds,
@@ -47,7 +47,7 @@ def test_normalize_unnormalize_one_param(
         normalized,
     )
     assert np.isclose(
-        unnormalize_one_param(
+        _unnormalize_one_param(
             np.array(normalized),
             scale_type,
             bounds,
@@ -77,7 +77,7 @@ def test_normalize_unnormalize_one_param(
 def test_round_one_normalized_param(
     scale_type: ScaleType, bounds: tuple[float, float], step: float, value: float, expected: float
 ) -> None:
-    res = round_one_normalized_param(
+    res = _round_one_normalized_param(
         np.array(value),
         scale_type,
         bounds,
@@ -103,7 +103,7 @@ def test_sample_normalized_params() -> None:
 
     integer_params = [1, 3, 4]
     for i in integer_params:
-        params = unnormalize_one_param(
+        params = _unnormalize_one_param(
             samples[:, i],
             search_space._scale_types[i],
             search_space._bounds[i],
