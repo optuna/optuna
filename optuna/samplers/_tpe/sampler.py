@@ -476,15 +476,16 @@ class TPESampler(BaseSampler):
         if trial.state.is_finished():
             return trial.params
 
-        params_str = ""
+        params_strs = []
         i = 0
         while params_str_i := trial.system_attrs.get(f"{_RELATIVE_PARAMS_KEY}:{i}"):
-            params_str += params_str_i
+            params_strs.append(params_str_i)
             i += 1
 
-        if params_str == "":
+        if len(params_strs) == 0:
             return trial.params
         else:
+            params_str = "".join(params_strs)
             params = json.loads(params_str)
             params.update(trial.params)
             return params
