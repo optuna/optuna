@@ -1672,8 +1672,6 @@ def test_tell_from_another_process() -> None:
 def test_pop_waiting_trial_thread_safe(storage_mode: str) -> None:
     if storage_mode in ("sqlite", "cached_sqlite", "grpc_rdb"):
         pytest.skip("study._pop_waiting_trial is not thread-safe on SQLite3")
-    if storage_mode == "grpc_journal_file":
-        pytest.skip("gRPC journal file storage does not support multi-threading")
 
     num_enqueued = 10
     with StorageSupplier(storage_mode) as storage:
