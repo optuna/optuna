@@ -234,20 +234,12 @@ def ppf(q: np.ndarray, a: np.ndarray | float, b: np.ndarray | float) -> np.ndarr
         return -_ndtri_exp(log_Phi_x)
 
     out = np.empty_like(q)
-
-    q_left = q[case_left]
-    q_right = q[case_right]
-
-    if q_left.size:
+    if (q_left := q[case_left]).size:
         out[case_left] = ppf_left(q_left, a[case_left], b[case_left])
-    if q_right.size:
+    if (q_right := q[case_right]).size:
         out[case_right] = ppf_right(q_right, a[case_right], b[case_right])
 
-    out[q == 0] = a[q == 0]
-    out[q == 1] = b[q == 1]
-    out[a == b] = math.nan
-
-    return out
+    return np.select([a == b, q == 0, q == 1], [np.nan, a, b], default=out)
 
 
 def rvs(
@@ -259,8 +251,8 @@ def rvs(
 ) -> np.ndarray:
     random_state = random_state or np.random.RandomState()
     size = np.broadcast(a, b, loc, scale).shape
-    percentiles = random_state.uniform(low=0, high=1, size=size)
-    return ppf(percentiles, a, b) * scale + loc
+    quantiles = random_state.uniform(low=0, high=1, size=size)
+    return ppf(quantiles, a, b) * scale + loc
 
 
 def logpdf(
@@ -271,13 +263,7 @@ def logpdf(
     scale: np.ndarray | float = 1,
 ) -> np.ndarray:
     x = (x - loc) / scale
-
     x, a, b = np.atleast_1d(x, a, b)
-
     out = _norm_logpdf(x) - _log_gauss_mass(a, b) - np.log(scale)
-
     x, a, b = np.broadcast_arrays(x, a, b)
-    out[(x < a) | (b < x)] = -np.inf
-    out[a == b] = math.nan
-
-    return out
+    return np.select([a == b, (x < a) | (x > b)], [np.nan, -np.inf], default=out)
