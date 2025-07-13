@@ -34,6 +34,26 @@ _BatchedDistributions = Union[
 ]
 
 
+def _log_gauss_mass_unique(a: np.ndarray, b: np.ndarray) -> np.ndarray:
+    """
+    This function reduces the the log Gaussian probability mass computation by avoiding the
+    duplcated evaluations using the np.unique_inverse(...) equivalent operation.
+
+    The lexsort below guarantees that a_order[i] <= a_order[j] and b_order[i] >= b_order[j] for
+    any i < j, enabling us to detect the first occurrence easily. inv is equivalent to the
+    inverse mapping obtained by np.unique_inverse(np.stack([a, b], axis=-1)).
+    """
+    order = np.lexsort([b.ravel(), a.ravel()])
+    a_order = a.ravel()[order]
+    b_order = b.ravel()[order]
+    is_first_occurrence = np.ones_like(a.ravel(), dtype=bool)
+    is_first_occurrence[1:] = (a_order[1:] != a_order[:-1]) | (b_order[1:] != b_order[:-1])
+    out = _truncnorm._log_gauss_mass(a_order[is_first_occurrence], b_order[is_first_occurrence])
+    inv = np.empty(a_order.size, dtype=int)
+    inv[order] = np.cumsum(is_first_occurrence) - 1
+    return out[inv].reshape(a.shape)
+
+
 class _MixtureOfProductDistribution(NamedTuple):
     weights: np.ndarray
     distributions: list[_BatchedDistributions]
@@ -102,11 +122,11 @@ class _MixtureOfProductDistribution(NamedTuple):
                 upper_limit = d.high + d.step / 2
                 x_lower = np.maximum(xi - d.step / 2, lower_limit)
                 x_upper = np.minimum(xi + d.step / 2, upper_limit)
-                log_gauss_mass = _truncnorm._log_gauss_mass(
+                log_gauss_mass = _log_gauss_mass_unique(
                     (x_lower[:, None] - d.mu[None, :]) / d.sigma[None, :],
                     (x_upper[:, None] - d.mu[None, :]) / d.sigma[None, :],
                 )
-                log_p_accept = _truncnorm._log_gauss_mass(
+                log_p_accept = _log_gauss_mass_unique(
                     (d.low - d.step / 2 - d.mu[None, :]) / d.sigma[None, :],
                     (d.high + d.step / 2 - d.mu[None, :]) / d.sigma[None, :],
                 )
