@@ -109,20 +109,18 @@ def _norm_logpdf(x: np.ndarray) -> np.ndarray:
     return -(x**2) / 2.0 - _norm_pdf_logC
 
 
-def _log_gauss_mass_1d_array(a: np.ndarray, b: np.ndarray) -> np.ndarray:
+def _log_gauss_mass(a: np.ndarray, b: np.ndarray) -> np.ndarray:
     """Log of Gaussian probability mass within an interval"""
-
+    assert a.shape == b.shape
     # Calculations in right tail are inaccurate, so we'll exploit the
     # symmetry and work only in the left tail
-    case_left = b <= 0
-    case_right = a > 0
-    case_central = ~(case_left | case_right)
+    case_right = a.ravel() > 0
+    left = np.where(case_right, -b.ravel(), a.ravel())
+    right = np.where(case_right, -a.ravel(), b.ravel())
+    case_central = (left <= 0) & (right > 0)
 
     def mass_case_left(a: np.ndarray, b: np.ndarray) -> np.ndarray:
         return _log_diff(_log_ndtr(b), _log_ndtr(a))
-
-    def mass_case_right(a: np.ndarray, b: np.ndarray) -> np.ndarray:
-        return mass_case_left(-b, -a)
 
     def mass_case_central(a: np.ndarray, b: np.ndarray) -> np.ndarray:
         # Previously, this was implemented as:
@@ -138,36 +136,12 @@ def _log_gauss_mass_1d_array(a: np.ndarray, b: np.ndarray) -> np.ndarray:
         return np.log1p(-_ndtr(a) - _ndtr(-b))
 
     # _lazyselect not working; don't care to debug it
-    out = np.full_like(a, fill_value=np.nan, dtype=np.complex128)
-    if any(case_left):
-        out[case_left] = mass_case_left(a[case_left], b[case_left])
-    if any(case_right):
-        out[case_right] = mass_case_right(a[case_right], b[case_right])
+    out = np.full_like(left, fill_value=np.nan, dtype=np.complex128)
+    if any(case_left := ~case_central):
+        out[case_left] = mass_case_left(left[case_left], right[case_left])
     if any(case_central):
-        out[case_central] = mass_case_central(a[case_central], b[case_central])
-    return np.real(out)  # discard ~0j
-
-
-def _log_gauss_mass(a: np.ndarray, b: np.ndarray) -> np.ndarray:
-    """
-    This function wraps the function that computes the log of the Gaussian probability mass.
-
-    This function reduces the computation by avoiding the duplcated evaluations using the
-    np.unique_inverse(...) equivalent operation.
-
-    The lexsort below guarantees that a_order[i] <= a_order[j] and b_order[i] >= b_order[j] for
-    any i < j, enabling us to detect the first occurrence easily. inv is equivalent to the
-    inverse mapping obtained by np.unique_inverse(np.stack([a, b], axis=-1)).
-    """
-    order = np.lexsort([b.ravel(), a.ravel()])
-    a_order = a.ravel()[order]
-    b_order = b.ravel()[order]
-    is_first_occurrence = np.ones_like(a.ravel(), dtype=bool)
-    is_first_occurrence[1:] = (a_order[1:] != a_order[:-1]) | (b_order[1:] != b_order[:-1])
-    out = _log_gauss_mass_1d_array(a_order[is_first_occurrence], b_order[is_first_occurrence])
-    inv = np.empty(a_order.size, dtype=int)
-    inv[order] = np.cumsum(is_first_occurrence) - 1
-    return out[inv].reshape(a.shape)
+        out[case_central] = mass_case_central(left[case_central], right[case_central])
+    return np.real(out).reshape(a.shape)  # discard ~0j
 
 
 def _ndtri_exp_single(y: float) -> float:
@@ -268,13 +242,10 @@ def ppf(q: np.ndarray, a: np.ndarray | float, b: np.ndarray | float) -> np.ndarr
     # the side for a >= 0.
     case_left = a < 0
     case_right = ~case_left
-    # q_x_mass = q * \\int_{a}^{b} f(x) dx.
     log_q_x_mass = _log_gauss_mass(a, b)
     log_q_x_mass[case_left] += np.log(q[case_left])
     log_q_x_mass[case_right] += np.log1p(-q[case_right])
-    # mass_from_neginf_to_left = \\int_{-inf}^{a} f(x) dx.
     log_mass_from_neginf_to_left = _log_ndtr(np.where(case_left, a, -b))
-    # There exists c such that mass_from_neginf_to_left + q_x_mass
     out = _ndtri_exp(_log_sum(log_mass_from_neginf_to_left, log_q_x_mass))
     out[case_right] *= -1  # Flip back the sign for the right tail.
     return np.select([a == b, q == 0, q == 1], [np.nan, a, b], default=out)
