@@ -228,31 +228,35 @@ def ppf(q: np.ndarray, a: np.ndarray | float, b: np.ndarray | float) -> np.ndarr
     where `f(x)` is the probability density function of the truncated normal distribution with
     the lower limit `a` and the upper limit `b`.
 
-    In this documentation, we focus on the case where `a < 0` and assume that `g(x)` is the
-    probability density function of the standard normal distribution.
-    q_x_mass below computes:
-        q * \\int_{a}^{b} g(x) dx = q * (ndtr(b) - ndtr(a))
-
-    mass_from_neginf_to_left computes:
-        \\int_{-inf}^{a} g(x) dx = ndtr(a)
-
-    The objective of this function is to find `c` such that:
+    More precisely, this function returns `c` such that:
         ndtr(c) = ndtr(a) + q * (ndtr(b) - ndtr(a))
+    for the case where `a < 0`, i.e., `case_left`. For `case_right`, we flip the sign for the
+    better numerical stability. 
     """
     q, a, b = np.atleast_1d(q, a, b)
     q, a, b = np.broadcast_arrays(q, a, b)
 
-    # NOTE(nabenabe): Since the numerical stability of log_ndtr is better in the left tail, we flip
-    # the side for a >= 0.
     case_left = a < 0
     case_right = ~case_left
-    log_q_x_mass = _log_gauss_mass(a, b)
-    log_q_x_mass[case_left] += np.log(q[case_left])
-    log_q_x_mass[case_right] += np.log1p(-q[case_right])
-    log_mass_from_neginf_to_left = _log_ndtr(np.where(case_left, a, -b))
-    out = _ndtri_exp(_log_sum(log_mass_from_neginf_to_left, log_q_x_mass))
-    out[case_right] *= -1  # Flip back the sign for the right tail.
-    return np.select([a == b, q == 0, q == 1], [np.nan, a, b], default=out)
+    log_mass = _log_gauss_mass(a, b)
+
+    def ppf_left(q: np.ndarray, a: np.ndarray, b: np.ndarray, log_mass: np.ndarray) -> np.ndarray:
+        log_Phi_x = _log_sum(_log_ndtr(a), np.log(q) + log_mass)
+        return _ndtri_exp(log_Phi_x)
+
+    def ppf_right(q: np.ndarray, a: np.ndarray, b: np.ndarray, log_mass: np.ndarray) -> np.ndarray:
+        # NOTE(nabenabe): Since the numerical stability of log_ndtr is better in the left tail, we
+        # flip the side for a >= 0.
+        log_Phi_x = _log_sum(_log_ndtr(-b), np.log1p(-q) + log_mass)
+        return -_ndtri_exp(log_Phi_x)
+
+    out = np.empty_like(q)
+    if (q_left := q[case_left]).size:
+        out[case_left] = ppf_left(q_left, a[case_left], b[case_left], log_mass[case_left])
+    if (q_right := q[case_right]).size:
+        out[case_right] = ppf_right(q_right, a[case_right], b[case_right], log_mass[case_right])
+
+    return np.select([a == b, q == 1, q == 0], [math.nan, b, a], default=out)
 
 
 def rvs(
