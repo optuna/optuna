@@ -109,7 +109,7 @@ def _norm_logpdf(x: np.ndarray) -> np.ndarray:
     return -(x**2) / 2.0 - _norm_pdf_logC
 
 
-def _log_gauss_mass(a: np.ndarray, b: np.ndarray) -> np.ndarray:
+def _log_gauss_mass_1d_array(a: np.ndarray, b: np.ndarray) -> np.ndarray:
     """Log of Gaussian probability mass within an interval"""
 
     # Calculations in right tail are inaccurate, so we'll exploit the
@@ -139,13 +139,25 @@ def _log_gauss_mass(a: np.ndarray, b: np.ndarray) -> np.ndarray:
 
     # _lazyselect not working; don't care to debug it
     out = np.full_like(a, fill_value=np.nan, dtype=np.complex128)
-    if a[case_left].size:
+    if any(case_left):
         out[case_left] = mass_case_left(a[case_left], b[case_left])
-    if a[case_right].size:
+    if any(case_right):
         out[case_right] = mass_case_right(a[case_right], b[case_right])
-    if a[case_central].size:
+    if any(case_central):
         out[case_central] = mass_case_central(a[case_central], b[case_central])
     return np.real(out)  # discard ~0j
+
+
+def _log_gauss_mass(a: np.ndarray, b: np.ndarray) -> np.ndarray:
+    order = np.lexsort([b.ravel(), a.ravel()])
+    a_order = a.ravel()[order]
+    b_order = b.ravel()[order]
+    is_first_occurrence = np.ones_like(a.ravel(), dtype=bool)
+    is_first_occurrence[1:] = (a_order[1:] != a_order[:-1]) | (b_order[1:] != b_order[:-1])
+    out = _log_gauss_mass_1d_array(a_order[is_first_occurrence], b_order[is_first_occurrence])
+    inv = np.empty(a_order.size, dtype=int)
+    inv[order] = np.cumsum(is_first_occurrence) - 1
+    return out[inv].reshape(a.shape)
 
 
 def _ndtri_exp_single(y: float) -> float:
