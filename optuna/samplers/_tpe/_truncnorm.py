@@ -231,7 +231,7 @@ def ppf(q: np.ndarray, a: np.ndarray | float, b: np.ndarray | float) -> np.ndarr
     More precisely, this function returns `c` such that:
         ndtr(c) = ndtr(a) + q * (ndtr(b) - ndtr(a))
     for the case where `a < 0`, i.e., `case_left`. For `case_right`, we flip the sign for the
-    better numerical stability. 
+    better numerical stability.
     """
     q, a, b = np.atleast_1d(q, a, b)
     q, a, b = np.broadcast_arrays(q, a, b)
