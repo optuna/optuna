@@ -111,16 +111,18 @@ def _norm_logpdf(x: np.ndarray) -> np.ndarray:
 
 def _log_gauss_mass(a: np.ndarray, b: np.ndarray) -> np.ndarray:
     """Log of Gaussian probability mass within an interval"""
-    assert a.shape == b.shape
+
     # Calculations in right tail are inaccurate, so we'll exploit the
     # symmetry and work only in the left tail
-    case_right = a.ravel() > 0
-    left = np.where(case_right, -b.ravel(), a.ravel())
-    right = np.where(case_right, -a.ravel(), b.ravel())
-    case_central = (left <= 0) & (right > 0)
+    case_left = b <= 0
+    case_right = a > 0
+    case_central = ~(case_left | case_right)
 
     def mass_case_left(a: np.ndarray, b: np.ndarray) -> np.ndarray:
         return _log_diff(_log_ndtr(b), _log_ndtr(a))
+
+    def mass_case_right(a: np.ndarray, b: np.ndarray) -> np.ndarray:
+        return mass_case_left(-b, -a)
 
     def mass_case_central(a: np.ndarray, b: np.ndarray) -> np.ndarray:
         # Previously, this was implemented as:
@@ -136,12 +138,14 @@ def _log_gauss_mass(a: np.ndarray, b: np.ndarray) -> np.ndarray:
         return np.log1p(-_ndtr(a) - _ndtr(-b))
 
     # _lazyselect not working; don't care to debug it
-    out = np.full_like(left, fill_value=np.nan, dtype=np.complex128)
-    if any(case_left := ~case_central):
-        out[case_left] = mass_case_left(left[case_left], right[case_left])
-    if any(case_central):
-        out[case_central] = mass_case_central(left[case_central], right[case_central])
-    return np.real(out).reshape(a.shape)  # discard ~0j
+    out = np.full_like(a, fill_value=np.nan, dtype=np.complex128)
+    if (a_left := a[case_left]).size:
+        out[case_left] = mass_case_left(a_left, b[case_left])
+    if (a_right := a[case_right]).size:
+        out[case_right] = mass_case_right(a_right, b[case_right])
+    if (a_central := a[case_central]).size:
+        out[case_central] = mass_case_central(a_central, b[case_central])
+    return np.real(out)  # discard ~0j
 
 
 def _ndtri_exp_single(y: float) -> float:
