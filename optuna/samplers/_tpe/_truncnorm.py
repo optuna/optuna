@@ -149,6 +149,16 @@ def _log_gauss_mass_1d_array(a: np.ndarray, b: np.ndarray) -> np.ndarray:
 
 
 def _log_gauss_mass(a: np.ndarray, b: np.ndarray) -> np.ndarray:
+    """
+    This function wraps the function that computes the log of the Gaussian probability mass.
+
+    This function reduces the computation by avoiding the duplcated evaluations using the
+    np.unique_inverse(...) equivalent operation.
+
+    The lexsort below guarantees that a_order[i] <= a_order[j] and b_order[i] >= b_order[j] for
+    any i < j, enabling us to detect the first occurrence easily. inv is equivalent to the
+    inverse mapping obtained by np.unique_inverse(np.stack([a, b], axis=-1)).
+    """
     order = np.lexsort([b.ravel(), a.ravel()])
     a_order = a.ravel()[order]
     b_order = b.ravel()[order]
