@@ -274,8 +274,7 @@ def ppf(q: np.ndarray, a: np.ndarray | float, b: np.ndarray | float) -> np.ndarr
     log_q_x_mass[case_right] += np.log1p(-q[case_right])
     # mass_from_neginf_to_left = \\int_{-inf}^{a} f(x) dx.
     log_mass_from_neginf_to_left = _log_ndtr(np.where(case_left, a, -b))
-    # There exists c such that 
-    # mass_from_neginf_to_left + q_x_mass
+    # There exists c such that mass_from_neginf_to_left + q_x_mass
     out = _ndtri_exp(_log_sum(log_mass_from_neginf_to_left, log_q_x_mass))
     out[case_right] *= -1  # Flip back the sign for the right tail.
     return np.select([a == b, q == 0, q == 1], [np.nan, a, b], default=out)
