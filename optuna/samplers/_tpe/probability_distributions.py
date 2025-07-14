@@ -43,10 +43,10 @@ def _log_gauss_mass_unique(a: np.ndarray, b: np.ndarray) -> np.ndarray:
     any i < j, enabling us to detect the first occurrence easily. inv is equivalent to the
     inverse mapping obtained by np.unique_inverse(np.stack([a, b], axis=-1)).
     """
-    order = np.lexsort([b.ravel(), a.ravel()])
-    a_order = a.ravel()[order]
-    b_order = b.ravel()[order]
-    is_first_occurrence = np.ones_like(a.ravel(), dtype=bool)
+    order = np.lexsort([(b_ravel := b.ravel()), (a_ravel := a.ravel())])
+    a_order = a_ravel[order]
+    b_order = b_ravel[order]
+    is_first_occurrence = np.ones_like(a_ravel, dtype=bool)
     is_first_occurrence[1:] = (a_order[1:] != a_order[:-1]) | (b_order[1:] != b_order[:-1])
     out = _truncnorm._log_gauss_mass(a_order[is_first_occurrence], b_order[is_first_occurrence])
     inv = np.empty(a_order.size, dtype=int)
