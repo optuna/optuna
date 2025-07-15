@@ -473,7 +473,7 @@ class TPESampler(BaseSampler):
         return self._sample(study, trial, {param_name: param_distribution})[param_name]
 
     def _get_params(self, trial: FrozenTrial) -> dict[str, Any]:
-        if trial.state.is_finished():
+        if trial.state.is_finished() or not self._multivariate:
             return trial.params
 
         params_strs = []
