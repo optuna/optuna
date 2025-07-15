@@ -38,10 +38,7 @@ def _log_gauss_mass_unique(a: np.ndarray, b: np.ndarray) -> np.ndarray:
     """
     This function reduces the the log Gaussian probability mass computation by avoiding the
     duplcated evaluations using the np.unique_inverse(...) equivalent operation.
-
-    The lexsort below guarantees that a_order[i] <= a_order[j] and b_order[i] >= b_order[j] for
-    any i < j, enabling us to detect the first occurrence easily. inv is equivalent to the
-    inverse mapping obtained by np.unique_inverse(np.stack([a, b], axis=-1)).
+    inv is equivalent to the inverse mapping by np.unique_inverse(np.stack([a, b], axis=-1)).
     """
     order = np.lexsort([(b_ravel := b.ravel()), (a_ravel := a.ravel())])
     a_order = a_ravel[order]
