@@ -36,8 +36,8 @@ _BatchedDistributions = Union[
 
 def _log_gauss_mass_unique(a: np.ndarray, b: np.ndarray) -> np.ndarray:
     """
-    This function reduces the the log Gaussian probability mass computation by avoiding the
-    duplcated evaluations using the np.unique_inverse(...) equivalent operation.
+    This function reduces the log Gaussian probability mass computation by avoiding the
+    duplicated evaluations using the np.unique_inverse(...) equivalent operation.
     inv is equivalent to the inverse mapping by np.unique_inverse(np.stack([a, b], axis=-1)).
     """
     order = np.lexsort([(b_ravel := b.ravel()), (a_ravel := a.ravel())])
