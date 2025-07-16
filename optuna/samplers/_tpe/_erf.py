@@ -14,10 +14,17 @@
 #  * ====================================================
 #  */
 
+from __future__ import annotations
+
 import math
+from typing import TYPE_CHECKING
 
 import numpy as np
 from numpy.polynomial import Polynomial
+
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 erx = 8.45062911510467529297e-01
@@ -41,7 +48,7 @@ qq2 = 6.50222499887672944485e-02
 qq3 = 5.08130628187576562776e-03
 qq4 = 1.32494738004321644526e-04
 qq5 = -3.96022827877536812320e-06
-qq = Polynomial([1.0, qq1, qq2, qq3, qq4, qq5])
+qq = Polynomial([1, qq1, qq2, qq3, qq4, qq5])
 
 # Coefficients for approximation to erf in [0.84375,1.25]
 
@@ -59,7 +66,7 @@ qa3 = 7.18286544141962662868e-02
 qa4 = 1.26171219808761642112e-01
 qa5 = 1.36370839120290507362e-02
 qa6 = 1.19844998467991074170e-02
-qa = Polynomial([1.0, qa1, qa2, qa3, qa4, qa5, qa6])
+qa = Polynomial([1, qa1, qa2, qa3, qa4, qa5, qa6])
 
 # Coefficients for approximation to erfc in [1.25,1/0.35]
 
@@ -80,7 +87,7 @@ sa5 = 4.29008140027567833386e02
 sa6 = 1.08635005541779435134e02
 sa7 = 6.57024977031928170135e00
 sa8 = -6.04244152148580987438e-02
-sa = Polynomial([1.0, sa1, sa2, sa3, sa4, sa5, sa6, sa7, sa8])
+sa = Polynomial([1, sa1, sa2, sa3, sa4, sa5, sa6, sa7, sa8])
 
 # Coefficients for approximation to erfc in [1/.35,28]
 
@@ -99,46 +106,26 @@ sb4 = 3.19985821950859553908e03
 sb5 = 2.55305040643316442583e03
 sb6 = 4.74528541206955367215e02
 sb7 = -2.24409524465858183362e01
-sb = Polynomial([1.0, sb1, sb2, sb3, sb4, sb5, sb6, sb7])
+sb = Polynomial([1, sb1, sb2, sb3, sb4, sb5, sb6, sb7])
 
 
-def _erf_right(x_sorted: np.ndarray) -> np.ndarray:
-    # x_sorted must be a sorted 1D non-negative value array.
-    assert len(x_sorted.shape) == 1, "x_sorted must be flattened."
-    boundary_indices = np.searchsorted(x_sorted, [2**-28, 0.84375, 1.25, 6])
-
-    def calc_case_small1(x: np.ndarray) -> np.ndarray:
-        z = x * x
-        return x * (1 + pp(z) / qq(z))
-
-    def calc_case_small2(x: np.ndarray) -> np.ndarray:
-        s = x - 1.0
-        return erx + pa(s) / qa(s)
-
-    def calc_case_med(x: np.ndarray) -> np.ndarray:
-        x2 = x * x
-        s = 1.0 / x2
-        mid_idx = np.searchsorted(x, 1 / 0.35)
-        Q = np.empty_like(s)
-        Q[:mid_idx] = ra(s[:mid_idx]) / sa(s[:mid_idx])
-        Q[mid_idx:] = rb(s[mid_idx:]) / sb(s[mid_idx:])
-        # the following 3 lines are omitted for the following reasons:
-        # (1) there are no easy way to implement SET_LOW_WORD equivalent method in NumPy
-        # (2) we don't need very high accuracy in our use case.
-        # z = x
-        # SET_LOW_WORD(z, 0)
-        # r = np.exp(-z * z - 0.5625) * np.exp((z - x) * (z + x) + Q)
-        return 1.0 - np.exp(-x2 - 0.5625 + Q) / x
-
-    out = np.where(np.isnan(x_sorted), np.nan, 1.0)  # Big values will receive 1.0.
-    if (tiny_end := boundary_indices[0]) > 0:
-        out[:tiny_end] = x_sorted[:tiny_end] * (1 + efx)
-    if (small1_end := boundary_indices[1]) - tiny_end > 0:
-        out[tiny_end:small1_end] = calc_case_small1(x_sorted[tiny_end:small1_end])
-    if (small2_end := boundary_indices[2]) - small1_end > 0:
-        out[small1_end:small2_end] = calc_case_small2(x_sorted[small1_end:small2_end])
-    if (med_end := boundary_indices[3]).size:
-        out[small2_end:med_end] = calc_case_med(x_sorted[small2_end:med_end])
+def _erf_right_non_big(x: np.ndarray) -> np.ndarray:
+    assert len(x.shape) == 1, "Input must be a 1D array."
+    # NOTE(nabenabe): Add [6] to the list and use out = np.ones_like(x) to handle the big case.
+    bin_inds = np.count_nonzero(x >= [[2**-28], [0.84375], [1.25], [1 / 0.35]], axis=0)
+    out = np.empty_like(x)
+    erf_approx_in_each_bin: list[Callable[[np.ndarray], np.ndarray]] = [
+        lambda x: (1 + efx) * x,  # Tiny: x < 2**-28.
+        lambda x: x * (1 + pp(z := x * x) / qq(z)),  # Small1: 2**-28 <= x < 0.84375.
+        lambda x: erx + pa(s := x - 1) / qa(s),  # Small2: 0.84375 <= x < 1.25.
+        # Med1: 1.25 <= x < 1 / 0.35, Med2: 1 / 0.35 <= x < 6.
+        # Omit SET_LOW_WORD due to its unavailablility in NumPy and no need for high accuracy.
+        lambda x: 1 - np.exp(-(z := x * x) - 0.5625 + ra(s := 1 / z) / sa(s)) / x,
+        lambda x: 1 - np.exp(-(z := x * x) - 0.5625 + rb(s := 1 / z) / sb(s)) / x,
+    ]
+    for bin_idx, erf_approx_in_bin in enumerate(erf_approx_in_each_bin):
+        if (target_inds := np.nonzero(bin_inds == bin_idx)[0]).size:
+            out[target_inds] = erf_approx_in_bin(x[target_inds])
 
     return out
 
@@ -147,8 +134,9 @@ def erf(x: np.ndarray) -> np.ndarray:
     if x.size < 2000:
         return np.asarray([math.erf(v) for v in x.ravel()]).reshape(x.shape)
 
-    a = np.abs(x.ravel())
-    order = np.argsort(a)
-    rev = np.empty(a.size, dtype=int)
-    rev[order] = np.arange(a.size)
-    return np.sign(x) * _erf_right(a[order])[rev].reshape(x.shape)
+    a = np.abs(x).ravel()
+    is_not_nan = ~np.isnan(a)
+    out = np.where(is_not_nan, 1.0, np.nan)
+    non_big_inds = np.nonzero(is_not_nan & (a < 6))[0]
+    out[non_big_inds] = _erf_right_non_big(a[non_big_inds])
+    return np.sign(x) * out.reshape(x.shape)
