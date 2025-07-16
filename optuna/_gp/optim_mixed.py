@@ -4,8 +4,8 @@ import math
 from typing import TYPE_CHECKING
 
 import numpy as np
-
-from optuna._gp.acqf import BaseAcquisitionFunc
+if TYPE_CHECKING:
+    from optuna._gp.acqf import BaseAcquisitionFunc
 from optuna._gp.search_space import normalize_one_param
 from optuna._gp.search_space import sample_normalized_params
 from optuna._gp.search_space import ScaleType
