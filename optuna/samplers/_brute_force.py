@@ -1,17 +1,19 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
+import decimal
 import itertools
 from typing import Any
+from typing import cast
 from typing import Dict
 from typing import List
-from typing import Optional
+from typing import Sequence
 
-import numpy as np
-
+import optuna
 from optuna import logging
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
+from optuna.distributions import FloatDistribution
+from optuna.distributions import IntDistribution
 from optuna.samplers import BaseSampler
 from optuna.samplers._lazy_random_state import LazyRandomState
 from optuna.trial import FrozenTrial
@@ -38,24 +40,21 @@ class BruteForceSampler(BaseSampler):
 
     def __init__(self, seed: int | None = None) -> None:
         self._rng = LazyRandomState(seed)
-        self._grid: list[dict[str, Any]] | None = None
-        self._shuffled_grid: list[dict[str, Any]] | None = None
-        self._trial_params_cache: dict[int, dict[str, Any]] = {}
+        self._grid: List[Dict[str, Any]] | None = None
+        self._shuffled_grid: List[Dict[str, Any]] | None = None
+        self._trial_params_cache: Dict[int, Dict[str, Any]] = {}
 
     def infer_relative_search_space(
         self, study: "optuna.study.Study", trial: "optuna.trial.FrozenTrial"
-    ) -> dict[str, BaseDistribution]:
-        # In this design, the search space is inferred after the first trial,
-        # so this method returns an empty dictionary.
+    ) -> Dict[str, BaseDistribution]:
         return {}
 
     def sample_relative(
         self,
         study: "optuna.study.Study",
         trial: "optuna.trial.FrozenTrial",
-        search_space: dict[str, BaseDistribution],
-    ) -> dict[str, Any]:
-        # All sampling is handled by `sample_independent` in this design.
+        search_space: Dict[str, BaseDistribution],
+    ) -> Dict[str, Any]:
         return {}
 
     def sample_independent(
@@ -65,32 +64,27 @@ class BruteForceSampler(BaseSampler):
         param_name: str,
         param_distribution: BaseDistribution,
     ) -> Any:
-        # If the grid is not built yet (i.e., during Trial 0), we must run in a
-        # 'discovery' mode to define the search space. We sample deterministically.
         if self._shuffled_grid is None:
+            # Discovery phase for Trial 0.
             if isinstance(param_distribution, CategoricalDistribution):
                 return param_distribution.choices[0]
-            # Extend with other distribution types if needed, e.g., return low value.
-            raise NotImplementedError(
-                "BruteForceSampler only supports CategoricalDistribution in the first trial."
-            )
+            elif isinstance(param_distribution, (IntDistribution, FloatDistribution)):
+                return param_distribution.low
+            raise NotImplementedError(f"Unsupported distribution {type(param_distribution)}.")
 
         trial_id = trial._trial_id
         if trial_id not in self._trial_params_cache:
-            # This is the first suggest call for this trial. Time to select
-            # a full parameter set for it from our pre-computed grid.
+            assert self._grid is not None, "Grid should be initialized after the first trial."
             if not self._shuffled_grid:
                 _logger.warning(
                     "All combinations have been sampled. Reshuffling and starting over."
                 )
                 self._shuffled_grid = list(self._grid)
-                self._rng.rng.shuffle(self._shuffled_grid)
+                self._rng.rng.shuffle(cast(Any, self._shuffled_grid))
 
-            # Pop the next pre-computed parameter set.
-            params_for_this_trial = self._shuffled_grid.pop()
+            params_for_this_trial = self._shuffled_grid.pop(0)
             self._trial_params_cache[trial_id] = params_for_this_trial
 
-        # Return the specific value for the parameter that was asked for.
         return self._trial_params_cache[trial_id][param_name]
 
     def after_trial(
@@ -100,30 +94,41 @@ class BruteForceSampler(BaseSampler):
         state: "TrialState",
         values: Sequence[float] | None,
     ) -> None:
-        # After the first trial is complete, we can inspect its distributions
-        # to build our full grid of parameters for all subsequent trials.
         if trial.number == 0 and state == TrialState.COMPLETE:
             search_space = trial.distributions
             self._grid = _get_all_search_params(search_space)
             self._shuffled_grid = list(self._grid)
-            self._rng.rng.shuffle(self._shuffled_grid)
+            self._rng.rng.shuffle(cast(Any, self._shuffled_grid))
             _logger.info(f"Brute force grid built with {len(self._grid)} trial combinations.")
 
-        # Clean up the cache for the trial that just finished.
         if trial._trial_id in self._trial_params_cache:
             del self._trial_params_cache[trial._trial_id]
 
 
-def _get_all_search_params(search_space: dict[str, BaseDistribution]) -> list[dict[str, Any]]:
+def _get_all_search_params(search_space: Dict[str, BaseDistribution]) -> List[Dict[str, Any]]:
     param_names = list(search_space.keys())
-    param_values = []
+    # This type hint is the fix for the mypy error.
+    param_values: List[Sequence[Any]] = []
     for param_name in param_names:
         dist = search_space[param_name]
-        if not isinstance(dist, CategoricalDistribution):
-            raise ValueError(
-                f"Parameter '{param_name}' has an unsupported distribution: {type(dist).__name__}."
-            )
-        param_values.append(dist.choices)
+        if isinstance(dist, CategoricalDistribution):
+            param_values.append(dist.choices)
+        elif isinstance(dist, IntDistribution):
+            param_values.append(list(range(dist.low, dist.high + 1, dist.step)))
+        elif isinstance(dist, FloatDistribution):
+            if dist.step is None:
+                raise ValueError("FloatDistribution must have a step for brute-force search.")
+            low = decimal.Decimal(str(dist.low))
+            high = decimal.Decimal(str(dist.high))
+            step = decimal.Decimal(str(dist.step))
+            values: List[Any] = []
+            val = low
+            while val <= high:
+                values.append(float(val))
+                val += step
+            param_values.append(values)
+        else:
+            raise ValueError(f"Unsupported distribution: {type(dist).__name__}.")
 
     all_combinations = itertools.product(*param_values)
     all_params = [dict(zip(param_names, combo)) for combo in all_combinations]
