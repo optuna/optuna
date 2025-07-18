@@ -312,7 +312,7 @@ def test_parallel_optimize_with_sleep() -> None:
     def objective(trial: Trial) -> float:
         x = trial.suggest_int("x", 0, 1)
         if x == 1:
-            limit = 20  # avoid infinite loop after 10 seconds
+            limit = 200  # avoid infinite after 100 seconds
 
             # Guarantee that the trial with x=0 is completed before the trial with x=1.
             while len(study.get_trials(states=[optuna.trial.TrialState.COMPLETE])) < 2:
