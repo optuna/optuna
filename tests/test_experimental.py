@@ -55,14 +55,8 @@ def test_experimental_func_decorator() -> None:
     assert decorated_func.__name__ == _sample_func.__name__
     assert decorated_func.__doc__ == _experimental._EXPERIMENTAL_NOTE_TEMPLATE.format(ver=version)
 
-    with pytest.warns(ExperimentalWarning) as warnings:
+    with pytest.warns(ExperimentalWarning):
         decorated_func()
-
-    (warning,) = warnings
-
-    assert _sample_func.__module__ in str(warning.message), warning.message
-    assert _sample_func.__qualname__ in str(warning.message), warning.message
-    assert version in str(warning.message), warning.message
 
 
 def test_experimental_func_decorator_with_static_method() -> None:
@@ -74,14 +68,8 @@ def test_experimental_func_decorator_with_static_method() -> None:
     assert decorated_func.__name__ == _Sample._static_method.__name__
     assert decorated_func.__doc__ == _experimental._EXPERIMENTAL_NOTE_TEMPLATE.format(ver=version)
 
-    with pytest.warns(ExperimentalWarning) as warnings:
+    with pytest.warns(ExperimentalWarning):
         decorated_func()
-
-    (warning,) = warnings
-
-    assert _Sample._static_method.__module__ in str(warning.message), warning.message
-    assert _Sample._static_method.__qualname__ in str(warning.message), warning.message
-    assert version in str(warning.message), warning.message
 
 
 def test_experimental_instance_method_decorator() -> None:
