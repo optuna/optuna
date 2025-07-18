@@ -305,15 +305,23 @@ def test_parallel_optimize() -> None:
 
 
 def test_parallel_optimize_with_sleep() -> None:
-    def objective(trial: Trial) -> float:
-        x = trial.suggest_int("x", 0, 1)
-        time.sleep(x)
-        y = trial.suggest_int("y", 0, 1)
-        return x + y
-
     # Seed is fixed to reproduce the same result.
     # See: https://github.com/optuna/optuna/issues/5780
     study = optuna.create_study(sampler=samplers.BruteForceSampler(seed=42))
+
+    def objective(trial: Trial) -> float:
+        x = trial.suggest_int("x", 0, 1)
+        if x == 1:
+            limit = 20  # avoid infinite loop after 10 seconds
+
+            # Guarantee that the trial with x=0 is completed before the trial with x=1.
+            while len(study.get_trials(states=[optuna.trial.TrialState.COMPLETE])) < 2:
+                time.sleep(0.5)
+                assert limit > 0  # Timeout, this should not happen.
+
+        y = trial.suggest_int("y", 0, 1)
+        return x + y
+
     study.optimize(objective, n_jobs=2)
     expected_suggested_values = [
         {"x": 0, "y": 0},
