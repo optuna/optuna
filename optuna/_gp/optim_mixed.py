@@ -4,8 +4,7 @@ import math
 from typing import TYPE_CHECKING
 
 import numpy as np
-if TYPE_CHECKING:
-    from optuna._gp.acqf import BaseAcquisitionFunc
+
 from optuna._gp.search_space import normalize_one_param
 from optuna._gp.search_space import sample_normalized_params
 from optuna._gp.search_space import ScaleType
@@ -14,6 +13,8 @@ from optuna.logging import get_logger
 
 if TYPE_CHECKING:
     import scipy.optimize as so
+
+    from optuna._gp.acqf import BaseAcquisitionFunc
 else:
     from optuna import _LazyImport
 
