@@ -1,15 +1,15 @@
 """Notations in this Gaussian process implementation
 
-X: Observed parameter values with the shape of (len(trials), len(params)).
-Y: Observed objective values with the shape of (len(trials), ).
+X_train: Observed parameter values with the shape of (len(trials), len(params)).
+y_train: Observed objective values with the shape of (len(trials), ).
 x: (Possibly batched) parameter value(s) to evaluate with the shape of (..., len(params)).
 cov_fX_fX: Kernel matrix X = V[f(X)] with the shape of (len(trials), len(trials)).
 cov_fx_fX: Kernel matrix Cov[f(x), f(X)] with the shape of (..., len(trials)).
 cov_fx_fx: Kernel scalar value x = V[f(x)]. This value is constant for the Matern 5/2 kernel.
 cov_Y_Y_inv:
-    The inverse of the covariance matrix (V[f(X) + noise])^-1 with the shape of
+    The inverse of the covariance matrix (V[f(X) + noise_var])^-1 with the shape of
     (len(trials), len(trials)).
-cov_Y_Y_inv_Y: `cov_Y_Y_inv @ Y` with the shape of (len(trials), ).
+cov_Y_Y_inv_Y: `cov_Y_Y_inv @ y` with the shape of (len(trials), ).
 max_Y: The maximum of Y (Note that we transform the objective values such that it is maximized.)
 d2: The squared distance between two points.
 is_categorical:
@@ -70,19 +70,22 @@ class Matern52Kernel(torch.autograd.Function):
         Please note that automatic differentiation by PyTorch does not work well at
         `squared_distance = 0` due to zero division, so we manually save the derivative, i.e.,
         `-5/6 * (1 + sqrt5d) * exp(-sqrt5d)`, for the exact derivative calculation.
+
+        Notice that the derivative of this function is taken w.r.t. d**2, but not w.r.t. d.
         """
         sqrt5d = torch.sqrt(5 * squared_distance)
         exp_part = torch.exp(-sqrt5d)
         val = exp_part * ((5 / 3) * squared_distance + sqrt5d + 1)
-        # Notice that the derivative is taken w.r.t. d^2, but not w.r.t. d.
         deriv = (-5 / 6) * (sqrt5d + 1) * exp_part
         ctx.save_for_backward(deriv)
         return val
 
     @staticmethod
     def backward(ctx: Any, grad: torch.Tensor) -> torch.Tensor:
-        # Let x be squared_distance, f(x) be forward(ctx, x), and g(f) be a provided function,
-        # then deriv := df/dx, grad := dg/df, and deriv * grad = df/dx * dg/df = dg/dx.
+        """
+        Let x be squared_distance, f(x) be forward(ctx, x), and g(f) be a provided function, then
+        deriv := df/dx, grad := dg/df, and deriv * grad = df/dx * dg/df = dg/dx.
+        """
         (deriv,) = ctx.saved_tensors
         return deriv * grad
 
@@ -141,41 +144,61 @@ class GPRegressor:
         return Matern52Kernel.apply(d2) * self.kernel_scale  # type: ignore
 
     def posterior(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
-        # The shape of mean and var is x.shape[:-1].
+        """
+        This method computes the posterior mean and variance given the points `x` where both mean
+        and variance tensors will have the shape of x.shape[:-1].
+
+        The posterior mean and variance are computed as:
+            mean = cov_fx_fX @ inv(cov_fX_fX + noise_var * I) @ y, and
+            var = cov_fx_fx - cov_fx_fX @ inv(cov_fX_fX + noise_var * I) @ cov_fx_fX.T.
+
+        Please note that we clamp the variance to avoid negative values due to numerical errors.
+        """
         assert (
             self._cov_Y_Y_inv is not None and self._cov_Y_Y_inv_Y is not None
         ), "Call cache_matrix before calling posterior."
         cov_fx_fX = self.kernel(x[..., None, :], self._X_train)[..., 0, :]
         cov_fx_fx = self.kernel_scale  # kernel(x, x) = kernel_scale
-        # mean = cov_fx_fX @ inv(cov_fX_fX + noise_var * I) @ y
-        # var = cov_fx_fx - cov_fx_fX @ inv(cov_fX_fX + noise_var * I) @ cov_fx_fX.T
-        # The shape of both mean and var is (..., ).
         mean = cov_fx_fX @ self._cov_Y_Y_inv_Y
         var = cov_fx_fx - (cov_fx_fX * (cov_fx_fX @ self._cov_Y_Y_inv)).sum(dim=-1)
-        # We need to clamp the variance to avoid negative values due to numerical errors.
         return mean, torch.clamp(var, min=0.0)
 
     def marginal_log_likelihood(self) -> torch.Tensor:  # Scalar
-        # -0.5 * log((2pi)^n |C|) - 0.5 * Y^T C^-1 Y, where C^-1 = cov_Y_Y_inv
-        # We apply the cholesky decomposition to efficiently compute log(|C|) and C^-1.
+        """
+        This method computes the marginal log-likelihood of the kernel hyperparameters given the
+        training dataset (X, y).
+        Assume that N = len(X) in this method.
 
-        cov_fX_fX = self.kernel(self._X_train, self._X_train)
+        Mathematically, the closed form is given as:
+            -0.5 * log((2*pi)**N * det(C)) - 0.5 * y.T @ inv(C) @ y
+            = -0.5 * log(det(C)) - 0.5 * y.T @ inv(C) @ y + const,
+        where C = cov_Y_Y = cov_fX_fX + noise_var * I and inv(...) is the inverse operator.
 
-        cov_Y_Y_chol = torch.linalg.cholesky(
-            cov_fX_fX + self.noise_var * torch.eye(self._X_train.shape[0], dtype=torch.float64)
+        We exploit the full advantages of the Cholesky decomposition (C = L @ L.T) in this method:
+            1. The determinant of a lower triangular matrix is the diagonal product, which can be
+               computed with N flops where log(det(C)) = log(det(L.T @ L)) = 2 * log(det(L)).
+            2. Solving linear system L @ u = y, which yields u = inv(L) @ y, costs N**2 flops.
+        Note that given `u = inv(L) @ y` and `inv(C) = inv(L @ L.T) = inv(L).T @ inv(L)`,
+        y.T @ inv(C) @ y is calculated as (inv(L) @ y) @ (inv(L) @ y).
+
+        In principle, we could invert the matrix C first, but in this case, it costs:
+            1. 1/3*N**3 flops for the determinant of inv(C).
+            2. 2*N**2-N flops to solve C @ alpha = y, which is alpha = inv(C) @ y.
+
+        Since the Cholesky decomposition costs 1/3*N**3 flops and the matrix inversion costs
+        2/3*N**3 flops, the overall cost for the former is 1/3*N**3+N**2+N flops and that for the
+        latter is N**3+2*N**2-N flops.
+        """
+        n_points = self._X_train.shape[0]
+        const = -0.5 * n_points * math.log(2 * math.pi)
+        cov_Y_Y = self.kernel(self._X_train, self._X_train) + self.noise_var * torch.eye(
+            n_points, dtype=torch.float64
         )
-        # log |L| = 0.5 * log|L^T L| = 0.5 * log|C|
-        logdet = 2 * torch.log(torch.diag(cov_Y_Y_chol)).sum()
-        # cov_Y_Y_chol @ cov_Y_Y_chol_inv_Y = Y --> cov_Y_Y_chol_inv_Y = inv(cov_Y_Y_chol) @ Y
-        cov_Y_Y_chol_inv_Y = torch.linalg.solve_triangular(
-            cov_Y_Y_chol, self._y_train[:, None], upper=False
-        )[:, 0]
-        return -0.5 * (
-            logdet
-            + self._X_train.shape[0] * math.log(2 * math.pi)
-            # Y^T C^-1 Y = Y^T inv(L^T L) Y --> cov_Y_Y_chol_inv_Y @ cov_Y_Y_chol_inv_Y
-            + (cov_Y_Y_chol_inv_Y @ cov_Y_Y_chol_inv_Y)
-        )
+        L = torch.linalg.cholesky(cov_Y_Y)
+        logdet_part = -L.diagonal().log().sum()
+        inv_L_y = torch.linalg.solve_triangular(L, self._y_train[:, None], upper=False)[:, 0]
+        quad_part = -0.5 * (inv_L_y @ inv_L_y)
+        return logdet_part + const + quad_part
 
 
 def _fit_kernel_params(
