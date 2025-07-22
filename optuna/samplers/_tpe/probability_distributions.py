@@ -40,16 +40,16 @@ def _unique_inverse_2d(a: np.ndarray, b: np.ndarray) -> tuple[np.ndarray, np.nda
         np.unique(np.concatenate([a[:, None], b[:, None]], axis=-1), return_inverse=True).
     """
     assert a.shape == b.shape and len(a.shape) == 1
-    order_by_b = np.argsort(b)
+    order = np.argsort(b)
     # Stable sorting is required for the tie breaking.
-    lexsort_order = order_by_b[np.argsort(a[order_by_b], kind="stable")]
-    a_order = a[lexsort_order]
-    b_order = b[lexsort_order]
-    is_first_occurrence = np.empty_like(a_order, dtype=bool)
+    order = order[np.argsort(a[order], kind="stable")]
+    a_order = a[order]
+    b_order = b[order]
+    is_first_occurrence = np.empty_like(a, dtype=bool)
     is_first_occurrence[0] = True
     is_first_occurrence[1:] = (a_order[1:] != a_order[:-1]) | (b_order[1:] != b_order[:-1])
     inv = np.empty(a_order.size, dtype=int)
-    inv[lexsort_order] = np.cumsum(is_first_occurrence) - 1
+    inv[order] = np.cumsum(is_first_occurrence) - 1
     return a_order[is_first_occurrence], b_order[is_first_occurrence], inv
 
 
