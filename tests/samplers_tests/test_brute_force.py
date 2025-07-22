@@ -317,6 +317,7 @@ def test_parallel_optimize_with_sleep() -> None:
             # Guarantee that the trial with x=0 is completed before the trial with x=1.
             while len(study.get_trials(states=[optuna.trial.TrialState.COMPLETE])) < 2:
                 time.sleep(0.5)
+                limit -= 1
                 assert limit > 0  # Timeout, this should not happen.
 
         y = trial.suggest_int("y", 0, 1)
