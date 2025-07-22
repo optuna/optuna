@@ -140,7 +140,7 @@ class _MixtureOfProductDistribution(NamedTuple):
                 )[mu_sigma_inv]
             else:
                 assert False
-        weighted_log_pdf += np.log(self.weights[None, :])
+        weighted_log_pdf += np.log(self.weights[np.newaxis])
         max_ = weighted_log_pdf.max(axis=1)
         # We need to avoid (-inf) - (-inf) when the probability is zero.
         max_[np.isneginf(max_)] = 0
