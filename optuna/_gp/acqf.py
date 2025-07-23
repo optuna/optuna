@@ -205,7 +205,8 @@ class ConstrainedLogEI(BaseAcquisitionFunc):
         super().__init__(gpr.length_scales, search_space)
 
     def eval_acqf(self, x: torch.Tensor) -> torch.Tensor:
-        # TODO(kAIto47802): Handle the infeasible case inside `ConstrainedLogEI` instead of `LogEI`.
+        # TODO(kAIto47802): Handle the infeasible case inside `ConstrainedLogEI`
+        # instead of `LogEI`.
         return self._acqf.eval_acqf(x) + sum(
             acqf.eval_acqf(x) for acqf in self._constraints_acqf_list
         )
@@ -280,7 +281,8 @@ class ConstrainedLogEHVI(BaseAcquisitionFunc):
         constraints_threshold_list: list[float],
         stabilizing_noise: float = 1e-12,
     ) -> None:
-        # NOTE(kAIto47802): It is sufficient to only passing the feasible objective values to `Y_train`
+        # NOTE(kAIto47802): It is sufficient to only passing the feasible objective values
+        # to `Y_train`
         self._acqf = (
             LogEHVI(gpr_list, search_space, Y_feasible, n_qmc_samples, qmc_seed, stabilizing_noise)
             if Y_feasible is not None
