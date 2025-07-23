@@ -273,7 +273,7 @@ class ConstrainedLogEHVI(BaseAcquisitionFunc):
         self,
         gpr_list: list[GPRegressor],
         search_space: SearchSpace,
-        Y_feasible: torch.Tensor,
+        Y_feasible: torch.Tensor | None,
         n_qmc_samples: int,
         qmc_seed: int | None,
         constraints_gpr_list: list[GPRegressor],
@@ -281,8 +281,10 @@ class ConstrainedLogEHVI(BaseAcquisitionFunc):
         stabilizing_noise: float = 1e-12,
     ) -> None:
         # NOTE(kAIto47802): It is sufficient to only passing the feasible objective values to `Y_train`
-        self._acqf = LogEHVI(
-            gpr_list, search_space, Y_feasible, n_qmc_samples, qmc_seed, stabilizing_noise
+        self._acqf = (
+            LogEHVI(gpr_list, search_space, Y_feasible, n_qmc_samples, qmc_seed, stabilizing_noise)
+            if Y_feasible is not None
+            else None
         )
         self._constraints_acqf_list = [
             LogPI(_gpr, search_space, _threshold, stabilizing_noise)
@@ -295,7 +297,8 @@ class ConstrainedLogEHVI(BaseAcquisitionFunc):
         super().__init__(np.mean([gpr.length_scales for gpr in gpr_list], axis=0), search_space)
 
     def eval_acqf(self, x: torch.Tensor) -> torch.Tensor:
-        # TODO(kAIto47802): Return 0.0 if there are no feasible trials, as in LogEI.
-        return self._acqf.eval_acqf(x) + sum(
-            acqf.eval_acqf(x) for acqf in self._constraints_acqf_list
-        )
+        return (
+            self._acqf.eval_acqf(x)
+            if self._acqf is not None
+            else torch.zeros(x.shape[:-1], dtype=torch.float64)
+        ) + sum(acqf.eval_acqf(x) for acqf in self._constraints_acqf_list)
