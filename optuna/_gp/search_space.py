@@ -51,7 +51,7 @@ class SearchSpace:
                 assert isinstance(distribution, (FloatDistribution, IntDistribution))
                 self._scale_types[i] = _ScaleType.LOG if distribution.log else _ScaleType.LINEAR
                 self._bounds[i, :] = (distribution.low, distribution.high)
-                self._steps[i] = 0.0 if distribution.step is None else distribution.step
+                self._steps[i] = distribution.step or 0.0
         self.dim = len(optuna_search_space)
         # TODO: Make it an index array.
         self.is_categorical = self._scale_types == _ScaleType.CATEGORICAL
