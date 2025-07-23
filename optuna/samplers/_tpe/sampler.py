@@ -474,7 +474,8 @@ class TPESampler(BaseSampler):
 
     def _get_params(self, trial: FrozenTrial) -> dict[str, Any]:
         if trial.state.is_finished() or not self._multivariate:
-            # NOTE(not522): If not multivariate, `relative_params` does not exist and `system_attrs` access will be unnecessary, so we skip it.
+            # NOTE(not522): If not multivariate, `relative_params` does not exist and
+            # `system_attrs` access will be unnecessary, so we skip it.
             return trial.params
 
         params_strs = []
