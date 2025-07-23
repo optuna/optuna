@@ -272,7 +272,7 @@ class ConstrainedLogEHVI(BaseAcquisitionFunc):
         self,
         gpr_list: list[GPRegressor],
         search_space: SearchSpace,
-        Y_train: torch.Tensor,
+        Y_feasible: torch.Tensor,
         n_qmc_samples: int,
         qmc_seed: int | None,
         constraints_gpr_list: list[GPRegressor],
@@ -280,9 +280,8 @@ class ConstrainedLogEHVI(BaseAcquisitionFunc):
         stabilizing_noise: float = 1e-12,
     ) -> None:
         # NOTE(kAIto47802): It is sufficient to only passing the feasible objective values to `Y_train`
-        # TODO(kAIto47802): Rename `Y_train` to make it more clear that it only contains feasible values.
         self._acqf = LogEHVI(
-            gpr_list, search_space, Y_train, n_qmc_samples, qmc_seed, stabilizing_noise
+            gpr_list, search_space, Y_feasible, n_qmc_samples, qmc_seed, stabilizing_noise
         )
         self._constraints_acqf_list = [
             LogPI(_gpr, search_space, _threshold, stabilizing_noise)
