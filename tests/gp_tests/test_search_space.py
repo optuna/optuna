@@ -6,7 +6,7 @@ import pytest
 import optuna
 from optuna._gp.search_space import _normalize_one_param
 from optuna._gp.search_space import _round_one_normalized_param
-from optuna._gp.search_space import ScaleType
+from optuna._gp.search_space import _ScaleType
 from optuna._gp.search_space import SearchSpace
 from optuna._gp.search_space import _unnormalize_one_param
 from optuna._transform import _SearchSpaceTransform
@@ -15,23 +15,23 @@ from optuna._transform import _SearchSpaceTransform
 @pytest.mark.parametrize(
     "scale_type,bounds,step,unnormalized,normalized",
     [
-        (ScaleType.LINEAR, (0.0, 10.0), 0.0, 2.0, 0.2),
-        (ScaleType.LINEAR, (0.0, 9.0), 1.0, 2.0, 0.25),
-        (ScaleType.LINEAR, (0.5, 8.5), 2.0, 2.5, 0.3),
-        (ScaleType.LINEAR, (0.0, 0.0), 0.0, 0.0, 0.5),
-        (ScaleType.LOG, (10**0.0, 10**10.0), 0.0, 10**2.0, 0.2),
+        (_ScaleType.LINEAR, (0.0, 10.0), 0.0, 2.0, 0.2),
+        (_ScaleType.LINEAR, (0.0, 9.0), 1.0, 2.0, 0.25),
+        (_ScaleType.LINEAR, (0.5, 8.5), 2.0, 2.5, 0.3),
+        (_ScaleType.LINEAR, (0.0, 0.0), 0.0, 0.0, 0.5),
+        (_ScaleType.LOG, (10**0.0, 10**10.0), 0.0, 10**2.0, 0.2),
         (
-            ScaleType.LOG,
+            _ScaleType.LOG,
             (1.0, 10.0),
             1.0,
             2.0,
             (np.log(2.0) - np.log(0.5)) / (np.log(10.5) - np.log(0.5)),
         ),
-        (ScaleType.CATEGORICAL, (0.0, 10.0), 0.0, 3.0, 3.0),
+        (_ScaleType.CATEGORICAL, (0.0, 10.0), 0.0, 3.0, 3.0),
     ],
 )
 def test_normalize_unnormalize_one_param(
-    scale_type: ScaleType,
+    scale_type: _ScaleType,
     bounds: tuple[float, float],
     step: float,
     unnormalized: float,
@@ -60,22 +60,22 @@ def test_normalize_unnormalize_one_param(
 @pytest.mark.parametrize(
     "scale_type,bounds,step,value,expected",
     [
-        (ScaleType.LINEAR, (0.0, 9.0), 1.0, 0.21, 0.25),
+        (_ScaleType.LINEAR, (0.0, 9.0), 1.0, 0.21, 0.25),
         (
-            ScaleType.LOG,
+            _ScaleType.LOG,
             (1.0, 10.0),
             1.0,
             (np.log(1.8) - np.log(0.5)) / (np.log(10.5) - np.log(0.5)),
             (np.log(2.0) - np.log(0.5)) / (np.log(10.5) - np.log(0.5)),
         ),
-        (ScaleType.LINEAR, (-1, 1), 0.5, 0.0, 0.1),
-        (ScaleType.LINEAR, (-1, 1), 0.5, 1.0, 0.9),
-        (ScaleType.LINEAR, (-0.1, 0.7), 0.4, -0.1, 1 / 6),
-        (ScaleType.LINEAR, (-0.1, 0.7), 0.4, 0.7, 5 / 6),
+        (_ScaleType.LINEAR, (-1, 1), 0.5, 0.0, 0.1),
+        (_ScaleType.LINEAR, (-1, 1), 0.5, 1.0, 0.9),
+        (_ScaleType.LINEAR, (-0.1, 0.7), 0.4, -0.1, 1 / 6),
+        (_ScaleType.LINEAR, (-0.1, 0.7), 0.4, 0.7, 5 / 6),
     ],
 )
 def test_round_one_normalized_param(
-    scale_type: ScaleType, bounds: tuple[float, float], step: float, value: float, expected: float
+    scale_type: _ScaleType, bounds: tuple[float, float], step: float, value: float, expected: float
 ) -> None:
     res = _round_one_normalized_param(
         np.array(value),
@@ -135,11 +135,11 @@ def test_get_search_space_and_normalized_params_no_categorical() -> None:
         search_space._scale_types
         == np.array(
             [
-                ScaleType.LINEAR,
-                ScaleType.LINEAR,
-                ScaleType.LOG,
-                ScaleType.LOG,
-                ScaleType.CATEGORICAL,
+                _ScaleType.LINEAR,
+                _ScaleType.LINEAR,
+                _ScaleType.LOG,
+                _ScaleType.LOG,
+                _ScaleType.CATEGORICAL,
             ]
         )
     )

@@ -27,7 +27,7 @@ else:
 _threading_lock = threading.Lock()
 
 
-class ScaleType(IntEnum):
+class _ScaleType(IntEnum):
     LINEAR = 0
     LOG = 1
     CATEGORICAL = 2
@@ -44,17 +44,17 @@ class SearchSpace:
         self._steps = np.zeros(len(optuna_search_space), dtype=np.float64)
         for i, distribution in enumerate(optuna_search_space.values()):
             if isinstance(distribution, CategoricalDistribution):
-                self._scale_types[i] = ScaleType.CATEGORICAL
+                self._scale_types[i] = _ScaleType.CATEGORICAL
                 self._bounds[i, :] = (0.0, len(distribution.choices))
                 self._steps[i] = 1.0
             else:
                 assert isinstance(distribution, (FloatDistribution, IntDistribution))
-                self._scale_types[i] = ScaleType.LOG if distribution.log else ScaleType.LINEAR
+                self._scale_types[i] = _ScaleType.LOG if distribution.log else _ScaleType.LINEAR
                 self._bounds[i, :] = (distribution.low, distribution.high)
                 self._steps[i] = 0.0 if distribution.step is None else distribution.step
         self.dim = len(optuna_search_space)
         # TODO: Make it an index array.
-        self.is_categorical = self._scale_types == ScaleType.CATEGORICAL
+        self.is_categorical = self._scale_types == _ScaleType.CATEGORICAL
         # NOTE(nabenabe): MyPy Redefinition for NumPy v2.2.0. (Cast signed int to int)
         self.discrete_indices = np.where(self._steps > 0)[0].astype(int)
         self.continuous_indices = np.where(self._steps == 0.0)[0].astype(int)
@@ -88,7 +88,7 @@ class SearchSpace:
                 ret[param] = distribution.to_external_repr(normalized_param[i])
             else:
                 assert isinstance(distribution, (FloatDistribution, IntDistribution))
-                scale_type = ScaleType.LOG if distribution.log else ScaleType.LINEAR
+                scale_type = _ScaleType.LOG if distribution.log else _ScaleType.LINEAR
                 step = 0.0 if distribution.step is None else distribution.step
                 bounds = (distribution.low, distribution.high)
                 param_value = float(
@@ -115,7 +115,7 @@ class SearchSpace:
         param_values = qmc_engine.random(n)
 
         for i in range(self.dim):
-            if self._scale_types[i] == ScaleType.CATEGORICAL:
+            if self._scale_types[i] == _ScaleType.CATEGORICAL:
                 param_values[:, i] = np.floor(param_values[:, i] * self._bounds[i, 1])
             elif self._steps[i] != 0.0:
                 param_values[:, i] = _round_one_normalized_param(
@@ -137,7 +137,7 @@ class SearchSpace:
                         self._bounds[i, 1] + 0.5 * self._steps[i],
                         self._steps[i],
                     ),
-                    scale_type=ScaleType(self._scale_types[i]),
+                    scale_type=_ScaleType(self._scale_types[i]),
                     bounds=(self._bounds[i, 0], self._bounds[i, 1]),
                     step=self._steps[i],
                 )
@@ -148,28 +148,28 @@ class SearchSpace:
 
 
 def _unnormalize_one_param(
-    param_value: np.ndarray, scale_type: ScaleType, bounds: tuple[float, float], step: float
+    param_value: np.ndarray, scale_type: _ScaleType, bounds: tuple[float, float], step: float
 ) -> np.ndarray:
     # param_value can be batched, or not.
-    if scale_type == ScaleType.CATEGORICAL:
+    if scale_type == _ScaleType.CATEGORICAL:
         return param_value
     low, high = (bounds[0] - 0.5 * step, bounds[1] + 0.5 * step)
-    if scale_type == ScaleType.LOG:
+    if scale_type == _ScaleType.LOG:
         low, high = (math.log(low), math.log(high))
     param_value = param_value * (high - low) + low
-    if scale_type == ScaleType.LOG:
+    if scale_type == _ScaleType.LOG:
         param_value = np.exp(param_value)
     return param_value
 
 
 def _normalize_one_param(
-    param_value: np.ndarray, scale_type: ScaleType, bounds: tuple[float, float], step: float
+    param_value: np.ndarray, scale_type: _ScaleType, bounds: tuple[float, float], step: float
 ) -> np.ndarray:
     # param_value can be batched, or not.
-    if scale_type == ScaleType.CATEGORICAL:
+    if scale_type == _ScaleType.CATEGORICAL:
         return param_value
     low, high = (bounds[0] - 0.5 * step, bounds[1] + 0.5 * step)
-    if scale_type == ScaleType.LOG:
+    if scale_type == _ScaleType.LOG:
         low, high = (math.log(low), math.log(high))
         param_value = np.log(param_value)
     if high == low:
@@ -179,9 +179,9 @@ def _normalize_one_param(
 
 
 def _round_one_normalized_param(
-    param_value: np.ndarray, scale_type: ScaleType, bounds: tuple[float, float], step: float
+    param_value: np.ndarray, scale_type: _ScaleType, bounds: tuple[float, float], step: float
 ) -> np.ndarray:
-    assert scale_type != ScaleType.CATEGORICAL
+    assert scale_type != _ScaleType.CATEGORICAL
     if step == 0.0:
         return param_value
 
