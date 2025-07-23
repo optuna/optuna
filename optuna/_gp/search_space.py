@@ -56,8 +56,8 @@ class SearchSpace:
         # TODO: Make it an index array.
         self.is_categorical = self._scale_types == _ScaleType.CATEGORICAL
         # NOTE(nabenabe): MyPy Redefinition for NumPy v2.2.0. (Cast signed int to int)
-        self.discrete_indices = np.where(self._steps > 0)[0].astype(int)
-        self.continuous_indices = np.where(self._steps == 0.0)[0].astype(int)
+        self.discrete_indices = np.flatnonzero(self._steps > 0).astype(int)
+        self.continuous_indices = np.flatnonzero(self._steps == 0.0).astype(int)
 
     def get_normalized_params(
         self,
