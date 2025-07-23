@@ -485,11 +485,9 @@ class TPESampler(BaseSampler):
 
         if len(params_strs) == 0:
             return trial.params
-        else:
-            params_str = "".join(params_strs)
-            params = json.loads(params_str)
-            params.update(trial.params)
-            return params
+        params = json.loads("".join(params_strs))
+        params.update(trial.params)
+        return params
 
     def _get_internal_repr(
         self, trials: list[FrozenTrial], search_space: dict[str, BaseDistribution]
