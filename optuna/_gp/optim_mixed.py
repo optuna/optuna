@@ -5,12 +5,13 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from optuna._gp.acqf import BaseAcquisitionFunc
 from optuna.logging import get_logger
 
 
 if TYPE_CHECKING:
     import scipy.optimize as so
+
+    from optuna._gp.acqf import BaseAcquisitionFunc
 else:
     from optuna import _LazyImport
 
