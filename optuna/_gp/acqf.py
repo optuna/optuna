@@ -205,6 +205,7 @@ class ConstrainedLogEI(BaseAcquisitionFunc):
         super().__init__(gpr.length_scales, search_space)
 
     def eval_acqf(self, x: torch.Tensor) -> torch.Tensor:
+        # TODO(kAIto47802): Handle the infeasible case inside `ConstrainedLogEI` instead of `LogEI`.
         return self._acqf.eval_acqf(x) + sum(
             acqf.eval_acqf(x) for acqf in self._constraints_acqf_list
         )
