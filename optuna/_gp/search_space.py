@@ -82,11 +82,13 @@ class SearchSpace:
         self,
         normalized_param: np.ndarray,
     ) -> dict[str, Any]:
-        # TODO(kAIto47802): Move the implementation of `_get_unnormalized_param` here instead of wrapping it.
+        # TODO(kAIto47802): Move the implementation of `_get_unnormalized_param` here
+        # instead of wrapping it.
         return _get_unnormalized_param(self._optuna_search_space, normalized_param)
 
     def sample_normalized_params(self, n: int, rng: np.random.RandomState | None) -> np.ndarray:
-        # TODO(kAIto47802): Move the implementation of `_sample_normalized_params` here instead of wrapping it.
+        # TODO(kAIto47802): Move the implementation of `_sample_normalized_params` here
+        # instead of wrapping it.
         return _sample_normalized_params(n, self, rng)
 
     def get_choices_of_discrete_params(self) -> list[np.ndarray]:

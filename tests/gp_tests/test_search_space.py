@@ -7,8 +7,8 @@ import optuna
 from optuna._gp.search_space import _normalize_one_param
 from optuna._gp.search_space import _round_one_normalized_param
 from optuna._gp.search_space import _ScaleType
-from optuna._gp.search_space import SearchSpace
 from optuna._gp.search_space import _unnormalize_one_param
+from optuna._gp.search_space import SearchSpace
 from optuna._transform import _SearchSpaceTransform
 
 
