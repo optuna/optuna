@@ -64,8 +64,8 @@ jobs:
     - name: Scheduled tests
       if:  ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
       run: |
-        pytest tests -n 8
+        pytest tests -n auto --dist=loadgroup
     - name: Tests
       if:  ${{ github.event_name != 'schedule' && github.event_name != 'workflow_dispatch' }}
       run: |
-        pytest tests -m "not slow" -n 8
+        pytest tests -m "not slow" -n auto --dist=loadgroup

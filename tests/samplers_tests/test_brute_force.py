@@ -304,6 +304,8 @@ def test_parallel_optimize() -> None:
     assert {x1, x2} == {"a", "b"}
 
 
+# TODO(c-bata): Make this test robust against parallel execution.
+@pytest.mark.xdist_group(name="serial")
 def test_parallel_optimize_with_sleep() -> None:
     def objective(trial: Trial) -> float:
         x = trial.suggest_int("x", 0, 1)
