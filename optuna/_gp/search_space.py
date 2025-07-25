@@ -66,9 +66,7 @@ class SearchSpace:
         values = np.zeros((len(trials), len(self._optuna_search_space)), dtype=np.float64)
         for i, (param, distribution) in enumerate(self._optuna_search_space.items()):
             if isinstance(distribution, CategoricalDistribution):
-                values[:, i] = np.array(
-                    [distribution.to_internal_repr(trial.params[param]) for trial in trials]
-                )
+                values[:, i] = [distribution.to_internal_repr(t.params[param]) for t in trials]
             else:
                 values[:, i] = _normalize_one_param(
                     np.array([trial.params[param] for trial in trials]),
