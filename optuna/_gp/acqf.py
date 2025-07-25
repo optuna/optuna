@@ -299,8 +299,7 @@ class ConstrainedLogEHVI(BaseAcquisitionFunc):
         super().__init__(np.mean([gpr.length_scales for gpr in gpr_list], axis=0), search_space)
 
     def eval_acqf(self, x: torch.Tensor) -> torch.Tensor:
-        return (
-            self._acqf.eval_acqf(x)
-            if self._acqf is not None
-            else torch.zeros(x.shape[:-1], dtype=torch.float64)
-        ) + sum(acqf.eval_acqf(x) for acqf in self._constraints_acqf_list)
+        log_feas_prob = sum(acqf.eval_acqf(x) for acqf in self._constraints_acqf_list)
+        if self._acqf is None:
+            return log_feas_prob
+        return log_feas_prob + self._acqf.eval_acqf(x)
