@@ -26,7 +26,6 @@ from optuna.samplers._nsgaiii._elite_population_selection_strategy import (
 )
 from optuna.samplers._nsgaiii._elite_population_selection_strategy import _COEF
 from optuna.samplers._nsgaiii._elite_population_selection_strategy import _filter_inf
-from optuna.samplers._nsgaiii._sampler import _POPULATION_CACHE_KEY_PREFIX
 from optuna.samplers._nsgaiii._sampler import NSGAIIISampler
 from optuna.samplers.nsgaii import BaseCrossover
 from optuna.samplers.nsgaii import BLXAlphaCrossover
@@ -40,6 +39,10 @@ from optuna.trial import create_trial
 from optuna.trial import FrozenTrial
 
 
+def test_generation_key_name() -> None:
+    assert NSGAIIISampler._GENERATION_KEY == "NSGAIIISampler:generation"
+
+
 def test_population_size() -> None:
     # Set `population_size` to 10.
     sampler = NSGAIIISampler(population_size=10)
@@ -48,7 +51,7 @@ def test_population_size() -> None:
     study.optimize(lambda t: [t.suggest_float("x", 0, 9)], n_trials=40)
 
     generations = Counter(
-        [t.system_attrs[optuna.samplers._nsgaiii._sampler._GENERATION_KEY] for t in study.trials]
+        [t.system_attrs[optuna.samplers.NSGAIIISampler._GENERATION_KEY] for t in study.trials]
     )
     assert generations == {0: 10, 1: 10, 2: 10, 3: 10}
 
@@ -59,7 +62,7 @@ def test_population_size() -> None:
     study.optimize(lambda t: [t.suggest_float("x", 0, 9)], n_trials=40)
 
     generations = Counter(
-        [t.system_attrs[optuna.samplers._nsgaiii._sampler._GENERATION_KEY] for t in study.trials]
+        [t.system_attrs[optuna.samplers.NSGAIIISampler._GENERATION_KEY] for t in study.trials]
     )
     assert generations == {i: 2 for i in range(20)}
 
@@ -180,35 +183,6 @@ def test_constraints_func_nan() -> None:
     assert all(0 <= x <= 1 for x in trials[0].params.values())  # The params are normal.
     assert trials[0].values == list(trials[0].params.values())  # The values are normal.
     assert trials[0].system_attrs[_CONSTRAINTS_KEY] is None  # None is set for constraints.
-
-
-def test_study_system_attr_for_population_cache() -> None:
-    sampler = NSGAIIISampler(population_size=10)
-    study = optuna.create_study(directions=["minimize"], sampler=sampler)
-
-    def get_cached_entries(
-        study: optuna.study.Study,
-    ) -> list[tuple[int, list[int]]]:
-        study_system_attrs = study._storage.get_study_system_attrs(study._study_id)
-        return [
-            v for k, v in study_system_attrs.items() if k.startswith(_POPULATION_CACHE_KEY_PREFIX)
-        ]
-
-    study.optimize(lambda t: [t.suggest_float("x", 0, 9)], n_trials=10)
-    cached_entries = get_cached_entries(study)
-    assert len(cached_entries) == 0
-
-    study.optimize(lambda t: [t.suggest_float("x", 0, 9)], n_trials=1)
-    cached_entries = get_cached_entries(study)
-    assert len(cached_entries) == 1
-    assert cached_entries[0][0] == 0  # Cached generation.
-    assert len(cached_entries[0][1]) == 10  # Population size.
-
-    study.optimize(lambda t: [t.suggest_float("x", 0, 9)], n_trials=10)
-    cached_entries = get_cached_entries(study)
-    assert len(cached_entries) == 1
-    assert cached_entries[0][0] == 1  # Cached generation.
-    assert len(cached_entries[0][1]) == 10  # Population size.
 
 
 def test_constraints_func_experimental_warning() -> None:
