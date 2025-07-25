@@ -3,6 +3,7 @@ from __future__ import annotations
 from abc import ABC
 from abc import abstractmethod
 import math
+from typing import cast
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -300,11 +301,7 @@ class ConstrainedLogEHVI(BaseAcquisitionFunc):
         super().__init__(np.mean([gpr.length_scales for gpr in gpr_list], axis=0), search_space)
 
     def eval_acqf(self, x: torch.Tensor) -> torch.Tensor:
-        constraints_acqf_values = sum(
-            [acqf.eval_acqf(x) for acqf in self._constraints_acqf_list], torch.tensor(0.0)
-        )
+        constraints_acqf_values = sum(acqf.eval_acqf(x) for acqf in self._constraints_acqf_list)
         if self._acqf is None:
-            return constraints_acqf_values
+            return cast(torch.Tensor, constraints_acqf_values)
         return constraints_acqf_values + self._acqf.eval_acqf(x)
-
-    a = sum(torch.randn(3) for _ in range(3))
