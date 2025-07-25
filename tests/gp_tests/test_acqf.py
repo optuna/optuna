@@ -120,6 +120,7 @@ def test_eval_multi_objective_acqf(
     )
     verify_eval_acqf(x, acqf)
 
+
 @parametrized_x
 @parametrized_additional_values
 def test_eval_multi_objective_acqf_with_constraints(
