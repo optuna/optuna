@@ -198,6 +198,9 @@ class ConstrainedLogEI(BaseAcquisitionFunc):
         constraints_threshold_list: list[float],
         stabilizing_noise: float = 1e-12,
     ) -> None:
+        assert (
+            len(constraints_gpr_list) == len(constraints_threshold_list) and constraints_gpr_list
+        )
         self._acqf = LogEI(gpr, search_space, threshold, stabilizing_noise)
         self._constraints_acqf_list = [
             LogPI(_gpr, search_space, _threshold, stabilizing_noise)
