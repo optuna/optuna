@@ -34,6 +34,34 @@ _BatchedDistributions = Union[
 ]
 
 
+def _unique_inverse_2d(a: np.ndarray, b: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """
+    This function is a quicker version of:
+        np.unique(np.concatenate([a[:, None], b[:, None]], axis=-1), return_inverse=True).
+    """
+    assert a.shape == b.shape and len(a.shape) == 1
+    order = np.argsort(b)
+    # Stable sorting is required for the tie breaking.
+    order = order[np.argsort(a[order], kind="stable")]
+    a_order = a[order]
+    b_order = b[order]
+    is_first_occurrence = np.empty_like(a, dtype=bool)
+    is_first_occurrence[0] = True
+    is_first_occurrence[1:] = (a_order[1:] != a_order[:-1]) | (b_order[1:] != b_order[:-1])
+    inv = np.empty(a_order.size, dtype=int)
+    inv[order] = np.cumsum(is_first_occurrence) - 1
+    return a_order[is_first_occurrence], b_order[is_first_occurrence], inv
+
+
+def _log_gauss_mass_unique(a: np.ndarray, b: np.ndarray) -> np.ndarray:
+    """
+    This function reduces the log Gaussian probability mass computation by avoiding the
+    duplicated evaluations using the np.unique_inverse(...) equivalent operation.
+    """
+    a_uniq, b_uniq, inv = _unique_inverse_2d(a.ravel(), b.ravel())
+    return _truncnorm._log_gauss_mass(a_uniq, b_uniq)[inv].reshape(a.shape)
+
+
 class _MixtureOfProductDistribution(NamedTuple):
     weights: np.ndarray
     distributions: list[_BatchedDistributions]
@@ -79,18 +107,17 @@ class _MixtureOfProductDistribution(NamedTuple):
         return ret
 
     def log_pdf(self, x: np.ndarray) -> np.ndarray:
-        batch_size, n_vars = x.shape
-        log_pdfs = np.empty((batch_size, len(self.weights), n_vars), dtype=np.float64)
+        weighted_log_pdf = np.zeros((len(x), len(self.weights)), dtype=np.float64)
         for i, d in enumerate(self.distributions):
             xi = x[:, i]
             if isinstance(d, _BatchedCategoricalDistributions):
-                log_pdfs[:, :, i] = np.log(
+                weighted_log_pdf += np.log(
                     np.take_along_axis(
                         d.weights[None, :, :], xi[:, None, None].astype(np.int64), axis=-1
                     )
                 )[:, :, 0]
             elif isinstance(d, _BatchedTruncNormDistributions):
-                log_pdfs[:, :, i] = _truncnorm.logpdf(
+                weighted_log_pdf += _truncnorm.logpdf(
                     x=xi[:, None],
                     a=(d.low - d.mu[None, :]) / d.sigma[None, :],
                     b=(d.high - d.mu[None, :]) / d.sigma[None, :],
@@ -98,23 +125,22 @@ class _MixtureOfProductDistribution(NamedTuple):
                     scale=d.sigma[None, :],
                 )
             elif isinstance(d, _BatchedDiscreteTruncNormDistributions):
+                xi_uniq, xi_inv = np.unique(xi, return_inverse=True)
+                mu_uniq, sigma_uniq, mu_sigma_inv = _unique_inverse_2d(d.mu, d.sigma)
                 lower_limit = d.low - d.step / 2
                 upper_limit = d.high + d.step / 2
-                x_lower = np.maximum(xi - d.step / 2, lower_limit)
-                x_upper = np.minimum(xi + d.step / 2, upper_limit)
-                log_gauss_mass = _truncnorm._log_gauss_mass(
-                    (x_lower[:, None] - d.mu[None, :]) / d.sigma[None, :],
-                    (x_upper[:, None] - d.mu[None, :]) / d.sigma[None, :],
-                )
-                log_p_accept = _truncnorm._log_gauss_mass(
-                    (d.low - d.step / 2 - d.mu[None, :]) / d.sigma[None, :],
-                    (d.high + d.step / 2 - d.mu[None, :]) / d.sigma[None, :],
-                )
-                log_pdfs[:, :, i] = log_gauss_mass - log_p_accept
-
+                x_lower = np.maximum(xi_uniq - d.step / 2, lower_limit)[:, np.newaxis]
+                x_upper = np.minimum(xi_uniq + d.step / 2, upper_limit)[:, np.newaxis]
+                weighted_log_pdf += _log_gauss_mass_unique(
+                    (x_lower - mu_uniq) / sigma_uniq, (x_upper - mu_uniq) / sigma_uniq
+                )[np.ix_(xi_inv, mu_sigma_inv)]
+                # Very unlikely to observe duplications below, so we skip the unique operation.
+                weighted_log_pdf -= _truncnorm._log_gauss_mass(
+                    (lower_limit - mu_uniq) / sigma_uniq, (upper_limit - mu_uniq) / sigma_uniq
+                )[mu_sigma_inv]
             else:
                 assert False
-        weighted_log_pdf = np.sum(log_pdfs, axis=-1) + np.log(self.weights[None, :])
+        weighted_log_pdf += np.log(self.weights[np.newaxis])
         max_ = weighted_log_pdf.max(axis=1)
         # We need to avoid (-inf) - (-inf) when the probability is zero.
         max_[np.isneginf(max_)] = 0
