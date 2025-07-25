@@ -39,9 +39,9 @@ class SearchSpace:
         optuna_search_space: dict[str, BaseDistribution],
     ) -> None:
         self._optuna_search_space = optuna_search_space
-        self._scale_types = np.zeros(len(optuna_search_space), dtype=np.int64)
-        self._bounds = np.zeros((len(optuna_search_space), 2), dtype=np.float64)
-        self._steps = np.zeros(len(optuna_search_space), dtype=np.float64)
+        self._scale_types = np.empty(len(optuna_search_space), dtype=np.int64)
+        self._bounds = np.empty((len(optuna_search_space), 2), dtype=float)
+        self._steps = np.empty(len(optuna_search_space), dtype=float)
         for i, distribution in enumerate(optuna_search_space.values()):
             if isinstance(distribution, CategoricalDistribution):
                 self._scale_types[i] = _ScaleType.CATEGORICAL
