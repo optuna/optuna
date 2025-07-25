@@ -92,7 +92,7 @@ class SearchSpace:
         return _sample_normalized_params(n, self, rng)
 
     def get_choices_of_discrete_params(self) -> list[np.ndarray]:
-        choices_of_discrete_params = [
+        return [
             (
                 np.arange(self._bounds[i, 1])
                 if self.is_categorical[i]
@@ -109,7 +109,6 @@ class SearchSpace:
             )
             for i in self.discrete_indices
         ]
-        return choices_of_discrete_params
 
 
 def _unnormalize_one_param(
