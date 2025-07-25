@@ -282,7 +282,9 @@ class ConstrainedLogEHVI(BaseAcquisitionFunc):
         constraints_threshold_list: list[float],
         stabilizing_noise: float = 1e-12,
     ) -> None:
-        assert len(constraints_gpr_list) == len(constraints_threshold_list) and constraints_gpr_list
+        assert (
+            len(constraints_gpr_list) == len(constraints_threshold_list) and constraints_gpr_list
+        )
         # NOTE(kAIto47802): It is sufficient to only passing the feasible objective values
         # to `Y_train`
         self._acqf = (
