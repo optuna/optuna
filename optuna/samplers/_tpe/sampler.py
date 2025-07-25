@@ -466,7 +466,7 @@ class TPESampler(BaseSampler):
     ) -> dict[str, np.ndarray]:
         values: dict[str, list[float]] = {param_name: [] for param_name in search_space}
         for trial in trials:
-            if all((param_name in trial.params) for param_name in search_space):
+            if search_space.keys() <= trial.params.keys():
                 for param_name in search_space:
                     param = trial.params[param_name]
                     distribution = trial.distributions[param_name]
@@ -517,11 +517,7 @@ class TPESampler(BaseSampler):
     ) -> _ParzenEstimator:
         observations = self._get_internal_repr(trials, search_space)
         if handle_below and study._is_multi_objective():
-            param_mask_below = []
-            for trial in trials:
-                param_mask_below.append(
-                    all((param_name in trial.params) for param_name in search_space)
-                )
+            param_mask_below = [search_space.keys() <= trial.params.keys() for trial in trials]
             weights_below = _calculate_weights_below_for_multi_objective(
                 study, trials, self._constraints_func
             )[param_mask_below]
