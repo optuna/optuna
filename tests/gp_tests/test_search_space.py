@@ -90,10 +90,10 @@ def test_round_one_normalized_param(
 def test_sample_normalized_params() -> None:
     search_space = SearchSpace(
         {
-            "a": optuna.distributions.FloatDistribution(0.0, 10.0, False, None),
+            "a": optuna.distributions.FloatDistribution(0.0, 10.0),
             "b": optuna.distributions.IntDistribution(1, 10),
-            "c": optuna.distributions.FloatDistribution(10.0, 100.0, True, None),
-            "d": optuna.distributions.IntDistribution(10, 100, True),
+            "c": optuna.distributions.FloatDistribution(10.0, 100.0, log=True),
+            "d": optuna.distributions.IntDistribution(10, 100, log=True),
             "e": optuna.distributions.CategoricalDistribution(["v", "w", "x", "y", "z"]),
         }
     )
