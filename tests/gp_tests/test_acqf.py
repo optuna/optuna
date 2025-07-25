@@ -119,3 +119,27 @@ def test_eval_multi_objective_acqf(
         stabilizing_noise=0.0,
     )
     verify_eval_acqf(x, acqf)
+
+@parametrized_x
+@parametrized_additional_values
+def test_eval_multi_objective_acqf_with_constraints(
+    x: np.ndarray,
+    additional_values: np.ndarray,
+    search_space: SearchSpace,
+) -> None:
+    c = additional_values.copy()
+    Y = np.hstack([np.array([1.0, 2.0, 3.0])[:, np.newaxis], additional_values])
+    n_objectives = Y.shape[-1]
+    is_feasible = np.all(c <= 0, axis=1)
+    is_all_infeasible = not np.any(is_feasible)
+    acqf = acqf_module.ConstrainedLogEHVI(
+        gpr_list=[get_gpr(Y[:, i]) for i in range(n_objectives)],
+        search_space=search_space,
+        Y_feasible=None if is_all_infeasible else torch.from_numpy(Y[is_feasible]),
+        n_qmc_samples=32,
+        qmc_seed=42,
+        constraints_gpr_list=[get_gpr(vals) for vals in c.T],
+        constraints_threshold_list=[0.0] * len(c.T),
+        stabilizing_noise=0.0,
+    )
+    verify_eval_acqf(x, acqf)
