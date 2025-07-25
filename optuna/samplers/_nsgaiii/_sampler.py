@@ -113,7 +113,6 @@ class NSGAIIISampler(BaseGASampler):
             )
 
         super().__init__(population_size=population_size)
-        self._population_size = population_size
         self._random_sampler = RandomSampler(seed=seed)
         self._rng = LazyRandomState(seed)
         self._constraints_func = constraints_func
