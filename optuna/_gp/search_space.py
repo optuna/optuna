@@ -63,7 +63,7 @@ class SearchSpace:
         self,
         trials: list[FrozenTrial],
     ) -> np.ndarray:
-        values = np.zeros((len(trials), len(self._optuna_search_space)), dtype=np.float64)
+        values = np.empty((len(trials), len(self._optuna_search_space)), dtype=float)
         for i, (param, distribution) in enumerate(self._optuna_search_space.items()):
             if isinstance(distribution, CategoricalDistribution):
                 values[:, i] = [distribution.to_internal_repr(t.params[param]) for t in trials]
