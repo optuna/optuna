@@ -516,6 +516,10 @@ class TPESampler(BaseSampler):
         use_cache = not self._constant_liar
         trials = study._get_trials(deepcopy=False, states=states, use_cache=use_cache)
 
+        if self._constant_liar:
+            # For constant_liar, filter out the current trial.
+            trials = [t for t in trials if trial.number != t.number]
+
         # We divide data into below and above.
         n = sum(trial.state != TrialState.RUNNING for trial in trials)  # Ignore running trials.
         below_trials, above_trials = _split_trials(
