@@ -20,6 +20,7 @@ from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalChoiceType
 from optuna.logging import get_logger
 from optuna.samplers._base import _CONSTRAINTS_KEY
+from optuna.samplers._base import _INDEPENDENT_SAMPLING_WARNING_TEMPLATE
 from optuna.samplers._base import _process_constraints_after_trial
 from optuna.samplers._base import BaseSampler
 from optuna.samplers._lazy_random_state import LazyRandomState
@@ -462,12 +463,15 @@ class TPESampler(BaseSampler):
             # Avoid independent warning at the first sampling of `param_name`.
             if any(param_name in trial.params for trial in trials):
                 _logger.warning(
-                    f"The parameter '{param_name}' in trial#{trial.number} is sampled "
-                    "independently instead of being sampled by multivariate TPE sampler. "
-                    "(optimization performance may be degraded). "
-                    "You can suppress this warning by setting `warn_independent_sampling` "
-                    "to `False` in the constructor of `TPESampler`, "
-                    "if this independent sampling is intended behavior."
+                    _INDEPENDENT_SAMPLING_WARNING_TEMPLATE.format(
+                        param_name=param_name,
+                        trial_number=trial.number,
+                        independent_sampler_name=self._random_sampler.__class__.__name__,
+                        sampler_name=self.__class__.__name__,
+                        fallback_reason=(
+                            "dynamic search space is not supported for `multivariate=True`"
+                        ),
+                    )
                 )
 
         return self._sample(study, trial, {param_name: param_distribution})[param_name]
@@ -496,7 +500,7 @@ class TPESampler(BaseSampler):
         values: dict[str, list[float]] = {param_name: [] for param_name in search_space}
         for trial in trials:
             params = self._get_params(trial)
-            if all((param_name in params) for param_name in search_space):
+            if search_space.keys() <= params.keys():
                 for param_name, distribution in search_space.items():
                     param = params[param_name]
                     values[param_name].append(distribution.to_internal_repr(param))
@@ -546,10 +550,7 @@ class TPESampler(BaseSampler):
     ) -> _ParzenEstimator:
         observations = self._get_internal_repr(trials, search_space)
         if handle_below and study._is_multi_objective():
-            param_mask_below = []
-            for trial in trials:
-                params = self._get_params(trial)
-                param_mask_below.append(all((param_name in params) for param_name in search_space))
+            param_mask_below = [search_space.keys() <= self._get_params(trial).keys() for trial in trials]
             weights_below = _calculate_weights_below_for_multi_objective(
                 study, trials, self._constraints_func
             )[param_mask_below]

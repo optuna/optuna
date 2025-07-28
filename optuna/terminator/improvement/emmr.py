@@ -155,7 +155,7 @@ class EMMREvaluator(BaseImprovementEvaluator):
         gpr_t1 = gp.fit_kernel_params(  # Fit kernel with up to (t-1)-th observation
             X=normalized_params[..., :-1, :],
             Y=standarized_score_vals[:-1],
-            is_categorical=(search_space.scale_types == gp_search_space.ScaleType.CATEGORICAL),
+            is_categorical=search_space.is_categorical,
             log_prior=prior.default_log_prior,
             minimum_noise=prior.DEFAULT_MINIMUM_NOISE_VAR,
             gpr_cache=None,
@@ -165,7 +165,7 @@ class EMMREvaluator(BaseImprovementEvaluator):
         gpr_t = gp.fit_kernel_params(  # Fit kernel with up to t-th observation
             X=normalized_params,
             Y=standarized_score_vals,
-            is_categorical=(search_space.scale_types == gp_search_space.ScaleType.CATEGORICAL),
+            is_categorical=search_space.is_categorical,
             log_prior=prior.default_log_prior,
             minimum_noise=prior.DEFAULT_MINIMUM_NOISE_VAR,
             gpr_cache=gpr_t1,

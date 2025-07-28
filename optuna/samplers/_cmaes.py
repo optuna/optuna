@@ -22,6 +22,7 @@ from optuna.distributions import BaseDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
 from optuna.samplers import BaseSampler
+from optuna.samplers._base import _INDEPENDENT_SAMPLING_WARNING_TEMPLATE
 from optuna.samplers._lazy_random_state import LazyRandomState
 from optuna.search_space import IntersectionSearchSpace
 from optuna.study._study_direction import StudyDirection
@@ -592,14 +593,15 @@ class CmaEsSampler(BaseSampler):
 
     def _log_independent_sampling(self, trial: FrozenTrial, param_name: str) -> None:
         _logger.warning(
-            "The parameter '{}' in trial#{} is sampled independently "
-            "by using `{}` instead of `CmaEsSampler` "
-            "(optimization performance may be degraded). "
-            "`CmaEsSampler` does not support dynamic search space or `CategoricalDistribution`. "
-            "You can suppress this warning by setting `warn_independent_sampling` "
-            "to `False` in the constructor of `CmaEsSampler`, "
-            "if this independent sampling is intended behavior.".format(
-                param_name, trial.number, self._independent_sampler.__class__.__name__
+            _INDEPENDENT_SAMPLING_WARNING_TEMPLATE.format(
+                param_name=param_name,
+                trial_number=trial.number,
+                independent_sampler_name=self._independent_sampler.__class__.__name__,
+                sampler_name=self.__class__.__name__,
+                fallback_reason=(
+                    "dynamic search space and `CategoricalDistribution` are not supported "
+                    "by `CmaEsSampler`"
+                ),
             )
         )
 

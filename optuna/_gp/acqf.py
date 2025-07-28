@@ -7,14 +7,15 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from optuna._gp.gp import GPRegressor
-from optuna._gp.search_space import SearchSpace
 from optuna._hypervolume import get_non_dominated_box_bounds
 from optuna.study._multi_objective import _is_pareto_front
 
 
 if TYPE_CHECKING:
     import torch
+
+    from optuna._gp.gp import GPRegressor
+    from optuna._gp.search_space import SearchSpace
 else:
     from optuna._imports import _LazyImport
 
