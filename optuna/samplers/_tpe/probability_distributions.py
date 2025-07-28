@@ -133,13 +133,18 @@ class _MixtureOfProductDistribution(NamedTuple):
                 )[mu_sigma_inv]
             else:
                 assert False
-        mus_cont = np.asarray([d.mu for d in cont_dists]).T
-        sigmas_cont = np.asarray([d.sigma for d in cont_dists]).T
-        weighted_log_pdf += _truncnorm.logpdf(
-            x[:, np.newaxis, cont_inds],
-            (np.asarray([d.low for d in cont_dists]) - mus_cont) / sigmas_cont,
-            (np.asarray([d.high for d in cont_dists]) - mus_cont) / sigmas_cont,
-        ).sum(axis=-1)
+
+        if len(cont_inds):
+            mus_cont = np.asarray([d.mu for d in cont_dists]).T
+            sigmas_cont = np.asarray([d.sigma for d in cont_dists]).T
+            weighted_log_pdf += _truncnorm.logpdf(
+                x[:, np.newaxis, cont_inds],
+                a=(np.asarray([d.low for d in cont_dists]) - mus_cont) / sigmas_cont,
+                b=(np.asarray([d.high for d in cont_dists]) - mus_cont) / sigmas_cont,
+                loc=mus_cont,
+                scale=sigmas_cont,
+            ).sum(axis=-1)
+
         weighted_log_pdf += np.log(self.weights[np.newaxis])
         max_ = weighted_log_pdf.max(axis=1)
         # We need to avoid (-inf) - (-inf) when the probability is zero.
