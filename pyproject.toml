@@ -89,7 +89,6 @@ optional = [
   "plotly>=4.9.0",  # optuna/visualization.
   "redis",  # optuna/storages/journal/_redis.py.
   "scikit-learn>=0.24.2",  # optuna/importance.
-  "scipy",  # optuna/_gp.
   "torch; python_version<='3.12'",  # TODO(gen740): Remove this line when 'torch', a dependency of 'optuna/_gp', supports Python 3.13
   "grpcio",  # optuna/storages/_grpc.
   "protobuf>=5.28.1",  # optuna/storages/_grpc.
@@ -130,6 +129,14 @@ version = {attr = "optuna.version.__version__"}
   "py.typed",
 ]
 
+# Consolidated from MANIFEST.in
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.package-dir]
+"" = "."
+
+# Black configuration (already present)
 [tool.black]
 line-length = 99
 target-version = ['py38']
@@ -150,6 +157,23 @@ force-exclude = '''
 )/
 '''
 
+# Flake8 configuration (consolidated from setup.cfg)
+[tool.flake8]
+ignore = ["E203", "E704", "W503"]
+max-line-length = 99
+statistics = true
+exclude = [
+  ".venv",
+  "venv", 
+  "build",
+  "tutorial",
+  ".asv",
+  "docs/visualization_examples",
+  "docs/visualization_matplotlib_examples",
+  "optuna/storages/_grpc/auto_generated"
+]
+
+# isort configuration (already present)
 [tool.isort]
 profile = 'black'
 src_paths = ['optuna', 'tests', 'docs', 'benchmarks']
@@ -167,6 +191,7 @@ force_single_line = 'True'
 force_sort_within_sections = 'True'
 order_by_type = 'False'
 
+# pytest configuration (already present)
 [tool.pytest.ini_options]
 addopts = "--color=yes"
 filterwarnings = 'ignore::optuna.exceptions.ExperimentalWarning'
@@ -175,6 +200,7 @@ markers = [
   "slow: marks tests as slow (deselect with '-m \"not slow\"')"
 ]
 
+# mypy configuration (already present)
 [tool.mypy]
 # Options configure mypy's strict mode.
 warn_unused_configs = true
@@ -194,3 +220,8 @@ exclude = [".venv", "venv", "build", "docs", "tutorial", "optuna/storages/_rdb/a
 [[tool.mypy.overrides]]
 module = 'optuna.storages._grpc.auto_generated/*'
 follow_imports = "skip"
+
+# Coverage configuration (consolidated from .coveragerc)
+[tool.coverage.run]
+concurrency = ["multiprocessing", "thread"]
+source = ["optuna/"]
