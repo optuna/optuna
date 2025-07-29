@@ -51,6 +51,7 @@ checking = [
   "black",
   "blackdoc",
   "flake8",
+  "flake8-pyproject",
   "isort",
   "mypy",
   "mypy_boto3_s3",
