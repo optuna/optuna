@@ -94,7 +94,7 @@ optional = [
   "protobuf>=5.28.1",  # optuna/storages/_grpc.
 ]
 test = [
-  "coverage",
+  "coverage>=7.2",
   "fakeredis[lua]",
   "kaleido<0.4",  # TODO(nzw0301): Remove the version constraint by installing browser separately.
   "moto",
