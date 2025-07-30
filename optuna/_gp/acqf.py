@@ -288,8 +288,6 @@ class ConstrainedLogEHVI(BaseAcquisitionFunc):
         assert (
             len(constraints_gpr_list) == len(constraints_threshold_list) and constraints_gpr_list
         )
-        # NOTE(kAIto47802): It is sufficient to only passing the feasible objective values
-        # to `Y_train`
         self._acqf = (
             LogEHVI(gpr_list, search_space, Y_feasible, n_qmc_samples, qmc_seed, stabilizing_noise)
             if Y_feasible is not None
