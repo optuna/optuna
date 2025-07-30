@@ -135,7 +135,6 @@ def _is_pareto_front_nd(unique_lexsorted_loss_values: np.ndarray) -> np.ndarray:
         # NOTE: trials[j] cannot dominate trials[i] for i < j because of lexsort.
         # Therefore, remaining_indices[0] is always non-dominated.
         on_front[new_nondominated_index := remaining_indices[0]] = True
-        new_nondominated_loss = loss_values[new_nondominated_index]
         nondominated_and_not_top = np.any(
             loss_values[remaining_indices] < loss_values[new_nondominated_index], axis=1
         )
