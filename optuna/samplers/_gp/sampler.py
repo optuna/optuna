@@ -380,7 +380,24 @@ class GPSampler(BaseSampler):
                     None if np.isneginf(best_feasible_y) else normalized_params[i_opt, np.newaxis]
                 )
             else:
-                pass
+                constraint_vals, is_feasible = _get_constraint_vals_and_feasibility(study, trials)
+                constr_gpr_list, constr_threshold_list = self._get_constraints_acqf_args(
+                    constraint_vals, internal_search_space, normalized_params
+                )
+                is_all_infeasible = not np.any(is_feasible)
+                acqf = acqf_module.ConstrainedLogEHVI(
+                    gpr_list=gprs_list,
+                    search_space=internal_search_space,
+                    Y_feasible=torch.from_numpy(standardized_score_vals[is_feasible]) if not is_all_infeasible else None,
+                    n_qmc_samples=128,  # NOTE(nabenabe): The BoTorch default value.
+                    qmc_seed=self._rng.rng.randint(1 << 30),
+                    constraints_gpr_list=constr_gpr_list,
+                    constraints_threshold_list=constr_threshold_list,
+                )
+                best_params = self._get_best_params_for_multi_objective(
+                    normalized_params[is_feasible],
+                    standardized_score_vals[is_feasible],
+                ) if not is_all_infeasible else None
 
         normalized_param = self._optimize_acqf(acqf, best_params)
         return gp_search_space.get_unnormalized_param(search_space, normalized_param)
