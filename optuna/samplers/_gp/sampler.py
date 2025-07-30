@@ -267,6 +267,20 @@ class GPSampler(BaseSampler):
         self._constraints_gprs_cache_list = constraints_gprs
         return constraints_gprs, constraints_threshold_list
 
+    def _get_best_params_for_multi_objective(
+        self,
+        normalized_params: np.ndarray,
+        standardized_score_vals: np.ndarray,
+    ) -> np.ndarray:
+        pareto_params = normalized_params[
+            _is_pareto_front(-standardized_score_vals, assume_unique_lexsorted=False)
+        ]
+        n_pareto_sols = len(pareto_params)
+        # TODO(nabenabe): Verify the validity of this choice.
+        size = min(self._n_local_search // 2, n_pareto_sols)
+        chosen_indices = self._rng.rng.choice(n_pareto_sols, size=size, replace=False)
+        return pareto_params[chosen_indices]
+
     def sample_relative(
         self, study: Study, trial: FrozenTrial, search_space: dict[str, BaseDistribution]
     ) -> dict[str, Any]:
@@ -337,14 +351,9 @@ class GPSampler(BaseSampler):
                     n_qmc_samples=128,  # NOTE(nabenabe): The BoTorch default value.
                     qmc_seed=self._rng.rng.randint(1 << 30),
                 )
-                pareto_params = normalized_params[
-                    _is_pareto_front(-standardized_score_vals, assume_unique_lexsorted=False)
-                ]
-                n_pareto_sols = len(pareto_params)
-                # TODO(nabenabe): Verify the validity of this choice.
-                size = min(self._n_local_search // 2, n_pareto_sols)
-                chosen_indices = self._rng.rng.choice(n_pareto_sols, size=size, replace=False)
-                best_params = pareto_params[chosen_indices]
+                best_params = self._get_best_params_for_multi_objective(
+                    normalized_params, standardized_score_vals
+                )
         else:
             if n_objectives == 1:
                 assert len(gprs_list) == 1
