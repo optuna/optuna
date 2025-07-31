@@ -140,7 +140,7 @@ class JournalFileSymlinkLock(BaseJournalFileLock):
             if grace_period <= 0:
                 raise ValueError("The value of `grace_period` should be a positive integer.")
             if grace_period < 3:
-                warnings.warn("The value of `grace_period` might be too small. ")
+                warnings.warn("The value of `grace_period` might be too small. ", stacklevel=2)
         self.grace_period = grace_period
 
     def acquire(self) -> bool:
@@ -221,7 +221,7 @@ class JournalFileOpenLock(BaseJournalFileLock):
             if grace_period <= 0:
                 raise ValueError("The value of `grace_period` should be a positive integer.")
             if grace_period < 3:
-                warnings.warn("The value of `grace_period` might be too small. ")
+                warnings.warn("The value of `grace_period` might be too small. ", stacklevel=2)
         self.grace_period = grace_period
 
     def acquire(self) -> bool:

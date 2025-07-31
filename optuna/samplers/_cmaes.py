@@ -271,6 +271,7 @@ class CmaEsSampler(BaseSampler):
                 f"{msg} From v4.4.0 onward, `restart_strategy` automatically falls back to "
                 "`None`. `restart_strategy` will be supported in OptunaHub.",
                 FutureWarning,
+                stacklevel=2,
             )
 
         self._x0 = x0

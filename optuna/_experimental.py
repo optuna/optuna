@@ -33,6 +33,7 @@ def warn_experimental_argument(option_name: str) -> None:
         f"Argument ``{option_name}`` is an experimental feature."
         " The interface can change in the future.",
         ExperimentalWarning,
+        stacklevel=3,
     )
 
 
