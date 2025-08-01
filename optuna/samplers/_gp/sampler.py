@@ -359,10 +359,11 @@ class GPSampler(BaseSampler):
                 assert len(gprs_list) == 1
                 constraint_vals, is_feasible = _get_constraint_vals_and_feasibility(study, trials)
                 y_with_neginf = np.where(is_feasible, standardized_score_vals[:, 0], -np.inf)
-                # TODO(kAIto47802): If all trials are infeasible, the acquisition function for the
-                # objective function can be ignored, so skipping the computation of gpr can speed up.
-                # TODO(kAIto47802): Consider the case where all trials are feasible. We can ignore
-                # constraints in this case.
+                # TODO(kAIto47802): If all trials are infeasible, the acquisition function
+                # for the objective function can be ignored, so skipping the computation
+                # of gpr can speed up.
+                # TODO(kAIto47802): Consider the case where all trials are feasible.
+                # We can ignore constraints in this case.
                 constr_gpr_list, constr_threshold_list = self._get_constraints_acqf_args(
                     constraint_vals, internal_search_space, normalized_params
                 )
@@ -388,16 +389,24 @@ class GPSampler(BaseSampler):
                 acqf = acqf_module.ConstrainedLogEHVI(
                     gpr_list=gprs_list,
                     search_space=internal_search_space,
-                    Y_feasible=torch.from_numpy(standardized_score_vals[is_feasible]) if not is_all_infeasible else None,
+                    Y_feasible=(
+                        torch.from_numpy(standardized_score_vals[is_feasible])
+                        if not is_all_infeasible
+                        else None
+                    ),
                     n_qmc_samples=128,  # NOTE(nabenabe): The BoTorch default value.
                     qmc_seed=self._rng.rng.randint(1 << 30),
                     constraints_gpr_list=constr_gpr_list,
                     constraints_threshold_list=constr_threshold_list,
                 )
-                best_params = self._get_best_params_for_multi_objective(
-                    normalized_params[is_feasible],
-                    standardized_score_vals[is_feasible],
-                ) if not is_all_infeasible else None
+                best_params = (
+                    self._get_best_params_for_multi_objective(
+                        normalized_params[is_feasible],
+                        standardized_score_vals[is_feasible],
+                    )
+                    if not is_all_infeasible
+                    else None
+                )
 
         normalized_param = self._optimize_acqf(acqf, best_params)
         return gp_search_space.get_unnormalized_param(search_space, normalized_param)
