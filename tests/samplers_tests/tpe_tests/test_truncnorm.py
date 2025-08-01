@@ -63,7 +63,7 @@ def test_log_gass_mass(a: float, b: float) -> None:
     not _imports.is_successful(), reason="Failed to import SciPy's internal function."
 )
 def test_ndtri_exp_single() -> None:
-    for y in [-sys.float_info.min] + [-(10**i) for i in range(-300, 10)]:
-        x = truncnorm_ours._ndtri_exp_single(y)
-        ans = ndtri_exp_scipy(y).item()
-        assert math.isclose(x, ans), f"Failed with y={y}."
+    y = np.asarray([-sys.float_info.min] + [-(10**i) for i in range(-300, 10)])
+    x = truncnorm_ours._ndtri_exp(y)
+    ans = ndtri_exp_scipy(y)
+    assert np.allclose(x, ans), f"Failed with {y[~np.isclose(x, ans)]}."

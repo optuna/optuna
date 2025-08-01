@@ -195,19 +195,20 @@ def _ndtri_exp(y: np.ndarray) -> np.ndarray:
     # z = log_ndtr(-x) --> z = log(1 - ndtr(x)) = log(1 - exp(y)) = log(-expm1(y)).
     # NOTE(nabenabe): x becomes positive if ndtr(x) = exp(y) > 0.5, meaning that y > log(1/2).
     flipped = y > -_log_2
-    y[flipped] = np.log(-np.expm1(y[flipped]))  # y is always < -log(2) = -0.693...
+    z = y.copy()
+    z[flipped] = np.log(-np.expm1(y[flipped]))  # y is always < -log(2) = -0.693...
     x = np.empty_like(y)
-    if (small_inds := np.nonzero(y < -5))[0].size:
-        x[small_inds] = -np.sqrt(-2.0 * (y[small_inds] + _norm_pdf_logC))
-    if (moderate_inds := np.nonzero(y >= -5))[0].size:
-        x[moderate_inds] = -_ndtri_exp_approx_C * np.log(np.expm1(-y[moderate_inds]))
+    if (small_inds := np.nonzero(z < -5))[0].size:
+        x[small_inds] = -np.sqrt(-2.0 * (z[small_inds] + _norm_pdf_logC))
+    if (moderate_inds := np.nonzero(z >= -5))[0].size:
+        x[moderate_inds] = -_ndtri_exp_approx_C * np.log(np.expm1(-z[moderate_inds]))
 
     for _ in range(100):
         log_ndtr_x = _log_ndtr(x)
         log_norm_pdf_x = -0.5 * x**2 - _norm_pdf_logC
         # NOTE(nabenabe): Use exp(log_ndtr_x - log_norm_pdf_x) instead of ndtr_x / norm_pdf_x for
         # numerical stability.
-        dx = (log_ndtr_x - y) * np.exp(log_ndtr_x - log_norm_pdf_x)
+        dx = (log_ndtr_x - z) * np.exp(log_ndtr_x - log_norm_pdf_x)
         x -= dx
         if np.all(np.abs(dx) < 1e-8 * -x):  # NOTE: x is always negative.
             # Equivalent to np.isclose with atol=0.0 and rtol=1e-8.
