@@ -58,18 +58,17 @@ def _compute_hv(sorted_loss_vals: np.ndarray, reference_point: np.ndarray) -> fl
     inclusive_hvs = np.prod(reference_point - sorted_loss_vals, axis=-1)
     # c.f. Eqs. (6) and (7) of ``A Fast Way of Calculating Exact Hypervolumes``.
     limited_sols_array = np.maximum(sorted_loss_vals[:, np.newaxis], sorted_loss_vals)
-    return sum(
-        _compute_exclusive_hv(limited_sols_array[i, i + 1 :], inclusive_hv, reference_point)
-        for i, inclusive_hv in enumerate(inclusive_hvs)
+    return inclusive_hvs[-1] + sum(
+        _compute_exclusive_hv(limited_sols_array[i, i + 1 :], inclusive_hvs[i], reference_point)
+        for i in range(inclusive_hvs.size - 1)
     )
 
 
 def _compute_exclusive_hv(
     limited_sols: np.ndarray, inclusive_hv: float, reference_point: np.ndarray
 ) -> float:
-    if limited_sols.shape[0] == 0:
-        return inclusive_hv
-    elif limited_sols.shape[0] <= 3:
+    assert limited_sols.shape[0] >= 1
+    if limited_sols.shape[0] <= 3:
         # NOTE(nabenabe): Don't use _is_pareto_front for 3 or fewer points to avoid its overhead.
         return inclusive_hv - _compute_hv(limited_sols, reference_point)
 
