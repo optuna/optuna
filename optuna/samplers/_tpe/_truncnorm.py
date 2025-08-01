@@ -203,9 +203,9 @@ def _ndtri_exp(y: np.ndarray) -> np.ndarray:
 
     for _ in range(100):
         log_ndtr_x = _log_ndtr(x)
-        # NOTE(nabenabe): Use exp(log_ndtr_x - norm_logpdf_x) instead of ndtr_x / norm_pdf_x for
+        log_norm_pdf_x = -0.5 * x**2 - _norm_pdf_logC
+        # NOTE(nabenabe): Use exp(log_ndtr_x - log_norm_pdf_x) instead of ndtr_x / norm_pdf_x for
         # numerical stability.
-        norm_logpdf_x = -(x**2) / 2.0 - _norm_pdf_logC
         dx = (log_ndtr_x - y) * np.exp(log_ndtr_x - norm_logpdf_x)
         x -= dx
         if np.all(np.abs(dx) < 1e-8 * -x):  # NOTE: x is always negative.
