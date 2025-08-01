@@ -128,10 +128,9 @@ class EMMREvaluator(BaseImprovementEvaluator):
         if len(complete_trials) < self.min_n_trials:
             return sys.float_info.max * MARGIN_FOR_NUMARICAL_STABILITY  # Do not terminate.
 
-        search_space, normalized_params = gp_search_space.get_search_space_and_normalized_params(
-            complete_trials, optuna_search_space
-        )
-        if len(search_space.scale_types) == 0:
+        search_space = gp_search_space.SearchSpace(optuna_search_space)
+        normalized_params = search_space.get_normalized_params(complete_trials)
+        if not search_space.dim:
             warnings.warn(
                 f"{self.__class__.__name__} cannot consider any search space."
                 "Termination will never occur in this study."
@@ -139,8 +138,7 @@ class EMMREvaluator(BaseImprovementEvaluator):
             return sys.float_info.max * MARGIN_FOR_NUMARICAL_STABILITY  # Do not terminate.
 
         len_trials = len(complete_trials)
-        len_params = len(search_space.scale_types)
-        assert normalized_params.shape == (len_trials, len_params)
+        assert normalized_params.shape == (len_trials, search_space.dim)
 
         # _gp module assumes that optimization direction is maximization
         sign = -1 if study_direction == StudyDirection.MINIMIZE else 1

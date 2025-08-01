@@ -3,6 +3,7 @@ from __future__ import annotations
 from abc import ABC
 from abc import abstractmethod
 import math
+from typing import cast
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -198,6 +199,9 @@ class ConstrainedLogEI(BaseAcquisitionFunc):
         constraints_threshold_list: list[float],
         stabilizing_noise: float = 1e-12,
     ) -> None:
+        assert (
+            len(constraints_gpr_list) == len(constraints_threshold_list) and constraints_gpr_list
+        )
         self._acqf = LogEI(gpr, search_space, threshold, stabilizing_noise)
         self._constraints_acqf_list = [
             LogPI(_gpr, search_space, _threshold, stabilizing_noise)
@@ -206,6 +210,8 @@ class ConstrainedLogEI(BaseAcquisitionFunc):
         super().__init__(gpr.length_scales, search_space)
 
     def eval_acqf(self, x: torch.Tensor) -> torch.Tensor:
+        # TODO(kAIto47802): Handle the infeasible case inside `ConstrainedLogEI`
+        # instead of `LogEI`.
         return self._acqf.eval_acqf(x) + sum(
             acqf.eval_acqf(x) for acqf in self._constraints_acqf_list
         )
@@ -266,3 +272,40 @@ class LogEHVI(BaseAcquisitionFunc):
             non_dominated_box_lower_bounds=self._non_dominated_box_lower_bounds,
             non_dominated_box_upper_bounds=self._non_dominated_box_upper_bounds,
         )
+
+
+class ConstrainedLogEHVI(BaseAcquisitionFunc):
+    def __init__(
+        self,
+        gpr_list: list[GPRegressor],
+        search_space: SearchSpace,
+        Y_feasible: torch.Tensor | None,
+        n_qmc_samples: int,
+        qmc_seed: int | None,
+        constraints_gpr_list: list[GPRegressor],
+        constraints_threshold_list: list[float],
+        stabilizing_noise: float = 1e-12,
+    ) -> None:
+        assert (
+            len(constraints_gpr_list) == len(constraints_threshold_list) and constraints_gpr_list
+        )
+        self._acqf = (
+            LogEHVI(gpr_list, search_space, Y_feasible, n_qmc_samples, qmc_seed, stabilizing_noise)
+            if Y_feasible is not None
+            else None
+        )
+        self._constraints_acqf_list = [
+            LogPI(_gpr, search_space, _threshold, stabilizing_noise)
+            for _gpr, _threshold in zip(constraints_gpr_list, constraints_threshold_list)
+        ]
+        # Since all the objectives are equally important, we simply use the mean of
+        # inverse of squared mean lengthscales over all the objectives.
+        # inverse_squared_lengthscales is used in optim_mixed.py.
+        # cf. https://github.com/optuna/optuna/blob/v4.3.0/optuna/_gp/optim_mixed.py#L200-L209
+        super().__init__(np.mean([gpr.length_scales for gpr in gpr_list], axis=0), search_space)
+
+    def eval_acqf(self, x: torch.Tensor) -> torch.Tensor:
+        constraints_acqf_values = sum(acqf.eval_acqf(x) for acqf in self._constraints_acqf_list)
+        if self._acqf is None:
+            return cast(torch.Tensor, constraints_acqf_values)
+        return constraints_acqf_values + self._acqf.eval_acqf(x)
