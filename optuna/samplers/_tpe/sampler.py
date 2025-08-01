@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from collections.abc import Sequence
+import json
 import math
 from typing import Any
 from typing import cast
@@ -42,6 +43,10 @@ if TYPE_CHECKING:
 
 EPS = 1e-12
 _logger = get_logger(__name__)
+
+_RELATIVE_PARAMS_KEY = "tpe:relative_params"
+# The value of system_attrs must be less than 2046 characters on RDBStorage.
+_SYSTEM_ATTR_MAX_LENGTH = 2045
 
 
 def default_gamma(x: int) -> int:
@@ -410,9 +415,19 @@ class TPESampler(BaseSampler):
                     if not distribution.single():
                         search_space[name] = distribution
                 params.update(self._sample_relative(study, trial, search_space))
-            return params
         else:
-            return self._sample_relative(study, trial, search_space)
+            params = self._sample_relative(study, trial, search_space)
+
+        if params != {} and self._constant_liar:
+            # Share the params obtained by the relative sampling with the other processes.
+            params_str = json.dumps(params)
+            for i in range(0, len(params_str), _SYSTEM_ATTR_MAX_LENGTH):
+                study._storage.set_trial_system_attr(
+                    trial._trial_id,
+                    f"{_RELATIVE_PARAMS_KEY}:{i // _SYSTEM_ATTR_MAX_LENGTH}",
+                    params_str[i : i + _SYSTEM_ATTR_MAX_LENGTH],
+                )
+        return params
 
     def _sample_relative(
         self, study: Study, trial: FrozenTrial, search_space: dict[str, BaseDistribution]
@@ -461,15 +476,33 @@ class TPESampler(BaseSampler):
 
         return self._sample(study, trial, {param_name: param_distribution})[param_name]
 
+    def _get_params(self, trial: FrozenTrial) -> dict[str, Any]:
+        if trial.state.is_finished() or not self._multivariate:
+            # NOTE(not522): If not multivariate, `relative_params` does not exist and
+            # `system_attrs` access will be unnecessary, so we skip it.
+            return trial.params
+
+        params_strs = []
+        i = 0
+        while params_str_i := trial.system_attrs.get(f"{_RELATIVE_PARAMS_KEY}:{i}"):
+            params_strs.append(params_str_i)
+            i += 1
+
+        if len(params_strs) == 0:
+            return trial.params
+        params = json.loads("".join(params_strs))
+        params.update(trial.params)
+        return params
+
     def _get_internal_repr(
         self, trials: list[FrozenTrial], search_space: dict[str, BaseDistribution]
     ) -> dict[str, np.ndarray]:
         values: dict[str, list[float]] = {param_name: [] for param_name in search_space}
         for trial in trials:
-            if search_space.keys() <= trial.params.keys():
-                for param_name in search_space:
-                    param = trial.params[param_name]
-                    distribution = trial.distributions[param_name]
+            params = self._get_params(trial)
+            if search_space.keys() <= params.keys():
+                for param_name, distribution in search_space.items():
+                    param = params[param_name]
                     values[param_name].append(distribution.to_internal_repr(param))
         return {k: np.asarray(v) for k, v in values.items()}
 
@@ -482,6 +515,10 @@ class TPESampler(BaseSampler):
             states = [TrialState.COMPLETE, TrialState.PRUNED]
         use_cache = not self._constant_liar
         trials = study._get_trials(deepcopy=False, states=states, use_cache=use_cache)
+
+        if self._constant_liar:
+            # For constant_liar, filter out the current trial.
+            trials = [t for t in trials if trial.number != t.number]
 
         # We divide data into below and above.
         n = sum(trial.state != TrialState.RUNNING for trial in trials)  # Ignore running trials.
@@ -517,7 +554,9 @@ class TPESampler(BaseSampler):
     ) -> _ParzenEstimator:
         observations = self._get_internal_repr(trials, search_space)
         if handle_below and study._is_multi_objective():
-            param_mask_below = [search_space.keys() <= trial.params.keys() for trial in trials]
+            param_mask_below = [
+                search_space.keys() <= self._get_params(trial).keys() for trial in trials
+            ]
             weights_below = _calculate_weights_below_for_multi_objective(
                 study, trials, self._constraints_func
             )[param_mask_below]
