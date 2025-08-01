@@ -191,8 +191,9 @@ def _ndtri_exp(y: np.ndarray) -> np.ndarray:
         --> log(exp(-y) - 1) \\simeq -pi * x / sqrt(3)
         --> x \\simeq -sqrt(3) / pi * log(exp(-y) - 1).
     """
-    # z = log_ndtr(-x) --> z = log1p(-ndtr(x)) --> z = log1p(-exp(y)) --> z = log(-expm1(y)).
-    # Since x becomes positive for y > -log(2), we use this formula and flip the sign later.
+    # If x becomes positive, we first derive x such that z = log_ndtr(-x) and then flip the sign.
+    # z = log_ndtr(-x) --> z = log(1 - ndtr(x)) = log(1 - exp(y)) = log(-expm1(y)).
+    # NOTE(nabenabe): x becomes positive if ndtr(x) = exp(y) > 0.5, meaning that y > log(1/2).
     flipped = y > -_log_2
     y[flipped] = np.log(-np.expm1(y[flipped]))  # y is always < -log(2) = -0.693...
     x = np.empty_like(y)
@@ -206,7 +207,7 @@ def _ndtri_exp(y: np.ndarray) -> np.ndarray:
         log_norm_pdf_x = -0.5 * x**2 - _norm_pdf_logC
         # NOTE(nabenabe): Use exp(log_ndtr_x - log_norm_pdf_x) instead of ndtr_x / norm_pdf_x for
         # numerical stability.
-        dx = (log_ndtr_x - y) * np.exp(log_ndtr_x - norm_logpdf_x)
+        dx = (log_ndtr_x - y) * np.exp(log_ndtr_x - log_norm_pdf_x)
         x -= dx
         if np.all(np.abs(dx) < 1e-8 * -x):  # NOTE: x is always negative.
             # Equivalent to np.isclose with atol=0.0 and rtol=1e-8.
