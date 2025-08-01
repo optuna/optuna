@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
+from optuna._gp.scipy_blas_thread_patch import single_blas_thread_if_scipy_v1_15_or_newer
 from optuna.logging import get_logger
 
 
@@ -55,13 +56,14 @@ def _gradient_ascent(
         # Let the scaled acqf be g(x) and the acqf be f(sx), then dg/dx = df/dx * s.
         return -fval, -grad[continuous_indices] * lengthscales
 
-    scaled_cont_x_opt, neg_fval_opt, info = so.fmin_l_bfgs_b(
-        func=negative_acqf_with_grad,
-        x0=normalized_params[continuous_indices] / lengthscales,
-        bounds=[(0, 1 / s) for s in lengthscales],
-        pgtol=math.sqrt(tol),
-        maxiter=200,
-    )
+    with single_blas_thread_if_scipy_v1_15_or_newer():
+        scaled_cont_x_opt, neg_fval_opt, info = so.fmin_l_bfgs_b(
+            func=negative_acqf_with_grad,
+            x0=normalized_params[continuous_indices] / lengthscales,
+            bounds=[(0, 1 / s) for s in lengthscales],
+            pgtol=math.sqrt(tol),
+            maxiter=200,
+        )
 
     if -neg_fval_opt > initial_fval and info["nit"] > 0:  # Improved.
         # `nit` is the number of iterations.
