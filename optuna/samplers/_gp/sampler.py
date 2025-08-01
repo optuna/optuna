@@ -387,7 +387,7 @@ class GPSampler(BaseSampler):
                 constr_gpr_list, constr_threshold_list = self._get_constraints_acqf_args(
                     constraint_vals, internal_search_space, normalized_params
                 )
-                is_all_infeasible = not np.any(is_feasible)
+                is_all_infeasible = not any(is_feasible)
                 acqf = acqf_module.ConstrainedLogEHVI(
                     gpr_list=gprs_list,
                     search_space=internal_search_space,
