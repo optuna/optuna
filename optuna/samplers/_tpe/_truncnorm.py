@@ -45,6 +45,7 @@ from optuna.samplers._tpe._erf import erf
 _norm_pdf_C = math.sqrt(2 * math.pi)
 _norm_pdf_logC = math.log(_norm_pdf_C)
 _ndtri_exp_approx_C = math.sqrt(3) / math.pi
+_log_2 = math.log(2)
 
 
 def _log_sum(log_p: np.ndarray, log_q: np.ndarray) -> np.ndarray:
@@ -148,7 +149,7 @@ def _log_gauss_mass(a: np.ndarray, b: np.ndarray) -> np.ndarray:
     return np.real(out)  # discard ~0j
 
 
-def _ndtri_exp_single(y: float) -> float:
+def _ndtri_exp(y: np.ndarray) -> np.ndarray:
     """
     Use the Newton method to efficiently find the root.
 
@@ -190,32 +191,28 @@ def _ndtri_exp_single(y: float) -> float:
         --> log(exp(-y) - 1) \\simeq -pi * x / sqrt(3)
         --> x \\simeq -sqrt(3) / pi * log(exp(-y) - 1).
     """
-    if y > -sys.float_info.min:
-        return math.inf if y <= 0 else math.nan
-
-    if y > -1e-2:  # Case 1. abs(y) << 1.
-        u = -2.0 * math.log(-y)
-        x = math.sqrt(u - math.log(u))
-    elif y < -5:  # Case 2. abs(y) >> 1.
-        x = -math.sqrt(-2.0 * (y + _norm_pdf_logC))
-    else:  # Case 3. Moderate y.
-        x = -_ndtri_exp_approx_C * math.log(math.exp(-y) - 1)
+    # z = log_ndtr(-x) --> z = log1p(-ndtr(x)) --> z = log1p(-exp(y)) --> z = log(-expm1(y)).
+    # Since x becomes positive for y > -log(2), we use this formula and flip the sign later.
+    flipped = y > -_log_2
+    y[flipped] = np.log(-np.expm1(y[flipped]))  # y is always < -log(2) = -0.693...
+    x = np.empty_like(y)
+    if (small_inds := np.nonzero(y < -5))[0].size:
+        x[small_inds] = -np.sqrt(-2.0 * (y[small_inds] + _norm_pdf_logC))
+    if (moderate_inds := np.nonzero(y >= -5))[0].size:
+        x[moderate_inds] = -_ndtri_exp_approx_C * np.log(np.expm1(-y[moderate_inds]))
 
     for _ in range(100):
-        log_ndtr_x = _log_ndtr_single(x)
-        log_norm_pdf_x = -0.5 * x**2 - _norm_pdf_logC
-        # NOTE(nabenabe): Use exp(log_ndtr_x - log_norm_pdf_x) instead of ndtr_x / norm_pdf_x for
+        log_ndtr_x = _log_ndtr(x)
+        # NOTE(nabenabe): Use exp(log_ndtr_x - norm_logpdf_x) instead of ndtr_x / norm_pdf_x for
         # numerical stability.
-        dx = (log_ndtr_x - y) * math.exp(log_ndtr_x - log_norm_pdf_x)
+        norm_logpdf_x = -(x**2) / 2.0 - _norm_pdf_logC
+        dx = (log_ndtr_x - y) * np.exp(log_ndtr_x - norm_logpdf_x)
         x -= dx
-        if abs(dx) < 1e-8 * abs(x):  # Equivalent to np.isclose with atol=0.0 and rtol=1e-8.
+        if np.all(np.abs(dx) < 1e-8 * -x):  # NOTE: x is always negative.
+            # Equivalent to np.isclose with atol=0.0 and rtol=1e-8.
             break
-
+    x[flipped] *= -1
     return x
-
-
-def _ndtri_exp(y: np.ndarray) -> np.ndarray:
-    return np.frompyfunc(_ndtri_exp_single, 1, 1)(y).astype(float)
 
 
 def ppf(q: np.ndarray, a: np.ndarray | float, b: np.ndarray | float) -> np.ndarray:
