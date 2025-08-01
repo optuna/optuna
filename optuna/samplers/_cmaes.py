@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 import copy
-from importlib.metadata import version
 import math
 import pickle
 from typing import Any
@@ -12,7 +11,6 @@ from typing import Union
 import warnings
 
 import numpy as np
-from packaging.version import parse
 
 import optuna
 from optuna import _deprecated
@@ -371,13 +369,6 @@ class CmaEsSampler(BaseSampler):
         completed_trials = self._get_trials(study)
         if len(completed_trials) < self._n_startup_trials:
             return {}
-
-        if len(search_space) == 1:
-            cmaes_version = version("cmaes")
-            assert parse(cmaes_version) >= parse("0.12.0"), (
-                f"`cmaes` version 0.12.0 or later is required to support single-dimensional "
-                f"search spaces. Current version: {cmaes_version}."
-            )
 
         # When `with_margin=True`, bounds in discrete dimensions are handled inside `CMAwM`.
         trans = _SearchSpaceTransform(
