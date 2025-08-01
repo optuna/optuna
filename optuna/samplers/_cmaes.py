@@ -519,15 +519,22 @@ class CmaEsSampler(BaseSampler):
         # Avoid ZeroDivisionError in cmaes.
         sigma0 = max(sigma0, _EPS)
 
-        if self._use_separable_cma and not is_single_dimension:
-            return cmaes.SepCMA(
-                mean=mean,
-                sigma=sigma0,
-                bounds=trans.bounds,
-                seed=self._cma_rng.rng.randint(1, 2**31 - 2),
-                n_max_resampling=10 * n_dimension,
-                population_size=self._popsize,
-            )
+        if self._use_separable_cma:
+            if is_single_dimension:
+                warnings.warn(
+                    "Separable CMA-ES does not operate meaningfully on single-dimensional "
+                    "search spaces. The setting `use_separable_cma=True` will be ignored.",
+                    UserWarning,
+                )
+            else:
+                return cmaes.SepCMA(
+                    mean=mean,
+                    sigma=sigma0,
+                    bounds=trans.bounds,
+                    seed=self._cma_rng.rng.randint(1, 2**31 - 2),
+                    n_max_resampling=10 * n_dimension,
+                    population_size=self._popsize,
+                )
 
         if self._with_margin:
             steps = np.empty(len(trans._search_space), dtype=float)
