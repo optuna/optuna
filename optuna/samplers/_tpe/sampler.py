@@ -319,6 +319,7 @@ class TPESampler(BaseSampler):
             warnings.warn(
                 f"{msg} From v4.3.0 onward, `consider_prior` automatically falls back to `True`.",
                 FutureWarning,
+                stacklevel=2,
             )
 
         self._parzen_estimator_parameters = _ParzenEstimatorParameters(

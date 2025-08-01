@@ -688,6 +688,7 @@ class Trial(BaseTrial):
                 "uses the values of the first call and ignores all following. "
                 "Using these values: {}".format(name, old_distribution._asdict()),
                 RuntimeWarning,
+                stacklevel=3,
             )
 
     def _get_latest_trial(self) -> FrozenTrial:
