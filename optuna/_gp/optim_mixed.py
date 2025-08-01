@@ -6,9 +6,6 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 from optuna._gp.scipy_blas_thread_patch import single_blas_thread_if_scipy_v1_15_or_newer
-from optuna._gp.search_space import normalize_one_param
-from optuna._gp.search_space import sample_normalized_params
-from optuna._gp.search_space import ScaleType
 from optuna.logging import get_logger
 
 
@@ -190,11 +187,7 @@ def local_search_mixed(
     tol: float = 1e-4,
     max_iter: int = 100,
 ) -> tuple[np.ndarray, float]:
-    scale_types = acqf.search_space.scale_types
-    bounds = acqf.search_space.bounds
-    steps = acqf.search_space.steps
-
-    continuous_indices = np.where(steps == 0.0)[0]
+    continuous_indices = acqf.search_space.continuous_indices
 
     # This is a technique for speeding up optimization.
     # We use an isotropic kernel, so scaling the gradient will make
@@ -204,22 +197,7 @@ def local_search_mixed(
     # TODO(kAIto47802): Think of a better way to handle this.
     lengthscales = acqf.length_scales[continuous_indices]
 
-    # NOTE(nabenabe): MyPy Redefinition for NumPy v2.2.0. (Cast signed int to int)
-    discrete_indices = np.where(steps > 0)[0].astype(int)
-    is_categorical = acqf.search_space.is_categorical
-    choices_of_discrete_params = [
-        (
-            np.arange(bounds[i, 1])
-            if is_categorical[i]
-            else normalize_one_param(
-                param_value=np.arange(bounds[i, 0], bounds[i, 1] + 0.5 * steps[i], steps[i]),
-                scale_type=ScaleType(scale_types[i]),
-                bounds=(bounds[i, 0], bounds[i, 1]),
-                step=steps[i],
-            )
-        )
-        for i in discrete_indices
-    ]
+    choices_of_discrete_params = acqf.search_space.get_choices_of_discrete_params()
 
     discrete_xtols = [
         # Terminate discrete optimizations once the change in x becomes smaller than this.
@@ -249,7 +227,9 @@ def local_search_mixed(
         if updated:
             last_changed_param = CONTINUOUS
 
-        for i, choices, xtol in zip(discrete_indices, choices_of_discrete_params, discrete_xtols):
+        for i, choices, xtol in zip(
+            acqf.search_space.discrete_indices, choices_of_discrete_params, discrete_xtols
+        ):
             if last_changed_param == i:
                 # Parameters not changed since last time.
                 return best_normalized_params, best_fval
@@ -279,15 +259,14 @@ def optimize_acqf_mixed(
 
     rng = rng or np.random.RandomState()
 
-    dim = acqf.search_space.scale_types.shape[0]
     if warmstart_normalized_params_array is None:
-        warmstart_normalized_params_array = np.empty((0, dim))
+        warmstart_normalized_params_array = np.empty((0, acqf.search_space.dim))
 
     assert (
         len(warmstart_normalized_params_array) <= n_local_search - 1
     ), "We must choose at least 1 best sampled point + given_initial_xs as start points."
 
-    sampled_xs = sample_normalized_params(n_preliminary_samples, acqf.search_space, rng=rng)
+    sampled_xs = acqf.search_space.sample_normalized_params(n_preliminary_samples, rng=rng)
 
     # Evaluate all values at initial samples
     f_vals = acqf.eval_acqf_no_grad(sampled_xs)
