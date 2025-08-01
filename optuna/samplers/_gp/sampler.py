@@ -269,6 +269,20 @@ class GPSampler(BaseSampler):
         self._constraints_gprs_cache_list = constraints_gprs
         return constraints_gprs, constraints_threshold_list
 
+    def _get_best_params_for_multi_objective(
+        self,
+        normalized_params: np.ndarray,
+        standardized_score_vals: np.ndarray,
+    ) -> np.ndarray:
+        pareto_params = normalized_params[
+            _is_pareto_front(-standardized_score_vals, assume_unique_lexsorted=False)
+        ]
+        n_pareto_sols = len(pareto_params)
+        # TODO(nabenabe): Verify the validity of this choice.
+        size = min(self._n_local_search // 2, n_pareto_sols)
+        chosen_indices = self._rng.rng.choice(n_pareto_sols, size=size, replace=False)
+        return pareto_params[chosen_indices]
+
     def sample_relative(
         self, study: Study, trial: FrozenTrial, search_space: dict[str, BaseDistribution]
     ) -> dict[str, Any]:
@@ -339,38 +353,62 @@ class GPSampler(BaseSampler):
                     n_qmc_samples=128,  # NOTE(nabenabe): The BoTorch default value.
                     qmc_seed=self._rng.rng.randint(1 << 30),
                 )
-                pareto_params = normalized_params[
-                    _is_pareto_front(-standardized_score_vals, assume_unique_lexsorted=False)
-                ]
-                n_pareto_sols = len(pareto_params)
-                # TODO(nabenabe): Verify the validity of this choice.
-                size = min(self._n_local_search // 2, n_pareto_sols)
-                chosen_indices = self._rng.rng.choice(n_pareto_sols, size=size, replace=False)
-                best_params = pareto_params[chosen_indices]
+                best_params = self._get_best_params_for_multi_objective(
+                    normalized_params, standardized_score_vals
+                )
         else:
-            assert n_objectives == len(gprs_list) == 1, "Multi-objective has not been supported."
-            constraint_vals, is_feasible = _get_constraint_vals_and_feasibility(study, trials)
-            y_with_neginf = np.where(is_feasible, standardized_score_vals[:, 0], -np.inf)
-            # TODO(kAIto47802): If all trials are infeasible, the acquisition function for the
-            # objective function can be ignored, so skipping the computation of gpr can speed up.
-            # TODO(kAIto47802): Consider the case where all trials are feasible. We can ignore
-            # constraints in this case.
-            constr_gpr_list, constr_threshold_list = self._get_constraints_acqf_args(
-                constraint_vals, internal_search_space, normalized_params
-            )
-            i_opt = np.argmax(y_with_neginf)
-            best_feasible_y = y_with_neginf[i_opt]
-            acqf = acqf_module.ConstrainedLogEI(
-                gpr=gprs_list[0],
-                search_space=internal_search_space,
-                threshold=best_feasible_y,
-                constraints_gpr_list=constr_gpr_list,
-                constraints_threshold_list=constr_threshold_list,
-            )
-            assert normalized_params.shape[:-1] == y_with_neginf.shape
-            best_params = (
-                None if np.isneginf(best_feasible_y) else normalized_params[i_opt, np.newaxis]
-            )
+            if n_objectives == 1:
+                assert len(gprs_list) == 1
+                constraint_vals, is_feasible = _get_constraint_vals_and_feasibility(study, trials)
+                y_with_neginf = np.where(is_feasible, standardized_score_vals[:, 0], -np.inf)
+                # TODO(kAIto47802): If all trials are infeasible, the acquisition function
+                # for the objective function can be ignored, so skipping the computation
+                # of gpr can speed up.
+                # TODO(kAIto47802): Consider the case where all trials are feasible.
+                # We can ignore constraints in this case.
+                constr_gpr_list, constr_threshold_list = self._get_constraints_acqf_args(
+                    constraint_vals, internal_search_space, normalized_params
+                )
+                i_opt = np.argmax(y_with_neginf)
+                best_feasible_y = y_with_neginf[i_opt]
+                acqf = acqf_module.ConstrainedLogEI(
+                    gpr=gprs_list[0],
+                    search_space=internal_search_space,
+                    threshold=best_feasible_y,
+                    constraints_gpr_list=constr_gpr_list,
+                    constraints_threshold_list=constr_threshold_list,
+                )
+                assert normalized_params.shape[:-1] == y_with_neginf.shape
+                best_params = (
+                    None if np.isneginf(best_feasible_y) else normalized_params[i_opt, np.newaxis]
+                )
+            else:
+                constraint_vals, is_feasible = _get_constraint_vals_and_feasibility(study, trials)
+                constr_gpr_list, constr_threshold_list = self._get_constraints_acqf_args(
+                    constraint_vals, internal_search_space, normalized_params
+                )
+                is_all_infeasible = not any(is_feasible)
+                acqf = acqf_module.ConstrainedLogEHVI(
+                    gpr_list=gprs_list,
+                    search_space=internal_search_space,
+                    Y_feasible=(
+                        torch.from_numpy(standardized_score_vals[is_feasible])
+                        if not is_all_infeasible
+                        else None
+                    ),
+                    n_qmc_samples=128,  # NOTE(nabenabe): The BoTorch default value.
+                    qmc_seed=self._rng.rng.randint(1 << 30),
+                    constraints_gpr_list=constr_gpr_list,
+                    constraints_threshold_list=constr_threshold_list,
+                )
+                best_params = (
+                    self._get_best_params_for_multi_objective(
+                        normalized_params[is_feasible],
+                        standardized_score_vals[is_feasible],
+                    )
+                    if not is_all_infeasible
+                    else None
+                )
 
         normalized_param = self._optimize_acqf(acqf, best_params)
         return internal_search_space.get_unnormalized_param(normalized_param)
