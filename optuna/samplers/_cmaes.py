@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 import copy
+from importlib.metadata import version
 import math
 import pickle
 from typing import Any
@@ -11,6 +12,7 @@ from typing import Union
 import warnings
 
 import numpy as np
+from packaging.version import parse
 
 import optuna
 from optuna import _deprecated
@@ -371,15 +373,11 @@ class CmaEsSampler(BaseSampler):
             return {}
 
         if len(search_space) == 1:
-            if self._warn_independent_sampling:
-                _logger.warning(
-                    "`CmaEsSampler` only supports two or more dimensional continuous "
-                    "search space. `{}` is used instead of `CmaEsSampler`.".format(
-                        self._independent_sampler.__class__.__name__
-                    )
-                )
-                self._warn_independent_sampling = False
-            return {}
+            cmaes_version = version("cmaes")
+            assert parse(cmaes_version) >= parse("0.12.0"), (
+                f"`cmaes` version 0.12.0 or later is required to support single-dimensional "
+                f"search spaces. Current version: {cmaes_version}."
+            )
 
         # When `with_margin=True`, bounds in discrete dimensions are handled inside `CMAwM`.
         trans = _SearchSpaceTransform(
@@ -388,7 +386,7 @@ class CmaEsSampler(BaseSampler):
 
         optimizer = self._restore_optimizer(completed_trials)
         if optimizer is None:
-            optimizer = self._init_optimizer(trans, study.direction)
+            optimizer = self._init_optimizer(trans, study.direction, len(search_space) == 1)
 
         if optimizer.dim != len(trans.bounds):
             if self._warn_independent_sampling:
@@ -489,6 +487,7 @@ class CmaEsSampler(BaseSampler):
         self,
         trans: _SearchSpaceTransform,
         direction: StudyDirection,
+        is_single_dimension: bool,
     ) -> "CmaClass":
         lower_bounds = trans.bounds[:, 0]
         upper_bounds = trans.bounds[:, 1]
@@ -529,7 +528,7 @@ class CmaEsSampler(BaseSampler):
         # Avoid ZeroDivisionError in cmaes.
         sigma0 = max(sigma0, _EPS)
 
-        if self._use_separable_cma:
+        if self._use_separable_cma and not is_single_dimension:
             return cmaes.SepCMA(
                 mean=mean,
                 sigma=sigma0,

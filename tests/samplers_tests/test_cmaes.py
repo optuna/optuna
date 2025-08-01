@@ -252,19 +252,6 @@ def test_infer_relative_search_space_1d() -> None:
     assert sampler.infer_relative_search_space(study, study.best_trial) == {}
 
 
-def test_sample_relative_1d() -> None:
-    independent_sampler = optuna.samplers.RandomSampler()
-    sampler = optuna.samplers.CmaEsSampler(independent_sampler=independent_sampler)
-    study = optuna.create_study(sampler=sampler)
-
-    # If search space is one dimensional, the independent sampler is always used.
-    with patch.object(
-        independent_sampler, "sample_independent", wraps=independent_sampler.sample_independent
-    ) as mock_object:
-        study.optimize(lambda t: t.suggest_int("x", -1, 1), n_trials=2)
-        assert mock_object.call_count == 2
-
-
 def test_sample_relative_n_startup_trials() -> None:
     independent_sampler = optuna.samplers.RandomSampler()
     sampler = optuna.samplers.CmaEsSampler(
@@ -512,9 +499,6 @@ def test_internal_optimizer_with_margin() -> None:
 def test_warn_independent_sampling(
     capsys: _pytest.capture.CaptureFixture, warn_independent_sampling: bool
 ) -> None:
-    def objective_single(trial: optuna.trial.Trial) -> float:
-        return trial.suggest_float("x", 0, 1)
-
     def objective_shrink(trial: optuna.trial.Trial) -> float:
         if trial.number != 5:
             x = trial.suggest_float("x", 0, 1)
@@ -537,7 +521,7 @@ def test_warn_independent_sampling(
             z = trial.suggest_float("z", 0, 1)
             return x + y + z
 
-    for objective in [objective_single, objective_shrink, objective_expand]:
+    for objective in [objective_shrink, objective_expand]:
         # We need to reconstruct our default handler to properly capture stderr.
         optuna.logging._reset_library_root_logger()
         optuna.logging.enable_default_handler()
