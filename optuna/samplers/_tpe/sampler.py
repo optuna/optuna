@@ -45,11 +45,11 @@ _logger = get_logger(__name__)
 
 
 def default_gamma(x: int) -> int:
-    return min(int(np.ceil(0.1 * x)), 25)
+    return min(math.ceil(0.1 * x), 25)
 
 
 def hyperopt_default_gamma(x: int) -> int:
-    return min(int(np.ceil(0.25 * np.sqrt(x))), 25)
+    return min(math.ceil(0.25 * x**0.5), 25)
 
 
 def default_weights(x: int) -> np.ndarray:
@@ -466,7 +466,7 @@ class TPESampler(BaseSampler):
     ) -> dict[str, np.ndarray]:
         values: dict[str, list[float]] = {param_name: [] for param_name in search_space}
         for trial in trials:
-            if all((param_name in trial.params) for param_name in search_space):
+            if search_space.keys() <= trial.params.keys():
                 for param_name in search_space:
                     param = trial.params[param_name]
                     distribution = trial.distributions[param_name]
@@ -517,11 +517,7 @@ class TPESampler(BaseSampler):
     ) -> _ParzenEstimator:
         observations = self._get_internal_repr(trials, search_space)
         if handle_below and study._is_multi_objective():
-            param_mask_below = []
-            for trial in trials:
-                param_mask_below.append(
-                    all((param_name in trial.params) for param_name in search_space)
-                )
+            param_mask_below = [search_space.keys() <= trial.params.keys() for trial in trials]
             weights_below = _calculate_weights_below_for_multi_objective(
                 study, trials, self._constraints_func
             )[param_mask_below]
@@ -703,7 +699,7 @@ def _split_complete_trials_multi_objective(
 
     assert 0 < n_below < len(trials)
     lvals = np.array([trial.values for trial in trials])
-    lvals *= np.array([-1.0 if d == StudyDirection.MAXIMIZE else 1.0 for d in study.directions])
+    lvals *= [-1.0 if d == StudyDirection.MAXIMIZE else 1.0 for d in study.directions]
     nondomination_ranks = _fast_non_domination_rank(lvals, n_below=n_below)
     ranks, rank_counts = np.unique(nondomination_ranks, return_counts=True)
     last_rank_before_tiebreak = int(np.max(ranks[np.cumsum(rank_counts) <= n_below], initial=-1))
@@ -784,12 +780,12 @@ def _calculate_weights_below_for_multi_objective(
         return weights_below
 
     lvals = np.asarray([t.values for t in below_trials])[is_feasible]
-    lvals *= np.array([-1.0 if d == StudyDirection.MAXIMIZE else 1.0 for d in study.directions])
+    lvals *= [-1.0 if d == StudyDirection.MAXIMIZE else 1.0 for d in study.directions]
     ref_point = _get_reference_point(lvals)
     on_front = _is_pareto_front(lvals, assume_unique_lexsorted=False)
     pareto_sols = lvals[on_front]
     hv = compute_hypervolume(pareto_sols, ref_point, assume_pareto=True)
-    if np.isinf(hv):
+    if math.isinf(hv):
         # TODO(nabenabe): Assign EPS to non-Pareto solutions, and
         # solutions with finite contrib if hv is inf. Ref: PR#5813.
         return weights_below

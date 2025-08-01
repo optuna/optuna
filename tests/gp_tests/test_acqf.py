@@ -6,8 +6,8 @@ import torch
 
 from optuna._gp import acqf as acqf_module
 from optuna._gp.gp import GPRegressor
-from optuna._gp.search_space import ScaleType
 from optuna._gp.search_space import SearchSpace
+from optuna.distributions import FloatDistribution
 
 
 def verify_eval_acqf(x: np.ndarray, acqf: acqf_module.BaseAcquisitionFunc) -> None:
@@ -38,11 +38,7 @@ def get_gpr(y_train: np.ndarray) -> GPRegressor:
 @pytest.fixture
 def search_space() -> SearchSpace:
     n_dims = 2
-    return SearchSpace(
-        scale_types=np.full(n_dims, ScaleType.LINEAR),
-        bounds=np.array([[0.0, 1.0] * n_dims]),
-        steps=np.zeros(n_dims),
-    )
+    return SearchSpace({chr(ord("a") + i): FloatDistribution(0.0, 1.0) for i in range(n_dims)})
 
 
 parametrized_x = pytest.mark.parametrize(
@@ -116,6 +112,31 @@ def test_eval_multi_objective_acqf(
         Y_train=torch.from_numpy(Y),
         n_qmc_samples=32,
         qmc_seed=42,
+        stabilizing_noise=0.0,
+    )
+    verify_eval_acqf(x, acqf)
+
+
+@parametrized_x
+@parametrized_additional_values
+def test_eval_multi_objective_acqf_with_constraints(
+    x: np.ndarray,
+    additional_values: np.ndarray,
+    search_space: SearchSpace,
+) -> None:
+    c = additional_values.copy()
+    Y = np.hstack([np.array([1.0, 2.0, 3.0])[:, np.newaxis], additional_values])
+    n_objectives = Y.shape[-1]
+    is_feasible = np.all(c <= 0, axis=1)
+    is_all_infeasible = not np.any(is_feasible)
+    acqf = acqf_module.ConstrainedLogEHVI(
+        gpr_list=[get_gpr(Y[:, i]) for i in range(n_objectives)],
+        search_space=search_space,
+        Y_feasible=None if is_all_infeasible else torch.from_numpy(Y[is_feasible]),
+        n_qmc_samples=32,
+        qmc_seed=42,
+        constraints_gpr_list=[get_gpr(vals) for vals in c.T],
+        constraints_threshold_list=[0.0] * len(c.T),
         stabilizing_noise=0.0,
     )
     verify_eval_acqf(x, acqf)
