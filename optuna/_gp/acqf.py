@@ -149,12 +149,13 @@ class LogPI(BaseAcquisitionFunc):
         super().__init__(gpr.length_scales, search_space)
 
     def eval_acqf(self, x: torch.Tensor) -> torch.Tensor:
-        # Return the integral of N(mean, var) from -inf to f0
-        # This is identical to the integral of N(0, 1) from -inf to (f0-mean)/sigma
-        # Return E_{y ~ N(mean, var)}[bool(y <= f0)]
+        # Return the integral of N(mean, var) from f0 to inf.
+        # This is identical to the integral of N(0, 1) from (f0-mean)/sigma to inf.
+        # Return E_{y ~ N(mean, var)}[bool(y >= f0)]
         mean, var = self._gpr.posterior(x)
         sigma = torch.sqrt(var + self._stabilizing_noise)
-        return torch.special.log_ndtr((self._threshold - mean) / sigma)
+        # NOTE(nabenabe): integral from a to b of f(x) is integral from -b to -a of f(-x).
+        return torch.special.log_ndtr((mean - self._threshold) / sigma)
 
 
 class UCB(BaseAcquisitionFunc):
