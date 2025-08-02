@@ -68,8 +68,11 @@ class _MixtureOfProductDistribution(NamedTuple):
 
     def sample(self, rng: np.random.RandomState, batch_size: int) -> np.ndarray:
         active_indices = rng.choice(len(self.weights), p=self.weights, size=batch_size)
-
-        ret = np.empty((batch_size, len(self.distributions)), dtype=np.float64)
+        ret = np.empty((batch_size, len(self.distributions)), dtype=float)
+        disc_inds, numerical_inds = [], []
+        numerical_dists: list[
+            _BatchedTruncNormDistributions | _BatchedDiscreteTruncNormDistributions
+        ] = []
         for i, d in enumerate(self.distributions):
             if isinstance(d, _BatchedCategoricalDistributions):
                 active_weights = d.weights[active_indices, :]
@@ -77,33 +80,35 @@ class _MixtureOfProductDistribution(NamedTuple):
                 cum_probs = np.cumsum(active_weights, axis=-1)
                 assert np.isclose(cum_probs[:, -1], 1).all()
                 cum_probs[:, -1] = 1  # Avoid numerical errors.
-                ret[:, i] = np.sum(cum_probs < rnd_quantile[:, None], axis=-1)
+                ret[:, i] = np.sum(cum_probs < rnd_quantile[:, np.newaxis], axis=-1)
             elif isinstance(d, _BatchedTruncNormDistributions):
-                active_mus = d.mu[active_indices]
-                active_sigmas = d.sigma[active_indices]
-                ret[:, i] = _truncnorm.rvs(
-                    a=(d.low - active_mus) / active_sigmas,
-                    b=(d.high - active_mus) / active_sigmas,
-                    loc=active_mus,
-                    scale=active_sigmas,
-                    random_state=rng,
-                )
+                numerical_dists.append(d)
+                numerical_inds.append(i)
             elif isinstance(d, _BatchedDiscreteTruncNormDistributions):
-                active_mus = d.mu[active_indices]
-                active_sigmas = d.sigma[active_indices]
-                samples = _truncnorm.rvs(
-                    a=(d.low - d.step / 2 - active_mus) / active_sigmas,
-                    b=(d.high + d.step / 2 - active_mus) / active_sigmas,
-                    loc=active_mus,
-                    scale=active_sigmas,
-                    random_state=rng,
-                )
-                ret[:, i] = np.clip(
-                    d.low + np.round((samples - d.low) / d.step) * d.step, d.low, d.high
-                )
+                disc_inds.append(i)
+                numerical_dists.append(d)
+                numerical_inds.append(i)
             else:
                 assert False
 
+        if len(numerical_dists):
+            active_mus = np.asarray([d.mu[active_indices] for d in numerical_dists])
+            active_sigmas = np.asarray([d.sigma[active_indices] for d in numerical_dists])
+            lows = np.array([d.low for d in numerical_dists])
+            highs = np.array([d.high for d in numerical_dists])
+            steps = np.array([getattr(d, "step", 0.0) for d in numerical_dists])
+            ret[:, numerical_inds] = _truncnorm.rvs(
+                a=((lows - steps / 2)[:, np.newaxis] - active_mus) / active_sigmas,
+                b=((highs + steps / 2)[:, np.newaxis] - active_mus) / active_sigmas,
+                loc=active_mus,
+                scale=active_sigmas,
+                random_state=rng,
+            ).T
+            steps_not_0 = np.nonzero(steps != 0.0)[0]
+            low_d, step_d, high_d = lows[steps_not_0], steps[steps_not_0], highs[steps_not_0]
+            ret[:, disc_inds] = np.clip(
+                low_d + np.round((ret[:, disc_inds] - low_d) / step_d) * step_d, low_d, high_d
+            )
         return ret
 
     def log_pdf(self, x: np.ndarray) -> np.ndarray:
