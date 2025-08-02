@@ -102,10 +102,6 @@ def _log_ndtr(a: np.ndarray) -> np.ndarray:
     return np.frompyfunc(_log_ndtr_single, 1, 1)(a).astype(float)
 
 
-def _norm_logpdf(x: np.ndarray) -> np.ndarray:
-    return -(x**2) / 2.0 - _norm_pdf_logC
-
-
 def log_gauss_mass(a: np.ndarray, b: np.ndarray) -> np.ndarray:
     """Log of Gaussian probability mass within an interval"""
 
@@ -132,7 +128,7 @@ def log_gauss_mass(a: np.ndarray, b: np.ndarray) -> np.ndarray:
         # underflows, it was insignificant; if both terms underflow,
         # the result can't accurately be represented in logspace anyway
         # because sc.log1p(x) ~ x for small x.
-        return np.log1p(-_ndtr(a) - _ndtr(-b))
+        return np.log1p(-np.exp(np.logaddexp(_log_ndtr(-b), _log_ndtr(a))))
 
     # _lazyselect not working; don't care to debug it
     out = np.full_like(a, fill_value=np.nan, dtype=np.complex128)
@@ -145,7 +141,7 @@ def log_gauss_mass(a: np.ndarray, b: np.ndarray) -> np.ndarray:
     return np.real(out)  # discard ~0j
 
 
-def _ndtri_exp(y: np.ndarray) -> np.ndarray:
+def _ndtri_exp(y: np.ndarray, check_inf: bool = True) -> np.ndarray:
     """
     Use the Newton method to efficiently find the root.
 
@@ -187,6 +183,15 @@ def _ndtri_exp(y: np.ndarray) -> np.ndarray:
         --> log(exp(-y) - 1) \\simeq -pi * x / sqrt(3)
         --> x \\simeq -sqrt(3) / pi * log(exp(-y) - 1).
     """
+    if check_inf:
+        is_y_zero = y == 0.0
+        is_y_neginf = np.isneginf(y)
+        if np.any(is_y_zero) or np.any(is_y_neginf):
+            x = np.where(is_y_zero, np.inf, -np.inf)
+            is_x_finite = ~is_y_zero & ~is_y_neginf
+            x[is_x_finite] = _ndtri_exp(y[is_x_finite], check_inf=False)
+            return x
+
     # If x becomes positive, we first derive x such that z = log_ndtr(-x) and then flip the sign.
     # z = log_ndtr(-x) --> z = log(1 - ndtr(x)) = log(1 - exp(y)) = log(-expm1(y)).
     # NOTE(nabenabe): x becomes positive if ndtr(x) = exp(y) > 0.5, meaning that y > log(1/2).
@@ -225,15 +230,20 @@ def _ppf(q: np.ndarray, a: np.ndarray | float, b: np.ndarray | float) -> np.ndar
 
     More precisely, this function returns `c` such that:
         ndtr(c) = ndtr(a) + q * (ndtr(b) - ndtr(a))
-    for the case where `a < 0`, i.e., `case_left`. For `case_right`, we flip the sign for the
-    better numerical stability, which is indeed done in the `_ndtri_exp` function.
+    for the case where `a < 0`. If `a > 0`, we flip the sign for the better numerical stability.
     """
     q, a, b = np.atleast_1d(q, a, b)
     q, a, b = np.broadcast_arrays(q, a, b)
-    # NOTE(nabenabe): if c is positive, ndtri_exp first derives -c and then flips the sign, so we
-    # do not need to flip the sign here.
-    c = _ndtri_exp(np.logaddexp(_log_ndtr(a), np.log(q) + log_gauss_mass(a, b)))
-    return np.select([a == b, q == 1, q == 0], [math.nan, b, a], default=c)
+    positive = np.nonzero(a > 0)
+    if positive[0].size:
+        # Negative side is more numerically stable, so we flip back the sign before the return.
+        a[positive], b[positive], q[positive] = -b[positive], -a[positive], 1 - q[positive]
+
+    log_ndtr_c = np.logaddexp(_log_ndtr(a), np.log(q) + log_gauss_mass(a, b))
+    c = _ndtri_exp(log_ndtr_c)
+    c[a == b] = np.nan
+    c[positive] *= -1
+    return c
 
 
 def rvs(
@@ -262,6 +272,6 @@ def logpdf(
 ) -> np.ndarray:
     x = (x - loc) / scale
     x, a, b = np.atleast_1d(x, a, b)
-    out = _norm_logpdf(x) - log_gauss_mass(a, b) - np.log(scale)
+    out = -0.5 * x**2 - _norm_pdf_logC - log_gauss_mass(a, b) - np.log(scale)
     x, a, b = np.broadcast_arrays(x, a, b)
     return np.select([a == b, (x < a) | (x > b)], [np.nan, -np.inf], default=out)
