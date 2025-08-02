@@ -195,15 +195,6 @@ def _ndtri_exp(y: np.ndarray, check_inf: bool = True) -> np.ndarray:
         --> log(exp(-y) - 1) \\simeq -pi * x / sqrt(3)
         --> x \\simeq -sqrt(3) / pi * log(exp(-y) - 1).
     """
-    if check_inf:
-        is_y_zero = y == 0.0
-        is_y_neginf = np.isneginf(y)
-        if np.any(is_y_zero) or np.any(is_y_neginf):
-            x = np.where(is_y_zero, np.inf, -np.inf)
-            is_x_finite = ~is_y_zero & ~is_y_neginf
-            x[is_x_finite] = _ndtri_exp(y[is_x_finite], check_inf=False)
-            return x
-
     # Flip the sign of y close to zero for better numerical stability and flip back the sign later.
     flipped = y > -1e-2
     z = y.copy()
@@ -225,6 +216,7 @@ def _ndtri_exp(y: np.ndarray, check_inf: bool = True) -> np.ndarray:
             # Equivalent to np.isclose with atol=0.0 and rtol=1e-8.
             break
     x[flipped] *= -1
+    x[y == 0.0] = np.inf
     return x
 
 
