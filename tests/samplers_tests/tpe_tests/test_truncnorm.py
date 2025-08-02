@@ -24,7 +24,7 @@ def test_ppf(a: float, b: float) -> None:
     for x in np.concatenate(
         [np.linspace(0, 1, num=100), np.array([sys.float_info.min, 1 - sys.float_info.epsilon])]
     ):
-        assert truncnorm_ours.ppf(x, a, b) == pytest.approx(
+        assert truncnorm_ours._ppf(x, a, b) == pytest.approx(
             truncnorm_scipy.ppf(x, a, b), nan_ok=True
         ), f"ppf(x={x}, a={a}, b={b})"
 
@@ -37,12 +37,12 @@ def test_ppf(a: float, b: float) -> None:
 @pytest.mark.parametrize("loc", [-10, 0, 10])
 @pytest.mark.parametrize("scale", [0.1, 1, 10])
 def test_logpdf(a: float, b: float, loc: float, scale: float) -> None:
-    for x in np.concatenate(
+    x = np.concatenate(
         [np.linspace(np.max([a, -100]), np.min([b, 100]), num=1000), np.array([-2000.0, +2000.0])]
-    ):
-        assert truncnorm_ours.logpdf(x, a, b, loc, scale) == pytest.approx(
-            truncnorm_scipy.logpdf(x, a, b, loc, scale), nan_ok=True
-        ), f"logpdf(x={x}, a={a}, b={b})"
+    )
+    assert truncnorm_ours.logpdf(x, a, b, loc, scale) == pytest.approx(
+        truncnorm_scipy.logpdf(x, a, b, loc, scale), nan_ok=True
+    ), f"logpdf(x={x}, a={a}, b={b})"
 
 
 @pytest.mark.skipif(
@@ -55,7 +55,7 @@ def test_logpdf(a: float, b: float, loc: float, scale: float) -> None:
 )
 def test_log_gass_mass(a: float, b: float) -> None:
     a_arr, b_arr = np.array([a]), np.array([b])
-    assert truncnorm_ours._log_gauss_mass(a_arr, b_arr) == pytest.approx(
+    assert truncnorm_ours.log_gauss_mass(a_arr, b_arr) == pytest.approx(
         _log_gauss_mass_scipy(a_arr, b_arr), nan_ok=True
     ), f"_log_gauss_mass(a={a}, b={b})"
 

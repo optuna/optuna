@@ -59,7 +59,7 @@ def _log_gauss_mass_unique(a: np.ndarray, b: np.ndarray) -> np.ndarray:
     duplicated evaluations using the np.unique_inverse(...) equivalent operation.
     """
     a_uniq, b_uniq, inv = _unique_inverse_2d(a.ravel(), b.ravel())
-    return _truncnorm._log_gauss_mass(a_uniq, b_uniq)[inv].reshape(a.shape)
+    return _truncnorm.log_gauss_mass(a_uniq, b_uniq)[inv].reshape(a.shape)
 
 
 class _MixtureOfProductDistribution(NamedTuple):
@@ -91,24 +91,25 @@ class _MixtureOfProductDistribution(NamedTuple):
             else:
                 assert False
 
-        active_mus = np.asarray([d.mu[active_indices] for d in numerical_dists])
-        active_sigmas = np.asarray([d.sigma[active_indices] for d in numerical_dists])
-        lows = np.array([d.low for d in numerical_dists])
-        highs = np.array([d.high for d in numerical_dists])
-        steps = np.array([getattr(d, "step", 0.0) for d in numerical_dists])
-        ret[:, numerical_inds] = _truncnorm.rvs(
-            a=((lows - steps / 2)[:, np.newaxis] - active_mus) / active_sigmas,
-            b=((highs + steps / 2)[:, np.newaxis] - active_mus) / active_sigmas,
-            loc=active_mus,
-            scale=active_sigmas,
-            random_state=rng,
-        ).T
-        lows_disc, steps_disc = lows[disc_inds], steps[disc_inds]
-        ret[:, disc_inds] = np.clip(
-            lows_disc + np.round((ret[:, disc_inds] - lows_disc) / steps_disc) * steps_disc,
-            lows_disc,
-            highs[disc_inds],
-        )
+        if len(numerical_dists):
+            active_mus = np.asarray([d.mu[active_indices] for d in numerical_dists])
+            active_sigmas = np.asarray([d.sigma[active_indices] for d in numerical_dists])
+            lows = np.array([d.low for d in numerical_dists])
+            highs = np.array([d.high for d in numerical_dists])
+            steps = np.array([getattr(d, "step", 0.0) for d in numerical_dists])
+            ret[:, numerical_inds] = _truncnorm.rvs(
+                a=((lows - steps / 2)[:, np.newaxis] - active_mus) / active_sigmas,
+                b=((highs + steps / 2)[:, np.newaxis] - active_mus) / active_sigmas,
+                loc=active_mus,
+                scale=active_sigmas,
+                random_state=rng,
+            ).T
+            lows_disc, steps_disc = lows[disc_inds], steps[disc_inds]
+            ret[:, disc_inds] = np.clip(
+                lows_disc + np.round((ret[:, disc_inds] - lows_disc) / steps_disc) * steps_disc,
+                lows_disc,
+                highs[disc_inds],
+            )
         return ret
 
     def log_pdf(self, x: np.ndarray) -> np.ndarray:
@@ -132,7 +133,7 @@ class _MixtureOfProductDistribution(NamedTuple):
                     ((xi_uniq + d.step / 2)[:, np.newaxis] - mu_uniq) / sigma_uniq,
                 )[np.ix_(xi_inv, mu_sigma_inv)]
                 # Very unlikely to observe duplications below, so we skip the unique operation.
-                weighted_log_pdf -= _truncnorm._log_gauss_mass(
+                weighted_log_pdf -= _truncnorm.log_gauss_mass(
                     (d.low - d.step / 2 - mu_uniq) / sigma_uniq,
                     (d.high + d.step / 2 - mu_uniq) / sigma_uniq,
                 )[mu_sigma_inv]

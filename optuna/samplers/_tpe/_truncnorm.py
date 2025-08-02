@@ -48,10 +48,6 @@ _ndtri_exp_approx_C = math.sqrt(3) / math.pi
 _log_2 = math.log(2)
 
 
-def _log_sum(log_p: np.ndarray, log_q: np.ndarray) -> np.ndarray:
-    return np.logaddexp(log_p, log_q)
-
-
 def _log_diff(log_p: np.ndarray, log_q: np.ndarray) -> np.ndarray:
     return log_p + np.log1p(-np.exp(log_q - log_p))
 
@@ -110,7 +106,7 @@ def _norm_logpdf(x: np.ndarray) -> np.ndarray:
     return -(x**2) / 2.0 - _norm_pdf_logC
 
 
-def _log_gauss_mass(a: np.ndarray, b: np.ndarray) -> np.ndarray:
+def log_gauss_mass(a: np.ndarray, b: np.ndarray) -> np.ndarray:
     """Log of Gaussian probability mass within an interval"""
 
     # Calculations in right tail are inaccurate, so we'll exploit the
@@ -129,7 +125,7 @@ def _log_gauss_mass(a: np.ndarray, b: np.ndarray) -> np.ndarray:
         # Previously, this was implemented as:
         # left_mass = mass_case_left(a, 0)
         # right_mass = mass_case_right(0, b)
-        # return _log_sum(left_mass, right_mass)
+        # return np.logaddexp(left_mass, right_mass)
         # Catastrophic cancellation occurs as np.exp(log_mass) approaches 1.
         # Correct for this with an alternative formulation.
         # We're not concerned with underflow here: if only one term
@@ -217,7 +213,7 @@ def _ndtri_exp(y: np.ndarray) -> np.ndarray:
     return x
 
 
-def ppf(q: np.ndarray, a: np.ndarray | float, b: np.ndarray | float) -> np.ndarray:
+def _ppf(q: np.ndarray, a: np.ndarray | float, b: np.ndarray | float) -> np.ndarray:
     """
     Compute the percent point function (inverse of cdf) at q of the given truncated Gaussian.
 
@@ -230,32 +226,14 @@ def ppf(q: np.ndarray, a: np.ndarray | float, b: np.ndarray | float) -> np.ndarr
     More precisely, this function returns `c` such that:
         ndtr(c) = ndtr(a) + q * (ndtr(b) - ndtr(a))
     for the case where `a < 0`, i.e., `case_left`. For `case_right`, we flip the sign for the
-    better numerical stability.
+    better numerical stability, which is indeed done in the `_ndtri_exp` function.
     """
     q, a, b = np.atleast_1d(q, a, b)
     q, a, b = np.broadcast_arrays(q, a, b)
-
-    case_left = a < 0
-    case_right = ~case_left
-    log_mass = _log_gauss_mass(a, b)
-
-    def ppf_left(q: np.ndarray, a: np.ndarray, b: np.ndarray, log_mass: np.ndarray) -> np.ndarray:
-        log_Phi_x = _log_sum(_log_ndtr(a), np.log(q) + log_mass)
-        return _ndtri_exp(log_Phi_x)
-
-    def ppf_right(q: np.ndarray, a: np.ndarray, b: np.ndarray, log_mass: np.ndarray) -> np.ndarray:
-        # NOTE(nabenabe): Since the numerical stability of log_ndtr is better in the left tail, we
-        # flip the side for a >= 0.
-        log_Phi_x = _log_sum(_log_ndtr(-b), np.log1p(-q) + log_mass)
-        return -_ndtri_exp(log_Phi_x)
-
-    out = np.empty_like(q)
-    if (q_left := q[case_left]).size:
-        out[case_left] = ppf_left(q_left, a[case_left], b[case_left], log_mass[case_left])
-    if (q_right := q[case_right]).size:
-        out[case_right] = ppf_right(q_right, a[case_right], b[case_right], log_mass[case_right])
-
-    return np.select([a == b, q == 1, q == 0], [math.nan, b, a], default=out)
+    # NOTE(nabenabe): if c is positive, ndtri_exp first derives -c and then flips the sign, so we
+    # do not need to flip the sign here.
+    c = _ndtri_exp(np.logaddexp(_log_ndtr(a), np.log(q) + log_gauss_mass(a, b)))
+    return np.select([a == b, q == 1, q == 0], [math.nan, b, a], default=c)
 
 
 def rvs(
@@ -272,7 +250,7 @@ def rvs(
     random_state = random_state or np.random.RandomState()
     size = np.broadcast(a, b, loc, scale).shape
     quantiles = random_state.uniform(low=0, high=1, size=size)
-    return ppf(quantiles, a, b) * scale + loc
+    return _ppf(quantiles, a, b) * scale + loc
 
 
 def logpdf(
@@ -284,6 +262,6 @@ def logpdf(
 ) -> np.ndarray:
     x = (x - loc) / scale
     x, a, b = np.atleast_1d(x, a, b)
-    out = _norm_logpdf(x) - _log_gauss_mass(a, b) - np.log(scale)
+    out = _norm_logpdf(x) - log_gauss_mass(a, b) - np.log(scale)
     x, a, b = np.broadcast_arrays(x, a, b)
     return np.select([a == b, (x < a) | (x > b)], [np.nan, -np.inf], default=out)
