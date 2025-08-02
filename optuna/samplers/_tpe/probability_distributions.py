@@ -59,7 +59,7 @@ def _log_gauss_mass_unique(a: np.ndarray, b: np.ndarray) -> np.ndarray:
     duplicated evaluations using the np.unique_inverse(...) equivalent operation.
     """
     a_uniq, b_uniq, inv = _unique_inverse_2d(a.ravel(), b.ravel())
-    return _truncnorm.log_gauss_mass(a_uniq, b_uniq)[inv].reshape(a.shape)
+    return _truncnorm._log_gauss_mass(a_uniq, b_uniq)[inv].reshape(a.shape)
 
 
 class _MixtureOfProductDistribution(NamedTuple):
@@ -133,7 +133,7 @@ class _MixtureOfProductDistribution(NamedTuple):
                     ((xi_uniq + d.step / 2)[:, np.newaxis] - mu_uniq) / sigma_uniq,
                 )[np.ix_(xi_inv, mu_sigma_inv)]
                 # Very unlikely to observe duplications below, so we skip the unique operation.
-                weighted_log_pdf -= _truncnorm.log_gauss_mass(
+                weighted_log_pdf -= _truncnorm._log_gauss_mass(
                     (d.low - d.step / 2 - mu_uniq) / sigma_uniq,
                     (d.high + d.step / 2 - mu_uniq) / sigma_uniq,
                 )[mu_sigma_inv]

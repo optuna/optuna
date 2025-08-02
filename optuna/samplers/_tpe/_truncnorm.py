@@ -48,6 +48,10 @@ _ndtri_exp_approx_C = math.sqrt(3) / math.pi
 _log_2 = math.log(2)
 
 
+def _log_sum(log_p: np.ndarray, log_q: np.ndarray) -> np.ndarray:
+    return np.logaddexp(log_p, log_q)
+
+
 def _log_diff(log_p: np.ndarray, log_q: np.ndarray) -> np.ndarray:
     return log_p + np.log1p(-np.exp(log_q - log_p))
 
@@ -102,7 +106,11 @@ def _log_ndtr(a: np.ndarray) -> np.ndarray:
     return np.frompyfunc(_log_ndtr_single, 1, 1)(a).astype(float)
 
 
-def log_gauss_mass(a: np.ndarray, b: np.ndarray) -> np.ndarray:
+def _norm_logpdf(x: np.ndarray) -> np.ndarray:
+    return -(x**2) / 2.0 - _norm_pdf_logC
+
+
+def _log_gauss_mass(a: np.ndarray, b: np.ndarray) -> np.ndarray:
     """Log of Gaussian probability mass within an interval"""
 
     # Calculations in right tail are inaccurate, so we'll exploit the
@@ -121,14 +129,14 @@ def log_gauss_mass(a: np.ndarray, b: np.ndarray) -> np.ndarray:
         # Previously, this was implemented as:
         # left_mass = mass_case_left(a, 0)
         # right_mass = mass_case_right(0, b)
-        # return np.logaddexp(left_mass, right_mass)
+        # return _log_sum(left_mass, right_mass)
         # Catastrophic cancellation occurs as np.exp(log_mass) approaches 1.
         # Correct for this with an alternative formulation.
         # We're not concerned with underflow here: if only one term
         # underflows, it was insignificant; if both terms underflow,
         # the result can't accurately be represented in logspace anyway
         # because sc.log1p(x) ~ x for small x.
-        return np.log1p(-np.exp(np.logaddexp(_log_ndtr(-b), _log_ndtr(a))))
+        return np.log1p(-_ndtr(a) - _ndtr(-b))
 
     # _lazyselect not working; don't care to debug it
     out = np.full_like(a, fill_value=np.nan, dtype=np.complex128)
@@ -239,8 +247,10 @@ def _ppf(q: np.ndarray, a: np.ndarray | float, b: np.ndarray | float) -> np.ndar
         # Negative side is more numerically stable, so we flip back the sign before the return.
         a[positive], b[positive], q[positive] = -b[positive], -a[positive], 1 - q[positive]
 
-    log_ndtr_c = np.logaddexp(_log_ndtr(a), np.log(q) + log_gauss_mass(a, b))
+    log_ndtr_c = np.logaddexp(_log_ndtr(a), np.log(q) + _log_gauss_mass(a, b))
     c = _ndtri_exp(log_ndtr_c)
+    c[q == 0] = a
+    c[q == 1] = b
     c[a == b] = np.nan
     c[positive] *= -1
     return c
@@ -272,6 +282,6 @@ def logpdf(
 ) -> np.ndarray:
     x = (x - loc) / scale
     x, a, b = np.atleast_1d(x, a, b)
-    out = -0.5 * x**2 - _norm_pdf_logC - log_gauss_mass(a, b) - np.log(scale)
+    out = _norm_logpdf(x) - _log_gauss_mass(a, b) - np.log(scale)
     x, a, b = np.broadcast_arrays(x, a, b)
     return np.select([a == b, (x < a) | (x > b)], [np.nan, -np.inf], default=out)
