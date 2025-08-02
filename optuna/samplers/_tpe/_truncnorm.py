@@ -166,7 +166,11 @@ def _ndtri_exp(y: np.ndarray, check_inf: bool = True) -> np.ndarray:
     First recall that y is a non-positive value and y = log_ndtr(inf) = 0 and
     y = log_ndtr(-inf) = -inf.
 
-    If abs(y) is very small, x is very large, meaning that x**2 >> log(x) and
+    If abs(y) is very small, x is very large, meaning that x**2 >> log(x). In this case, we first
+    derive x such that z = log_ndtr(-x) and then flip the sign. Please note that the following:
+        z = log_ndtr(-x) --> z = log(1 - ndtr(x)) = log(1 - exp(y)) = log(-expm1(y)).
+    Recall that as long as ndtr(x) = exp(y) > 0.5 --> y > -log(2) = -0.693..., x becomes positive.
+
     ndtr(x) = exp(y) \\simeq 1 + y --> -y \\simeq 1 - ndtr(x). From this, we can calculate:
         log(1 - ndtr(x)) \\simeq log(-y) \\simeq -1/2 * x**2 - 1/2 * log(2pi) - log(x).
     Because x**2 >> log(x), we can ignore the second and third terms, leading to:
@@ -200,10 +204,8 @@ def _ndtri_exp(y: np.ndarray, check_inf: bool = True) -> np.ndarray:
             x[is_x_finite] = _ndtri_exp(y[is_x_finite], check_inf=False)
             return x
 
-    # If x becomes positive, we first derive x such that z = log_ndtr(-x) and then flip the sign.
-    # z = log_ndtr(-x) --> z = log(1 - ndtr(x)) = log(1 - exp(y)) = log(-expm1(y)).
-    # NOTE(nabenabe): x becomes positive if ndtr(x) = exp(y) > 0.5, meaning that y > log(1/2).
-    flipped = y > -_log_2
+    # Flip the sign of y close to zero for better numerical stability and flip back the sign later.
+    flipped = y > -1e-2
     z = y.copy()
     z[flipped] = np.log(-np.expm1(y[flipped]))  # y is always < -log(2) = -0.693...
     x = np.empty_like(y)
@@ -219,7 +221,7 @@ def _ndtri_exp(y: np.ndarray, check_inf: bool = True) -> np.ndarray:
         # numerical stability.
         dx = (log_ndtr_x - z) * np.exp(log_ndtr_x - log_norm_pdf_x)
         x -= dx
-        if np.all(np.abs(dx) < 1e-8 * -x):  # NOTE: x is always negative.
+        if np.all(np.abs(dx) < 1e-8 * np.abs(x)):  # NOTE: rtol controls the precision.
             # Equivalent to np.isclose with atol=0.0 and rtol=1e-8.
             break
     x[flipped] *= -1

@@ -104,11 +104,10 @@ class _MixtureOfProductDistribution(NamedTuple):
                 scale=active_sigmas,
                 random_state=rng,
             ).T
-            lows_disc, steps_disc = lows[disc_inds], steps[disc_inds]
+            steps_not_0 = np.nonzero(steps != 0.0)[0]
+            low_d, step_d, high_d = lows[steps_not_0], steps[steps_not_0], highs[steps_not_0]
             ret[:, disc_inds] = np.clip(
-                lows_disc + np.round((ret[:, disc_inds] - lows_disc) / steps_disc) * steps_disc,
-                lows_disc,
-                highs[disc_inds],
+                low_d + np.round((ret[:, disc_inds] - low_d) / step_d) * step_d, low_d, high_d
             )
         return ret
 
