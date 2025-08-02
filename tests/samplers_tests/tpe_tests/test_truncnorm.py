@@ -24,7 +24,7 @@ def test_ppf(a: float, b: float) -> None:
     for x in np.concatenate(
         [np.linspace(0, 1, num=100), np.array([sys.float_info.min, 1 - sys.float_info.epsilon])]
     ):
-        assert truncnorm_ours._ppf(x, a, b) == pytest.approx(
+        assert truncnorm_ours.ppf(x, a, b) == pytest.approx(
             truncnorm_scipy.ppf(x, a, b), nan_ok=True
         ), f"ppf(x={x}, a={a}, b={b})"
 

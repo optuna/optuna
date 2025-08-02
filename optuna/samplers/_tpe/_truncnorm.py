@@ -226,7 +226,7 @@ def _ndtri_exp(y: np.ndarray, check_inf: bool = True) -> np.ndarray:
     return x
 
 
-def _ppf(q: np.ndarray, a: np.ndarray | float, b: np.ndarray | float) -> np.ndarray:
+def ppf(q: np.ndarray, a: np.ndarray | float, b: np.ndarray | float) -> np.ndarray:
     """
     Compute the percent point function (inverse of cdf) at q of the given truncated Gaussian.
 
@@ -238,22 +238,33 @@ def _ppf(q: np.ndarray, a: np.ndarray | float, b: np.ndarray | float) -> np.ndar
 
     More precisely, this function returns `c` such that:
         ndtr(c) = ndtr(a) + q * (ndtr(b) - ndtr(a))
-    for the case where `a < 0`. If `a > 0`, we flip the sign for the better numerical stability.
+    for the case where `a < 0`, i.e., `case_left`. For `case_right`, we flip the sign for the
+    better numerical stability.
     """
     q, a, b = np.atleast_1d(q, a, b)
     q, a, b = np.broadcast_arrays(q, a, b)
-    positive = np.nonzero(a > 0)
-    if positive[0].size:
-        # Negative side is more numerically stable, so we flip back the sign before the return.
-        a[positive], b[positive], q[positive] = -b[positive], -a[positive], 1 - q[positive]
 
-    log_ndtr_c = np.logaddexp(_log_ndtr(a), np.log(q) + _log_gauss_mass(a, b))
-    c = _ndtri_exp(log_ndtr_c)
-    c[q == 0] = a
-    c[q == 1] = b
-    c[a == b] = np.nan
-    c[positive] *= -1
-    return c
+    case_left = a < 0
+    case_right = ~case_left
+    log_mass = _log_gauss_mass(a, b)
+
+    def ppf_left(q: np.ndarray, a: np.ndarray, b: np.ndarray, log_mass: np.ndarray) -> np.ndarray:
+        log_Phi_x = _log_sum(_log_ndtr(a), np.log(q) + log_mass)
+        return _ndtri_exp(log_Phi_x)
+
+    def ppf_right(q: np.ndarray, a: np.ndarray, b: np.ndarray, log_mass: np.ndarray) -> np.ndarray:
+        # NOTE(nabenabe): Since the numerical stability of log_ndtr is better in the left tail, we
+        # flip the side for a >= 0.
+        log_Phi_x = _log_sum(_log_ndtr(-b), np.log1p(-q) + log_mass)
+        return -_ndtri_exp(log_Phi_x)
+
+    out = np.empty_like(q)
+    if (q_left := q[case_left]).size:
+        out[case_left] = ppf_left(q_left, a[case_left], b[case_left], log_mass[case_left])
+    if (q_right := q[case_right]).size:
+        out[case_right] = ppf_right(q_right, a[case_right], b[case_right], log_mass[case_right])
+
+    return np.select([a == b, q == 1, q == 0], [math.nan, b, a], default=out)
 
 
 def rvs(
@@ -270,7 +281,7 @@ def rvs(
     random_state = random_state or np.random.RandomState()
     size = np.broadcast(a, b, loc, scale).shape
     quantiles = random_state.uniform(low=0, high=1, size=size)
-    return _ppf(quantiles, a, b) * scale + loc
+    return ppf(quantiles, a, b) * scale + loc
 
 
 def logpdf(
