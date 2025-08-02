@@ -149,7 +149,7 @@ def _log_gauss_mass(a: np.ndarray, b: np.ndarray) -> np.ndarray:
     return np.real(out)  # discard ~0j
 
 
-def _ndtri_exp(y: np.ndarray, check_inf: bool = True) -> np.ndarray:
+def _ndtri_exp(y: np.ndarray) -> np.ndarray:
     """
     Use the Newton method to efficiently find the root.
 
