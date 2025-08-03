@@ -216,7 +216,8 @@ def _ndtri_exp(y: np.ndarray) -> np.ndarray:
             # Equivalent to np.isclose with atol=0.0 and rtol=1e-8.
             break
     x[flipped] *= -1
-    x[y == 0.0] = np.inf
+    # NOTE(nabe): x[y == 0.0] = np.inf, x[np.isneginf(y)] = -np.inf are necessary for the accurate
+    # computation, but we omit them as it is used only from the ppf function.
     return x
 
 
