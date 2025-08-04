@@ -40,7 +40,6 @@ If you make a pull request, please follow the guidelines below:
 - [Unit Tests](#unit-tests)
 - [Continuous Integration and Local Verification](#continuous-integration-and-local-verification)
 - [Creating a Pull Request](#creating-a-pull-request)
-- [Learning Optuna's Implementation](#learning-optunas-implementation)
 
 > [!IMPORTANT]
 > To minimize the review effort, we highly appreciate PRs only with related changes. Please note that submitted PRs may be closed if they include unrelated changes or significantly modified unit tests.
