@@ -117,21 +117,21 @@ def _get_hypervolume_history_info(
                 hypervolume_values.append(hypervolume)
                 continue
 
+        if (values_normalized > minimization_reference_point).any():
+            hypervolume_values.append(hypervolume)
+            continue
+
         if best_trials_values_normalized is None:
+            hypervolume = np.prod(minimization_reference_point - values_normalized)
             best_trials_values_normalized = values_normalized
         else:
+            hypervolume += np.prod(minimization_reference_point - values_normalized)
+            limited_sols = np.maximum(best_trials_values_normalized, values_normalized)
+            hypervolume -= compute_hypervolume(limited_sols, minimization_reference_point)
             is_kept = (best_trials_values_normalized < values_normalized).any(axis=1)
             best_trials_values_normalized = np.concatenate(
                 [best_trials_values_normalized[is_kept, :], values_normalized], axis=0
             )
-
-        loss_vals = best_trials_values_normalized[
-            (best_trials_values_normalized <= minimization_reference_point[np.newaxis, :]).all(
-                axis=1
-            )
-        ]
-        if loss_vals.size > 0:
-            hypervolume = compute_hypervolume(loss_vals, minimization_reference_point)
         hypervolume_values.append(hypervolume)
 
     if best_trials_values_normalized is None:
