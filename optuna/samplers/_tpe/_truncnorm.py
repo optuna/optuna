@@ -166,8 +166,8 @@ def _ndtri_exp(y: np.ndarray) -> np.ndarray:
     First recall that y is a non-positive value and y = log_ndtr(inf) = 0 and
     y = log_ndtr(-inf) = -inf.
 
-    If abs(y) is very small, x is very large, meaning that x**2 >> log(x). In this case, we first
-    derive x such that z = log_ndtr(-x) and then flip the sign. Please note that the following:
+    If abs(y) is very small, we first derive -x such that z = log_ndtr(-x) and then flip the sign.
+    Please note that the following holds:
         z = log_ndtr(-x) --> z = log(1 - ndtr(x)) = log(1 - exp(y)) = log(-expm1(y)).
     Recall that as long as ndtr(x) = exp(y) > 0.5 --> y > -log(2) = -0.693..., x becomes positive.
 
@@ -198,7 +198,7 @@ def _ndtri_exp(y: np.ndarray) -> np.ndarray:
     # Flip the sign of y close to zero for better numerical stability and flip back the sign later.
     flipped = y > -1e-2
     z = y.copy()
-    z[flipped] = np.log(-np.expm1(y[flipped]))  # y is always < -log(2) = -0.693...
+    z[flipped] = np.log(-np.expm1(y[flipped]))
     x = np.empty_like(y)
     if (small_inds := np.nonzero(z < -5))[0].size:
         x[small_inds] = -np.sqrt(-2.0 * (z[small_inds] + _norm_pdf_logC))
@@ -217,7 +217,7 @@ def _ndtri_exp(y: np.ndarray) -> np.ndarray:
             break
     x[flipped] *= -1
     # NOTE(nabe): x[y == 0.0] = np.inf, x[np.isneginf(y)] = -np.inf are necessary for the accurate
-    # computation, but we omit them as it is used only from the ppf function.
+    # computation, but we omit them as the ppf applies clipping, removing the need for them.
     return x
 
 
