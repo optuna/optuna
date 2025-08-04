@@ -90,7 +90,7 @@ optional = [
   "redis",  # optuna/storages/journal/_redis.py.
   "scikit-learn>=0.24.2",  # optuna/importance.
   "scipy",  # optuna/_gp.
-  "torch; python_version<='3.12'",  # TODO(gen740): Remove this line when 'torch', a dependency of 'optuna/_gp', supports Python 3.13
+  "torch",  # optuna/_gp.
   "grpcio",  # optuna/storages/_grpc.
   "protobuf>=5.28.1",  # optuna/storages/_grpc.
 ]
@@ -102,7 +102,7 @@ test = [
   "pytest",
   "pytest-xdist",
   "scipy>=1.9.2",
-  "torch; python_version<='3.12'",  # TODO(gen740): Remove this line when 'torch', a dependency of 'optuna/_gp', supports Python 3.13
+  "torch",  # optuna/_gp.
   "grpcio",  # optuna/storages/_grpc.
   "protobuf>=5.28.1",  # optuna/storages/_grpc.
 ]
