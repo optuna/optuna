@@ -120,12 +120,10 @@ def _get_hypervolume_history_info(
         if (values_normalized > minimization_reference_point).any():
             hypervolume_values.append(hypervolume)
             continue
-
+        hypervolume += np.prod(minimization_reference_point - values_normalized)
         if best_trials_values_normalized is None:
-            hypervolume = np.prod(minimization_reference_point - values_normalized)
             best_trials_values_normalized = values_normalized
         else:
-            hypervolume += np.prod(minimization_reference_point - values_normalized)
             limited_sols = np.maximum(best_trials_values_normalized, values_normalized)
             hypervolume -= compute_hypervolume(limited_sols, minimization_reference_point)
             is_kept = (best_trials_values_normalized < values_normalized).any(axis=1)
