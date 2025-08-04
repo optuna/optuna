@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import math
+
 import numpy as np
 
 import optuna
@@ -56,30 +58,48 @@ def _lazy_contribs_update(
     H(S' v {j}) - H(S'), we start to update from i with a higher upper bound so that we can
     skip more HV calculations.
     """
+    if math.isinf(hv_selected):
+        return np.full_like(contribs, np.inf)
 
+    intersec = np.maximum(pareto_loss_values[:, np.newaxis], selected_vecs[:-1])
     # The HV difference only using the latest selected point and a candidate is a simple, yet
     # obvious, contribution upper bound. Denote t as the latest selected index and j as an
     # unselected index. Then, H(T v {j}) - H(T) <= H({t} v {j}) - H({t}) holds where the inequality
     # comes from submodularity. We use the inclusion-exclusion principle to calculate the RHS.
-    single_volume = np.prod(reference_point - pareto_loss_values, axis=1)
-    intersection = np.maximum(selected_vecs[-2], pareto_loss_values)
-    intersection_volume = np.prod(reference_point - intersection, axis=1)
-    contribs = np.minimum(contribs, single_volume - intersection_volume)
-
+    inclusive_hvs = np.prod(reference_point - pareto_loss_values, axis=1)
+    is_contrib_inf = np.isinf(inclusive_hvs)  # NOTE(nabe): inclusive_hvs[i] >= contribs[i].
+    contribs = np.minimum(
+        contribs, inclusive_hvs - np.prod(reference_point - intersec[:, -1], axis=1)
+    )
     max_contrib = 0.0
+    n_objectives = pareto_loss_values.shape[1]
     index_from_larger_upper_bound_contrib = np.argsort(-contribs)
     for i in index_from_larger_upper_bound_contrib:
+        if is_contrib_inf[i]:
+            # inf - inf in the contribution calculation is always inf.
+            # Since hv_selected is finite, contribs[i] will be inf iff inclusive_hvs[i] is inf.
+            max_contrib = contribs[i] = np.inf
+            continue
         if contribs[i] < max_contrib:
             # Lazy evaluation to reduce HV calculations.
             # If contribs[i] will not be the maximum next, it is unnecessary to compute it.
             continue
 
-        selected_vecs[-1] = pareto_loss_values[i].copy()
-        hv_plus = optuna._hypervolume.compute_hypervolume(
-            selected_vecs, reference_point, assume_pareto=True
-        )
-        # inf - inf in the contribution calculation is always inf.
-        contribs[i] = hv_plus - hv_selected if not np.isinf(hv_plus) else np.inf
+        if n_objectives <= 3:
+            # Hypervolume calculation is vectorized up to 3D, so it is faster to use it.
+            selected_vecs[-1] = pareto_loss_values[i].copy()
+            # As inclusive_hvs[i] and hv_selected are finite, hv_plus is also finite due to the
+            # submodularity hv_plus < inclusive_hvs[i] + selected_hv.
+            hv_plus = optuna._hypervolume.compute_hypervolume(
+                selected_vecs, reference_point, assume_pareto=True
+            )
+            contribs[i] = hv_plus - hv_selected
+        else:
+            # NOTE(nabenabe): contribs[i] = H(S v {i)) - H(S) = H({i}) - H(S ^ {i}).
+            # When using WFG (i.e., n_objectives >= 4), this calculation is faster.
+            contribs[i] = inclusive_hvs[i] - optuna._hypervolume.compute_hypervolume(
+                intersec[i], reference_point
+            )
         max_contrib = max(contribs[i], max_contrib)
 
     return contribs
