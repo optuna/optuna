@@ -8,8 +8,8 @@ import numpy as np
 import pytest
 
 import optuna
-import optuna._gp.gp as optuna_gp
 import optuna._gp.acqf as acqf_module
+import optuna._gp.gp as optuna_gp
 import optuna._gp.optim_mixed as optim_mixed
 import optuna._gp.prior as prior
 import optuna._gp.search_space as gp_search_space
@@ -69,9 +69,9 @@ def test_constraints_func(constraint_value: float, n_objectives: int) -> None:
         if n_objectives == 1:
             return x
         else:
-            return x, (x - 2)**2
+            return x, (x - 2) ** 2
 
-    study = optuna.create_study(directions=["minimize"]*n_objectives, sampler=sampler)
+    study = optuna.create_study(directions=["minimize"] * n_objectives, sampler=sampler)
     study.optimize(objective, n_trials=n_trials)
 
     assert len(study.trials) == n_trials
@@ -92,14 +92,16 @@ def test_constraints_func_nan(n_objectives: int) -> None:
         warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
         sampler = GPSampler(n_startup_trials=2, constraints_func=constraints_func)
 
-    def objective(trial: optuna.Trial) -> tuple[float] | tuple[float, float]:
+    def objective(
+        trial: optuna.Trial | optuna.trial.FrozenTrial,
+    ) -> tuple[float] | tuple[float, float]:
         x = trial.suggest_float("x", 0, 1)
         if n_objectives == 1:
-            return (x, )
+            return (x,)
         else:
-            return x, (x - 2)**2
+            return x, (x - 2) ** 2
 
-    study = optuna.create_study(directions=["minimize"]*n_objectives, sampler=sampler)
+    study = optuna.create_study(directions=["minimize"] * n_objectives, sampler=sampler)
     with pytest.raises(ValueError):
         study.optimize(objective, n_trials=n_trials)
 
