@@ -33,14 +33,14 @@ If you feel like giving a hand, here are some ways:
 If you make a pull request, please follow the guidelines below:
 
 - [Contribution Guidelines](#contribution-guidelines)
-  - [Pull Request Guidelines](#pull-request-guidelines)
-    - [Setup Optuna](#setup-optuna)
-    - [Checking the Format, Coding Style, and Type Hints](#checking-the-format-coding-style-and-type-hints)
-    - [Documentation](#documentation)
-    - [Unit Tests](#unit-tests)
-    - [Continuous Integration and Local Verification](#continuous-integration-and-local-verification)
-    - [Creating a Pull Request](#creating-a-pull-request)
-  - [Learning Optuna's Implementation](#learning-optunas-implementation)
+- [Pull Request Guidelines](#pull-request-guidelines)
+- [Setup Optuna](#setup-optuna)
+- [Checking the Format, Coding Style, and Type Hints](#checking-the-format-coding-style-and-type-hints)
+- [Documentation](#documentation)
+- [Unit Tests](#unit-tests)
+- [Continuous Integration and Local Verification](#continuous-integration-and-local-verification)
+- [Creating a Pull Request](#creating-a-pull-request)
+- [Learning Optuna's Implementation](#learning-optunas-implementation)
 
 > [!IMPORTANT]
 > To minimize the review effort, we highly appreciate PRs only with related changes. Please note that submitted PRs may be closed if they include unrelated changes or significantly modified unit tests.
