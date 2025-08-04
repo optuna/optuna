@@ -32,8 +32,6 @@ If you feel like giving a hand, here are some ways:
 
 If you make a pull request, please follow the guidelines below:
 
-- [Contribution Guidelines](#contribution-guidelines)
-- [Pull Request Guidelines](#pull-request-guidelines)
 - [Setup Optuna](#setup-optuna)
 - [Checking the Format, Coding Style, and Type Hints](#checking-the-format-coding-style-and-type-hints)
 - [Documentation](#documentation)
