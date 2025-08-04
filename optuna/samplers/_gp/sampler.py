@@ -286,11 +286,6 @@ class GPSampler(BaseSampler):
     def sample_relative(
         self, study: Study, trial: FrozenTrial, search_space: dict[str, BaseDistribution]
     ) -> dict[str, Any]:
-        if study._is_multi_objective() and self._constraints_func is not None:
-            raise ValueError(
-                "GPSampler does not support constrained multi-objective optimization."
-            )
-
         if search_space == {}:
             return {}
 
