@@ -72,8 +72,7 @@ def _lazy_contribs_update(
     intersec = np.maximum(pareto_loss_values[:, np.newaxis], selected_vecs[:-1])
     inclusive_hvs = np.prod(reference_point - pareto_loss_values, axis=1)
     is_contrib_inf = np.isinf(inclusive_hvs)  # NOTE(nabe): inclusive_hvs[i] >= contribs[i].
-    # Please see (2) in the docstring for more details.
-    contribs = np.minimum(
+    contribs = np.minimum(  # Please see (2) in the docstring for more details.
         contribs, inclusive_hvs - np.prod(reference_point - intersec[:, -1], axis=1)
     )
     max_contrib = 0.0
@@ -82,8 +81,7 @@ def _lazy_contribs_update(
         if is_contrib_inf[i]:
             max_contrib = contribs[i] = np.inf
             continue
-        if contribs[i] < max_contrib:  # contribs[i] decreases after the update, so skip it.
-            # Please see (1) in the docstring for more details.
+        if contribs[i] < max_contrib:  # Please see (1) in the docstring for more details.
             continue
 
         # NOTE(nabenabe): contribs[i] = H(S v {i)) - H(S) = H({i}) - H(S ^ {i}).
