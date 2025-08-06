@@ -236,7 +236,8 @@ class GPSampler(BaseSampler):
         internal_search_space: gp_search_space.SearchSpace,
         normalized_params: np.ndarray,
     ) -> tuple[list[gp.GPRegressor], list[float]]:
-        standardized_constraint_vals, means, stds = _standardize_values(constraint_vals)
+        # NOTE(nabenabe): Flip the sign of constraints since they are always to be minimized.
+        standardized_constraint_vals, means, stds = _standardize_values(-constraint_vals)
         if (
             self._gprs_cache_list is not None
             and len(self._gprs_cache_list[0].inverse_squared_lengthscales)
