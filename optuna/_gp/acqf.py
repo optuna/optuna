@@ -261,9 +261,7 @@ class LogEHVI(BaseAcquisitionFunc):
             # deterministic, making it possible to optimize the acqf by l-BFGS.
             # Sobol is better than the standard Monte-Carlo w.r.t. the approximation stability.
             # cf. Appendix D of https://arxiv.org/pdf/2006.05078
-            Y_post.append(
-                mean[..., None] + stdev[..., None] * self._fixed_samples[..., i]
-            )
+            Y_post.append(mean[..., None] + stdev[..., None] * self._fixed_samples[..., i])
 
         # NOTE(nabenabe): Use the following once multi-task GP is supported.
         # L = torch.linalg.cholesky(cov)
