@@ -51,7 +51,7 @@ def logehvi(
     _EPS = torch.tensor(1e-12, dtype=torch.float64)  # NOTE(nabenabe): grad becomes nan when EPS=0.
     diff = torch.maximum(
         _EPS,
-        torch.minimum(Y_post[..., torch.newaxis, :], non_dominated_box_upper_bounds)
+        torch.minimum(Y_post[..., None, :], non_dominated_box_upper_bounds)
         - non_dominated_box_lower_bounds,
     )
     # NOTE(nabenabe): logsumexp with dim=-1 is for the HVI calculation and that with dim=-2 is for
@@ -262,12 +262,12 @@ class LogEHVI(BaseAcquisitionFunc):
             # Sobol is better than the standard Monte-Carlo w.r.t. the approximation stability.
             # cf. Appendix D of https://arxiv.org/pdf/2006.05078
             Y_post.append(
-                mean[..., torch.newaxis] + stdev[..., torch.newaxis] * self._fixed_samples[..., i]
+                mean[..., None] + stdev[..., None] * self._fixed_samples[..., i]
             )
 
         # NOTE(nabenabe): Use the following once multi-task GP is supported.
         # L = torch.linalg.cholesky(cov)
-        # Y_post = means[..., torch.newaxis, :] + torch.einsum("...MM,SM->...SM", L, fixed_samples)
+        # Y_post = means[..., None, :] + torch.einsum("...MM,SM->...SM", L, fixed_samples)
         return logehvi(
             Y_post=torch.stack(Y_post, dim=-1),
             non_dominated_box_lower_bounds=self._non_dominated_box_lower_bounds,
