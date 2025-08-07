@@ -377,7 +377,7 @@ class CmaEsSampler(BaseSampler):
 
         optimizer = self._restore_optimizer(completed_trials)
         if optimizer is None:
-            optimizer = self._init_optimizer(trans, study.direction, len(search_space) == 1)
+            optimizer = self._init_optimizer(trans, study.direction)
 
         if optimizer.dim != len(trans.bounds):
             if self._warn_independent_sampling:
@@ -478,7 +478,6 @@ class CmaEsSampler(BaseSampler):
         self,
         trans: _SearchSpaceTransform,
         direction: StudyDirection,
-        is_single_dimension: bool,
     ) -> "CmaClass":
         lower_bounds = trans.bounds[:, 0]
         upper_bounds = trans.bounds[:, 1]
@@ -520,7 +519,7 @@ class CmaEsSampler(BaseSampler):
         sigma0 = max(sigma0, _EPS)
 
         if self._use_separable_cma:
-            if is_single_dimension:
+            if len(trans.bounds) == 1:
                 warnings.warn(
                     "Separable CMA-ES does not operate meaningfully on single-dimensional "
                     "search spaces. The setting `use_separable_cma=True` will be ignored.",
