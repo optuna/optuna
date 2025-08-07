@@ -63,7 +63,7 @@ checking = [
 ]
 document = [
   "ase",
-  "cmaes>=0.10.0",  # optuna/samplers/_cmaes.py.
+  "cmaes>=0.12.0",  # optuna/samplers/_cmaes.py.
   "fvcore",
   "kaleido<0.4",  # TODO(nzw0301): Remove the version constraint by installing browser separately.
   "lightgbm",
@@ -82,7 +82,7 @@ document = [
 ]
 optional = [
   "boto3",  # optuna/artifacts/_boto3.py.
-  "cmaes>=0.10.0",  # optuna/samplers/_cmaes.py.
+  "cmaes>=0.12.0",  # optuna/samplers/_cmaes.py.
   "google-cloud-storage",  # optuna/artifacts/_gcs.py.
   "matplotlib!=3.6.0",  # optuna/visualization/matplotlib.
   "pandas",  # optuna/study/_dataframe.py.
