@@ -185,6 +185,24 @@ def test_warm_starting_cmaes_maximize(with_margin: bool) -> None:
 
 
 @pytest.mark.filterwarnings("ignore::optuna.exceptions.ExperimentalWarning")
+@pytest.mark.parametrize("with_margin", [False, True])
+def test_warm_starting_cmaes_with_1d_search_space(with_margin: bool) -> None:
+    def objective(trial: optuna.Trial) -> float:
+        x = trial.suggest_float("x", -10, 10)
+        return x**2
+
+    source_study = optuna.create_study()
+    source_study.optimize(objective, 20)
+    source_trials = source_study.get_trials(deepcopy=False)
+
+    sampler = optuna.samplers.CmaEsSampler(
+        seed=1, n_startup_trials=1, with_margin=with_margin, source_trials=source_trials
+    )
+    study = optuna.create_study(sampler=sampler)
+    study.optimize(objective, 2)
+
+
+@pytest.mark.filterwarnings("ignore::optuna.exceptions.ExperimentalWarning")
 def test_should_raise_exception() -> None:
     dummy_source_trials = [create_trial(value=i, state=TrialState.COMPLETE) for i in range(10)]
 
@@ -551,3 +569,14 @@ def test_rdb_storage(with_margin: bool, storage_name: str) -> None:
             storage=storage,
         )
         study.optimize(objective, n_trials=3)
+
+
+@pytest.mark.parametrize("with_margin", [False, True])
+def test_1d_search_space_with_margin(with_margin: bool) -> None:
+    def objective(trial: optuna.Trial) -> float:
+        x = trial.suggest_float("x", -10, 10)
+        return x**2
+
+    sampler = optuna.samplers.CmaEsSampler(with_margin=with_margin)
+    study = optuna.create_study(sampler=sampler)
+    study.optimize(objective, n_trials=3)
