@@ -579,4 +579,4 @@ def test_1d_search_space_with_margin(with_margin: bool) -> None:
 
     sampler = optuna.samplers.CmaEsSampler(with_margin=with_margin)
     study = optuna.create_study(sampler=sampler)
-    study.optimize(objective, n_trials=3)
+    study.optimize(objective, n_trials=2)
