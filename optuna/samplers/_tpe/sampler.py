@@ -753,7 +753,7 @@ def _split_complete_trials_multi_objective(
         rank_i_lvals = lvals[need_tiebreak]
         subset_size = n_below - indices_below.size
         selected_indices = solve_hssp_with_cache(
-            tuple(map(tuple, rank_i_lvals)),
+            tuple(rank_i_lvals.ravel()),
             tuple(indices[need_tiebreak]),
             subset_size,
             tuple(_get_reference_point(rank_i_lvals)),
