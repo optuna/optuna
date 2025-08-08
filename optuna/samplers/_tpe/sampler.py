@@ -850,7 +850,7 @@ def _solve_hssp_with_cache(
     ref_point_tuple: tuple[float, ...],
 ) -> np.ndarray:
     lvals_shape = (len(rank_i_indices_tuple), len(ref_point_tuple))
-    rank_i_lvals = np.reshape(rank_i_lvals_tuple, shape=lvals_shape)
+    rank_i_lvals = np.reshape(rank_i_lvals_tuple, lvals_shape)
     rank_i_indices = np.array(rank_i_indices_tuple)
     ref_point = np.array(ref_point_tuple)
     return _solve_hssp(rank_i_lvals, rank_i_indices, subset_size, ref_point)
