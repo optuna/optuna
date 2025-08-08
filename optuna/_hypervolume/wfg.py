@@ -55,7 +55,7 @@ def _compute_hv(sorted_loss_vals: np.ndarray, reference_point: np.ndarray) -> fl
             intersec *= r - max(v1, v2)
         return hv1 + hv2 - intersec
 
-    inclusive_hvs = np.prod(reference_point - sorted_loss_vals, axis=-1)
+    inclusive_hvs = (reference_point - sorted_loss_vals).prod(axis=-1)
     # c.f. Eqs. (6) and (7) of ``A Fast Way of Calculating Exact Hypervolumes``.
     limited_sols_array = np.maximum(sorted_loss_vals[:, np.newaxis], sorted_loss_vals)
     return inclusive_hvs[-1] + sum(
