@@ -39,27 +39,38 @@ def _compute_3d(sorted_pareto_sols: np.ndarray, reference_point: np.ndarray) -> 
 
 
 def _compute_hv(sorted_loss_vals: np.ndarray, reference_point: np.ndarray) -> float:
-    inclusive_hvs = np.prod(reference_point - sorted_loss_vals, axis=-1)
-    if inclusive_hvs.shape[0] == 1:
-        return float(inclusive_hvs[0])
-    elif inclusive_hvs.shape[0] == 2:
+    if sorted_loss_vals.shape[0] == 1:
+        # NOTE(nabenabe): NumPy overhead is slower than the simple for-loop here.
+        inclusive_hv = 1.0
+        for r, v in zip(reference_point, sorted_loss_vals[0]):
+            inclusive_hv *= r - v
+        return float(inclusive_hv)
+    elif sorted_loss_vals.shape[0] == 2:
+        # NOTE(nabenabe): NumPy overhead is slower than the simple for-loop here.
         # S(A v B) = S(A) + S(B) - S(A ^ B).
-        intersec = np.prod(reference_point - np.maximum(sorted_loss_vals[0], sorted_loss_vals[1]))
-        return np.sum(inclusive_hvs) - intersec
+        hv1, hv2, intersec = 1.0, 1.0, 1.0
+        for r, v1, v2 in zip(reference_point, sorted_loss_vals[0], sorted_loss_vals[1]):
+            hv1 *= r - v1
+            hv2 *= r - v2
+            intersec *= r - max(v1, v2)
+        return hv1 + hv2 - intersec
 
+    inclusive_hvs = (reference_point - sorted_loss_vals).prod(axis=-1)
     # c.f. Eqs. (6) and (7) of ``A Fast Way of Calculating Exact Hypervolumes``.
     limited_sols_array = np.maximum(sorted_loss_vals[:, np.newaxis], sorted_loss_vals)
-    return sum(
-        _compute_exclusive_hv(limited_sols_array[i, i + 1 :], inclusive_hv, reference_point)
-        for i, inclusive_hv in enumerate(inclusive_hvs)
+    return inclusive_hvs[-1] + sum(
+        _compute_exclusive_hv(limited_sols_array[i, i + 1 :], inclusive_hvs[i], reference_point)
+        for i in range(inclusive_hvs.size - 1)
     )
 
 
 def _compute_exclusive_hv(
     limited_sols: np.ndarray, inclusive_hv: float, reference_point: np.ndarray
 ) -> float:
-    if limited_sols.shape[0] == 0:
-        return inclusive_hv
+    assert limited_sols.shape[0] >= 1
+    if limited_sols.shape[0] <= 3:
+        # NOTE(nabenabe): Don't use _is_pareto_front for 3 or fewer points to avoid its overhead.
+        return inclusive_hv - _compute_hv(limited_sols, reference_point)
 
     # NOTE(nabenabe): As the following line is a hack for speedup, I will describe several
     # important points to note. Even if we do not run _is_pareto_front below or use

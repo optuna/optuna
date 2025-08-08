@@ -51,7 +51,7 @@ def logehvi(
     _EPS = torch.tensor(1e-12, dtype=torch.float64)  # NOTE(nabenabe): grad becomes nan when EPS=0.
     diff = torch.maximum(
         _EPS,
-        torch.minimum(Y_post[..., torch.newaxis, :], non_dominated_box_upper_bounds)
+        torch.minimum(Y_post[..., None, :], non_dominated_box_upper_bounds)
         - non_dominated_box_lower_bounds,
     )
     # NOTE(nabenabe): logsumexp with dim=-1 is for the HVI calculation and that with dim=-2 is for
@@ -149,12 +149,13 @@ class LogPI(BaseAcquisitionFunc):
         super().__init__(gpr.length_scales, search_space)
 
     def eval_acqf(self, x: torch.Tensor) -> torch.Tensor:
-        # Return the integral of N(mean, var) from -inf to f0
-        # This is identical to the integral of N(0, 1) from -inf to (f0-mean)/sigma
-        # Return E_{y ~ N(mean, var)}[bool(y <= f0)]
+        # Return the integral of N(mean, var) from f0 to inf.
+        # This is identical to the integral of N(0, 1) from (f0-mean)/sigma to inf.
+        # Return E_{y ~ N(mean, var)}[bool(y >= f0)]
         mean, var = self._gpr.posterior(x)
         sigma = torch.sqrt(var + self._stabilizing_noise)
-        return torch.special.log_ndtr((self._threshold - mean) / sigma)
+        # NOTE(nabenabe): integral from a to b of f(x) is integral from -b to -a of f(-x).
+        return torch.special.log_ndtr((mean - self._threshold) / sigma)
 
 
 class UCB(BaseAcquisitionFunc):
@@ -260,13 +261,11 @@ class LogEHVI(BaseAcquisitionFunc):
             # deterministic, making it possible to optimize the acqf by l-BFGS.
             # Sobol is better than the standard Monte-Carlo w.r.t. the approximation stability.
             # cf. Appendix D of https://arxiv.org/pdf/2006.05078
-            Y_post.append(
-                mean[..., torch.newaxis] + stdev[..., torch.newaxis] * self._fixed_samples[..., i]
-            )
+            Y_post.append(mean[..., None] + stdev[..., None] * self._fixed_samples[..., i])
 
         # NOTE(nabenabe): Use the following once multi-task GP is supported.
         # L = torch.linalg.cholesky(cov)
-        # Y_post = means[..., torch.newaxis, :] + torch.einsum("...MM,SM->...SM", L, fixed_samples)
+        # Y_post = means[..., None, :] + torch.einsum("...MM,SM->...SM", L, fixed_samples)
         return logehvi(
             Y_post=torch.stack(Y_post, dim=-1),
             non_dominated_box_lower_bounds=self._non_dominated_box_lower_bounds,
