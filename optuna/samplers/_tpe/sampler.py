@@ -844,12 +844,13 @@ def _calculate_weights_below_for_multi_objective(
 
 @lru_cache(maxsize=1)
 def solve_hssp_with_cache(
-    rank_i_lvals_tuple: tuple[tuple[float, ...]],
+    rank_i_lvals_tuple: tuple[float, ...],
     rank_i_indices_tuple: tuple[int, ...],
     subset_size: int,
     ref_point_tuple: tuple[float, ...],
 ) -> np.ndarray:
-    rank_i_lvals = np.array(rank_i_lvals_tuple)
+    lvals_shape = (len(rank_i_indices_tuple), len(ref_point_tuple))
+    rank_i_lvals = np.reshape(rank_i_lvals_tuple, shape=lvals_shape)
     rank_i_indices = np.array(rank_i_indices_tuple)
     ref_point = np.array(ref_point_tuple)
     return _solve_hssp(rank_i_lvals, rank_i_indices, subset_size, ref_point)
