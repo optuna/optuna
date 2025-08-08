@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from collections.abc import Sequence
+from functools import lru_cache
 import json
 import math
 from typing import Any
@@ -751,8 +752,11 @@ def _split_complete_trials_multi_objective(
         need_tiebreak = nondomination_ranks == last_rank_before_tiebreak + 1
         rank_i_lvals = lvals[need_tiebreak]
         subset_size = n_below - indices_below.size
-        selected_indices = _solve_hssp(
-            rank_i_lvals, indices[need_tiebreak], subset_size, _get_reference_point(rank_i_lvals)
+        selected_indices = solve_hssp_with_cache(
+            tuple(map(tuple, rank_i_lvals)),
+            tuple(indices[need_tiebreak]),
+            subset_size,
+            tuple(_get_reference_point(rank_i_lvals)),
         )
         indices_below = np.append(indices_below, selected_indices)
 
@@ -836,3 +840,16 @@ def _calculate_weights_below_for_multi_objective(
     )
     weights_below[is_feasible] = np.maximum(contribs / max(np.max(contribs), EPS), EPS)
     return weights_below
+
+
+@lru_cache(maxsize=1)
+def solve_hssp_with_cache(
+    rank_i_lvals: tuple[tuple[float, ...]],
+    rank_i_indices: tuple[int, ...],
+    subset_size: int,
+    ref_point: tuple[float, ...],
+) -> np.ndarray:
+    rank_i_lvals = np.array(rank_i_lvals)
+    rank_i_indices = np.array(rank_i_indices)
+    ref_point = np.array(ref_point)
+    return _solve_hssp(rank_i_lvals, rank_i_indices, subset_size, ref_point)
