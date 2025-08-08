@@ -843,7 +843,7 @@ def _calculate_weights_below_for_multi_objective(
 
 
 @lru_cache(maxsize=1)
-def solve_hssp_with_cache(
+def _solve_hssp_with_cache(
     rank_i_lvals_tuple: tuple[float, ...],
     rank_i_indices_tuple: tuple[int, ...],
     subset_size: int,
