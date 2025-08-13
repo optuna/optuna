@@ -127,6 +127,12 @@ class GPRegressor:
         # NOTE(nabenabe): Here we use NumPy to guarantee the reproducibility from the past.
         self._cov_Y_Y_inv = torch.from_numpy(cov_Y_Y_inv)
         self._cov_Y_Y_inv_Y = torch.from_numpy(cov_Y_Y_inv_Y)
+        self.inverse_squared_lengthscales = self.inverse_squared_lengthscales.detach()
+        self.inverse_squared_lengthscales.grad = None
+        self.kernel_scale = self.kernel_scale.detach()
+        self.kernel_scale.grad = None
+        self.noise_var = self.noise_var.detach()
+        self.noise_var.grad = None
 
     def kernel(self, X1: torch.Tensor, X2: torch.Tensor) -> torch.Tensor:
         """
