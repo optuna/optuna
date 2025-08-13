@@ -117,7 +117,7 @@ class GPRegressor:
     def _cache_matrix(self) -> None:
         assert (
             self._cov_Y_Y_inv is None and self._cov_Y_Y_inv_Y is None
-        ), "Cannot cache_matrix more than once."
+        ), "Cannot call cache_matrix more than once."
         with torch.no_grad():
             cov_Y_Y = self.kernel(self._X_train, self._X_train).detach().numpy()
 
