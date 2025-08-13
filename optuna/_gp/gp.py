@@ -138,7 +138,9 @@ class GPRegressor:
         self.noise_var = self.noise_var.detach()
         self.noise_var.grad = None
 
-    def kernel(self, X: torch.Tensor | None = None) -> torch.Tensor:
+    def kernel(
+        self, X1: torch.Tensor | None = None, X2: torch.Tensor | None = None
+    ) -> torch.Tensor:
         """
         Return the kernel matrix with the shape of (..., n_A, n_B) given X1 and X2 each with the
         shapes of (..., n_A, len(params)) and (..., n_B, len(params)).
@@ -151,10 +153,13 @@ class GPRegressor:
         categorical, d2(x1, x2)[i] = int(x1[i] != x2[i]).
         Note that the distance for categorical parameters is the Hamming distance.
         """
-        if X is None:
+        if X1 is None:
+            assert X2 is None
             d2 = self._squared_X_diff
         else:
-            d2 = (X[..., None, :] - self._X_train[..., None, :, :]) ** 2
+            if X2 is None:
+                X2 = self._X_train
+            d2 = (X1[..., None, :] - X2[..., None, :, :]) ** 2
             if self._is_categorical.any():
                 d2[..., self._is_categorical] = (d2[..., self._is_categorical] > 0.0).type(
                     torch.float64
@@ -210,9 +215,7 @@ class GPRegressor:
         """
         n_points = self._X_train.shape[0]
         const = -0.5 * n_points * math.log(2 * math.pi)
-        cov_Y_Y = self.kernel() + self.noise_var * torch.eye(
-            n_points, dtype=torch.float64
-        )
+        cov_Y_Y = self.kernel() + self.noise_var * torch.eye(n_points, dtype=torch.float64)
         L = torch.linalg.cholesky(cov_Y_Y)
         logdet_part = -L.diagonal().log().sum()
         inv_L_y = torch.linalg.solve_triangular(L, self._y_train[:, None], upper=False)[:, 0]
