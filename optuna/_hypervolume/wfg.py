@@ -147,7 +147,7 @@ def compute_hypervolume(
     if not np.all(np.isfinite(reference_point)):
         # reference_point does not have nan, thanks to the verification above.
         return float("inf")
-    if len(loss_vals) == 0:
+    if loss_vals.size == 0:
         return 0.0
 
     if not assume_pareto:
