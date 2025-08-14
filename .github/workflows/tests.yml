@@ -75,11 +75,6 @@ jobs:
         pip install --progress-bar off .[test] --extra-index-url https://download.pytorch.org/whl/cpu
         pip install --progress-bar off .[optional] --extra-index-url https://download.pytorch.org/whl/cpu
 
-        # TODO(gen740): Remove this after pytorch supports Python 3.13
-        if [ "${{ matrix.python-version }}" = "3.13" ] ; then
-          pip install --pre torch --index-url https://download.pytorch.org/whl/nightly/cpu
-        fi
-
         if [ "${{ matrix.python-version }}" = "3.8" ] ; then
           # TODO(nabe): Remove this line once Python 3.8 is dropped.
           pip install --upgrade "fakeredis[lua]<2.30.0"
@@ -102,6 +97,6 @@ jobs:
           target="not slow"
         fi
 
-        pytest tests -m "$target"
+        pytest tests -m "$target" -n 8
       env:
         SQLALCHEMY_WARN_20: 1

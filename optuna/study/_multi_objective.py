@@ -127,20 +127,20 @@ def _is_pareto_front_nd(unique_lexsorted_loss_values: np.ndarray) -> np.ndarray:
     n_trials = loss_values.shape[0]
     on_front = np.zeros(n_trials, dtype=bool)
     # TODO(nabenabe): Replace with the following once Python 3.8 is dropped.
-    # nondominated_indices: np.ndarray[tuple[int], np.dtype[np.signedinteger]] = ...
-    nondominated_indices: np.ndarray[tuple[int, ...], np.dtype[np.signedinteger]] = np.arange(
+    # remaining_indices: np.ndarray[tuple[int], np.dtype[np.signedinteger]] = ...
+    remaining_indices: np.ndarray[tuple[int, ...], np.dtype[np.signedinteger]] = np.arange(
         n_trials
     )
-    while len(loss_values):
-        # The following judges `np.any(loss_values[i] < loss_values[0])` for each `i`.
-        nondominated_and_not_top = np.any(loss_values < loss_values[0], axis=1)
+    while len(remaining_indices):
         # NOTE: trials[j] cannot dominate trials[i] for i < j because of lexsort.
-        # Therefore, nondominated_indices[0] is always non-dominated.
-        on_front[nondominated_indices[0]] = True
-        loss_values = loss_values[nondominated_and_not_top]
+        # Therefore, remaining_indices[0] is always non-dominated.
+        on_front[(new_nondominated_index := remaining_indices[0])] = True
+        nondominated_and_not_top = np.any(
+            loss_values[remaining_indices] < loss_values[new_nondominated_index], axis=1
+        )
         # TODO(nabenabe): Replace with the following once Python 3.8 is dropped.
         # ... = cast(np.ndarray[tuple[int], np.dtype[np.signedinteger]], ...)
-        nondominated_indices = nondominated_indices[nondominated_and_not_top]
+        remaining_indices = remaining_indices[nondominated_and_not_top]
 
     return on_front
 

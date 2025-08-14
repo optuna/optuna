@@ -1141,6 +1141,7 @@ def test_log_completed_trial(capsys: _pytest.capture.CaptureFixture) -> None:
 
 
 def test_log_completed_trial_skip_storage_access() -> None:
+    logging._reset_library_root_logger()
     study = create_study()
 
     # Create a trial to retrieve it as the `study.best_trial`.
@@ -1149,18 +1150,19 @@ def test_log_completed_trial_skip_storage_access() -> None:
 
     storage = study._storage
 
+    logging.set_verbosity(logging.INFO)
     with patch.object(storage, "get_best_trial", wraps=storage.get_best_trial) as mock_object:
-        study._log_completed_trial(frozen_trial)
+        study._log_completed_trial(frozen_trial.values, frozen_trial.number, frozen_trial.params)
         assert mock_object.call_count == 1
 
     logging.set_verbosity(logging.WARNING)
     with patch.object(storage, "get_best_trial", wraps=storage.get_best_trial) as mock_object:
-        study._log_completed_trial(frozen_trial)
+        study._log_completed_trial(frozen_trial.values, frozen_trial.number, frozen_trial.params)
         assert mock_object.call_count == 0
 
     logging.set_verbosity(logging.DEBUG)
     with patch.object(storage, "get_best_trial", wraps=storage.get_best_trial) as mock_object:
-        study._log_completed_trial(frozen_trial)
+        study._log_completed_trial(frozen_trial.values, frozen_trial.number, frozen_trial.params)
         assert mock_object.call_count == 1
 
 

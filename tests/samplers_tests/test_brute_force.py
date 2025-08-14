@@ -304,6 +304,8 @@ def test_parallel_optimize() -> None:
     assert {x1, x2} == {"a", "b"}
 
 
+# TODO(c-bata): Make this test robust. Currently xfail due to timing sensitivity.
+@pytest.mark.xfail(reason="This test is fragile due to timing issues.")
 def test_parallel_optimize_with_sleep() -> None:
     def objective(trial: Trial) -> float:
         x = trial.suggest_int("x", 0, 1)

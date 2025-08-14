@@ -134,11 +134,11 @@ def plot_param_importances(
             :class:`~optuna.importance.FanovaImportanceEvaluator`.
 
             .. note::
-                :class:`~optuna.importance.FanovaImportanceEvaluator` takes over 1 minute
-                when given a study that contains 1000+ trials. We published
-                `optuna-fast-fanova <https://github.com/optuna/optuna-fast-fanova>`__ library,
-                that is a Cython accelerated fANOVA implementation.
-                By using it, you can get hyperparameter importances within a few seconds.
+                Although the default importance evaluator in Optuna is
+                :class:`~optuna.importance.FanovaImportanceEvaluator`, Optuna Dashboard uses a
+                light-weight evaluator, i.e.,
+                :class:`~optuna.importance.PedAnovaImportanceEvaluator`, for runtime performance
+                purposes, yielding a different result.
 
         params:
             A list of names of parameters to assess.

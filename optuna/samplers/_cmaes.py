@@ -22,6 +22,7 @@ from optuna.distributions import BaseDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
 from optuna.samplers import BaseSampler
+from optuna.samplers._base import _INDEPENDENT_SAMPLING_WARNING_TEMPLATE
 from optuna.samplers._lazy_random_state import LazyRandomState
 from optuna.search_space import IntersectionSearchSpace
 from optuna.study._study_direction import StudyDirection
@@ -369,17 +370,6 @@ class CmaEsSampler(BaseSampler):
         if len(completed_trials) < self._n_startup_trials:
             return {}
 
-        if len(search_space) == 1:
-            if self._warn_independent_sampling:
-                _logger.warning(
-                    "`CmaEsSampler` only supports two or more dimensional continuous "
-                    "search space. `{}` is used instead of `CmaEsSampler`.".format(
-                        self._independent_sampler.__class__.__name__
-                    )
-                )
-                self._warn_independent_sampling = False
-            return {}
-
         # When `with_margin=True`, bounds in discrete dimensions are handled inside `CMAwM`.
         trans = _SearchSpaceTransform(
             search_space, transform_step=not self._with_margin, transform_0_1=True
@@ -529,14 +519,21 @@ class CmaEsSampler(BaseSampler):
         sigma0 = max(sigma0, _EPS)
 
         if self._use_separable_cma:
-            return cmaes.SepCMA(
-                mean=mean,
-                sigma=sigma0,
-                bounds=trans.bounds,
-                seed=self._cma_rng.rng.randint(1, 2**31 - 2),
-                n_max_resampling=10 * n_dimension,
-                population_size=self._popsize,
-            )
+            if len(trans.bounds) == 1:
+                warnings.warn(
+                    "Separable CMA-ES does not operate meaningfully on single-dimensional "
+                    "search spaces. The setting `use_separable_cma=True` will be ignored.",
+                    UserWarning,
+                )
+            else:
+                return cmaes.SepCMA(
+                    mean=mean,
+                    sigma=sigma0,
+                    bounds=trans.bounds,
+                    seed=self._cma_rng.rng.randint(1, 2**31 - 2),
+                    n_max_resampling=10 * n_dimension,
+                    population_size=self._popsize,
+                )
 
         if self._with_margin:
             steps = np.empty(len(trans._search_space), dtype=float)
@@ -592,14 +589,15 @@ class CmaEsSampler(BaseSampler):
 
     def _log_independent_sampling(self, trial: FrozenTrial, param_name: str) -> None:
         _logger.warning(
-            "The parameter '{}' in trial#{} is sampled independently "
-            "by using `{}` instead of `CmaEsSampler` "
-            "(optimization performance may be degraded). "
-            "`CmaEsSampler` does not support dynamic search space or `CategoricalDistribution`. "
-            "You can suppress this warning by setting `warn_independent_sampling` "
-            "to `False` in the constructor of `CmaEsSampler`, "
-            "if this independent sampling is intended behavior.".format(
-                param_name, trial.number, self._independent_sampler.__class__.__name__
+            _INDEPENDENT_SAMPLING_WARNING_TEMPLATE.format(
+                param_name=param_name,
+                trial_number=trial.number,
+                independent_sampler_name=self._independent_sampler.__class__.__name__,
+                sampler_name=self.__class__.__name__,
+                fallback_reason=(
+                    "dynamic search space and `CategoricalDistribution` are not supported "
+                    "by `CmaEsSampler`"
+                ),
             )
         )
 

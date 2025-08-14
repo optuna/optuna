@@ -8,7 +8,8 @@ import numpy as np
 import pytest
 
 import optuna
-import optuna._gp.acqf as acqf
+import optuna._gp.acqf as acqf_module
+import optuna._gp.gp as optuna_gp
 import optuna._gp.optim_mixed as optim_mixed
 import optuna._gp.prior as prior
 import optuna._gp.search_space as gp_search_space
@@ -26,11 +27,9 @@ def test_after_convergence(caplog: LogCaptureFixture) -> None:
     X = np.array(X_uniform + X_uniform_near_optimal + X_optimal)
     score_vals = -(X - np.mean(X)) / np.std(X)
     search_space = gp_search_space.SearchSpace(
-        scale_types=np.array([gp_search_space.ScaleType.LINEAR]),
-        bounds=np.array([[0.0, 1.0]]),
-        steps=np.zeros(1, dtype=float),
+        {"a": optuna.distributions.FloatDistribution(0.0, 1.0)}
     )
-    gpr = optuna._gp.gp.fit_kernel_params(
+    gpr = optuna_gp.fit_kernel_params(
         X=X[:, np.newaxis],
         Y=score_vals,
         is_categorical=np.array([False]),
@@ -38,12 +37,8 @@ def test_after_convergence(caplog: LogCaptureFixture) -> None:
         minimum_noise=prior.DEFAULT_MINIMUM_NOISE_VAR,
         deterministic_objective=False,
     )
-    acqf_params = acqf.create_acqf_params(
-        acqf_type=acqf.AcquisitionFunctionType.LOG_EI,
-        gpr=gpr,
-        search_space=search_space,
-        X=X[:, np.newaxis],
-        Y=score_vals,
+    acqf_params = acqf_module.LogEI(
+        gpr=gpr, search_space=search_space, threshold=np.max(score_vals)
     )
     caplog.clear()
     optuna.logging.enable_propagation()
@@ -53,8 +48,9 @@ def test_after_convergence(caplog: LogCaptureFixture) -> None:
 
 
 @pytest.mark.parametrize("constraint_value", [-1.0, 0.0, 1.0, -float("inf"), float("inf")])
+@pytest.mark.parametrize("n_objectives", [1, 2])
 @pytest.mark.filterwarnings("ignore:.*GPSampler cannot handle infinite values*")
-def test_constraints_func(constraint_value: float) -> None:
+def test_constraints_func(constraint_value: float, n_objectives: int) -> None:
     n_trials = 5
     constraints_func_call_count = 0
 
@@ -68,8 +64,15 @@ def test_constraints_func(constraint_value: float) -> None:
         warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
         sampler = GPSampler(n_startup_trials=2, constraints_func=constraints_func)
 
-    study = optuna.create_study(direction="minimize", sampler=sampler)
-    study.optimize(lambda t: t.suggest_float("x", 0, 1), n_trials=n_trials)
+    def objective(trial: optuna.Trial) -> float | tuple[float, float]:
+        x = trial.suggest_float("x", 0, 1)
+        if n_objectives == 1:
+            return x
+        else:
+            return x, (x - 2) ** 2
+
+    study = optuna.create_study(directions=["minimize"] * n_objectives, sampler=sampler)
+    study.optimize(objective, n_trials=n_trials)
 
     assert len(study.trials) == n_trials
     assert constraints_func_call_count == n_trials
@@ -78,7 +81,8 @@ def test_constraints_func(constraint_value: float) -> None:
             assert x == y
 
 
-def test_constraints_func_nan() -> None:
+@pytest.mark.parametrize("n_objectives", [1, 2])
+def test_constraints_func_nan(n_objectives: int) -> None:
     n_trials = 5
 
     def constraints_func(_: FrozenTrial) -> Sequence[float]:
@@ -88,22 +92,21 @@ def test_constraints_func_nan() -> None:
         warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
         sampler = GPSampler(n_startup_trials=2, constraints_func=constraints_func)
 
-    study = optuna.create_study(direction="minimize", sampler=sampler)
+    def objective(
+        trial: optuna.Trial | optuna.trial.FrozenTrial,
+    ) -> tuple[float] | tuple[float, float]:
+        x = trial.suggest_float("x", 0, 1)
+        if n_objectives == 1:
+            return (x,)
+        else:
+            return x, (x - 2) ** 2
+
+    study = optuna.create_study(directions=["minimize"] * n_objectives, sampler=sampler)
     with pytest.raises(ValueError):
-        study.optimize(
-            lambda t: t.suggest_float("x", 0, 1),
-            n_trials=n_trials,
-        )
+        study.optimize(objective, n_trials=n_trials)
 
     trials = study.get_trials()
     assert len(trials) == 1  # The error stops optimization, but completed trials are recorded.
     assert all(0 <= x <= 1 for x in trials[0].params.values())  # The params are normal.
-    assert trials[0].values == list(trials[0].params.values())  # The values are normal.
+    assert trials[0].values == list(objective(trials[0]))  # The values are normal.
     assert trials[0].system_attrs[_CONSTRAINTS_KEY] is None  # None is set for constraints.
-
-
-def test_raise_error_for_constrained_multi_objective() -> None:
-    sampler = GPSampler(constraints_func=(lambda t: (t.number,)))
-    study = optuna.create_study(directions=["minimize"] * 2, sampler=sampler)
-    with pytest.raises(ValueError):
-        study.optimize(func=(lambda t: (t.suggest_float("x", -1, 1), 0.0)), n_trials=1)
