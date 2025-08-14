@@ -54,6 +54,8 @@ jobs:
         pip install PyQt6 # Install PyQT for using QtAgg as matplotlib backend.
         # TODO(HideakiImamura): Remove this after fixing https://github.com/plotly/Kaleido/issues/110
         pip install "kaleido<=0.1.0post1"
+        # TODO(nabe): <6.3.0 is a hotfix, so please remove it once the bug is fixed.
+        pip install "plotly<6.3.0"
         # TODO(nabe): Remove the version constraint once Torch supports NumPy v2.0.0 for Windows.
         pip uninstall numpy
         pip install --progress-bar off 'numpy<2.0.0'

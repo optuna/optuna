@@ -70,7 +70,7 @@ document = [
   "matplotlib!=3.6.0",
   "pandas",
   "pillow",
-  "plotly>=4.9.0,<6.3.0",  # optuna/visualization. TODO(nabe): <6.3.0 is a hotfix, so please remove it once the bug is fixed.
+  "plotly>=4.9.0",  # optuna/visualization.
   "scikit-learn",
   "sphinx",
   "sphinx-copybutton",
@@ -86,7 +86,7 @@ optional = [
   "google-cloud-storage",  # optuna/artifacts/_gcs.py.
   "matplotlib!=3.6.0",  # optuna/visualization/matplotlib.
   "pandas",  # optuna/study/_dataframe.py.
-  "plotly>=4.9.0,<6.3.0",  # optuna/visualization. TODO(nabe): <6.4.0 is a hotfix, so please remove it once the bug is fixed.
+  "plotly>=4.9.0",  # optuna/visualization.
   "redis",  # optuna/storages/journal/_redis.py.
   "scikit-learn>=0.24.2",  # optuna/importance.
   "scipy",  # optuna/_gp.
