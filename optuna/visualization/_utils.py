@@ -65,7 +65,8 @@ def _check_plot_args(
 
     if target is not None and target_name == "Objective Value":
         warnings.warn(
-            "`target` is specified, but `target_name` is the default value, 'Objective Value'."
+            "`target` is specified, but `target_name` is the default value, 'Objective Value'.",
+            stacklevel=2,
         )
 
 

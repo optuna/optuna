@@ -186,13 +186,13 @@ def _get_pareto_front_info(
         msg = _deprecated._DEPRECATION_WARNING_TEMPLATE.format(
             name="`axis_order`", d_ver="3.0.0", r_ver="5.0.0"
         )
-        warnings.warn(msg, FutureWarning)
+        warnings.warn(msg, FutureWarning, stacklevel=2)
 
     if constraints_func is not None:
         msg = _deprecated._DEPRECATION_WARNING_TEMPLATE.format(
             name="`constraints_func`", d_ver="4.0.0", r_ver="6.0.0"
         )
-        warnings.warn(msg, FutureWarning)
+        warnings.warn(msg, FutureWarning, stacklevel=2)
 
     if targets is not None and axis_order is not None:
         raise ValueError(
