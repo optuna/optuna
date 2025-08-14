@@ -64,12 +64,12 @@ document = [
   "ase",
   "cmaes>=0.10.0",  # optuna/samplers/_cmaes.py.
   "fvcore",
-  "kaleido!=0.4",  # TODO(nzw0301): Remove the version constraint by installing browser separately.
+  "kaleido<0.4",  # TODO(nzw0301): Remove the version constraint by installing browser separately.
   "lightgbm",
   "matplotlib!=3.6.0",
   "pandas",
   "pillow",
-  "plotly>=4.9.0",  # optuna/visualization.
+  "plotly>=4.9.0,<6.4.0",  # optuna/visualization. NOTE(nabe): <6.4.0 is a hotfix, so please remove it once the bug is fixed.
   "scikit-learn",
   "sphinx",
   "sphinx-copybutton",
@@ -85,7 +85,7 @@ optional = [
   "google-cloud-storage",  # optuna/artifacts/_gcs.py.
   "matplotlib!=3.6.0",  # optuna/visualization/matplotlib.
   "pandas",  # optuna/study/_dataframe.py.
-  "plotly>=4.9.0",  # optuna/visualization.
+  "plotly>=4.9.0,<6.4.0",  # optuna/visualization. NOTE(nabe): <6.4.0 is a hotfix, so please remove it once the bug is fixed.
   "redis",  # optuna/storages/journal/_redis.py.
   "scikit-learn>=0.24.2",  # optuna/importance.
   "scipy",  # optuna/_gp.
@@ -96,7 +96,7 @@ optional = [
 test = [
   "coverage",
   "fakeredis[lua]",
-  "kaleido!=0.4",  # TODO(nzw0301): Remove the version constraint by installing browser separately.
+  "kaleido<0.4",  # TODO(nzw0301): Remove the version constraint by installing browser separately.
   "moto",
   "pytest",
   "scipy>=1.9.2",
