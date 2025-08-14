@@ -69,7 +69,7 @@ jobs:
     - name: Scheduled tests
       if:  ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
       run: |
-        pytest -n 8
+        pytest -s -n 8
       env:
         SQLALCHEMY_WARN_20: 1
         MPLBACKEND: "QtAgg" # Use QtAgg as matplotlib backend.
@@ -77,6 +77,6 @@ jobs:
     - name: Tests
       if:  ${{ github.event_name != 'schedule' && github.event_name != 'workflow_dispatch' }}
       run: |
-        pytest -m "not slow" -n 8
+        pytest -s -m "not slow" -n 8
       env:
         MPLBACKEND: "QtAgg" # Use QtAgg as matplotlib backend.
