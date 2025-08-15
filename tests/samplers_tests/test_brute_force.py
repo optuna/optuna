@@ -1,4 +1,4 @@
-import time
+from unittest.mock import patch
 
 import numpy as np
 import pytest
@@ -304,39 +304,91 @@ def test_parallel_optimize() -> None:
     assert {x1, x2} == {"a", "b"}
 
 
-# TODO(c-bata): Make this test robust. Currently xfail due to timing sensitivity.
-@pytest.mark.xfail(reason="This test is fragile due to timing issues.")
-def test_parallel_optimize_with_sleep() -> None:
-    def objective(trial: Trial) -> float:
-        x = trial.suggest_int("x", 0, 1)
-        time.sleep(x)
-        y = trial.suggest_int("y", 0, 1)
-        return x + y
-
-    # Seed is fixed to reproduce the same result.
-    # See: https://github.com/optuna/optuna/issues/5780
+def test_not_avoid_premature_stop() -> None:
     study = optuna.create_study(sampler=samplers.BruteForceSampler(seed=42))
-    study.optimize(objective, n_jobs=2)
-    expected_suggested_values = [
-        {"x": 0, "y": 0},
-        {"x": 0, "y": 1},
-        {"x": 1, "y": 0},
-    ]
-    all_suggested_values = [t.params for t in study.trials]
-    assert len(all_suggested_values) == len(expected_suggested_values)
-    for expected_value in expected_suggested_values:
-        assert expected_value in all_suggested_values
 
+    trials = [study.ask() for _ in range(3)]
+
+    assert trials[0].suggest_int("x", 0, 1) == 0
+    assert trials[0].suggest_int("y", 0, 1) == 1
+
+    study.tell(trials[0], 0.0)
+
+    assert trials[1].suggest_int("x", 0, 1) == 1
+
+    assert trials[2].suggest_int("x", 0, 1) == 0
+    assert trials[2].suggest_int("y", 0, 1) == 0
+
+    with patch.object(study, "stop", return_value=None) as mock_stop:
+        # At this moment, the BruteForceSampler knows:
+        #
+        #   trials[0]: x = 0, y = 1  # Completed
+        #   trials[1]: x = 1         # Running
+        #   trials[2]: x = 0, y = 0  # Running
+        #
+        # Since the sampler assumes that running trials already suggest all parameters, the sampler
+        # considers all possible combinations of x and y have been exhausted.
+        study.tell(trials[1], 0.0)
+        study.tell(trials[2], 0.0)
+        assert mock_stop.call_count == 2
+
+
+def test_avoid_premature_stop() -> None:
     study = optuna.create_study(
         sampler=samplers.BruteForceSampler(seed=42, avoid_premature_stop=True)
     )
-    study.optimize(objective, n_jobs=2)
-    expected_suggested_values = [
-        {"x": 0, "y": 0},
-        {"x": 0, "y": 1},
-        {"x": 1, "y": 0},
-        {"x": 1, "y": 1},
-    ]
-    all_suggested_values = [t.params for t in study.trials]
-    for expected_value in expected_suggested_values:
-        assert expected_value in all_suggested_values
+
+    trials = [study.ask() for _ in range(5)]
+
+    assert trials[0].suggest_int("x", 0, 1) == 0
+    assert trials[0].suggest_int("y", 0, 1) == 1
+
+    study.tell(trials[0], 0.0)
+
+    assert trials[1].suggest_int("x", 0, 1) == 1
+
+    assert trials[2].suggest_int("x", 0, 1) == 0
+    assert trials[2].suggest_int("y", 0, 1) == 0
+
+    with patch.object(study, "stop", return_value=None) as mock_stop:
+        # At this moment, the BruteForceSampler knows:
+        #
+        #   trials[0]: x = 0, y = 1  # Completed
+        #   trials[1]: x = 1         # Running
+        #   trials[2]: x = 0, y = 0  # Running
+        #
+        # If `avoid_premature_stop` is `True`, the sampler assumes that running trials may still
+        # suggest new parameters, considering the possibility for trials[1] to suggest `y`.
+        # So the sampler should not stop.
+        study.tell(trials[2], 0.0)
+        mock_stop.assert_not_called()
+
+    assert trials[1].suggest_int("y", 0, 1) == 0
+
+    assert trials[3].suggest_int("x", 0, 1) == 1
+    assert trials[3].suggest_int("y", 0, 1) == 1
+
+    with patch.object(study, "stop", return_value=None) as mock_stop:
+        # At this moment, the BruteForceSampler knows:
+        #
+        #   trials[0]: x = 0, y = 1  # Completed
+        #   trials[1]: x = 1, y = 0  # Running
+        #   trials[2]: x = 0, y = 0  # Completed
+        #   trials[3]: x = 1, y = 1  # Running
+        #
+        # However, the BruteForceSampler assumes that trials[3] may possibly have
+        # another parameter that has not yet been suggested.
+        study.tell(trials[1], 0.0)
+        mock_stop.assert_not_called()
+
+    with patch.object(study, "stop", return_value=None) as mock_stop:
+        # At this moment, the BruteForceSampler knows:
+        #
+        #   trials[0]: x = 0, y = 1  # Completed
+        #   trials[1]: x = 1, y = 0  # Completed
+        #   trials[2]: x = 0, y = 0  # Completed
+        #   trials[3]: x = 1, y = 1  # Running
+        #
+        # All possible combinations of x and y have been exhausted.
+        study.tell(trials[3], 0.0)
+        mock_stop.assert_called_once()
