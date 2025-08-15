@@ -75,14 +75,16 @@ def standard_logei(z: torch.Tensor) -> torch.Tensor:
     NOTE: We do not use the third condition because [-10**100, 10**100] is an overly high range.
     """
     # First condition (most z falls into this condition, so we calculate it first)
-    z_x_cdf = (z_half := 0.5 * z) * torch.special.erfc(-_SQRT_HALF * z)
-    pdf = (-z_half * z).exp() * _INV_SQRT_2PI
-    out = (z_x_cdf + pdf).log()
-
+    # NOTE: ei(z) = z * cdf(z) + pdf(z)
+    out = (
+        (z_half := 0.5 * z) * torch.special.erfc(-_SQRT_HALF * z)  # z * cdf(z)
+        + (-z_half * z).exp() * _INV_SQRT_2PI  # pdf(z)
+    ).log()
     if (z_small := z[(small := z < -25)]).numel():
         # Second condition
-        log_part = (1 + _SQRT_HALF_PI * z_small * torch.special.erfcx(-_SQRT_HALF * z_small)).log()
-        out[small] = -0.5 * z_small**2 + log_part - _LOG_SQRT_2PI
+        out[small] = -0.5 * z_small**2 + (
+            1 + _SQRT_HALF_PI * z_small * torch.special.erfcx(-_SQRT_HALF * z_small)
+        ).log() - _LOG_SQRT_2PI
     return out
 
 
