@@ -326,7 +326,8 @@ def test_not_avoid_premature_stop() -> None:
         #   trials[1]: x = 1         # Running
         #   trials[2]: x = 0, y = 0  # Running
         #
-        # Assume that all possible combinations of x and y have been exhausted.
+        # Since the sampler assumes that running trials already suggest all parameters, the sampler
+        # considers all possible combinations of x and y have been exhausted.
         study.tell(trials[1], 0.0)
         study.tell(trials[2], 0.0)
         assert mock_stop.call_count == 2
@@ -356,8 +357,9 @@ def test_avoid_premature_stop() -> None:
         #   trials[1]: x = 1         # Running
         #   trials[2]: x = 0, y = 0  # Running
         #
-        # If `avoid_premature_stop` is set to `True`, the sampler should not stop,
-        # because BruteForceSampler assumes that `y` for trials[1] has not been suggested yet
+        # If `avoid_premature_stop` is `True`, the sampler assumes that running trials may still
+        # suggest new parameters, considering the possibility for trials[1] to suggest `y`.
+        # So the sampler should not stop.
         study.tell(trials[2], 0.0)
         mock_stop.assert_not_called()
 
@@ -387,6 +389,6 @@ def test_avoid_premature_stop() -> None:
         #   trials[2]: x = 0, y = 0  # Completed
         #   trials[3]: x = 1, y = 1  # Running
         #
-        # Assume that all possible combinations of x and y have been exhausted.
+        # All possible combinations of x and y have been exhausted.
         study.tell(trials[3], 0.0)
         mock_stop.assert_called_once()
