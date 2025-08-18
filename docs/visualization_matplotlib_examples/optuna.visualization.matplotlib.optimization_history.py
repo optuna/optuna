@@ -10,8 +10,6 @@ The following code snippet shows how to plot optimization history.
 """
 
 import optuna
-import matplotlib.pyplot as plt
-
 
 def objective(trial):
     x = trial.suggest_float("x", -100, 100)
