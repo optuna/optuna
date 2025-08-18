@@ -72,7 +72,7 @@ def _get_optimization_history_plot(
 ) -> "Axes":
     # Set up the graph style.
     plt.style.use("ggplot")  # Use ggplot style sheet for similar outputs to plotly.
-    _, ax = plt.subplots()
+    _, ax = plt.subplots(tight_layout=True)
     ax.set_title("Optimization History Plot")
     ax.set_xlabel("Trial")
     ax.set_ylabel(target_name)
