@@ -89,7 +89,8 @@ optional = [
   "plotly>=4.9.0",  # optuna/visualization.
   "redis",  # optuna/storages/journal/_redis.py.
   "scikit-learn>=0.24.2",  # optuna/importance.
-  "torch; python_version<='3.12'",  # TODO(gen740): Remove this line when 'torch', a dependency of 'optuna/_gp', supports Python 3.13
+  "scipy",  # optuna/_gp.
+  "torch",  # optuna/_gp.
   "grpcio",  # optuna/storages/_grpc.
   "protobuf>=5.28.1",  # optuna/storages/_grpc.
 ]
