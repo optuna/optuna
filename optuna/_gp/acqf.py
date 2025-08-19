@@ -81,8 +81,10 @@ def standard_logei(z: torch.Tensor) -> torch.Tensor:
         + (-z_half * z).exp() * _INV_SQRT_2PI  # pdf(z)
     ).log()
     if (z_small := z[(small := z < -25)]).numel():
-        # Second condition
-        out[small] = -0.5 * z_small**2 - _LOG_SQRT_2PI + (
+        # Second condition (does not happen often, so we calculate it only if necessary)
+        out[small] = (
+            -0.5 * z_small**2
+            - _LOG_SQRT_2PI
             + (1 + _SQRT_HALF_PI * z_small * torch.special.erfcx(-_SQRT_HALF * z_small)).log()
         )
     return out
