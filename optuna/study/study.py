@@ -1571,7 +1571,14 @@ def copy_study(
         to_study.set_user_attr(key, value)
 
     # Trials are deep copied on `add_trials`.
-    to_study.add_trials(from_study.get_trials(deepcopy=False))
+    for trial in from_study.get_trials(deepcopy=False):
+        if trial.values is not None and len(to_study.directions) != len(trial.values):
+            raise ValueError(
+                f"The added trial has {len(trial.values)} values, which is different from the "
+                f"number of objectives {len(to_study.directions)} in the study (determined by "
+                "Study.directions)."
+            )
+        to_study._storage.create_new_trial(to_study._study_id, template_trial=trial)
 
 
 def get_all_study_summaries(
