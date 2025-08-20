@@ -35,10 +35,6 @@ def plot_optimization_history(
     .. seealso::
         Please refer to :func:`optuna.visualization.plot_optimization_history` for an example.
 
-    .. note::
-        You need to adjust the size of the plot by yourself using ``plt.tight_layout()`` or
-        ``plt.savefig(IMAGE_NAME, bbox_inches='tight')``.
-
     Args:
         study:
             A :class:`~optuna.study.Study` object whose trials are plotted for their target values.
@@ -72,7 +68,7 @@ def _get_optimization_history_plot(
 ) -> "Axes":
     # Set up the graph style.
     plt.style.use("ggplot")  # Use ggplot style sheet for similar outputs to plotly.
-    _, ax = plt.subplots()
+    _, ax = plt.subplots(tight_layout=True)
     ax.set_title("Optimization History Plot")
     ax.set_xlabel("Trial")
     ax.set_ylabel(target_name)
