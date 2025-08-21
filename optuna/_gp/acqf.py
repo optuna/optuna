@@ -49,11 +49,8 @@ def logehvi(
     # https://github.com/pytorch/botorch/blob/v0.13.0/botorch/utils/safe_math.py
     # https://github.com/pytorch/botorch/blob/v0.13.0/botorch/acquisition/multi_objective/logei.py#L146-L266
     _EPS = torch.tensor(1e-12, dtype=torch.float64)  # NOTE(nabenabe): grad becomes nan when EPS=0.
-    diff = torch.maximum(
-        _EPS,
-        torch.minimum(Y_post[..., None, :], non_dominated_box_upper_bounds)
-        - non_dominated_box_lower_bounds,
-    )
+    diff = Y_post.unsqueeze(-2) - non_dominated_box_lower_bounds
+    diff.clamp_(min=_EPS, max=non_dominated_box_upper_bounds - non_dominated_box_lower_bounds)
     # NOTE(nabenabe): logsumexp with dim=-1 is for the HVI calculation and that with dim=-2 is for
     # expectation of the HVIs over the fixed_samples.
     return torch.special.logsumexp(diff.log().sum(dim=-1), dim=(-2, -1)) - log_n_qmc_samples
