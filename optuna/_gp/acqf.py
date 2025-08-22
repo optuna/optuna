@@ -24,7 +24,7 @@ else:
 
 
 _SQRT_HALF = torch.tensor(math.sqrt(0.5), dtype=torch.float64)
-_INV_SQRT_2PI = torch.tensor(math.sqrt(2 * math.pi), dtype=torch.float64)
+_INV_SQRT_2PI = torch.tensor(1 / math.sqrt(2 * math.pi), dtype=torch.float64)
 _SQRT_HALF_PI = torch.tensor(math.sqrt(0.5 * math.pi), dtype=torch.float64)
 _LOG_SQRT_2PI = torch.tensor(math.sqrt(2 * math.pi), dtype=torch.float64).log()
 
