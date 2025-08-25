@@ -191,10 +191,17 @@ class _MixtureOfProductDistribution(NamedTuple):
                     (d.high + d.step / 2 - mu_uniq) / sigma_uniq,
                 )[mu_sigma_inv]
             elif isinstance(d, _BatchedDiscreteTruncLogNormDistributions):
-                cont_dists.append(d)
-                x_cont.append(np.log(x[:, i]))
-                lows_cont.append(np.log(d.low - d.step / 2))
-                highs_cont.append(np.log(d.high + d.step / 2))
+                xi_uniq, xi_inv = np.unique(x[:, i], return_inverse=True)
+                mu_uniq, sigma_uniq, mu_sigma_inv = _unique_inverse_2d(d.mu, d.sigma)
+                weighted_log_pdf += _log_gauss_mass_unique(
+                    (np.log(xi_uniq - d.step / 2)[:, np.newaxis] - mu_uniq) / sigma_uniq,
+                    (np.log(xi_uniq + d.step / 2)[:, np.newaxis] - mu_uniq) / sigma_uniq,
+                )[np.ix_(xi_inv, mu_sigma_inv)]
+                # Very unlikely to observe duplications below, so we skip the unique operation.
+                weighted_log_pdf -= _truncnorm._log_gauss_mass(
+                    (np.log(d.low - d.step / 2) - mu_uniq) / sigma_uniq,
+                    (np.log(d.high + d.step / 2) - mu_uniq) / sigma_uniq,
+                )[mu_sigma_inv]
             else:
                 assert False
 
