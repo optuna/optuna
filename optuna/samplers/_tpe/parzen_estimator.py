@@ -232,13 +232,9 @@ class _ParzenEstimator:
                 )
                 sigmas = np.full(shape=(len(observations),), fill_value=sigma)
             else:
-                # TODO(contramundum53): Remove dependency on prior_mu
-                prior_mu = 0.5 * (low + high)
-                mus_with_prior = np.append(mus, prior_mu)
-
-                sorted_indices = np.argsort(mus_with_prior)
-                sorted_mus = mus_with_prior[sorted_indices]
-                sorted_mus_with_endpoints = np.empty(len(mus_with_prior) + 2, dtype=float)
+                sorted_indices = np.argsort(mus)
+                sorted_mus = mus[sorted_indices]
+                sorted_mus_with_endpoints = np.empty(len(mus) + 2, dtype=float)
                 sorted_mus_with_endpoints[0] = low - step_or_0 / 2
                 sorted_mus_with_endpoints[1:-1] = sorted_mus
                 sorted_mus_with_endpoints[-1] = high + step_or_0 / 2
@@ -254,12 +250,11 @@ class _ParzenEstimator:
                         sorted_mus_with_endpoints[-2] - sorted_mus_with_endpoints[-3]
                     )
 
-                sigmas = sorted_sigmas[np.argsort(sorted_indices)][: len(observations)]
+                sigmas = sorted_sigmas[np.argsort(sorted_indices)]
 
             # We adjust the range of the 'sigmas' according to the 'consider_magic_clip' flag.
             maxsigma = 1.0 * (high - low + step_or_0)
             if parameters.consider_magic_clip:
-                # TODO(contramundum53): Remove dependency of minsigma on consider_prior.
                 n_kernels = len(observations) + 1  # NOTE(sawa3030): +1 for prior.
                 minsigma = 1.0 * (high - low + step_or_0) / min(100.0, (1.0 + n_kernels))
             else:
