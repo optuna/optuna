@@ -215,7 +215,7 @@ class GPRegressor:
         minimum_noise: float,
         deterministic_objective: bool,
         gtol: float,
-    ) -> GPRegressor:
+    ) -> Self:
         n_params = self._X_train.shape[1]
 
         # We apply log transform to enforce the positivity of the kernel parameters.
