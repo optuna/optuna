@@ -68,33 +68,33 @@ def test_init_parzen_estimator(multivariate: bool) -> None:
         distributions=[
             _BatchedTruncNormDistributions(
                 mu=np.array([1.0, 50.5]),
-                sigma=np.array([49.5, 99.0]),
+                sigma=np.array([99.0, 99.0]),
                 low=1.0,
                 high=100.0,
             ),
             _BatchedTruncNormDistributions(
                 mu=np.array([np.log(1.0), np.log(100) / 2.0]),
-                sigma=np.array([np.log(100) / 2, np.log(100)]),
+                sigma=np.array([np.log(100), np.log(100)]),
                 low=np.log(1.0),
                 high=np.log(100.0),
             ),
             _BatchedDiscreteTruncNormDistributions(
                 mu=np.array([1.0, 50.5]),
-                sigma=np.array([49.5, 102.0]),
+                sigma=np.array([100.5, 102.0]),
                 low=1.0,
                 high=100.0,
                 step=3.0,
             ),
             _BatchedDiscreteTruncNormDistributions(
                 mu=np.array([1.0, 50.5]),
-                sigma=np.array([49.5, 100.0]),
+                sigma=np.array([99.5, 100.0]),
                 low=1,
                 high=100,
                 step=1,
             ),
             _BatchedTruncNormDistributions(
                 mu=np.array([np.log(1.0), (np.log(100.5) + np.log(0.5)) / 2.0]),
-                sigma=np.array([(np.log(100.5) + np.log(0.5)) / 2, np.log(100.5) - np.log(0.5)]),
+                sigma=np.array([np.log(100.5), np.log(100.5) - np.log(0.5)]),
                 low=np.log(0.5),
                 high=np.log(100.5),
             ),
@@ -252,22 +252,22 @@ def test_invalid_prior_weight(mus: np.ndarray) -> None:
         [
             np.asarray([0.4]),
             {"magic_clip": False, "endpoints": True},
-            {"weights": [0.5, 0.5], "mus": [0.4, 0.0], "sigmas": [0.6, 2.0]},
+            {"weights": [0.5, 0.5], "mus": [0.4, 0.0], "sigmas": [1.4, 2.0]},
         ],
         [
             np.asarray([-0.4]),
             {"magic_clip": False, "endpoints": True},
-            {"weights": [0.5, 0.5], "mus": [-0.4, 0.0], "sigmas": [0.6, 2.0]},
+            {"weights": [0.5, 0.5], "mus": [-0.4, 0.0], "sigmas": [1.4, 2.0]},
         ],
         [
-            np.asarray([-0.4, 0.4]),
+            np.asarray([-0.3, 0.3]),
             {"magic_clip": False, "endpoints": True},
-            {"weights": [1.0 / 3] * 3, "mus": [-0.4, 0.4, 0.0], "sigmas": [0.6, 0.6, 2.0]},
+            {"weights": [1.0 / 3] * 3, "mus": [-0.3, 0.3, 0.0], "sigmas": [0.7, 0.7, 2.0]},
         ],
         [
-            np.asarray([-0.4, 0.4]),
+            np.asarray([-0.3, 0.3]),
             {"magic_clip": False, "endpoints": False},
-            {"weights": [1.0 / 3] * 3, "mus": [-0.4, 0.4, 0.0], "sigmas": [0.4, 0.4, 2.0]},
+            {"weights": [1.0 / 3] * 3, "mus": [-0.3, 0.3, 0.0], "sigmas": [0.6, 0.6, 2.0]},
         ],
         [
             np.asarray([-0.4, 0.4, 0.41, 0.42]),
@@ -275,7 +275,7 @@ def test_invalid_prior_weight(mus: np.ndarray) -> None:
             {
                 "weights": [0.2, 0.2, 0.2, 0.2, 0.2],
                 "mus": [-0.4, 0.4, 0.41, 0.42, 0.0],
-                "sigmas": [0.6, 0.4, 0.01, 0.58, 2.0],
+                "sigmas": [0.8, 0.8, 0.01, 0.58, 2.0],
             },
         ],
         [
@@ -284,7 +284,7 @@ def test_invalid_prior_weight(mus: np.ndarray) -> None:
             {
                 "weights": [0.2, 0.2, 0.2, 0.2, 0.2],
                 "mus": [-0.4, 0.4, 0.41, 0.42, 0.0],
-                "sigmas": [0.6, 0.4, 1.0 / 3, 0.58, 2.0],
+                "sigmas": [0.8, 0.8, 1.0 / 3, 0.58, 2.0],
             },
         ],
     ],
