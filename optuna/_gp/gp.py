@@ -287,6 +287,7 @@ def fit_kernel_params(
     gtol: float = 1e-2,
 ) -> GPRegressor:
     default_kernel_params = torch.ones(X.shape[1] + 2, dtype=torch.float64)
+    # TODO: Move this function into a method of `GPRegressor`
 
     def _default_gpr() -> GPRegressor:
         return GPRegressor(
