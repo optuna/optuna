@@ -564,7 +564,9 @@ class Study:
         """
 
         if not self._thread_local.in_optimize_loop and is_heartbeat_enabled(self._storage):
-            warnings.warn("Heartbeat of storage is supposed to be used with Study.optimize.")
+            warnings.warn(
+                "Heartbeat of storage is supposed to be used with Study.optimize.", stacklevel=2
+            )
 
         fixed_distributions = fixed_distributions or {}
         fixed_distributions = {
