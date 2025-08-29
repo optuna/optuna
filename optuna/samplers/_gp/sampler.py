@@ -145,8 +145,6 @@ class GPSampler(BaseSampler):
             The ``constraints_func`` will be evaluated after each successful trial.
             The function won't be called when trials fail or are pruned, but this behavior is
             subject to change in future releases.
-            Currently, the ``constraints_func`` option is not supported for multi-objective
-            optimization.
         warn_independent_sampling:
             If this is :obj:`True`, a warning message is emitted when
             the value of a parameter is sampled by using an independent sampler,
