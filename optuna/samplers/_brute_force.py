@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from collections.abc import Iterable
-from collections.abc import Sequence
 from dataclasses import dataclass
 import decimal
 from typing import Any
@@ -22,6 +20,9 @@ from optuna.trial import TrialState
 
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable
+    from collections.abc import Sequence
+
     from optuna.study import Study
 
 
@@ -61,7 +62,7 @@ class _TreeNode:
 
     def add_path(
         self, params_and_search_spaces: Iterable[tuple[str, Iterable[float], float]]
-    ) -> "_TreeNode" | None:
+    ) -> _TreeNode | None:
         # Add a path (i.e. a list of suggested parameters in one trial) to the tree.
         current_node = self
         for param_name, search_space, value in params_and_search_spaces:
@@ -199,7 +200,11 @@ class BruteForceSampler(BaseSampler):
     ) -> Any:
         exclude_running = not self._avoid_premature_stop
 
-        trials = study.get_trials(
+        # We directly query the storage to get trials here instead of `study.get_trials`,
+        # since some pruners such as `HyperbandPruner` use the study transformed
+        # to filter trials. See https://github.com/optuna/optuna/issues/2327 for details.
+        trials = study._storage.get_all_trials(
+            study._study_id,
             deepcopy=False,
             states=(
                 TrialState.COMPLETE,
@@ -231,7 +236,11 @@ class BruteForceSampler(BaseSampler):
     ) -> None:
         exclude_running = not self._avoid_premature_stop
 
-        trials = study.get_trials(
+        # We directly query the storage to get trials here instead of `study.get_trials`,
+        # since some pruners such as `HyperbandPruner` use the study transformed
+        # to filter trials. See https://github.com/optuna/optuna/issues/2327 for details.
+        trials = study._storage.get_all_trials(
+            study._study_id,
             deepcopy=False,
             states=(
                 TrialState.COMPLETE,

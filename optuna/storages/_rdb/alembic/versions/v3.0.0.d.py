@@ -55,11 +55,11 @@ class TrialValueModel(BaseModel):
         value: float,
     ) -> tuple[float | None, TrialValueType]:
         if value == float("inf"):
-            return (None, cls.TrialValueType.INF_POS)
+            return None, cls.TrialValueType.INF_POS
         elif value == float("-inf"):
-            return (None, cls.TrialValueType.INF_NEG)
+            return None, cls.TrialValueType.INF_NEG
         else:
-            return (value, cls.TrialValueType.FINITE)
+            return value, cls.TrialValueType.FINITE
 
     @classmethod
     def stored_repr_to_value(cls, value: float | None, float_type: TrialValueType) -> float:

@@ -57,7 +57,8 @@ def experimental_func(
 
     Args:
         version: The first version that supports the target feature.
-        name: The name of the feature. Defaults to the function name. Optional.
+        name: The name of the feature. Defaults to fully qualified name of
+        the function, i.e. `f"{func.__module__}.{func.__qualname__}"`. Optional.
     """
 
     _validate_version(version)
@@ -70,13 +71,13 @@ def experimental_func(
         indent = _get_docstring_indent(func.__doc__)
         func.__doc__ = func.__doc__.strip() + textwrap.indent(note, indent) + indent
 
+        _name = name or f"{func.__module__}.{func.__qualname__}"
+
         @functools.wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> FT:
             warnings.warn(
                 "{} is experimental (supported from v{}). "
-                "The interface can change in the future.".format(
-                    name if name is not None else func.__name__, version
-                ),
+                "The interface can change in the future.".format(_name, version),
                 ExperimentalWarning,
                 stacklevel=2,
             )

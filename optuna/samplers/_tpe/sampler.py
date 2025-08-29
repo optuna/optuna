@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from collections.abc import Sequence
+from functools import lru_cache
+import json
 import math
 from typing import Any
 from typing import cast
@@ -19,6 +21,7 @@ from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalChoiceType
 from optuna.logging import get_logger
 from optuna.samplers._base import _CONSTRAINTS_KEY
+from optuna.samplers._base import _INDEPENDENT_SAMPLING_WARNING_TEMPLATE
 from optuna.samplers._base import _process_constraints_after_trial
 from optuna.samplers._base import BaseSampler
 from optuna.samplers._lazy_random_state import LazyRandomState
@@ -42,13 +45,17 @@ if TYPE_CHECKING:
 EPS = 1e-12
 _logger = get_logger(__name__)
 
+_RELATIVE_PARAMS_KEY = "tpe:relative_params"
+# The value of system_attrs must be less than 2046 characters on RDBStorage.
+_SYSTEM_ATTR_MAX_LENGTH = 2045
+
 
 def default_gamma(x: int) -> int:
-    return min(int(np.ceil(0.1 * x)), 25)
+    return min(math.ceil(0.1 * x), 25)
 
 
 def hyperopt_default_gamma(x: int) -> int:
-    return min(int(np.ceil(0.25 * np.sqrt(x))), 25)
+    return min(math.ceil(0.25 * x**0.5), 25)
 
 
 def default_weights(x: int) -> np.ndarray:
@@ -409,9 +416,19 @@ class TPESampler(BaseSampler):
                     if not distribution.single():
                         search_space[name] = distribution
                 params.update(self._sample_relative(study, trial, search_space))
-            return params
         else:
-            return self._sample_relative(study, trial, search_space)
+            params = self._sample_relative(study, trial, search_space)
+
+        if params != {} and self._constant_liar:
+            # Share the params obtained by the relative sampling with the other processes.
+            params_str = json.dumps(params)
+            for i in range(0, len(params_str), _SYSTEM_ATTR_MAX_LENGTH):
+                study._storage.set_trial_system_attr(
+                    trial._trial_id,
+                    f"{_RELATIVE_PARAMS_KEY}:{i // _SYSTEM_ATTR_MAX_LENGTH}",
+                    params_str[i : i + _SYSTEM_ATTR_MAX_LENGTH],
+                )
+        return params
 
     def _sample_relative(
         self, study: Study, trial: FrozenTrial, search_space: dict[str, BaseDistribution]
@@ -447,25 +464,46 @@ class TPESampler(BaseSampler):
             # Avoid independent warning at the first sampling of `param_name`.
             if any(param_name in trial.params for trial in trials):
                 _logger.warning(
-                    f"The parameter '{param_name}' in trial#{trial.number} is sampled "
-                    "independently instead of being sampled by multivariate TPE sampler. "
-                    "(optimization performance may be degraded). "
-                    "You can suppress this warning by setting `warn_independent_sampling` "
-                    "to `False` in the constructor of `TPESampler`, "
-                    "if this independent sampling is intended behavior."
+                    _INDEPENDENT_SAMPLING_WARNING_TEMPLATE.format(
+                        param_name=param_name,
+                        trial_number=trial.number,
+                        independent_sampler_name=self._random_sampler.__class__.__name__,
+                        sampler_name=self.__class__.__name__,
+                        fallback_reason=(
+                            "dynamic search space is not supported for `multivariate=True`"
+                        ),
+                    )
                 )
 
         return self._sample(study, trial, {param_name: param_distribution})[param_name]
+
+    def _get_params(self, trial: FrozenTrial) -> dict[str, Any]:
+        if trial.state.is_finished() or not self._multivariate:
+            # NOTE(not522): If not multivariate, `relative_params` does not exist and
+            # `system_attrs` access will be unnecessary, so we skip it.
+            return trial.params
+
+        params_strs = []
+        i = 0
+        while params_str_i := trial.system_attrs.get(f"{_RELATIVE_PARAMS_KEY}:{i}"):
+            params_strs.append(params_str_i)
+            i += 1
+
+        if len(params_strs) == 0:
+            return trial.params
+        params = json.loads("".join(params_strs))
+        params.update(trial.params)
+        return params
 
     def _get_internal_repr(
         self, trials: list[FrozenTrial], search_space: dict[str, BaseDistribution]
     ) -> dict[str, np.ndarray]:
         values: dict[str, list[float]] = {param_name: [] for param_name in search_space}
         for trial in trials:
-            if all((param_name in trial.params) for param_name in search_space):
-                for param_name in search_space:
-                    param = trial.params[param_name]
-                    distribution = trial.distributions[param_name]
+            params = self._get_params(trial)
+            if search_space.keys() <= params.keys():
+                for param_name, distribution in search_space.items():
+                    param = params[param_name]
                     values[param_name].append(distribution.to_internal_repr(param))
         return {k: np.asarray(v) for k, v in values.items()}
 
@@ -478,6 +516,10 @@ class TPESampler(BaseSampler):
             states = [TrialState.COMPLETE, TrialState.PRUNED]
         use_cache = not self._constant_liar
         trials = study._get_trials(deepcopy=False, states=states, use_cache=use_cache)
+
+        if self._constant_liar:
+            # For constant_liar, filter out the current trial.
+            trials = [t for t in trials if trial.number != t.number]
 
         # We divide data into below and above.
         n = sum(trial.state != TrialState.RUNNING for trial in trials)  # Ignore running trials.
@@ -513,11 +555,9 @@ class TPESampler(BaseSampler):
     ) -> _ParzenEstimator:
         observations = self._get_internal_repr(trials, search_space)
         if handle_below and study._is_multi_objective():
-            param_mask_below = []
-            for trial in trials:
-                param_mask_below.append(
-                    all((param_name in trial.params) for param_name in search_space)
-                )
+            param_mask_below = [
+                search_space.keys() <= self._get_params(trial).keys() for trial in trials
+            ]
             weights_below = _calculate_weights_below_for_multi_objective(
                 study, trials, self._constraints_func
             )[param_mask_below]
@@ -699,7 +739,7 @@ def _split_complete_trials_multi_objective(
 
     assert 0 < n_below < len(trials)
     lvals = np.array([trial.values for trial in trials])
-    lvals *= np.array([-1.0 if d == StudyDirection.MAXIMIZE else 1.0 for d in study.directions])
+    lvals *= [-1.0 if d == StudyDirection.MAXIMIZE else 1.0 for d in study.directions]
     nondomination_ranks = _fast_non_domination_rank(lvals, n_below=n_below)
     ranks, rank_counts = np.unique(nondomination_ranks, return_counts=True)
     last_rank_before_tiebreak = int(np.max(ranks[np.cumsum(rank_counts) <= n_below], initial=-1))
@@ -712,8 +752,11 @@ def _split_complete_trials_multi_objective(
         need_tiebreak = nondomination_ranks == last_rank_before_tiebreak + 1
         rank_i_lvals = lvals[need_tiebreak]
         subset_size = n_below - indices_below.size
-        selected_indices = _solve_hssp(
-            rank_i_lvals, indices[need_tiebreak], subset_size, _get_reference_point(rank_i_lvals)
+        selected_indices = _solve_hssp_with_cache(
+            tuple(rank_i_lvals.ravel()),
+            tuple(indices[need_tiebreak]),
+            subset_size,
+            tuple(_get_reference_point(rank_i_lvals)),
         )
         indices_below = np.append(indices_below, selected_indices)
 
@@ -780,12 +823,12 @@ def _calculate_weights_below_for_multi_objective(
         return weights_below
 
     lvals = np.asarray([t.values for t in below_trials])[is_feasible]
-    lvals *= np.array([-1.0 if d == StudyDirection.MAXIMIZE else 1.0 for d in study.directions])
+    lvals *= [-1.0 if d == StudyDirection.MAXIMIZE else 1.0 for d in study.directions]
     ref_point = _get_reference_point(lvals)
     on_front = _is_pareto_front(lvals, assume_unique_lexsorted=False)
     pareto_sols = lvals[on_front]
     hv = compute_hypervolume(pareto_sols, ref_point, assume_pareto=True)
-    if np.isinf(hv):
+    if math.isinf(hv):
         # TODO(nabenabe): Assign EPS to non-Pareto solutions, and
         # solutions with finite contrib if hv is inf. Ref: PR#5813.
         return weights_below
@@ -793,7 +836,21 @@ def _calculate_weights_below_for_multi_objective(
     loo_mat = ~np.eye(pareto_sols.shape[0], dtype=bool)  # Leave-one-out bool matrix.
     contribs = np.zeros(n_below_feasible, dtype=float)
     contribs[on_front] = hv - np.array(
-        [compute_hypervolume(pareto_sols[loo], ref_point) for loo in loo_mat]
+        [compute_hypervolume(pareto_sols[loo], ref_point, assume_pareto=True) for loo in loo_mat]
     )
     weights_below[is_feasible] = np.maximum(contribs / max(np.max(contribs), EPS), EPS)
     return weights_below
+
+
+@lru_cache(maxsize=1)
+def _solve_hssp_with_cache(
+    rank_i_lvals_tuple: tuple[float, ...],
+    rank_i_indices_tuple: tuple[int, ...],
+    subset_size: int,
+    ref_point_tuple: tuple[float, ...],
+) -> np.ndarray:
+    lvals_shape = (len(rank_i_indices_tuple), len(ref_point_tuple))
+    rank_i_lvals = np.reshape(rank_i_lvals_tuple, lvals_shape)
+    rank_i_indices = np.array(rank_i_indices_tuple)
+    ref_point = np.array(ref_point_tuple)
+    return _solve_hssp(rank_i_lvals, rank_i_indices, subset_size, ref_point)

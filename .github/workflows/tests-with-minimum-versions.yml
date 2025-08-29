@@ -66,11 +66,16 @@ jobs:
         pip install --progress-bar off .[test] --extra-index-url https://download.pytorch.org/whl/cpu
         pip install --progress-bar off .[optional] --extra-index-url https://download.pytorch.org/whl/cpu
 
+        if [ "${{ matrix.python-version }}" = "3.8" ] ; then
+          # TODO(nabe): Remove this line once Python 3.8 is dropped.
+          pip install --upgrade "fakeredis[lua]<2.30.0"
+        fi
+
     - name: Install dependencies with minimum versions
       run: |
         # Install dependencies with minimum versions.
         pip uninstall -y alembic cmaes packaging sqlalchemy plotly scikit-learn pillow
-        pip install alembic==1.5.0 cmaes==0.10.0 packaging==20.0 sqlalchemy==1.4.2 tqdm==4.27.0 colorlog==0.3 PyYAML==5.1 'pillow<10.4.0'
+        pip install alembic==1.5.0 cmaes==0.12.0 packaging==20.0 sqlalchemy==1.4.2 tqdm==4.27.0 colorlog==0.3 PyYAML==5.1 'pillow<10.4.0'
         pip uninstall -y matplotlib pandas scipy
         if [ "${{ matrix.python-version }}" = "3.8" ]; then
           pip install matplotlib==3.7.5 pandas==2.0.3 scipy==1.10.1 numpy==1.20.3
@@ -90,9 +95,9 @@ jobs:
     - name: Scheduled tests
       if:  ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
       run: |
-        pytest tests
+        pytest tests -n 8
 
     - name: Tests
       if:  ${{ github.event_name != 'schedule' && github.event_name != 'workflow_dispatch' }}
       run: |
-        pytest tests -m "not slow"
+        pytest tests -m "not slow" -n 8

@@ -15,6 +15,7 @@ from optuna._transform import _SearchSpaceTransform
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
 from optuna.samplers import BaseSampler
+from optuna.samplers._base import _INDEPENDENT_SAMPLING_WARNING_TEMPLATE
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
@@ -220,13 +221,16 @@ class QMCSampler(BaseSampler):
 
     def _log_independent_sampling(self, trial: FrozenTrial, param_name: str) -> None:
         _logger.warning(
-            f"The parameter '{param_name}' in trial#{trial.number} is sampled independently "
-            f"by using `{self._independent_sampler.__class__.__name__}` instead of `QMCSampler` "
-            "(optimization performance may be degraded). "
-            "`QMCSampler` does not support dynamic search space or `CategoricalDistribution`. "
-            "You can suppress this warning by setting `warn_independent_sampling` "
-            "to `False` in the constructor of `QMCSampler`, "
-            "if this independent sampling is intended behavior."
+            _INDEPENDENT_SAMPLING_WARNING_TEMPLATE.format(
+                param_name=param_name,
+                trial_number=trial.number,
+                independent_sampler_name=self._independent_sampler.__class__.__name__,
+                sampler_name=self.__class__.__name__,
+                fallback_reason=(
+                    "dynamic search space and `CategoricalDistribution` are not supported "
+                    "by `QMCSampler`"
+                ),
+            )
         )
 
     def sample_independent(

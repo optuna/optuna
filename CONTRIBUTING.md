@@ -39,6 +39,9 @@ If you make a pull request, please follow the guidelines below:
 - [Continuous Integration and Local Verification](#continuous-integration-and-local-verification)
 - [Creating a Pull Request](#creating-a-pull-request)
 
+> [!IMPORTANT]
+> To minimize the review effort, we highly appreciate PRs only with related changes. Please note that submitted PRs may be closed if they include unrelated changes or significantly modified unit tests.
+
 Detailed conventions and policies to write, test, and maintain Optuna code are described in the [Optuna Wiki](https://github.com/optuna/optuna/wiki).
 
 - [Coding Style Conventions](https://github.com/optuna/optuna/wiki/Coding-Style-Conventions)

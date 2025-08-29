@@ -3,7 +3,6 @@ from __future__ import annotations
 from collections.abc import Callable
 import datetime
 from io import BytesIO
-import time
 from typing import Any
 
 import _pytest.capture
@@ -104,6 +103,30 @@ def test_get_timeline_info(trial_sys_attrs: dict[str, Any] | None, infeasible: b
         assert bar.infeasible == infeasible
 
 
+@pytest.mark.parametrize(
+    "n_recent_trials, expected_count",
+    [
+        (None, 4),
+        (2, 2),
+        (100, 4),
+    ],
+)
+def test_get_timeline_info_n_recent_trials(
+    n_recent_trials: int | None, expected_count: int
+) -> None:
+    states = [TrialState.COMPLETE, TrialState.PRUNED, TrialState.FAIL, TrialState.RUNNING]
+    study = _create_study(states)
+    info = _get_timeline_info(study, n_recent_trials=n_recent_trials)
+
+    assert len(info.bars) == expected_count
+
+    if n_recent_trials is not None and n_recent_trials > 0 and expected_count > 0:
+        all_trials = study.get_trials(deepcopy=False)
+        expected_trials = all_trials[-expected_count:]
+        for bar, trial in zip(info.bars, expected_trials):
+            assert bar.number == trial.number
+
+
 def test_get_timeline_info_negative_elapsed_time(capsys: _pytest.capture.CaptureFixture) -> None:
     # We need to reconstruct our default handler to properly capture stderr.
     optuna.logging._reset_library_root_logger()
@@ -128,18 +151,23 @@ def test_get_timeline_info_negative_elapsed_time(capsys: _pytest.capture.Capture
 
 @parametrize_plot_timeline
 @pytest.mark.parametrize(
-    "trial_states",
+    "trial_states, n_recent_trials",
     [
-        [],
-        [TrialState.COMPLETE, TrialState.PRUNED, TrialState.FAIL, TrialState.RUNNING],
-        [TrialState.RUNNING, TrialState.FAIL, TrialState.PRUNED, TrialState.COMPLETE],
+        ([], None),
+        ([TrialState.COMPLETE, TrialState.PRUNED, TrialState.FAIL, TrialState.RUNNING], None),
+        ([TrialState.RUNNING, TrialState.FAIL, TrialState.PRUNED, TrialState.COMPLETE], None),
+        ([TrialState.COMPLETE, TrialState.PRUNED, TrialState.FAIL, TrialState.RUNNING], 2),
+        ([TrialState.RUNNING, TrialState.FAIL, TrialState.PRUNED, TrialState.COMPLETE], 1),
+        ([TrialState.COMPLETE, TrialState.PRUNED, TrialState.FAIL], 5),  # More than available.
     ],
 )
 def test_get_timeline_plot(
-    plot_timeline: Callable[..., Any], trial_states: list[TrialState]
+    plot_timeline: Callable[..., Any],
+    trial_states: list[TrialState],
+    n_recent_trials: int | None,
 ) -> None:
     study = _create_study(trial_states)
-    figure = plot_timeline(study)
+    figure = plot_timeline(study, n_recent_trials=n_recent_trials)
 
     if isinstance(figure, go.Figure):
         figure.write_image(BytesIO())
@@ -149,42 +177,15 @@ def test_get_timeline_plot(
 
 
 @parametrize_plot_timeline
-@pytest.mark.parametrize("waiting_time", [0.0, 1.5])
-def test_get_timeline_plot_with_killed_running_trials(
-    plot_timeline: Callable[..., Any], waiting_time: float
+@pytest.mark.parametrize(
+    "n_recent_trials",
+    [0, -1, -10],
+)
+def test_plot_timeline_n_recent_trials_invalid(
+    plot_timeline: Callable[..., Any],
+    n_recent_trials: int | None,
 ) -> None:
-    def _objective_with_sleep(trial: optuna.Trial) -> float:
-        sleep_start_datetime = datetime.datetime.now()
-        # Spin waiting is used here because high accuracy is necessary even in weak VM.
-        # Please check the motivation of the bugfix in https://github.com/optuna/optuna/pull/5549/
-        while datetime.datetime.now() - sleep_start_datetime < datetime.timedelta(seconds=0.1):
-            # `sleep(0.1)` is only guaranteed to rest for more than 0.1 second; the actual time
-            # depends on the OS. spin waiting is used here to rest for 0.1 second as precisely as
-            # possible without voluntarily releasing the context.
-            pass
-        assert datetime.datetime.now() - sleep_start_datetime < datetime.timedelta(seconds=0.19)
-        trial.suggest_float("x", -1.0, 1.0)
-        return 1.0
-
-    study = optuna.create_study()
-    trial = optuna.trial.create_trial(
-        params={"x": 0.0},
-        distributions={"x": optuna.distributions.FloatDistribution(-1.0, 1.0)},
-        value=None,
-        state=TrialState.RUNNING,
-    )
-    study.add_trial(trial)
-    study.optimize(_objective_with_sleep, n_trials=2)
-
-    time.sleep(waiting_time)
-    figure = plot_timeline(study)
-
-    if isinstance(figure, go.Figure):
-        bar_colors = [d["marker"]["color"] for d in figure["data"]]
-        assert "green" in bar_colors, "Running trial, i.e. green color, must be included."
-        bar_length_in_milliseconds = figure["data"][1]["x"][0]
-        # If the waiting time is too long, stop the timeline plots for running trials.
-        assert waiting_time < 1.0 or bar_length_in_milliseconds < waiting_time * 1000
-        figure.write_image(BytesIO())
-    else:
-        pytest.skip("Matplotlib test is unimplemented.")
+    states = [TrialState.COMPLETE, TrialState.PRUNED, TrialState.FAIL, TrialState.RUNNING]
+    study = _create_study(states)
+    with pytest.raises(ValueError):
+        plot_timeline(study, n_recent_trials=n_recent_trials)

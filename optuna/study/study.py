@@ -36,6 +36,7 @@ from optuna.study._multi_objective import _get_pareto_front_trials
 from optuna.study._optimize import _optimize
 from optuna.study._study_direction import StudyDirection
 from optuna.study._study_summary import StudySummary  # NOQA
+from optuna.study._tell import _get_frozen_trial
 from optuna.study._tell import _tell_with_warning
 from optuna.trial import create_trial
 from optuna.trial import TrialState
@@ -152,30 +153,7 @@ class Study:
             method.
 
         """
-
-        if self._is_multi_objective():
-            raise RuntimeError(
-                "A single best trial cannot be retrieved from a multi-objective study. Consider "
-                "using Study.best_trials to retrieve a list containing the best trials."
-            )
-
-        best_trial = self._storage.get_best_trial(self._study_id)
-
-        # If the trial with the best value is infeasible, select the best trial from all feasible
-        # trials. Note that the behavior is undefined when constrained optimization without the
-        # violation value in the best-valued trial.
-        constraints = best_trial.system_attrs.get(_CONSTRAINTS_KEY)
-        if constraints is not None and any([x > 0.0 for x in constraints]):
-            complete_trials = self.get_trials(deepcopy=False, states=[TrialState.COMPLETE])
-            feasible_trials = _get_feasible_trials(complete_trials)
-            if len(feasible_trials) == 0:
-                raise ValueError("No feasible trials are completed yet.")
-            if self.direction == StudyDirection.MAXIMIZE:
-                best_trial = max(feasible_trials, key=lambda t: cast(float, t.value))
-            else:
-                best_trial = min(feasible_trials, key=lambda t: cast(float, t.value))
-
-        return copy.deepcopy(best_trial)
+        return self._get_best_trial(deepcopy=True)
 
     @property
     def best_trials(self) -> list[FrozenTrial]:
@@ -307,6 +285,43 @@ class Study:
             return copy.deepcopy(filtered_trials) if deepcopy else filtered_trials
 
         return self._storage.get_all_trials(self._study_id, deepcopy=deepcopy, states=states)
+
+    def _get_best_trial(self, deepcopy: bool) -> FrozenTrial:
+        """Return the best trial in the study.
+
+        Args:
+            deepcopy:
+                Flag to control whether to apply ``copy.deepcopy()`` to the trial.
+                If :obj:`False`, returns the trial without deep copying for better performance.
+                Note that if you set this to :obj:`False`, you shouldn't mutate any fields
+                of the returned trial.
+
+        Returns:
+            A :class:`~optuna.trial.FrozenTrial` object of the best trial.
+        """
+        if self._is_multi_objective():
+            raise RuntimeError(
+                "A single best trial cannot be retrieved from a multi-objective study. Consider "
+                "using Study.best_trials to retrieve a list containing the best trials."
+            )
+
+        best_trial = self._storage.get_best_trial(self._study_id)
+
+        # If the trial with the best value is infeasible, select the best trial from all feasible
+        # trials. Note that the behavior is undefined when constrained optimization without the
+        # violation value in the best-valued trial.
+        constraints = best_trial.system_attrs.get(_CONSTRAINTS_KEY)
+        if constraints is not None and any([x > 0.0 for x in constraints]):
+            complete_trials = self.get_trials(deepcopy=False, states=[TrialState.COMPLETE])
+            feasible_trials = _get_feasible_trials(complete_trials)
+            if len(feasible_trials) == 0:
+                raise ValueError("No feasible trials are completed yet.")
+            if self.direction == StudyDirection.MAXIMIZE:
+                best_trial = max(feasible_trials, key=lambda t: cast(float, t.value))
+            else:
+                best_trial = min(feasible_trials, key=lambda t: cast(float, t.value))
+
+        return copy.deepcopy(best_trial) if deepcopy else best_trial
 
     @property
     def user_attrs(self) -> dict[str, Any]:
@@ -654,14 +669,14 @@ class Study:
             A returned trial is deep copied thus user can modify it as needed.
         """
 
-        frozen_trial, _ = _tell_with_warning(
+        _tell_with_warning(
             study=self,
             trial=trial,
             value_or_values=values,
             state=state,
             skip_if_finished=skip_if_finished,
         )
-        return copy.deepcopy(frozen_trial)
+        return copy.deepcopy(_get_frozen_trial(self, trial))
 
     def set_user_attr(self, key: str, value: Any) -> None:
         """Set a user attribute to the study.
@@ -1110,36 +1125,37 @@ class Study:
 
         return False
 
-    def _log_completed_trial(self, trial: FrozenTrial) -> None:
+    def _log_completed_trial(
+        self, values: list[float], number: int, params: dict[str, Any]
+    ) -> None:
         if not _logger.isEnabledFor(logging.INFO):
             return
 
         metric_names = self.metric_names
 
-        if len(trial.values) > 1:
+        if len(values) > 1:
             trial_values: list[float] | dict[str, float]
             if metric_names is None:
-                trial_values = trial.values
+                trial_values = values
             else:
-                trial_values = {name: value for name, value in zip(metric_names, trial.values)}
+                trial_values = {name: value for name, value in zip(metric_names, values)}
             _logger.info(
                 "Trial {} finished with values: {} and parameters: {}.".format(
-                    trial.number, trial_values, trial.params
+                    number, trial_values, params
                 )
             )
-        elif len(trial.values) == 1:
+        elif len(values) == 1:
             trial_value: float | dict[str, float]
             if metric_names is None:
-                trial_value = trial.values[0]
+                trial_value = values[0]
             else:
-                trial_value = {metric_names[0]: trial.values[0]}
+                trial_value = {metric_names[0]: values[0]}
 
             message = (
-                f"Trial {trial.number} finished with value: {trial_value} and parameters: "
-                f"{trial.params}."
+                f"Trial {number} finished with value: {trial_value} and parameters: " f"{params}."
             )
             try:
-                best_trial = self.best_trial
+                best_trial = self._get_best_trial(deepcopy=False)
                 message += f" Best is trial {best_trial.number} with value: {best_trial.value}."
             except ValueError:
                 # If no feasible trials are completed yet, study.best_trial raises ValueError.
@@ -1158,6 +1174,8 @@ class Study:
         "direction",
         "load_if_exists",
     ],
+    deprecated_version="3.0.0",
+    removed_version="5.0.0",
 )
 def create_study(
     *,
@@ -1307,6 +1325,8 @@ def create_study(
         "sampler",
         "pruner",
     ],
+    deprecated_version="3.0.0",
+    removed_version="5.0.0",
 )
 def load_study(
     *,
@@ -1394,6 +1414,8 @@ def load_study(
         "study_name",
         "storage",
     ],
+    deprecated_version="3.0.0",
+    removed_version="5.0.0",
 )
 def delete_study(
     *,
@@ -1455,6 +1477,8 @@ def delete_study(
         "to_study_name",
     ],
     warning_stacklevel=3,
+    deprecated_version="3.0.0",
+    removed_version="5.0.0",
 )
 def copy_study(
     *,
@@ -1547,7 +1571,14 @@ def copy_study(
         to_study.set_user_attr(key, value)
 
     # Trials are deep copied on `add_trials`.
-    to_study.add_trials(from_study.get_trials(deepcopy=False))
+    for trial in from_study.get_trials(deepcopy=False):
+        if trial.values is not None and len(to_study.directions) != len(trial.values):
+            raise ValueError(
+                f"The added trial has {len(trial.values)} values, which is different from the "
+                f"number of objectives {len(to_study.directions)} in the study (determined by "
+                "Study.directions)."
+            )
+        to_study._storage.create_new_trial(to_study._study_id, template_trial=trial)
 
 
 def get_all_study_summaries(

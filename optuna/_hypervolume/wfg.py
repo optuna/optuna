@@ -6,35 +6,71 @@ from optuna.study._multi_objective import _is_pareto_front
 
 
 def _compute_2d(sorted_pareto_sols: np.ndarray, reference_point: np.ndarray) -> float:
-    assert sorted_pareto_sols.shape[1] == 2 and reference_point.shape[0] == 2
-    rect_diag_y = np.append(reference_point[1], sorted_pareto_sols[:-1, 1])
+    assert sorted_pareto_sols.shape[1] == reference_point.shape[0] == 2
+    rect_diag_y = np.concatenate([reference_point[1:], sorted_pareto_sols[:-1, 1]])
     edge_length_x = reference_point[0] - sorted_pareto_sols[:, 0]
     edge_length_y = rect_diag_y - sorted_pareto_sols[:, 1]
     return edge_length_x @ edge_length_y
 
 
-def _compute_hv(sorted_loss_vals: np.ndarray, reference_point: np.ndarray) -> float:
-    inclusive_hvs = np.prod(reference_point - sorted_loss_vals, axis=-1)
-    if inclusive_hvs.shape[0] == 1:
-        return float(inclusive_hvs[0])
-    elif inclusive_hvs.shape[0] == 2:
-        # S(A v B) = S(A) + S(B) - S(A ^ B).
-        intersec = np.prod(reference_point - np.maximum(sorted_loss_vals[0], sorted_loss_vals[1]))
-        return np.sum(inclusive_hvs) - intersec
+def _compute_3d(sorted_pareto_sols: np.ndarray, reference_point: np.ndarray) -> float:
+    """
+    Compute hypervolume in 3D. Time complexity is O(N^2) where N is sorted_pareto_sols.shape[0].
+    If X, Y, Z coordinates are permutations of 0, 1, ..., N-1 and reference_point is (N, N, N), the
+    hypervolume is calculated as the number of voxels (x, y, z) dominated by at least one point.
+    If we fix x and y, this number is equal to the minimum of z' over all points (x', y', z')
+    satisfying x' <= x and y' <= y. This can be efficiently computed using cumulative minimum
+    (`np.minimum.accumulate`). Non-permutation coordinates can be transformed into permutation
+    coordinates by using coordinate compression.
+    """
+    assert sorted_pareto_sols.shape[1] == reference_point.shape[0] == 3
+    n = sorted_pareto_sols.shape[0]
+    y_order = np.argsort(sorted_pareto_sols[:, 1])
+    z_delta = np.zeros((n, n), dtype=float)
+    z_delta[y_order, np.arange(n)] = reference_point[2] - sorted_pareto_sols[y_order, 2]
+    z_delta = np.maximum.accumulate(np.maximum.accumulate(z_delta, axis=0), axis=1)
+    # The x axis is already sorted, so no need to compress this coordinate.
+    x_vals = sorted_pareto_sols[:, 0]
+    y_vals = sorted_pareto_sols[y_order, 1]
+    x_delta = np.concatenate([x_vals[1:], reference_point[:1]]) - x_vals
+    y_delta = np.concatenate([y_vals[1:], reference_point[1:2]]) - y_vals
+    # NOTE(nabenabe): Below is the faster alternative of `np.sum(dx[:, None] * dy * dz)`.
+    return np.dot(np.dot(z_delta, y_delta), x_delta)
 
+
+def _compute_hv(sorted_loss_vals: np.ndarray, reference_point: np.ndarray) -> float:
+    if sorted_loss_vals.shape[0] == 1:
+        # NOTE(nabenabe): NumPy overhead is slower than the simple for-loop here.
+        inclusive_hv = 1.0
+        for r, v in zip(reference_point, sorted_loss_vals[0]):
+            inclusive_hv *= r - v
+        return float(inclusive_hv)
+    elif sorted_loss_vals.shape[0] == 2:
+        # NOTE(nabenabe): NumPy overhead is slower than the simple for-loop here.
+        # S(A v B) = S(A) + S(B) - S(A ^ B).
+        hv1, hv2, intersec = 1.0, 1.0, 1.0
+        for r, v1, v2 in zip(reference_point, sorted_loss_vals[0], sorted_loss_vals[1]):
+            hv1 *= r - v1
+            hv2 *= r - v2
+            intersec *= r - max(v1, v2)
+        return hv1 + hv2 - intersec
+
+    inclusive_hvs = (reference_point - sorted_loss_vals).prod(axis=-1)
     # c.f. Eqs. (6) and (7) of ``A Fast Way of Calculating Exact Hypervolumes``.
     limited_sols_array = np.maximum(sorted_loss_vals[:, np.newaxis], sorted_loss_vals)
-    return sum(
-        _compute_exclusive_hv(limited_sols_array[i, i + 1 :], inclusive_hv, reference_point)
-        for i, inclusive_hv in enumerate(inclusive_hvs)
+    return inclusive_hvs[-1] + sum(
+        _compute_exclusive_hv(limited_sols_array[i, i + 1 :], inclusive_hvs[i], reference_point)
+        for i in range(inclusive_hvs.size - 1)
     )
 
 
 def _compute_exclusive_hv(
     limited_sols: np.ndarray, inclusive_hv: float, reference_point: np.ndarray
 ) -> float:
-    if limited_sols.shape[0] == 0:
-        return inclusive_hv
+    assert limited_sols.shape[0] >= 1
+    if limited_sols.shape[0] <= 3:
+        # NOTE(nabenabe): Don't use _is_pareto_front for 3 or fewer points to avoid its overhead.
+        return inclusive_hv - _compute_hv(limited_sols, reference_point)
 
     # NOTE(nabenabe): As the following line is a hack for speedup, I will describe several
     # important points to note. Even if we do not run _is_pareto_front below or use
@@ -111,6 +147,8 @@ def compute_hypervolume(
     if not np.all(np.isfinite(reference_point)):
         # reference_point does not have nan, thanks to the verification above.
         return float("inf")
+    if loss_vals.size == 0:
+        return 0.0
 
     if not assume_pareto:
         unique_lexsorted_loss_vals = np.unique(loss_vals, axis=0)
@@ -125,6 +163,13 @@ def compute_hypervolume(
 
     if reference_point.shape[0] == 2:
         hv = _compute_2d(sorted_pareto_sols, reference_point)
+    elif reference_point.shape[0] == 3:
+        # NOTE: For 3D points, we always prefer _compute_3d to _compute_hv because the time
+        # complexity of _compute_3d is O(N^2), while that of _compute_nd is \\Omega(N^3)
+        # - It calls _compute_exclusive_hv with i points for i = 0, 1, ..., N-1
+        # - _compute_exclusive_hv calls _is_pareto_front, which is quadratic
+        #   with the number of points
+        hv = _compute_3d(sorted_pareto_sols, reference_point)
     else:
         hv = _compute_hv(sorted_pareto_sols, reference_point)
 

@@ -56,13 +56,13 @@ class IntermediateValueModel(BaseModel):
         value: float,
     ) -> tuple[float | None, TrialIntermediateValueType]:
         if np.isnan(value):
-            return (None, cls.TrialIntermediateValueType.NAN)
+            return None, cls.TrialIntermediateValueType.NAN
         elif value == float("inf"):
-            return (None, cls.TrialIntermediateValueType.INF_POS)
+            return None, cls.TrialIntermediateValueType.INF_POS
         elif value == float("-inf"):
-            return (None, cls.TrialIntermediateValueType.INF_NEG)
+            return None, cls.TrialIntermediateValueType.INF_NEG
         else:
-            return (value, cls.TrialIntermediateValueType.FINITE)
+            return value, cls.TrialIntermediateValueType.FINITE
 
 
 def upgrade():
