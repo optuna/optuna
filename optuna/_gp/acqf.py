@@ -23,6 +23,12 @@ else:
     torch = _LazyImport("torch")
 
 
+_SQRT_HALF = torch.tensor(math.sqrt(0.5), dtype=torch.float64)
+_INV_SQRT_2PI = torch.tensor(1 / math.sqrt(2 * math.pi), dtype=torch.float64)
+_SQRT_HALF_PI = torch.tensor(math.sqrt(0.5 * math.pi), dtype=torch.float64)
+_LOG_SQRT_2PI = torch.tensor(math.sqrt(2 * math.pi), dtype=torch.float64).log()
+
+
 def _sample_from_normal_sobol(dim: int, n_samples: int, seed: int | None) -> torch.Tensor:
     # NOTE(nabenabe): Normal Sobol sampling based on BoTorch.
     # https://github.com/pytorch/botorch/blob/v0.13.0/botorch/sampling/qmc.py#L26-L97
@@ -60,34 +66,33 @@ def logehvi(
 
 
 def standard_logei(z: torch.Tensor) -> torch.Tensor:
-    # Return E_{x ~ N(0, 1)}[max(0, x+z)]
+    """
+    Return E_{x ~ N(0, 1)}[max(0, x+z)]
+    The calculation depends on the value of z for numerical stability.
+    Please refer to Eq. (9) in the following paper for more details:
+        https://arxiv.org/pdf/2310.20708.pdf
 
-    # We switch the implementation depending on the value of z to
-    # avoid numerical instability.
-    small = z < -25
-
-    vals = torch.empty_like(z)
-    # Eq. (9) in ref: https://arxiv.org/pdf/2310.20708.pdf
-    # NOTE: We do not use the third condition because ours is good enough.
-    z_small = z[small]
-    z_normal = z[~small]
-    sqrt_2pi = math.sqrt(2 * math.pi)
-    # First condition
-    cdf = 0.5 * torch.special.erfc(-z_normal * math.sqrt(0.5))
-    pdf = torch.exp(-0.5 * z_normal**2) * (1 / sqrt_2pi)
-    vals[~small] = torch.log(z_normal * cdf + pdf)
-    # Second condition
-    r = math.sqrt(0.5 * math.pi) * torch.special.erfcx(-z_small * math.sqrt(0.5))
-    vals[small] = -0.5 * z_small**2 + torch.log((z_small * r + 1) * (1 / sqrt_2pi))
-    return vals
+    NOTE: We do not use the third condition because [-10**100, 10**100] is an overly high range.
+    """
+    # First condition (most z falls into this condition, so we calculate it first)
+    # NOTE: ei(z) = z * cdf(z) + pdf(z)
+    out = (
+        (z_half := 0.5 * z) * torch.special.erfc(-_SQRT_HALF * z)  # z * cdf(z)
+        + (-z_half * z).exp() * _INV_SQRT_2PI  # pdf(z)
+    ).log()
+    if (z_small := z[(small := z < -25)]).numel():
+        # Second condition (does not happen often, so we calculate it only if necessary)
+        out[small] = (
+            -0.5 * z_small**2
+            - _LOG_SQRT_2PI
+            + (1 + _SQRT_HALF_PI * z_small * torch.special.erfcx(-_SQRT_HALF * z_small)).log()
+        )
+    return out
 
 
 def logei(mean: torch.Tensor, var: torch.Tensor, f0: float) -> torch.Tensor:
     # Return E_{y ~ N(mean, var)}[max(0, y-f0)]
-    sigma = torch.sqrt(var)
-    st_val = standard_logei((mean - f0) / sigma)
-    val = torch.log(sigma) + st_val
-    return val
+    return standard_logei((mean - f0) / (sigma := var.sqrt_())) + sigma.log()
 
 
 class BaseAcquisitionFunc(ABC):

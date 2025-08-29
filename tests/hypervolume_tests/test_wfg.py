@@ -101,3 +101,9 @@ def test_invalid_input() -> None:
     s = np.atleast_2d(2 * np.ones(3))
     with pytest.raises(ValueError):
         _ = optuna._hypervolume.compute_hypervolume(s, r)
+
+
+@pytest.mark.parametrize("n_objectives", [2, 3, 4, 5])
+def test_empty_hypervolume(n_objectives: int) -> None:
+    s = np.empty((0, n_objectives), dtype=float)
+    assert optuna._hypervolume.compute_hypervolume(s, np.ones(n_objectives, dtype=float)) == 0.0
