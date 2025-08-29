@@ -176,7 +176,6 @@ markers = [
 ]
 
 [tool.mypy]
-# Options configure mypy's strict mode.
 warn_unused_configs = true
 disallow_untyped_calls = true
 disallow_untyped_defs = true
@@ -194,3 +193,8 @@ exclude = [".venv", "venv", "build", "docs", "tutorial", "optuna/storages/_rdb/a
 [[tool.mypy.overrides]]
 module = 'optuna.storages._grpc.auto_generated/*'
 follow_imports = "skip"
+
+# Coverage configuration (consolidated from .coveragerc)
+[tool.coverage.run]
+concurrency = ["multiprocessing", "thread"]
+source = ["optuna/"]
