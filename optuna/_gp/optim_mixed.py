@@ -315,6 +315,31 @@ def _local_search_discrete(
         return _discrete_line_search(acqf, initial_params, initial_fval, param_idx, choices, xtol)
 
 
+def _local_search_discrete_batched(
+    acqf: BaseAcquisitionFunc,
+    initial_params_batched: np.ndarray,
+    initial_fvals: np.ndarray,
+    param_idx: int,
+    choices: np.ndarray,
+    xtol: float,
+    last_changed_param,
+) -> tuple[np.ndarray, np.ndarray, bool]:
+    best_normalized_params_batched = initial_params_batched.copy()
+    best_fvals = initial_fvals.copy()
+    for batch, normalized_params in enumerate(initial_params_batched):
+        if last_changed_param == param_idx:
+            # Parameters not changed since last time.
+            best_fvals[batch] = float(acqf.eval_acqf_no_grad(normalized_params))
+        (best_normalized_params, best_fval, updated) = _local_search_discrete(
+            acqf, normalized_params, best_fvals[batch], param_idx, choices, xtol
+        )
+        best_normalized_params_batched[batch] = best_normalized_params
+        best_fvals[batch] = best_fval
+
+    # TODO: return updated properly
+    return best_normalized_params_batched, best_fvals, True
+
+
 def local_search_mixed(
     acqf: BaseAcquisitionFunc,
     initial_normalized_params: np.ndarray,
@@ -383,19 +408,6 @@ def local_search_mixed(
     return best_normalized_params, best_fval
 
 
-# TODO:
-# def _local_search_discrete_batched(...):
-#     for batch, best_normalized_params in enumerate(best_normalized_params_batched):
-#         if last_changed_param == i:
-#             # Parameters not changed since last time.
-#             best_normalized_params_batched[batch] = best_normalized_params
-#             best_fvals[batch] = float(acqf.eval_acqf_no_grad(best_normalized_params))
-#         (best_normalized_params, best_fval, updated) = _local_search_discrete(
-#             acqf, best_normalized_params, best_fvals[batch], i, choices, xtol
-#         )
-#     return ...
-
-
 def local_search_mixed_batched(
     acqf: BaseAcquisitionFunc,
     initial_normalized_params_batched: np.ndarray,
@@ -441,22 +453,24 @@ def local_search_mixed_batched(
             last_changed_param = CONTINUOUS
         best_fvals = np.array(acqf.eval_acqf_no_grad(best_normalized_params_batched))
 
-        for batch, best_normalized_params in enumerate(best_normalized_params_batched):
-            for i, choices, xtol in zip(
-                acqf.search_space.discrete_indices, choices_of_discrete_params, discrete_xtols
-            ):
-                if last_changed_param == i:
-                    # Parameters not changed since last time.
-                    best_fvals[batch] = float(acqf.eval_acqf_no_grad(best_normalized_params))
-                (best_normalized_params, best_fval, updated) = _local_search_discrete(
-                    acqf, best_normalized_params, best_fvals[batch], i, choices, xtol
-                )
-                if updated:
-                    last_changed_param = i
+        for i, choices, xtol in zip(
+            acqf.search_space.discrete_indices, choices_of_discrete_params, discrete_xtols
+        ):
+            (best_normalized_params_batched, best_fvals, updated) = _local_search_discrete_batched(
+                acqf,
+                best_normalized_params_batched,
+                best_fvals,
+                i,
+                choices,
+                xtol,
+                last_changed_param,
+            )
+            if updated:
+                last_changed_param = i
 
-            if last_changed_param is None:
-                best_normalized_params_batched[batch] = best_normalized_params
-                best_fvals[batch] = float(acqf.eval_acqf_no_grad(best_normalized_params))
+            # if last_changed_param is None:
+            #     best_normalized_params_batched[batch] = best_normalized_params
+            #     best_fvals[batch] = float(acqf.eval_acqf_no_grad(best_normalized_params))
         # TODO: Implement logging
         # _logger.warning("local_search_mixed: Local search did not converge.")
     return best_normalized_params_batched, best_fvals
