@@ -40,7 +40,9 @@ if TYPE_CHECKING:
     from typing import Any, Protocol
 
     class FuncAndGrad(Protocol):
-        def __call__(self, x: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+        def __call__(
+            self, x: np.ndarray, unconverged_batch_indices: np.ndarray
+        ) -> tuple[np.ndarray, np.ndarray]:
             raise NotImplementedError
 
 
@@ -180,9 +182,7 @@ class _TaskStatusManager:
 
     def _update_task_status(self, batch_id: int, status_id: int, task_id: int) -> None:
         if _is_lbfgsb_fortran:
-            self.task_status[batch_id] = (
-                f"{status_messages[status_id]}: {task_messages[task_id]}"
-            )
+            self.task_status[batch_id] = f"{status_messages[status_id]}: {task_messages[task_id]}"
         else:
             self.task_status[batch_id] = [status_id, task_id]
 
@@ -216,12 +216,8 @@ class _TaskStatusManager:
             return True
         elif self._judge_status(b, status_id=1):  # New parameter suggested.
             self._n_iterations[b] += 1  # This timing follows SciPy.
-            self.is_batch_terminated[b] = self.reach_iter_limit(
-                b
-            ) or self.reach_eval_limit(b)
-        elif not self._judge_status(b, status_id=0) and not self._judge_status(
-            b, status_id=3
-        ):
+            self.is_batch_terminated[b] = self.reach_iter_limit(b) or self.reach_eval_limit(b)
+        elif not self._judge_status(b, status_id=0) and not self._judge_status(b, status_id=3):
             # 0: Start, 3: Next function evaluation.
             self.is_batch_terminated[b] = True
         return self.is_batch_terminated[b]
@@ -237,9 +233,7 @@ class _TaskStatusManager:
             for ts in self.task_status
         ]
         return {
-            "is_converged": [
-                self._judge_status(b, status_id=4) for b in range(self._batch_size)
-            ],
+            "is_converged": [self._judge_status(b, status_id=4) for b in range(self._batch_size)],
             "n_iterations": self._n_iterations.tolist(),
             "n_evals": self._n_evals.tolist(),
             "messages": messages,
@@ -314,25 +308,19 @@ def batched_lbfgsb(
     """
     batched_x = x0.reshape(-1, (original_x_shape := x0.shape)[-1]).copy()
     b_indices = np.arange((batch_size := len(batched_x)), dtype=int)
-    bounds = (
-        np.array([[-np.inf, np.inf]] * x0.shape[-1]).T if bounds is None else bounds.T
-    )
+    bounds = np.array([[-np.inf, np.inf]] * x0.shape[-1]).T if bounds is None else bounds.T
     data = _DataConstantInPython(batch_size, bounds, m, factr, pgtol, max_line_search)
     f_vals = np.zeros(batch_size, dtype=np.float64)
     grads = np.zeros_like(batched_x, dtype=np.float64)
     tm = _TaskStatusManager(batch_size, max_iters=max_iters, max_evals=max_evals)
-    while (batch_indices := b_indices[~tm.is_batch_terminated]).size:
-        f_vals[batch_indices], grads[batch_indices] = func_and_grad(
-            batched_x[batch_indices]
+    while (unconverged_batch_indices := b_indices[~tm.is_batch_terminated]).size:
+        f_vals[unconverged_batch_indices], grads[unconverged_batch_indices] = func_and_grad(
+            batched_x[unconverged_batch_indices], unconverged_batch_indices
         )
-        for b in batch_indices:
-            lbfgsb_args = data.lbfgsb_args(
-                b, tm.task_status[b], batched_x[b], f_vals[b], grads[b]
-            )
+        for b in unconverged_batch_indices:
+            lbfgsb_args = data.lbfgsb_args(b, tm.task_status[b], batched_x[b], f_vals[b], grads[b])
             while not tm.should_terminate_batch(b):
-                scipy_lbfgsb.setulb(
-                    *lbfgsb_args
-                )  # x,f,g,task_status will be updated inplace.
+                scipy_lbfgsb.setulb(*lbfgsb_args)  # x,f,g,task_status will be updated inplace.
                 if tm.should_evaluate(b):
                     break
     return (
