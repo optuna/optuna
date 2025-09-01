@@ -4,6 +4,7 @@ import math
 from typing import TYPE_CHECKING
 
 import numpy as np
+import scipy
 import torch
 
 from optuna._gp.batched_lbfgsb import batched_lbfgsb
@@ -74,43 +75,49 @@ def _gradient_ascent(
     return initial_params, initial_fval, False  # No improvement.
 
 
-def batched_lbfgs_with_fallback(
-    func_and_grad,  # (B,D)->(B,(B,D))
-    x0_batched: np.ndarray,
-    bounds: np.ndarray,  # (D,2)
-    pgtol: float,
-    max_iters: int,
-) -> tuple[np.ndarray, np.ndarray, dict]:
-    # TODO: Add batched_lbfgsb and fallback
-    x_opts = []
-    fval_opts = []
+def is_scipy_version_supported() -> bool:
+    return scipy.__version__ <= "1.15.0"
 
-    def flatten_func_and_grad(x: np.ndarray) -> tuple[float, np.ndarray]:
-        fval, grad = func_and_grad(x)
-        return fval.item(), grad.flatten()
 
-    IS_BATCHED_MODE = True
-    if IS_BATCHED_MODE:
-        x_opts, fval_opts, _ = batched_lbfgsb(
-            func_and_grad=func_and_grad,
-            x0=x0_batched,
-            bounds=bounds,
-            pgtol=pgtol,
-            max_iters=max_iters,
-        )
-    else:
-        for x0 in x0_batched:
-            x_opt, fval_opt, _ = so.fmin_l_bfgs_b(
-                func=flatten_func_and_grad,
-                x0=x0,
-                bounds=bounds,
-                pgtol=pgtol,
-                maxiter=max_iters,
-            )
-            x_opts.append(x_opt)
-            fval_opts.append(fval_opt)
-    # TODO: return appropriate info dict
-    return np.array(x_opts), np.array(fval_opts), {}
+# def batched_lbfgsb_with_fallback(
+#     func_and_grad,  # (B,D)->(B,(B,D))
+#     x0_batched: np.ndarray,
+#     bounds: np.ndarray,  # (D,2)
+#     pgtol: float,
+#     max_iters: int,
+# ) -> tuple[np.ndarray, np.ndarray, dict]:
+#     # TODO: Add batched_lbfgsb and fallback
+#     x_opts = []
+#     fval_opts = []
+
+#     def func_and_grad_wrapper(x: np.ndarray) -> tuple[float, np.ndarray]:
+#         # TODO
+#         # fval, grad = func_and_grad(x.reshape...)
+#         fval, grad = func_and_grad(x[None])  # (1,D)->((1,),(1,D))
+#         return fval.item(), grad.ravel()  # (1,)->(), (1,D)->(D,)
+
+#     # TODO: try... catchがいいのでは？try, catchしやすいように切り替えられるように
+#     if is_scipy_version_supported():
+#         x_opts, fval_opts, _ = batched_lbfgsb(
+#             func_and_grad=func_and_grad,
+#             x0=x0_batched,
+#             bounds=bounds,
+#             pgtol=pgtol,
+#             max_iters=max_iters,
+#         )
+#     else:
+#         for x0 in x0_batched:
+#             x_opt, fval_opt, _ = so.fmin_l_bfgs_b(
+#                 func=func_and_grad_wrapper,
+#                 x0=x0,
+#                 bounds=bounds,
+#                 pgtol=pgtol,
+#                 maxiter=max_iters,
+#             )
+#             x_opts.append(x_opt)
+#             fval_opts.append(fval_opt)
+#     # TODO: return appropriate info dict
+#     return np.array(x_opts), np.array(fval_opts), {}
 
 
 def _gradient_ascent_batched(
@@ -141,32 +148,60 @@ def _gradient_ascent_batched(
     normalized_params = initial_params_batched.copy()
 
     # scaled_x: (B,D) or (D,)
-    def negative_acqf_with_grad(scaled_x: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    def negative_acqf_with_grad(
+        scaled_x: np.ndarray, unconverged_batch_indices: np.ndarray
+    ) -> tuple[np.ndarray, np.ndarray]:
         # Scale back to the original domain, i.e. [0, 1], from [0, 1/s].
-        if scaled_x.ndim == 1:
-            scaled_x = scaled_x[None, :]
-        not_converged_batch_size = len(scaled_x)
-        normalized_params[:not_converged_batch_size, continuous_indices] = scaled_x * lengthscales
+        assert scaled_x.ndim == 2
+        normalized_params[np.ix_(unconverged_batch_indices, continuous_indices)] = (
+            scaled_x * lengthscales
+        )
         x_tensor = torch.from_numpy(
-            normalized_params[:not_converged_batch_size, continuous_indices]
+            normalized_params[unconverged_batch_indices, :]
         ).requires_grad_(True)
-        fvals = acqf.eval_acqf(x_tensor)
-        fvals.sum().backward()
+        neg_fvals = -acqf.eval_acqf(x_tensor)
+        neg_fvals.sum().backward()
         grads = x_tensor.grad.detach().numpy()  # type: ignore
-        fvals = fvals.detach().numpy()
+        neg_fvals = neg_fvals.detach().numpy()
         # Flip sign because scipy minimizes functions.
         # Let the scaled acqf be g(x) and the acqf be f(sx), then dg/dx = df/dx * s.
-        return -fvals, -grads[:, continuous_indices] * lengthscales
+        return neg_fvals, grads[:, continuous_indices] * lengthscales
+
+    def _1D_wrapper(scaled_x: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+        # 1D wrapper for the negative acquisition function with gradient.
+        unconverged_batch_indices = [0]
+        fval, grad = negative_acqf_with_grad(scaled_x[None], unconverged_batch_indices)
+        return fval.item(), grad.ravel()
 
     with single_blas_thread_if_scipy_v1_15_or_newer():
-        scaled_cont_x_opts, neg_fval_opts, _ = batched_lbfgs_with_fallback(
-            func_and_grad=negative_acqf_with_grad,
-            x0_batched=normalized_params[:, continuous_indices] / lengthscales,
-            bounds=np.array([(0, 1 / s) for s in lengthscales]),
-            pgtol=math.sqrt(tol),
-            max_iters=200,
-        )
-
+        x0_batched = normalized_params[:, continuous_indices] / lengthscales
+        bounds = np.array([(0, 1 / s) for s in lengthscales])
+        pgtol = math.sqrt(tol)
+        max_iters = 200
+        # if is_scipy_version_supported():
+        if False:
+            scaled_cont_x_opts, neg_fval_opts, _ = batched_lbfgsb(
+                func_and_grad=negative_acqf_with_grad,
+                x0=x0_batched,
+                bounds=bounds,
+                pgtol=pgtol,
+                max_iters=max_iters,
+            )
+        else:
+            # TODO
+            scaled_cont_x_opts, neg_fval_opts = [], []
+            for x0 in x0_batched:
+                scaled_cont_x_opt, neg_fval_opt, _ = so.fmin_l_bfgs_b(
+                    func=_1D_wrapper,
+                    x0=x0,
+                    bounds=bounds,
+                    pgtol=pgtol,
+                    maxiter=max_iters,
+                )
+                scaled_cont_x_opts.append(scaled_cont_x_opt)
+                neg_fval_opts.append(neg_fval_opt)
+            scaled_cont_x_opts = np.array(scaled_cont_x_opts)
+            neg_fval_opts = np.array(neg_fval_opts)
     normalized_params[:, continuous_indices] = scaled_cont_x_opts * lengthscales
 
     # TODO: return update information for each parameter
@@ -316,6 +351,7 @@ def local_search_mixed(
         if last_changed_param == CONTINUOUS:
             # Parameters not changed since last time.
             return best_normalized_params, best_fval
+
         (best_normalized_params, best_fval, updated) = _gradient_ascent(
             acqf,
             best_normalized_params,
@@ -345,6 +381,19 @@ def local_search_mixed(
 
     _logger.warning("local_search_mixed: Local search did not converge.")
     return best_normalized_params, best_fval
+
+
+# TODO:
+# def _local_search_discrete_batched(...):
+#     for batch, best_normalized_params in enumerate(best_normalized_params_batched):
+#         if last_changed_param == i:
+#             # Parameters not changed since last time.
+#             best_normalized_params_batched[batch] = best_normalized_params
+#             best_fvals[batch] = float(acqf.eval_acqf_no_grad(best_normalized_params))
+#         (best_normalized_params, best_fval, updated) = _local_search_discrete(
+#             acqf, best_normalized_params, best_fvals[batch], i, choices, xtol
+#         )
+#     return ...
 
 
 def local_search_mixed_batched(
@@ -398,7 +447,6 @@ def local_search_mixed_batched(
             ):
                 if last_changed_param == i:
                     # Parameters not changed since last time.
-                    best_normalized_params_batched[batch] = best_normalized_params
                     best_fvals[batch] = float(acqf.eval_acqf_no_grad(best_normalized_params))
                 (best_normalized_params, best_fval, updated) = _local_search_discrete(
                     acqf, best_normalized_params, best_fvals[batch], i, choices, xtol
