@@ -4,7 +4,9 @@ import math
 from typing import TYPE_CHECKING
 
 import numpy as np
+import torch
 
+from optuna._gp.batched_lbfgsb import batched_lbfgsb
 from optuna._gp.scipy_blas_thread_patch import single_blas_thread_if_scipy_v1_15_or_newer
 from optuna.logging import get_logger
 
@@ -70,6 +72,105 @@ def _gradient_ascent(
         return normalized_params, -neg_fval_opt, True
 
     return initial_params, initial_fval, False  # No improvement.
+
+
+def batched_lbfgs_with_fallback(
+    func_and_grad,  # (B,D)->(B,(B,D))
+    x0_batched: np.ndarray,
+    bounds: np.ndarray,  # (D,2)
+    pgtol: float,
+    max_iters: int,
+) -> tuple[np.ndarray, np.ndarray, dict]:
+    # TODO: Add batched_lbfgsb and fallback
+    x_opts = []
+    fval_opts = []
+
+    def flatten_func_and_grad(x: np.ndarray) -> tuple[float, np.ndarray]:
+        fval, grad = func_and_grad(x)
+        return fval.item(), grad.flatten()
+
+    IS_BATCHED_MODE = True
+    if IS_BATCHED_MODE:
+        x_opts, fval_opts, _ = batched_lbfgsb(
+            func_and_grad=func_and_grad,
+            x0=x0_batched,
+            bounds=bounds,
+            pgtol=pgtol,
+            max_iters=max_iters,
+        )
+    else:
+        for x0 in x0_batched:
+            x_opt, fval_opt, _ = so.fmin_l_bfgs_b(
+                func=flatten_func_and_grad,
+                x0=x0,
+                bounds=bounds,
+                pgtol=pgtol,
+                maxiter=max_iters,
+            )
+            x_opts.append(x_opt)
+            fval_opts.append(fval_opt)
+    # TODO: return appropriate info dict
+    return np.array(x_opts), np.array(fval_opts), {}
+
+
+def _gradient_ascent_batched(
+    acqf: BaseAcquisitionFunc,
+    initial_params_batched: np.ndarray,
+    initial_fvals: np.ndarray,
+    continuous_indices: np.ndarray,
+    lengthscales: np.ndarray,
+    tol: float,
+) -> tuple[np.ndarray, np.ndarray, bool]:
+    """
+    This function optimizes the acquisition function using preconditioning.
+    Preconditioning equalizes the variances caused by each parameter and
+    speeds up the convergence.
+
+    In Optuna, acquisition functions use Matern 5/2 kernel, which is a function of `x / l`
+    where `x` is `normalized_params` and `l` is the corresponding lengthscales.
+    Then acquisition functions are a function of `x / l`, i.e. `f(x / l)`.
+    As `l` has different values for each param, it makes the function ill-conditioned.
+    By transforming `x / l` to `zl / l = z`, the function becomes `f(z)` and has
+    equal variances w.r.t. `z`.
+    So optimization w.r.t. `z` instead of `x` is the preconditioning here and
+    speeds up the convergence.
+    As the domain of `x` is [0, 1], that of `z` becomes [0, 1/l].
+    """
+    if len(continuous_indices) == 0:
+        return initial_params_batched, initial_fvals, False
+    normalized_params = initial_params_batched.copy()
+
+    # scaled_x: (B,D) or (D,)
+    def negative_acqf_with_grad(scaled_x: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+        # Scale back to the original domain, i.e. [0, 1], from [0, 1/s].
+        if scaled_x.ndim == 1:
+            scaled_x = scaled_x[None, :]
+        not_converged_batch_size = len(scaled_x)
+        normalized_params[:not_converged_batch_size, continuous_indices] = scaled_x * lengthscales
+        x_tensor = torch.from_numpy(
+            normalized_params[:not_converged_batch_size, continuous_indices]
+        ).requires_grad_(True)
+        fvals = acqf.eval_acqf(x_tensor)
+        fvals.sum().backward()
+        grads = x_tensor.grad.detach().numpy()  # type: ignore
+        fvals = fvals.detach().numpy()
+        # Flip sign because scipy minimizes functions.
+        # Let the scaled acqf be g(x) and the acqf be f(sx), then dg/dx = df/dx * s.
+        return -fvals, -grads[:, continuous_indices] * lengthscales
+
+    with single_blas_thread_if_scipy_v1_15_or_newer():
+        scaled_cont_x_opts, neg_fval_opts, _ = batched_lbfgs_with_fallback(
+            func_and_grad=negative_acqf_with_grad,
+            x0_batched=normalized_params[:, continuous_indices] / lengthscales,
+            bounds=np.array([(0, 1 / s) for s in lengthscales]),
+            pgtol=math.sqrt(tol),
+            max_iters=200,
+        )
+
+    normalized_params[:, continuous_indices] = scaled_cont_x_opts * lengthscales
+
+    # TODO: return update information for each parameter
+    return normalized_params, -neg_fval_opts, True
 
 
 def _exhaustive_search(
@@ -246,6 +347,73 @@ def local_search_mixed(
     return best_normalized_params, best_fval
 
 
+def local_search_mixed_batched(
+    acqf: BaseAcquisitionFunc,
+    initial_normalized_params_batched: np.ndarray,
+    *,
+    tol: float = 1e-4,
+    max_iter: int = 10,
+) -> tuple[np.ndarray, np.ndarray]:
+    continuous_indices = acqf.search_space.continuous_indices
+    # This is a technique for speeding up optimization.
+    # We use an isotropic kernel, so scaling the gradient will make
+    # the hessian better-conditioned.
+    # NOTE: Ideally, separating lengthscales should be used for the constraint functions,
+    # but for simplicity, the ones from the objective function are being reused.
+    # TODO(kAIto47802): Think of a better way to handle this.
+    lengthscales = acqf.length_scales[continuous_indices]
+    choices_of_discrete_params = acqf.search_space.get_choices_of_discrete_params()
+
+    discrete_xtols = [
+        # Terminate discrete optimizations once the change in x becomes smaller than this.
+        # Basically, if the change is smaller than min(dx) / 4, it is useless to see more details.
+        np.min(np.diff(choices), initial=np.inf) / 4
+        for choices in choices_of_discrete_params
+    ]
+
+    best_normalized_params_batched = initial_normalized_params_batched.copy()
+    best_fvals = np.array(
+        [float(acqf.eval_acqf_no_grad(p)) for p in best_normalized_params_batched]
+    )
+
+    for _ in range(max_iter):
+        (best_normalized_params_batched, best_fvals, updated) = _gradient_ascent_batched(
+            acqf,
+            best_normalized_params_batched,
+            best_fvals,
+            continuous_indices,
+            lengthscales,
+            tol,
+        )
+
+        CONTINUOUS = -1
+        last_changed_param: int | None = None
+        if updated:
+            last_changed_param = CONTINUOUS
+        best_fvals = np.array(acqf.eval_acqf_no_grad(best_normalized_params_batched))
+
+        for batch, best_normalized_params in enumerate(best_normalized_params_batched):
+            for i, choices, xtol in zip(
+                acqf.search_space.discrete_indices, choices_of_discrete_params, discrete_xtols
+            ):
+                if last_changed_param == i:
+                    # Parameters not changed since last time.
+                    best_normalized_params_batched[batch] = best_normalized_params
+                    best_fvals[batch] = float(acqf.eval_acqf_no_grad(best_normalized_params))
+                (best_normalized_params, best_fval, updated) = _local_search_discrete(
+                    acqf, best_normalized_params, best_fvals[batch], i, choices, xtol
+                )
+                if updated:
+                    last_changed_param = i
+
+            if last_changed_param is None:
+                best_normalized_params_batched[batch] = best_normalized_params
+                best_fvals[batch] = float(acqf.eval_acqf_no_grad(best_normalized_params))
+        # TODO: Implement logging
+        # _logger.warning("local_search_mixed: Local search did not converge.")
+    return best_normalized_params_batched, best_fvals
+
+
 def optimize_acqf_mixed(
     acqf: BaseAcquisitionFunc,
     *,
@@ -295,10 +463,10 @@ def optimize_acqf_mixed(
     best_x = sampled_xs[max_i, :]
     best_f = float(f_vals[max_i])
 
-    for x_warmstart in np.vstack([sampled_xs[chosen_idxs, :], warmstart_normalized_params_array]):
-        x, f = local_search_mixed(acqf, x_warmstart, tol=tol)
+    x_warmstarts = np.vstack([sampled_xs[chosen_idxs, :], warmstart_normalized_params_array])
+    xs, fs = local_search_mixed_batched(acqf, x_warmstarts, tol=tol)
+    for x, f in zip(xs, fs):
         if f > best_f:
             best_x = x
             best_f = f
-
     return best_x, best_f
