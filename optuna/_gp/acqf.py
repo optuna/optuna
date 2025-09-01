@@ -7,26 +7,22 @@ from typing import cast
 from typing import TYPE_CHECKING
 
 import numpy as np
+import torch
 
 from optuna._hypervolume import get_non_dominated_box_bounds
 from optuna.study._multi_objective import _is_pareto_front
 
 
 if TYPE_CHECKING:
-    import torch
-
     from optuna._gp.gp import GPRegressor
     from optuna._gp.search_space import SearchSpace
-else:
-    from optuna._imports import _LazyImport
-
-    torch = _LazyImport("torch")
 
 
 _SQRT_HALF = torch.tensor(math.sqrt(0.5), dtype=torch.float64)
 _INV_SQRT_2PI = torch.tensor(1 / math.sqrt(2 * math.pi), dtype=torch.float64)
 _SQRT_HALF_PI = torch.tensor(math.sqrt(0.5 * math.pi), dtype=torch.float64)
 _LOG_SQRT_2PI = torch.tensor(math.sqrt(2 * math.pi), dtype=torch.float64).log()
+_EPS = torch.tensor(1e-12, dtype=torch.float64)  # NOTE(nabenabe): grad becomes nan when EPS=0.
 
 
 def _sample_from_normal_sobol(dim: int, n_samples: int, seed: int | None) -> torch.Tensor:
@@ -44,7 +40,7 @@ def _sample_from_normal_sobol(dim: int, n_samples: int, seed: int | None) -> tor
 def logehvi(
     Y_post: torch.Tensor,  # (..., n_qmc_samples, n_objectives)
     non_dominated_box_lower_bounds: torch.Tensor,  # (n_boxes, n_objectives)
-    non_dominated_box_upper_bounds: torch.Tensor,  # (n_boxes, n_objectives)
+    non_dominated_box_intervals: torch.Tensor,  # (n_boxes, n_objectives)
 ) -> torch.Tensor:  # (..., )
     log_n_qmc_samples = float(np.log(Y_post.shape[-2]))
     # This function calculates Eq. (1) of https://arxiv.org/abs/2006.05078.
@@ -54,9 +50,8 @@ def logehvi(
     # Check the implementations here:
     # https://github.com/pytorch/botorch/blob/v0.13.0/botorch/utils/safe_math.py
     # https://github.com/pytorch/botorch/blob/v0.13.0/botorch/acquisition/multi_objective/logei.py#L146-L266
-    _EPS = torch.tensor(1e-12, dtype=torch.float64)  # NOTE(nabenabe): grad becomes nan when EPS=0.
     diff = Y_post.unsqueeze(-2) - non_dominated_box_lower_bounds
-    diff.clamp_(min=_EPS, max=non_dominated_box_upper_bounds - non_dominated_box_lower_bounds)
+    diff.clamp_(min=_EPS, max=non_dominated_box_intervals)
     # NOTE(nabenabe): logsumexp with dim=-1 is for the HVI calculation and that with dim=-2 is for
     # expectation of the HVIs over the fixed_samples.
     return torch.special.logsumexp(diff.log().sum(dim=-1), dim=(-2, -1)) - log_n_qmc_samples
@@ -245,9 +240,12 @@ class LogEHVI(BaseAcquisitionFunc):
         self._fixed_samples = _sample_from_normal_sobol(
             dim=Y_train.shape[-1], n_samples=n_qmc_samples, seed=qmc_seed
         )
-        self._non_dominated_box_lower_bounds, self._non_dominated_box_upper_bounds = (
+        self._non_dominated_box_lower_bounds, non_dominated_box_upper_bounds = (
             _get_non_dominated_box_bounds()
         )
+        self._non_dominated_box_intervals = (
+            non_dominated_box_upper_bounds - self._non_dominated_box_lower_bounds
+        ).clamp_min_(_EPS)
         # Since all the objectives are equally important, we simply use the mean of
         # inverse of squared mean lengthscales over all the objectives.
         # inverse_squared_lengthscales is used in optim_mixed.py.
@@ -271,7 +269,7 @@ class LogEHVI(BaseAcquisitionFunc):
         return logehvi(
             Y_post=torch.stack(Y_post, dim=-1),
             non_dominated_box_lower_bounds=self._non_dominated_box_lower_bounds,
-            non_dominated_box_upper_bounds=self._non_dominated_box_upper_bounds,
+            non_dominated_box_intervals=self._non_dominated_box_intervals,
         )
 
 
