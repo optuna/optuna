@@ -6,7 +6,10 @@ from typing import TYPE_CHECKING
 import numpy as np
 import scipy
 import torch
+import scipy
+import torch
 
+from optuna._gp.batched_lbfgsb import batched_lbfgsb
 from optuna._gp.batched_lbfgsb import batched_lbfgsb
 from optuna._gp.scipy_blas_thread_patch import single_blas_thread_if_scipy_v1_15_or_newer
 from optuna.logging import get_logger
@@ -28,7 +31,14 @@ def is_scipy_version_supported() -> bool:
 
 
 def _gradient_ascent_batched(
+def is_scipy_version_supported() -> bool:
+    return scipy.__version__ <= "1.15.0"
+
+
+def _gradient_ascent_batched(
     acqf: BaseAcquisitionFunc,
+    initial_params_batched: np.ndarray,
+    initial_fvals: np.ndarray,
     initial_params_batched: np.ndarray,
     initial_fvals: np.ndarray,
     continuous_indices: np.ndarray,
@@ -58,6 +68,17 @@ def _gradient_ascent_batched(
         scaled_x: np.ndarray, unconverged_batch_indices: np.ndarray
     ) -> tuple[np.ndarray, np.ndarray]:
         # Scale back to the original domain, i.e. [0, 1], from [0, 1/s].
+        assert scaled_x.ndim == 2
+        normalized_params[np.ix_(unconverged_batch_indices, continuous_indices)] = (
+            scaled_x * lengthscales
+        )
+        x_tensor = torch.from_numpy(
+            normalized_params[unconverged_batch_indices, :]
+        ).requires_grad_(True)
+        neg_fvals = -acqf.eval_acqf(x_tensor)
+        neg_fvals.sum().backward()
+        grads = x_tensor.grad.detach().numpy()  # type: ignore
+        neg_fvals = neg_fvals.detach().numpy()
         assert scaled_x.ndim == 2
         normalized_params[np.ix_(unconverged_batch_indices, continuous_indices)] = (
             scaled_x * lengthscales
@@ -263,6 +284,7 @@ def _local_search_discrete_batched(
 def local_search_mixed_batched(
     acqf: BaseAcquisitionFunc,
     initial_normalized_params_batched: np.ndarray,
+    initial_normalized_params_batched: np.ndarray,
     *,
     tol: float = 1e-4,
     max_iter: int = 100,
@@ -396,6 +418,9 @@ def optimize_acqf_mixed(
     best_x = sampled_xs[max_i, :]
     best_f = float(f_vals[max_i])
 
+    x_warmstarts = np.vstack([sampled_xs[chosen_idxs, :], warmstart_normalized_params_array])
+    xs, fs = local_search_mixed_batched(acqf, x_warmstarts, tol=tol)
+    for x, f in zip(xs, fs):
     x_warmstarts = np.vstack([sampled_xs[chosen_idxs, :], warmstart_normalized_params_array])
     xs, fs = local_search_mixed_batched(acqf, x_warmstarts, tol=tol)
     for x, f in zip(xs, fs):
