@@ -86,8 +86,8 @@ def _gradient_ascent_batched(
         pgtol = math.sqrt(tol)
         max_iters = 200
 
-        # if False:
-        if is_scipy_version_supported():
+        # if is_scipy_version_supported():
+        if False:
             scaled_cont_x_opts, neg_fval_opts, info = batched_lbfgsb(
                 func_and_grad=negative_acqf_with_grad,
                 x0=x0_batched,
@@ -260,7 +260,7 @@ def local_search_mixed_batched(
     initial_normalized_params_batched: np.ndarray,
     *,
     tol: float = 1e-4,
-    max_iter: int = 10,
+    max_iter: int = 100,
 ) -> tuple[np.ndarray, np.ndarray]:
     continuous_indices = acqf.search_space.continuous_indices
     # This is a technique for speeding up optimization.
@@ -285,46 +285,60 @@ def local_search_mixed_batched(
     )
 
     batch_size = len(best_normalized_params_batched)
-    unconverged_mask = np.ones(batch_size, dtype=bool)
-
+    INITIALIZED = -1
+    CONTINUOUS = -2
+    last_changed_params = np.full(batch_size, INITIALIZED)
+    unconverged_batch_indices = np.ones(batch_size, dtype=bool)
     for _ in range(max_iter):
-        if not unconverged_mask.any():
-            _logger.info("local_search_mixed: All local searches converged. Exiting.")
-            break
-        updated_in_iteration = np.zeros(batch_size, dtype=bool)
+        unconverged_batch_indices[last_changed_params == CONTINUOUS] = False
+        if not unconverged_batch_indices.any():
+            return best_normalized_params_batched, best_fvals
 
         (params, fvals, updated) = _gradient_ascent_batched(
             acqf,
-            best_normalized_params_batched[unconverged_mask],
-            best_fvals[unconverged_mask],
+            best_normalized_params_batched[unconverged_batch_indices],
+            best_fvals[unconverged_batch_indices],
             continuous_indices,
             lengthscales,
             tol,
         )
 
-        best_normalized_params_batched[unconverged_mask] = params
-        best_fvals[unconverged_mask] = fvals
-        updated_in_iteration[unconverged_mask] = updated
+        assert len(params) == len(fvals) == len(updated) == unconverged_batch_indices.sum()
+
+        best_normalized_params_batched[unconverged_batch_indices] = params
+        best_fvals[unconverged_batch_indices] = fvals
+        last_changed_params[unconverged_batch_indices] = np.where(
+            updated, CONTINUOUS, last_changed_params[unconverged_batch_indices]
+        )
 
         for i, choices, xtol in zip(
             acqf.search_space.discrete_indices, choices_of_discrete_params, discrete_xtols
         ):
+            unconverged_batch_indices[last_changed_params == i] = False
+            if not unconverged_batch_indices.any():
+                return best_normalized_params_batched, best_fvals
             (params, fvals, updated) = _local_search_discrete_batched(
                 acqf,
-                best_normalized_params_batched[unconverged_mask],
-                best_fvals[unconverged_mask],
+                best_normalized_params_batched[unconverged_batch_indices],
+                best_fvals[unconverged_batch_indices],
                 i,
                 choices,
                 xtol,
             )
+            assert len(params) == len(fvals) == len(updated) == unconverged_batch_indices.sum()
 
-            best_normalized_params_batched[unconverged_mask] = params
-            best_fvals[unconverged_mask] = fvals
-            updated_in_iteration[unconverged_mask] = np.logical_or(
-                updated_in_iteration[unconverged_mask], updated
+            best_normalized_params_batched[unconverged_batch_indices] = params
+            best_fvals[unconverged_batch_indices] = fvals
+            last_changed_params[unconverged_batch_indices] = np.where(
+                updated, i, last_changed_params[unconverged_batch_indices]
             )
 
-        unconverged_mask[unconverged_mask] = updated_in_iteration[unconverged_mask]
+        # Parameters not changed from the beginning.
+        unconverged_batch_indices[last_changed_params == INITIALIZED] = False
+        if not unconverged_batch_indices.any():
+            return best_normalized_params_batched, best_fvals
+    else:
+        _logger.warning("local_search_mixed: Local search did not converge.")
     return best_normalized_params_batched, best_fvals
 
 
