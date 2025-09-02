@@ -841,12 +841,12 @@ def _calculate_weights_below_for_multi_objective(
             for loo in loo_mat
         ]
     else:
-        hvs = []
-        for i in range(pareto_sols.shape[0]):
-            limited_sols = np.maximum(pareto_sols[loo_mat[i, :]], pareto_sols[i, :])
-            intersec_hv = compute_hypervolume(limited_sols, ref_point)
-            hvs.append(np.prod(ref_point - pareto_sols[i, :]) - intersec_hv)
-        contribs[on_front] = hvs
+        contribs[on_front] = np.prod(ref_point - pareto_sols, axis=-1)
+        limited_sols = np.maximum(pareto_sols, pareto_sols[:, np.newaxis])
+        contribs[on_front] -= [
+            compute_hypervolume(limited_sols[i, loo], ref_point)
+            for i, loo in enumerate(loo_mat)
+        ]
     weights_below[is_feasible] = np.maximum(contribs / max(np.max(contribs), EPS), EPS)
     return weights_below
 
