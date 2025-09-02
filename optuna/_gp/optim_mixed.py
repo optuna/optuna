@@ -99,7 +99,6 @@ def _gradient_ascent_batched(
             updated_batched = (neg_fval_opts > -initial_fvals) & (np.array(info["nit"]) > 0)
 
         else:
-            # TODO
             scaled_cont_x_opts, neg_fval_opts, updated_batched = [], [], []
             for batch, x0 in enumerate(x0_batched):
                 scaled_cont_x_opt, neg_fval_opt, info = so.fmin_l_bfgs_b(
@@ -118,7 +117,6 @@ def _gradient_ascent_batched(
             updated_batched = np.array(updated_batched)
     normalized_params[:, continuous_indices] = scaled_cont_x_opts * lengthscales
 
-    # TODO: return update information for each parameter
     # If any parameter is updated, return the updated parameters and values. Otherwise, return the initial ones.
     final_params = initial_params_batched.copy()
     final_params[updated_batched, :] = normalized_params[updated_batched, :]
@@ -241,22 +239,20 @@ def _local_search_discrete_batched(
     param_idx: int,
     choices: np.ndarray,
     xtol: float,
-    last_changed_param,
-) -> tuple[np.ndarray, np.ndarray, bool]:
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     best_normalized_params_batched = initial_params_batched.copy()
     best_fvals = initial_fvals.copy()
+
+    updated_batched = np.zeros(len(initial_fvals), dtype=bool)
     for batch, normalized_params in enumerate(initial_params_batched):
-        if last_changed_param == param_idx:
-            # Parameters not changed since last time.
-            best_fvals[batch] = float(acqf.eval_acqf_no_grad(normalized_params))
         (best_normalized_params, best_fval, updated) = _local_search_discrete(
             acqf, normalized_params, best_fvals[batch], param_idx, choices, xtol
         )
         best_normalized_params_batched[batch] = best_normalized_params
         best_fvals[batch] = best_fval
+        updated_batched[batch] = updated
 
-    # TODO: return updated properly
-    return best_normalized_params_batched, best_fvals, True
+    return best_normalized_params_batched, best_fvals, updated_batched
 
 
 def local_search_mixed_batched(
@@ -288,42 +284,47 @@ def local_search_mixed_batched(
         [float(acqf.eval_acqf_no_grad(p)) for p in best_normalized_params_batched]
     )
 
+    batch_size = len(best_normalized_params_batched)
+    unconverged_mask = np.ones(batch_size, dtype=bool)
+
     for _ in range(max_iter):
-        (best_normalized_params_batched, best_fvals, updated) = _gradient_ascent_batched(
+        if not unconverged_mask.any():
+            _logger.info("local_search_mixed: All local searches converged. Exiting.")
+            break
+        updated_in_iteration = np.zeros(batch_size, dtype=bool)
+
+        (params, fvals, updated) = _gradient_ascent_batched(
             acqf,
-            best_normalized_params_batched,
-            best_fvals,
+            best_normalized_params_batched[unconverged_mask],
+            best_fvals[unconverged_mask],
             continuous_indices,
             lengthscales,
             tol,
         )
 
-        CONTINUOUS = -1
-        last_changed_param: int | None = None
-        if updated:
-            last_changed_param = CONTINUOUS
-        best_fvals = np.array(acqf.eval_acqf_no_grad(best_normalized_params_batched))
+        best_normalized_params_batched[unconverged_mask] = params
+        best_fvals[unconverged_mask] = fvals
+        updated_in_iteration[unconverged_mask] = updated
 
         for i, choices, xtol in zip(
             acqf.search_space.discrete_indices, choices_of_discrete_params, discrete_xtols
         ):
-            (best_normalized_params_batched, best_fvals, updated) = _local_search_discrete_batched(
+            (params, fvals, updated) = _local_search_discrete_batched(
                 acqf,
-                best_normalized_params_batched,
-                best_fvals,
+                best_normalized_params_batched[unconverged_mask],
+                best_fvals[unconverged_mask],
                 i,
                 choices,
                 xtol,
-                last_changed_param,
             )
-            if updated:
-                last_changed_param = i
 
-            # if last_changed_param is None:
-            #     best_normalized_params_batched[batch] = best_normalized_params
-            #     best_fvals[batch] = float(acqf.eval_acqf_no_grad(best_normalized_params))
-        # TODO: Implement logging
-        # _logger.warning("local_search_mixed: Local search did not converge.")
+            best_normalized_params_batched[unconverged_mask] = params
+            best_fvals[unconverged_mask] = fvals
+            updated_in_iteration[unconverged_mask] = np.logical_or(
+                updated_in_iteration[unconverged_mask], updated
+            )
+
+        unconverged_mask[unconverged_mask] = updated_in_iteration[unconverged_mask]
     return best_normalized_params_batched, best_fvals
 
 
