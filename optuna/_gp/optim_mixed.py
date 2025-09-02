@@ -34,7 +34,7 @@ def _gradient_ascent_batched(
     continuous_indices: np.ndarray,
     lengthscales: np.ndarray,
     tol: float,
-) -> tuple[np.ndarray, np.ndarray, bool]:
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     This function optimizes the acquisition function using preconditioning.
     Preconditioning equalizes the variances caused by each parameter and
@@ -51,7 +51,7 @@ def _gradient_ascent_batched(
     As the domain of `x` is [0, 1], that of `z` becomes [0, 1/l].
     """
     if len(continuous_indices) == 0:
-        return initial_params_batched, initial_fvals, False
+        return initial_params_batched, initial_fvals, np.array([False] * len(initial_fvals))
     normalized_params = initial_params_batched.copy()
 
     # scaled_x: (B,D) or (D,)
@@ -85,20 +85,24 @@ def _gradient_ascent_batched(
         bounds = np.array([(0, 1 / s) for s in lengthscales])
         pgtol = math.sqrt(tol)
         max_iters = 200
-        # if is_scipy_version_supported():
-        if False:
-            scaled_cont_x_opts, neg_fval_opts, _ = batched_lbfgsb(
+
+        # if False:
+        if is_scipy_version_supported():
+            scaled_cont_x_opts, neg_fval_opts, info = batched_lbfgsb(
                 func_and_grad=negative_acqf_with_grad,
                 x0=x0_batched,
                 bounds=bounds,
                 pgtol=pgtol,
                 max_iters=max_iters,
             )
+            # (B,)
+            updated_batched = (neg_fval_opts > -initial_fvals) & (np.array(info["nit"]) > 0)
+
         else:
             # TODO
-            scaled_cont_x_opts, neg_fval_opts = [], []
-            for x0 in x0_batched:
-                scaled_cont_x_opt, neg_fval_opt, _ = so.fmin_l_bfgs_b(
+            scaled_cont_x_opts, neg_fval_opts, updated_batched = [], [], []
+            for batch, x0 in enumerate(x0_batched):
+                scaled_cont_x_opt, neg_fval_opt, info = so.fmin_l_bfgs_b(
                     func=_1D_wrapper,
                     x0=x0,
                     bounds=bounds,
@@ -107,12 +111,20 @@ def _gradient_ascent_batched(
                 )
                 scaled_cont_x_opts.append(scaled_cont_x_opt)
                 neg_fval_opts.append(neg_fval_opt)
+                updated = neg_fval_opt > -initial_fvals[batch] and info["nit"] > 0
+                updated_batched.append(updated)
             scaled_cont_x_opts = np.array(scaled_cont_x_opts)
             neg_fval_opts = np.array(neg_fval_opts)
+            updated_batched = np.array(updated_batched)
     normalized_params[:, continuous_indices] = scaled_cont_x_opts * lengthscales
 
     # TODO: return update information for each parameter
-    return normalized_params, -neg_fval_opts, True
+    # If any parameter is updated, return the updated parameters and values. Otherwise, return the initial ones.
+    final_params = initial_params_batched.copy()
+    final_params[updated_batched, :] = normalized_params[updated_batched, :]
+    final_fvals = initial_fvals.copy()
+    final_fvals[updated_batched] = -neg_fval_opts[updated_batched]
+    return final_params, final_fvals, updated_batched
 
 
 def _exhaustive_search(
