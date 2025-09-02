@@ -92,6 +92,11 @@ class TPESampler(BaseSampler):
       Problems <https://doi.org/10.1145/3377930.3389817>`__
     - `Multiobjective Tree-Structured Parzen Estimator <https://doi.org/10.1613/jair.1.13188>`__
 
+    For the `categorical_distance_func`, please refer to the following paper:
+
+    - `Tree-Structured Parzen Estimator Can Solve Black-Box Combinatorial Optimization More
+      Efficiently <https://arxiv.org/abs/2507.08053>`__
+
     Please also check our articles:
 
     - `Significant Speed Up of Multi-Objective TPESampler in Optuna v4.0.0
