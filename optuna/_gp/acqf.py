@@ -7,22 +7,27 @@ from typing import cast
 from typing import TYPE_CHECKING
 
 import numpy as np
-import torch
 
 from optuna._hypervolume import get_non_dominated_box_bounds
 from optuna.study._multi_objective import _is_pareto_front
 
 
 if TYPE_CHECKING:
+    import torch
+
     from optuna._gp.gp import GPRegressor
     from optuna._gp.search_space import SearchSpace
+else:
+    from optuna._imports import _LazyImport
+
+    torch = _LazyImport("torch")
 
 
-_SQRT_HALF = torch.tensor(math.sqrt(0.5), dtype=torch.float64)
-_INV_SQRT_2PI = torch.tensor(1 / math.sqrt(2 * math.pi), dtype=torch.float64)
-_SQRT_HALF_PI = torch.tensor(math.sqrt(0.5 * math.pi), dtype=torch.float64)
-_LOG_SQRT_2PI = torch.tensor(math.sqrt(2 * math.pi), dtype=torch.float64).log()
-_EPS = torch.tensor(1e-12, dtype=torch.float64)  # NOTE(nabenabe): grad becomes nan when EPS=0.
+_SQRT_HALF = math.sqrt(0.5)
+_INV_SQRT_2PI = 1 / math.sqrt(2 * math.pi)
+_SQRT_HALF_PI = math.sqrt(0.5 * math.pi)
+_LOG_SQRT_2PI = math.log(math.sqrt(2 * math.pi))
+_EPS = 1e-12  # NOTE(nabenabe): grad becomes nan when EPS=0.
 
 
 def _sample_from_normal_sobol(dim: int, n_samples: int, seed: int | None) -> torch.Tensor:
@@ -51,7 +56,7 @@ def logehvi(
     # https://github.com/pytorch/botorch/blob/v0.13.0/botorch/utils/safe_math.py
     # https://github.com/pytorch/botorch/blob/v0.13.0/botorch/acquisition/multi_objective/logei.py#L146-L266
     diff = Y_post.unsqueeze(-2) - non_dominated_box_lower_bounds
-    diff.clamp_(min=_EPS, max=non_dominated_box_intervals)
+    diff.clamp_(min=torch.tensor(_EPS).double(), max=non_dominated_box_intervals)
     # NOTE(nabenabe): logsumexp with dim=-1 is for the HVI calculation and that with dim=-2 is for
     # expectation of the HVIs over the fixed_samples.
     return torch.special.logsumexp(diff.log().sum(dim=-1), dim=(-2, -1)) - log_n_qmc_samples
