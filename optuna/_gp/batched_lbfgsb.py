@@ -234,7 +234,7 @@ class _TaskStatusManager:
         ]
         return {
             "is_converged": [self._judge_status(b, status_id=4) for b in range(self._batch_size)],
-            "n_iterations": self._n_iterations.tolist(),
+            "nit": self._n_iterations.tolist(),
             "n_evals": self._n_evals.tolist(),
             "messages": messages,
         }

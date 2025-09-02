@@ -54,7 +54,6 @@ def _gradient_ascent_batched(
         return initial_params_batched, initial_fvals, np.array([False] * len(initial_fvals))
     normalized_params = initial_params_batched.copy()
 
-    # scaled_x: (B,D) or (D,)
     def negative_acqf_with_grad(
         scaled_x: np.ndarray, unconverged_batch_indices: np.ndarray
     ) -> tuple[np.ndarray, np.ndarray]:
@@ -74,9 +73,11 @@ def _gradient_ascent_batched(
         # Let the scaled acqf be g(x) and the acqf be f(sx), then dg/dx = df/dx * s.
         return neg_fvals, grads[:, continuous_indices] * lengthscales
 
-    def _1D_wrapper(scaled_x: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    def _1D_wrapper(
+        scaled_x: np.ndarray, unconverged_batch_indices: np.ndarray
+    ) -> tuple[np.ndarray, np.ndarray]:
         # 1D wrapper for the negative acquisition function with gradient.
-        unconverged_batch_indices = [0]
+        assert scaled_x.ndim == 1
         fval, grad = negative_acqf_with_grad(scaled_x[None], unconverged_batch_indices)
         return fval.item(), grad.ravel()
 
@@ -86,8 +87,8 @@ def _gradient_ascent_batched(
         pgtol = math.sqrt(tol)
         max_iters = 200
 
-        # if is_scipy_version_supported():
-        if False:
+        # if False:
+        if is_scipy_version_supported():
             scaled_cont_x_opts, neg_fval_opts, info = batched_lbfgsb(
                 func_and_grad=negative_acqf_with_grad,
                 x0=x0_batched,
@@ -96,21 +97,25 @@ def _gradient_ascent_batched(
                 max_iters=max_iters,
             )
             # (B,)
-            updated_batched = (neg_fval_opts > -initial_fvals) & (np.array(info["nit"]) > 0)
+            updated_batched = (-neg_fval_opts > initial_fvals) & (np.array(info["nit"]) > 0)
 
         else:
             scaled_cont_x_opts, neg_fval_opts, updated_batched = [], [], []
             for batch, x0 in enumerate(x0_batched):
+                unconverged_batch_indices = np.zeros(len(initial_fvals), dtype=bool)
+                unconverged_batch_indices[batch] = True
                 scaled_cont_x_opt, neg_fval_opt, info = so.fmin_l_bfgs_b(
                     func=_1D_wrapper,
                     x0=x0,
+                    args=(unconverged_batch_indices,),
                     bounds=bounds,
                     pgtol=pgtol,
                     maxiter=max_iters,
                 )
                 scaled_cont_x_opts.append(scaled_cont_x_opt)
                 neg_fval_opts.append(neg_fval_opt)
-                updated = neg_fval_opt > -initial_fvals[batch] and info["nit"] > 0
+
+                updated = -neg_fval_opt > initial_fvals[batch] and info["nit"] > 0
                 updated_batched.append(updated)
             scaled_cont_x_opts = np.array(scaled_cont_x_opts)
             neg_fval_opts = np.array(neg_fval_opts)
