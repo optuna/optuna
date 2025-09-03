@@ -481,9 +481,9 @@ class TPESampler(BaseSampler):
                 )
 
         search_space = {param_name: param_distribution}
-        return self._sample(
-            study, trial, search_space, use_trial_cache=not self._constant_liar
-        )[param_name]
+        return self._sample(study, trial, search_space, use_trial_cache=not self._constant_liar)[
+            param_name
+        ]
 
     def _get_params(self, trial: FrozenTrial) -> dict[str, Any]:
         if trial.state.is_finished() or not self._multivariate:
