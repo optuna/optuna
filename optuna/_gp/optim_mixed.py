@@ -4,9 +4,7 @@ import math
 from typing import TYPE_CHECKING
 
 import numpy as np
-import scipy
 import torch
-from packaging.version import Version
 
 from optuna._gp.batched_lbfgsb import batched_lbfgsb
 from optuna._gp.scipy_blas_thread_patch import single_blas_thread_if_scipy_v1_15_or_newer
@@ -22,10 +20,6 @@ else:
     so = _LazyImport("scipy.optimize")
 
 _logger = get_logger(__name__)
-
-
-def is_scipy_version_supported() -> bool:
-    return Version(scipy.__version__) <= Version("1.16.1")
 
 
 def _gradient_ascent_batched(
@@ -75,60 +69,29 @@ def _gradient_ascent_batched(
         # Let the scaled acqf be g(x) and the acqf be f(sx), then dg/dx = df/dx * s.
         return neg_fvals, grads[:, continuous_indices] * lengthscales
 
-    def _1D_wrapper(
-        scaled_x: np.ndarray, unconverged_batch_indices: np.ndarray
-    ) -> tuple[np.ndarray, np.ndarray]:
-        # 1D wrapper for the negative acquisition function with gradient.
-        assert scaled_x.ndim == 1
-        fval, grad = negative_acqf_with_grad(scaled_x[None], unconverged_batch_indices)
-        return fval.item(), grad.ravel()
-
     with single_blas_thread_if_scipy_v1_15_or_newer():
         x0_batched = normalized_params[:, continuous_indices] / lengthscales
         bounds = np.array([(0, 1 / s) for s in lengthscales])
         pgtol = math.sqrt(tol)
         max_iters = 200
 
-        # if False:
-        if is_scipy_version_supported():
-            scaled_cont_x_opts, neg_fval_opts, info = batched_lbfgsb(
-                func_and_grad=negative_acqf_with_grad,
-                x0=x0_batched,
-                bounds=bounds,
-                pgtol=pgtol,
-                max_iters=max_iters,
-            )
-            # (B,)
-            updated_batched = (-neg_fval_opts > initial_fvals) & (np.array(info["nit"]) > 0)
+        scaled_cont_x_opts, neg_fval_opts, n_iterations = batched_lbfgsb(
+            func_and_grad=negative_acqf_with_grad,
+            x0_batched=x0_batched,
+            bounds=bounds,
+            pgtol=pgtol,
+            max_iters=max_iters,
+        )
 
-        else:
-            scaled_cont_x_opts, neg_fval_opts, updated_batched = [], [], []
-            for batch, x0 in enumerate(x0_batched):
-                is_converged_batch = np.ones(len(initial_fvals), dtype=bool)
-                is_converged_batch[batch] = False
-                scaled_cont_x_opt, neg_fval_opt, info = so.fmin_l_bfgs_b(
-                    func=_1D_wrapper,
-                    x0=x0,
-                    bounds=bounds,
-                    pgtol=pgtol,
-                    maxiter=max_iters,
-                )
-                scaled_cont_x_opts.append(scaled_cont_x_opt)
-                neg_fval_opts.append(neg_fval_opt)
-
-                updated = -neg_fval_opt > initial_fvals[batch] and info["nit"] > 0
-                updated_batched.append(updated)
-            scaled_cont_x_opts = np.array(scaled_cont_x_opts)
-            neg_fval_opts = np.array(neg_fval_opts)
-            updated_batched = np.array(updated_batched)
     normalized_params[:, continuous_indices] = scaled_cont_x_opts * lengthscales
 
     # If any parameter is updated, return the updated parameters and values. Otherwise, return the initial ones.
+    is_updated_batch = (-neg_fval_opts > initial_fvals) & (n_iterations > 0)
     final_params = initial_params_batched.copy()
-    final_params[updated_batched, :] = normalized_params[updated_batched, :]
+    final_params[is_updated_batch, :] = normalized_params[is_updated_batch, :]
     final_fvals = initial_fvals.copy()
-    final_fvals[updated_batched] = -neg_fval_opts[updated_batched]
-    return final_params, final_fvals, updated_batched
+    final_fvals[is_updated_batch] = -neg_fval_opts[is_updated_batch]
+    return final_params, final_fvals, is_updated_batch
 
 
 def _exhaustive_search(
