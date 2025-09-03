@@ -249,16 +249,16 @@ def _local_search_discrete_batched(
     best_normalized_params_batched = initial_params_batched.copy()
     best_fvals = initial_fvals.copy()
 
-    updated_batched = np.zeros(len(initial_fvals), dtype=bool)
+    is_updated_batch = np.zeros(len(initial_fvals), dtype=bool)
     for batch, normalized_params in enumerate(initial_params_batched):
         (best_normalized_params, best_fval, updated) = _local_search_discrete(
             acqf, normalized_params, best_fvals[batch], param_idx, choices, xtol
         )
         best_normalized_params_batched[batch] = best_normalized_params
         best_fvals[batch] = best_fval
-        updated_batched[batch] = updated
+        is_updated_batch[batch] = updated
 
-    return best_normalized_params_batched, best_fvals, updated_batched
+    return best_normalized_params_batched, best_fvals, is_updated_batch
 
 
 def local_search_mixed_batched(
