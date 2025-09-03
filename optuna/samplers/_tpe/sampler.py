@@ -447,7 +447,7 @@ class TPESampler(BaseSampler):
         if len(trials) < self._n_startup_trials:
             return {}
 
-        return self._sample(study, trial, search_space, True)
+        return self._sample(study, trial, search_space, use_trial_cache=True)
 
     def sample_independent(
         self,
@@ -481,7 +481,9 @@ class TPESampler(BaseSampler):
                 )
 
         search_space = {param_name: param_distribution}
-        return self._sample(study, trial, search_space, not self._constant_liar)[param_name]
+        return self._sample(
+            study, trial, search_space, use_trial_cache=not self._constant_liar
+        )[param_name]
 
     def _get_params(self, trial: FrozenTrial) -> dict[str, Any]:
         if trial.state.is_finished() or not self._multivariate:
@@ -518,13 +520,13 @@ class TPESampler(BaseSampler):
         study: Study,
         trial: FrozenTrial,
         search_space: dict[str, BaseDistribution],
-        use_cache: bool,
+        use_trial_cache: bool,
     ) -> dict[str, Any]:
         if self._constant_liar:
             states = [TrialState.COMPLETE, TrialState.PRUNED, TrialState.RUNNING]
         else:
             states = [TrialState.COMPLETE, TrialState.PRUNED]
-        trials = study._get_trials(deepcopy=False, states=states, use_cache=use_cache)
+        trials = study._get_trials(deepcopy=False, states=states, use_cache=use_trial_cache)
 
         if self._constant_liar:
             # For constant_liar, filter out the current trial.
