@@ -235,7 +235,7 @@ class _TaskStatusManager:
         ]
         return {
             "is_converged": [self._judge_status(b, status_id=4) for b in range(self._batch_size)],
-            "nit": self._n_iterations.tolist(),
+            "n_iterations": self._n_iterations.tolist(),
             "n_evals": self._n_evals.tolist(),
             "messages": messages,
         }
@@ -373,7 +373,7 @@ def batched_lbfgsb(
             max_iters=max_iters,
             max_line_search=max_line_search,
         )
-        n_iterations = np.array(info["nit"])
+        n_iterations = np.array(info["n_iterations"])
 
     # fallback to sequential optimization if SciPy version is not supported
     else:
