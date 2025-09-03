@@ -55,6 +55,7 @@ def _gradient_ascent_batched(
         return initial_params_batched, initial_fvals, np.array([False] * len(initial_fvals))
     normalized_params = initial_params_batched.copy()
 
+    # TODO: rename unconverged_batch_indices to clearer name
     def negative_acqf_with_grad(
         scaled_x: np.ndarray, unconverged_batch_indices: np.ndarray
     ) -> tuple[np.ndarray, np.ndarray]:
