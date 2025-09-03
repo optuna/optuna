@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 import scipy
 import torch
+from packaging.version import Version
 
 from optuna._gp.batched_lbfgsb import batched_lbfgsb
 from optuna._gp.scipy_blas_thread_patch import single_blas_thread_if_scipy_v1_15_or_newer
@@ -24,7 +25,7 @@ _logger = get_logger(__name__)
 
 
 def is_scipy_version_supported() -> bool:
-    return scipy.__version__ <= "1.15.0"
+    return Version(scipy.__version__) <= Version("1.16.1")
 
 
 def _gradient_ascent_batched(
