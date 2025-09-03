@@ -103,12 +103,11 @@ def _gradient_ascent_batched(
         else:
             scaled_cont_x_opts, neg_fval_opts, updated_batched = [], [], []
             for batch, x0 in enumerate(x0_batched):
-                unconverged_batch_indices = np.zeros(len(initial_fvals), dtype=bool)
-                unconverged_batch_indices[batch] = True
+                is_converged_batch = np.ones(len(initial_fvals), dtype=bool)
+                is_converged_batch[batch] = False
                 scaled_cont_x_opt, neg_fval_opt, info = so.fmin_l_bfgs_b(
                     func=_1D_wrapper,
                     x0=x0,
-                    args=(unconverged_batch_indices,),
                     bounds=bounds,
                     pgtol=pgtol,
                     maxiter=max_iters,
@@ -294,54 +293,64 @@ def local_search_mixed_batched(
     INITIALIZED = -1
     CONTINUOUS = -2
     last_changed_params = np.full(batch_size, INITIALIZED)
-    unconverged_batch_indices = np.ones(batch_size, dtype=bool)
+    is_converged_batch = np.zeros(batch_size, dtype=bool)
     for _ in range(max_iter):
-        unconverged_batch_indices[last_changed_params == CONTINUOUS] = False
-        if not unconverged_batch_indices.any():
+        is_converged_batch[last_changed_params == CONTINUOUS] = True
+        if is_converged_batch.all():
             return best_normalized_params_batched, best_fvals
 
         (params, fvals, updated) = _gradient_ascent_batched(
             acqf,
-            best_normalized_params_batched[unconverged_batch_indices],
-            best_fvals[unconverged_batch_indices],
+            best_normalized_params_batched[~is_converged_batch],
+            best_fvals[~is_converged_batch],
             continuous_indices,
             lengthscales,
             tol,
         )
 
-        assert len(params) == len(fvals) == len(updated) == unconverged_batch_indices.sum()
+        assert (
+            len(params)
+            == len(fvals)
+            == len(updated)
+            == len(best_normalized_params_batched) - is_converged_batch.sum()
+        )
 
-        best_normalized_params_batched[unconverged_batch_indices] = params
-        best_fvals[unconverged_batch_indices] = fvals
-        last_changed_params[unconverged_batch_indices] = np.where(
-            updated, CONTINUOUS, last_changed_params[unconverged_batch_indices]
+        best_normalized_params_batched[~is_converged_batch] = params
+        best_fvals[~is_converged_batch] = fvals
+        last_changed_params[~is_converged_batch] = np.where(
+            updated, CONTINUOUS, last_changed_params[~is_converged_batch]
         )
 
         for i, choices, xtol in zip(
             acqf.search_space.discrete_indices, choices_of_discrete_params, discrete_xtols
         ):
-            unconverged_batch_indices[last_changed_params == i] = False
-            if not unconverged_batch_indices.any():
+            is_converged_batch[last_changed_params == i] = True
+            if is_converged_batch.all():
                 return best_normalized_params_batched, best_fvals
             (params, fvals, updated) = _local_search_discrete_batched(
                 acqf,
-                best_normalized_params_batched[unconverged_batch_indices],
-                best_fvals[unconverged_batch_indices],
+                best_normalized_params_batched[~is_converged_batch],
+                best_fvals[~is_converged_batch],
                 i,
                 choices,
                 xtol,
             )
-            assert len(params) == len(fvals) == len(updated) == unconverged_batch_indices.sum()
+            assert (
+                len(params)
+                == len(fvals)
+                == len(updated)
+                == len(best_normalized_params_batched) - is_converged_batch.sum()
+            )
 
-            best_normalized_params_batched[unconverged_batch_indices] = params
-            best_fvals[unconverged_batch_indices] = fvals
-            last_changed_params[unconverged_batch_indices] = np.where(
-                updated, i, last_changed_params[unconverged_batch_indices]
+            best_normalized_params_batched[~is_converged_batch] = params
+            best_fvals[~is_converged_batch] = fvals
+            last_changed_params[~is_converged_batch] = np.where(
+                updated, i, last_changed_params[~is_converged_batch]
             )
 
         # Parameters not changed from the beginning.
-        unconverged_batch_indices[last_changed_params == INITIALIZED] = False
-        if not unconverged_batch_indices.any():
+        is_converged_batch[last_changed_params == INITIALIZED] = True
+        if is_converged_batch.all():
             return best_normalized_params_batched, best_fvals
     else:
         _logger.warning("local_search_mixed: Local search did not converge.")
