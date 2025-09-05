@@ -159,7 +159,8 @@ class GPRegressor:
         else:
             if X2 is None:
                 X2 = self._X_train
-            d2 = (X1[..., None, :] - X2[..., None, :, :]) ** 2
+
+            d2 = (X1 - X2) ** 2 if X1.ndim == 1 else (X1[..., None, :] - X2[..., None, :, :]) ** 2
             if self._is_categorical.any():
                 d2[..., self._is_categorical] = (d2[..., self._is_categorical] > 0.0).type(
                     torch.float64
