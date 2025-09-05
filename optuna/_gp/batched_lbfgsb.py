@@ -25,11 +25,11 @@ def _batched_lbfgsb(
     func_and_grad: FuncAndGrad,
     x0_batched: np.ndarray,
     bounds: np.ndarray | None,
-    m: int ,
-    factr: float ,
-    pgtol: float ,
-    max_evals: int ,
-    max_iters: int ,
+    m: int,
+    factr: float,
+    pgtol: float,
+    max_evals: int,
+    max_iters: int,
     max_line_search: int,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     assert x0_batched.ndim == 2
@@ -122,7 +122,9 @@ def batched_lbfgsb(
     max_iters: int = 15000,
     max_line_search: int = 20,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    def func_and_grad_1D_wrapper(scaled_x: np.ndarray) -> tuple[float, np.ndarray]:
+    def func_and_grad_1D_wrapper(
+        scaled_x: np.ndarray, batch_index: np.ndarray
+    ) -> tuple[float, np.ndarray]:
         """A wrapper for `func_and_grad` to handle 1D inputs.
 
         This is used as a fallback to sequential optimization when the batched
@@ -131,7 +133,7 @@ def batched_lbfgsb(
         a 1D input array.
         """
         assert scaled_x.ndim == 1
-        unconverged_batch_indices = np.array([0])
+        unconverged_batch_indices = np.array([batch_index])
         fval, grad = func_and_grad(scaled_x[None], unconverged_batch_indices)
         return fval.item(), grad.ravel()
 
@@ -151,10 +153,11 @@ def batched_lbfgsb(
     # fallback to sequential optimization if SciPy version is not supported
     else:
         scaled_cont_x_opts, neg_fval_opts, n_iterations = [], [], []
-        for x0 in x0_batched:
+        for batch_index, x0 in enumerate(x0_batched):
             scaled_cont_x_opt, neg_fval_opt, info = so.fmin_l_bfgs_b(
                 func=func_and_grad_1D_wrapper,
                 x0=x0,
+                args=(batch_index,),
                 bounds=bounds,
                 m=m,
                 factr=factr,
