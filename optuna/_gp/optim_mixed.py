@@ -70,17 +70,12 @@ def _gradient_ascent_batched(
         return neg_fvals, grads[:, continuous_indices] * lengthscales
 
     with single_blas_thread_if_scipy_v1_15_or_newer():
-        x0_batched = normalized_params[:, continuous_indices] / lengthscales
-        bounds = np.array([(0, 1 / s) for s in lengthscales])
-        pgtol = math.sqrt(tol)
-        max_iters = 200
-
         scaled_cont_x_opts, neg_fval_opts, n_iterations = batched_lbfgsb(
             func_and_grad=negative_acqf_with_grad,
-            x0_batched=x0_batched,
-            bounds=bounds,
-            pgtol=pgtol,
-            max_iters=max_iters,
+            x0_batched=normalized_params[:, continuous_indices] / lengthscales,
+            bounds=np.array([(0, 1 / s) for s in lengthscales]),
+            pgtol=math.sqrt(tol),
+            max_iters=200,
         )
 
     normalized_params[:, continuous_indices] = scaled_cont_x_opts * lengthscales
