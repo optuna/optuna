@@ -370,14 +370,7 @@ def optimize_acqf_mixed(
         )
         chosen_idxs = np.append(chosen_idxs, additional_idxs)
 
-    best_x = sampled_xs[max_i, :]
-    best_f = float(f_vals[max_i])
-
     x_warmstarts = np.vstack([sampled_xs[chosen_idxs, :], warmstart_normalized_params_array])
-    xs, fs = local_search_mixed_batched(acqf, x_warmstarts, tol=tol)
-    for x, f in zip(xs, fs):
-        if f > best_f:
-            best_x = x
-            best_f = f
-
-    return best_x, best_f
+    best_xs, best_fvals = local_search_mixed_batched(acqf, x_warmstarts, tol=tol)
+    best_idx = np.argmax(best_fvals).item()
+    return best_xs[best_idx], best_fvals[best_idx]
