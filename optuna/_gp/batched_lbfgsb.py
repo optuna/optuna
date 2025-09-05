@@ -24,7 +24,7 @@ if TYPE_CHECKING:
 def _batched_lbfgsb(
     func_and_grad: FuncAndGrad,
     x0_batched: np.ndarray,
-    bounds: np.ndarray | None = None,
+    bounds: np.ndarray | None,
     m: int ,
     factr: float ,
     pgtol: float ,
