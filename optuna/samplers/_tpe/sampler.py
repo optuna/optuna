@@ -840,9 +840,17 @@ def _calculate_weights_below_for_multi_objective(
 
     loo_mat = ~np.eye(pareto_sols.shape[0], dtype=bool)  # Leave-one-out bool matrix.
     contribs = np.zeros(n_below_feasible, dtype=float)
-    contribs[on_front] = hv - np.array(
-        [compute_hypervolume(pareto_sols[loo], ref_point, assume_pareto=True) for loo in loo_mat]
-    )
+    if len(study.directions) <= 3:
+        contribs[on_front] = [
+            hv - compute_hypervolume(pareto_sols[loo], ref_point, assume_pareto=True)
+            for loo in loo_mat
+        ]
+    else:
+        contribs[on_front] = np.prod(ref_point - pareto_sols, axis=-1)
+        limited_sols = np.maximum(pareto_sols, pareto_sols[:, np.newaxis])
+        contribs[on_front] -= [
+            compute_hypervolume(limited_sols[i, loo], ref_point) for i, loo in enumerate(loo_mat)
+        ]
     weights_below[is_feasible] = np.maximum(contribs / max(np.max(contribs), EPS), EPS)
     return weights_below
 
