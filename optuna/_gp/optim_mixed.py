@@ -10,6 +10,7 @@ from optuna._gp.batched_lbfgsb import batched_lbfgsb
 from optuna._gp.scipy_blas_thread_patch import single_blas_thread_if_scipy_v1_15_or_newer
 from optuna.logging import get_logger
 
+
 if TYPE_CHECKING:
     import scipy.optimize as so
 
@@ -335,9 +336,9 @@ def optimize_acqf_mixed(
     if warmstart_normalized_params_array is None:
         warmstart_normalized_params_array = np.empty((0, acqf.search_space.dim))
 
-    assert len(warmstart_normalized_params_array) <= n_local_search - 1, (
-        "We must choose at least 1 best sampled point + given_initial_xs as start points."
-    )
+    assert (
+        len(warmstart_normalized_params_array) <= n_local_search - 1
+    ), "We must choose at least 1 best sampled point + given_initial_xs as start points."
 
     sampled_xs = acqf.search_space.sample_normalized_params(n_preliminary_samples, rng=rng)
 

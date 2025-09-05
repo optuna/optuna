@@ -1,8 +1,6 @@
-# %%
-
+from greenlet import greenlet
 import numpy as np
 import scipy.optimize as so
-from greenlet import greenlet
 
 
 def batched_lbfgsb(
