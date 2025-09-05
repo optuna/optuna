@@ -50,7 +50,6 @@ def _gradient_ascent_batched(
         return initial_params_batched, initial_fvals, np.array([False] * len(initial_fvals))
     normalized_params = initial_params_batched.copy()
 
-    # TODO: rename unconverged_batch_indices to clearer name
     def negative_acqf_with_grad(
         scaled_x: np.ndarray, unconverged_batch_indices: np.ndarray
     ) -> tuple[np.ndarray, np.ndarray]:
@@ -155,9 +154,8 @@ def _discrete_line_search(
             return np.inf
         right = int(np.clip(np.searchsorted(grids, x), 1, len(grids) - 1))
         left = right - 1
-        neg_acqf_left, neg_acqf_right = (
-            negative_acqf_with_cache(left),
-            negative_acqf_with_cache(right),
+        neg_acqf_left, neg_acqf_right = negative_acqf_with_cache(left), negative_acqf_with_cache(
+            right
         )
         w_left = (grids[right] - x) / (grids[right] - grids[left])
         w_right = 1.0 - w_left
@@ -191,6 +189,7 @@ def _local_search_discrete(
     choices: np.ndarray,
     xtol: float,
 ) -> tuple[np.ndarray, float, bool]:
+
     # If the number of possible parameter values is small, we just perform an exhaustive search.
     # This is faster and better than the line search.
     MAX_INT_EXHAUSTIVE_SEARCH_PARAMS = 16
@@ -233,6 +232,7 @@ def local_search_mixed_batched(
     max_iter: int = 100,
 ) -> tuple[np.ndarray, np.ndarray]:
     continuous_indices = acqf.search_space.continuous_indices
+
     # This is a technique for speeding up optimization.
     # We use an isotropic kernel, so scaling the gradient will make
     # the hessian better-conditioned.
@@ -240,6 +240,7 @@ def local_search_mixed_batched(
     # but for simplicity, the ones from the objective function are being reused.
     # TODO(kAIto47802): Think of a better way to handle this.
     lengthscales = acqf.length_scales[continuous_indices]
+
     choices_of_discrete_params = acqf.search_space.get_choices_of_discrete_params()
 
     discrete_xtols = [
@@ -331,6 +332,7 @@ def optimize_acqf_mixed(
     tol: float = 1e-4,
     rng: np.random.RandomState | None = None,
 ) -> tuple[np.ndarray, float]:
+
     rng = rng or np.random.RandomState()
 
     if warmstart_normalized_params_array is None:
@@ -377,4 +379,5 @@ def optimize_acqf_mixed(
         if f > best_f:
             best_x = x
             best_f = f
+
     return best_x, best_f
