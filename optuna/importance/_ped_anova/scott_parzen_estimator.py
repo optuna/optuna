@@ -48,14 +48,13 @@ class _ScottParzenEstimator(_ParzenEstimator):
     def _calculate_numerical_distributions(
         self,
         observations: np.ndarray,
-        low: float,  # The type is actually int, but typing follows the original.
-        high: float,  # The type is actually int, but typing follows the original.
-        step: float | None,
+        search_space: FloatDistribution | IntDistribution,
         parameters: _ParzenEstimatorParameters,
     ) -> _BatchedDistributions:
         # NOTE: The Optuna TPE bandwidth selection is too wide for this analysis.
         # So use the Scott's rule by Scott, D.W. (1992),
         # Multivariate Density Estimation: Theory, Practice, and Visualization.
+        step = search_space.step
         assert step is not None and np.isclose(step, 1.0), "MyPy redefinition."
 
         n_trials = np.sum(self._counts)
@@ -73,8 +72,8 @@ class _ScottParzenEstimator(_ParzenEstimator):
         # To avoid numerical errors. 0.5/1.64 means 1.64sigma (=90%) will fit in the target grid.
         sigma_min = 0.5 / 1.64
         sigmas = np.full_like(mus, max(sigma_est, sigma_min), dtype=np.float64)
-        mus = np.append(mus, [0.5 * (low + high)])
-        sigmas = np.append(sigmas, [1.0 * (high - low + 1)])
+        mus = np.append(mus, [0.5 * (search_space.low + search_space.high)])
+        sigmas = np.append(sigmas, [1.0 * (search_space.high - search_space.low + 1)])
 
         return _BatchedDiscreteTruncNormDistributions(
             mu=mus, sigma=sigmas, low=0, high=self.n_steps - 1, step=1
