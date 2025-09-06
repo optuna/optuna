@@ -440,11 +440,11 @@ def test_sample_independent_prior() -> None:
 
     # Prepare a trial and a sample for later checks.
     trial = frozen_trial_factory(8)
-    sampler = TPESampler(n_startup_trials=5, seed=0)
+    sampler = TPESampler(n_startup_trials=5, seed=0, n_ei_candidates=100)
     with patch.object(study._storage, "get_all_trials", return_value=past_trials):
         suggestion = sampler.sample_independent(study, trial, "param-a", dist)
 
-    sampler = TPESampler(prior_weight=0.1, n_startup_trials=5, seed=0)
+    sampler = TPESampler(prior_weight=0.1, n_startup_trials=5, seed=0, n_ei_candidates=100)
     with patch.object(study._storage, "get_all_trials", return_value=past_trials):
         assert sampler.sample_independent(study, trial, "param-a", dist) != suggestion
 
@@ -479,21 +479,24 @@ def test_sample_independent_misc_arguments() -> None:
 
     # Prepare a trial and a sample for later checks.
     trial = frozen_trial_factory(8)
-    sampler = TPESampler(n_startup_trials=5, seed=0)
+    sampler = TPESampler(n_startup_trials=5, seed=0, n_ei_candidates=100)
     with patch.object(study._storage, "get_all_trials", return_value=past_trials):
         suggestion = sampler.sample_independent(study, trial, "param-a", dist)
 
     # Test misc. parameters.
-    sampler = TPESampler(n_ei_candidates=13, n_startup_trials=5, seed=0)
+    sampler = TPESampler(n_startup_trials=5, seed=0, n_ei_candidates=13)
     with patch.object(study._storage, "get_all_trials", return_value=past_trials):
         assert sampler.sample_independent(study, trial, "param-a", dist) != suggestion
 
-    sampler = TPESampler(gamma=lambda _: 5, n_startup_trials=5, seed=0)
+    sampler = TPESampler(gamma=lambda _: 5, n_startup_trials=5, seed=0, n_ei_candidates=100)
     with patch.object(study._storage, "get_all_trials", return_value=past_trials):
         assert sampler.sample_independent(study, trial, "param-a", dist) != suggestion
 
     sampler = TPESampler(
-        weights=lambda i: np.asarray([10 - j for j in range(i)]), n_startup_trials=5, seed=0
+        weights=lambda i: np.asarray([10 - j for j in range(i)]),
+        n_startup_trials=5,
+        seed=0,
+        n_ei_candidates=100,
     )
     with patch("optuna.Study._get_trials", return_value=past_trials):
         assert sampler.sample_independent(study, trial, "param-a", dist) != suggestion
