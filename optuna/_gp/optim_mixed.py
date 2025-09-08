@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from optuna._gp.batched_lbfgsb import batched_lbfgsb
 from optuna._gp.scipy_blas_thread_patch import single_blas_thread_if_scipy_v1_15_or_newer
 from optuna.logging import get_logger
 
@@ -14,12 +13,15 @@ if TYPE_CHECKING:
     import scipy.optimize as so
     import torch
 
+    from optuna._gp import batched_lbfgsb
     from optuna._gp.acqf import BaseAcquisitionFunc
 else:
     from optuna import _LazyImport
 
     so = _LazyImport("scipy.optimize")
     torch = _LazyImport("torch")
+    batched_lbfgsb = _LazyImport("optuna._gp.batched_lbfgsb")
+
 
 _logger = get_logger(__name__)
 
@@ -65,7 +67,7 @@ def _gradient_ascent_batched(
         return neg_fvals, grads[:, continuous_indices] * lengthscales
 
     with single_blas_thread_if_scipy_v1_15_or_newer():
-        scaled_cont_x_opts, neg_fval_opts, n_iterations = batched_lbfgsb(
+        scaled_cont_x_opts, neg_fval_opts, n_iterations = batched_lbfgsb.batched_lbfgsb(
             func_and_grad=negative_acqf_with_grad,
             x0_batched=normalized_params[:, continuous_indices] / lengthscales,
             bounds=np.array([(0, 1 / s) for s in lengthscales]),
