@@ -5,11 +5,16 @@ import os
 from typing import TYPE_CHECKING
 
 from packaging.version import Version
-import scipy
 
 
 if TYPE_CHECKING:
     from typing import Generator
+
+    import scipy
+else:
+    from optuna import _LazyImport
+
+    scipy = _LazyImport("scipy")
 
 
 @contextmanager
