@@ -50,17 +50,11 @@ def _gradient_ascent_batched(
         return initial_params_batched, initial_fvals, np.array([False] * len(initial_fvals))
     normalized_params = initial_params_batched.copy()
 
-    def negative_acqf_with_grad(
-        scaled_x: np.ndarray, unconverged_batch_indices: np.ndarray
-    ) -> tuple[np.ndarray, np.ndarray]:
+    def negative_acqf_with_grad(scaled_x: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         # Scale back to the original domain, i.e. [0, 1], from [0, 1/s].
         assert scaled_x.ndim == 2
-        normalized_params[np.ix_(unconverged_batch_indices, continuous_indices)] = (
-            scaled_x * lengthscales
-        )
-        x_tensor = torch.from_numpy(
-            normalized_params[unconverged_batch_indices, :]
-        ).requires_grad_(True)
+        normalized_params[: len(scaled_x), continuous_indices] = scaled_x * lengthscales
+        x_tensor = torch.from_numpy(normalized_params[: len(scaled_x), :]).requires_grad_(True)
         neg_fvals = -acqf.eval_acqf(x_tensor)
         neg_fvals.sum().backward()
         grads = x_tensor.grad.detach().numpy()  # type: ignore

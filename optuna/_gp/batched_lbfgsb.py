@@ -15,9 +15,7 @@ if TYPE_CHECKING:
     from typing import Protocol
 
     class FuncAndGrad(Protocol):
-        def __call__(
-            self, x: np.ndarray, unconverged_batch_indices: np.ndarray
-        ) -> tuple[np.ndarray, np.ndarray]:
+        def __call__(self, x: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
             raise NotImplementedError
 
 
@@ -32,7 +30,9 @@ def _batched_lbfgsb(
     max_iters: int,
     max_line_search: int,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    assert x0_batched.ndim == 2
+    assert (
+        x0_batched.ndim == 2
+    ), f"The shape of x0 must be (batch_size, dim), but got {x0_batched.shape}."
     batch_size, dimension = x0_batched.shape
     assert bounds.shape == (dimension, 2)
 
@@ -41,17 +41,8 @@ def _batched_lbfgsb(
     n_iterations = [None] * batch_size
 
     def run(i: int) -> None:
-        # This wrapper will be passed to fmin_l_bfgs_b.
-        # It receives the current point `x` and additional arguments `args`.
-        def func(x: np.ndarray, *args) -> tuple[float, np.ndarray]:
-            assert x.shape == (dimension,)
-            # Pass the current point `x` and its original index `i` to the parent greenlet.
-            y, grad = greenlet.getcurrent().parent.switch((x, i))
-            assert grad.shape == (dimension,)
-            return y, grad
-
         x_opt, fval_opt, info = so.fmin_l_bfgs_b(
-            func=func,
+            func=lambda x: greenlet.getcurrent().parent.switch(x),
             x0=x0_batched[i],
             bounds=bounds,
             m=m,
@@ -66,45 +57,13 @@ def _batched_lbfgsb(
         fval_opts[i] = fval_opt
         n_iterations[i] = info["nit"]
 
-    # Collect initial requests
-    requests = []
-    greenlets = []
-    for i in range(batch_size):
-        gl = greenlet(run)
-        # The first switch starts the greenlet and passes the index `i`.
-        # It returns a tuple (x, original_index)
-        req = gl.switch(i)
-        if req is None:  # The greenlet finished without requesting evaluation.
-            continue
-        requests.append(req)
-        greenlets.append(gl)
+    greenlets = [greenlet(run) for _ in range(batch_size)]
+    x_batched = [gl.switch(i) for i, gl in enumerate(greenlets)]
 
-    while len(requests) > 0:
-        # Unzip requests into points and their original indices
-        xs, unconverged_indices = zip(*requests)
-        unconverged_indices = np.array(unconverged_indices)
-
-        # Batch evaluation
-        ys, grads = func_and_grad(
-            np.stack(xs),
-            unconverged_indices,
-        )
-        assert ys.shape == (len(xs),)
-        assert grads.shape == (len(xs), dimension)
-
-        # Distribute results and collect next requests
-        requests_next = []
-        greenlets_next = []
-        for j, gl in enumerate(greenlets):
-            # Pass the evaluation result (y, grad) to the waiting greenlet.
-            req = gl.switch((ys[j], grads[j]))
-            if req is None:  # The greenlet has finished.
-                continue
-            requests_next.append(req)
-            greenlets_next.append(gl)
-        requests = requests_next
-        greenlets = greenlets_next
-
+    while len(x_batched := [x for x in x_batched if x is not None]) > 0:
+        fvals, grads = func_and_grad(np.asarray(x_batched))
+        x_batched = [gl.switch((fvals[i].item(), grads[i])) for i, gl in enumerate(greenlets)]
+        greenlets = [gl for x, gl in zip(x_batched, greenlets) if x is not None]
     x_opts = np.array(x_opts)
     fval_opts = np.array(fval_opts)
     n_iterations = np.array(n_iterations)
@@ -133,8 +92,7 @@ def batched_lbfgsb(
         a 1D input array.
         """
         assert scaled_x.ndim == 1
-        unconverged_batch_indices = np.array([batch_index])
-        fval, grad = func_and_grad(scaled_x[None], unconverged_batch_indices)
+        fval, grad = func_and_grad(scaled_x[None])
         return fval.item(), grad.ravel()
 
     if _imports.is_successful():
