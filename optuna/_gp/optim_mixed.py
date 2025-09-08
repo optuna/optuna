@@ -80,7 +80,8 @@ def _gradient_ascent_batched(
 
     normalized_params[:, continuous_indices] = scaled_cont_x_opts * lengthscales
 
-    # If any parameter is updated, return the updated parameters and values. Otherwise, return the initial ones.
+    # If any parameter is updated, return the updated parameters and values.
+    # Otherwise, return the initial ones.
     is_updated_batch = (-neg_fval_opts > initial_fvals) & (n_iterations > 0)
     final_params = initial_params_batched.copy()
     final_params[is_updated_batch, :] = normalized_params[is_updated_batch, :]
