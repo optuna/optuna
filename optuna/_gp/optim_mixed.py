@@ -4,7 +4,6 @@ import math
 from typing import TYPE_CHECKING
 
 import numpy as np
-import torch
 
 from optuna._gp.batched_lbfgsb import batched_lbfgsb
 from optuna._gp.scipy_blas_thread_patch import single_blas_thread_if_scipy_v1_15_or_newer
@@ -13,12 +12,14 @@ from optuna.logging import get_logger
 
 if TYPE_CHECKING:
     import scipy.optimize as so
+    import torch
 
     from optuna._gp.acqf import BaseAcquisitionFunc
 else:
     from optuna import _LazyImport
 
     so = _LazyImport("scipy.optimize")
+    torch = _LazyImport("torch")
 
 _logger = get_logger(__name__)
 

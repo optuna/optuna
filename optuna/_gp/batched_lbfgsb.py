@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import numpy as np
-import scipy.optimize as so
 
 from optuna._imports import try_import
 
@@ -17,6 +16,11 @@ if TYPE_CHECKING:
     class FuncAndGrad(Protocol):
         def __call__(self, x: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
             raise NotImplementedError
+
+else:
+    from optuna import _LazyImport
+
+    so = _LazyImport("scipy.optimize")
 
 
 def _batched_lbfgsb(
