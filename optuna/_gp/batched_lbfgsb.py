@@ -73,10 +73,8 @@ def _batched_lbfgsb(
         assert grads.shape[1] == x_batched[0].shape[0]
         x_batched = [gl.switch((fvals[i].item(), grads[i])) for i, gl in enumerate(greenlets)]
         greenlets = [gl for x, gl in zip(x_batched, greenlets) if x is not None]
-    x_opts = np.array(x_opts)
-    fval_opts = np.array(fval_opts)
-    n_iterations = np.array(n_iterations)
-    return x_opts, fval_opts, n_iterations
+
+    return np.array(x_opts), np.array(fval_opts), np.array(n_iterations)
 
 
 def batched_lbfgsb(
