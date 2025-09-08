@@ -39,8 +39,7 @@ def _batched_lbfgsb(
     assert (
         x0_batched.ndim == 2
     ), f"The shape of x0 must be (batch_size, dim), but got {x0_batched.shape}."
-    batch_size, dimension = x0_batched.shape
-
+    batch_size = len(x0_batched)
     x_opts = [None] * batch_size
     fval_opts = [None] * batch_size
     n_iterations = [None] * batch_size
@@ -67,6 +66,9 @@ def _batched_lbfgsb(
 
     while len(x_batched := [x for x in x_batched if x is not None]) > 0:
         fvals, grads = func_and_grad(np.asarray(x_batched))
+        assert fvals.ndim == 1 and grads.ndim == 2
+        assert len(fvals) == len(grads) == len(x_batched)
+        assert grads.shape[1] == x_batched[0].shape[0]
         x_batched = [gl.switch((fvals[i].item(), grads[i])) for i, gl in enumerate(greenlets)]
         greenlets = [gl for x, gl in zip(x_batched, greenlets) if x is not None]
     x_opts = np.array(x_opts)
