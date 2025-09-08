@@ -28,7 +28,7 @@ else:
 def _batched_lbfgsb(
     func_and_grad: FuncAndGrad,
     x0_batched: np.ndarray,
-    bounds: np.ndarray | None,
+    bounds: list | None,
     m: int,
     factr: float,
     pgtol: float,
@@ -78,7 +78,7 @@ def _batched_lbfgsb(
 def batched_lbfgsb(
     func_and_grad: FuncAndGrad,
     x0_batched: np.ndarray,
-    bounds: np.ndarray | None = None,
+    bounds: list | None = None,
     m: int = 10,
     factr: float = 1e7,
     pgtol: float = 1e-5,
@@ -86,9 +86,7 @@ def batched_lbfgsb(
     max_iters: int = 15000,
     max_line_search: int = 20,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    def func_and_grad_1D_wrapper(
-        scaled_x: np.ndarray, batch_index: np.ndarray
-    ) -> tuple[float, np.ndarray]:
+    def func_and_grad_1D_wrapper(scaled_x: np.ndarray) -> tuple[float, np.ndarray]:
         """A wrapper for `func_and_grad` to handle 1D inputs.
 
         This is used as a fallback to sequential optimization when the batched
@@ -115,12 +113,13 @@ def batched_lbfgsb(
 
     # fallback to sequential optimization if SciPy version is not supported
     else:
-        scaled_cont_x_opts, neg_fval_opts, n_iterations = [], [], []
+        scaled_cont_x_opts = np.zeros_like(x0_batched)
+        neg_fval_opts = np.zeros(x0_batched.shape[0])
+        n_iterations = np.zeros(x0_batched.shape[0], dtype=int)
         for batch_index, x0 in enumerate(x0_batched):
             scaled_cont_x_opt, neg_fval_opt, info = so.fmin_l_bfgs_b(
                 func=func_and_grad_1D_wrapper,
                 x0=x0,
-                args=(batch_index,),
                 bounds=bounds,
                 m=m,
                 factr=factr,
@@ -129,11 +128,8 @@ def batched_lbfgsb(
                 maxiter=max_iters,
                 maxls=max_line_search,
             )
-            scaled_cont_x_opts.append(scaled_cont_x_opt)
-            neg_fval_opts.append(neg_fval_opt)
-            n_iterations.append(info["nit"])
-        scaled_cont_x_opts = np.array(scaled_cont_x_opts)
-        neg_fval_opts = np.array(neg_fval_opts)
-        n_iterations = np.array(n_iterations)
+            scaled_cont_x_opts[batch_index] = scaled_cont_x_opt
+            neg_fval_opts[batch_index] = neg_fval_opt
+            n_iterations[batch_index] = info["nit"]
 
     return scaled_cont_x_opts, neg_fval_opts, n_iterations

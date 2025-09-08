@@ -70,7 +70,7 @@ def _gradient_ascent_batched(
         scaled_cont_x_opts, neg_fval_opts, n_iterations = batched_lbfgsb.batched_lbfgsb(
             func_and_grad=negative_acqf_with_grad,  # type: ignore
             x0_batched=normalized_params[:, continuous_indices] / lengthscales,
-            bounds=np.array([(0, 1 / s) for s in lengthscales]),
+            bounds=[(0, 1 / s) for s in lengthscales],
             pgtol=math.sqrt(tol),
             max_iters=200,
         )
