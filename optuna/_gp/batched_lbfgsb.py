@@ -12,8 +12,8 @@ with try_import() as _imports:
 
 if TYPE_CHECKING:
     from typing import Protocol
-    import scipy.optimize as so
 
+    import scipy.optimize as so
 
     class FuncAndGrad(Protocol):
         def __call__(self, x: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
@@ -47,7 +47,7 @@ def _batched_lbfgsb(
 
     def run(i: int) -> None:
         x_opt, fval_opt, info = so.fmin_l_bfgs_b(
-            func=lambda x: greenlet.getcurrent().parent.switch(x), # type: ignore
+            func=lambda x: greenlet.getcurrent().parent.switch(x),  # type: ignore
             x0=x0_batched[i],
             bounds=bounds,
             m=m,
