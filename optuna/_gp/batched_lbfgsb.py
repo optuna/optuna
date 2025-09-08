@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+from typing import List
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -40,9 +42,9 @@ def _batched_lbfgsb(
         x0_batched.ndim == 2
     ), f"The shape of x0 must be (batch_size, dim), but got {x0_batched.shape}."
     batch_size = len(x0_batched)
-    x_opts = [None] * batch_size
-    fval_opts = [None] * batch_size
-    n_iterations = [None] * batch_size
+    x_opts: List[Any] = [None] * batch_size
+    fval_opts: List[Any] = [None] * batch_size
+    n_iterations: List[Any] = [None] * batch_size
 
     def run(i: int) -> None:
         x_opt, fval_opt, info = so.fmin_l_bfgs_b(
