@@ -1,9 +1,9 @@
 from __future__ import annotations
 
+from typing import Callable
 from typing import TYPE_CHECKING
 
 import numpy as np
-from typing import Callable
 
 from optuna._imports import try_import
 from optuna.logging import get_logger
