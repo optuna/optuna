@@ -229,7 +229,7 @@ def local_search_mixed_batched(
     # NOTE: Ideally, separating lengthscales should be used for the constraint functions,
     # but for simplicity, the ones from the objective function are being reused.
     # TODO(kAIto47802): Think of a better way to handle this.
-    lengthscales = acqf.length_scales[cont_inds := acqf.search_space.continuous_indices]
+    lengthscales = acqf.length_scales[(cont_inds := acqf.search_space.continuous_indices)]
     discrete_indices = acqf.search_space.discrete_indices
     choices_of_discrete_params = acqf.search_space.get_choices_of_discrete_params()
     discrete_xtols = [
@@ -238,7 +238,7 @@ def local_search_mixed_batched(
         np.min(np.diff(choices), initial=np.inf) / 4
         for choices in choices_of_discrete_params
     ]
-    best_fvals = acqf.eval_acqf_no_grad(best_xs := xs0.copy())
+    best_fvals = acqf.eval_acqf_no_grad((best_xs := xs0.copy()))
     CONTINUOUS = -1
     last_changed_dims = np.full(len(best_xs), CONTINUOUS, dtype=int)
     remaining_inds = np.arange(len(best_xs))
@@ -248,7 +248,7 @@ def local_search_mixed_batched(
         )
         last_changed_dims = np.where(updated, CONTINUOUS, last_changed_dims)
         for i, choices, xtol in zip(discrete_indices, choices_of_discrete_params, discrete_xtols):
-            last_changed_dims = last_changed_dims[~(is_converged := last_changed_dims == i)]
+            last_changed_dims = last_changed_dims[~((is_converged := last_changed_dims) == i)]
             remaining_inds = remaining_inds[~is_converged]
             if remaining_inds.size == 0:
                 return best_xs, best_fvals
@@ -260,7 +260,7 @@ def local_search_mixed_batched(
             last_changed_dims = np.where(updated, i, last_changed_dims)
 
         # Parameters not changed from the beginning or last changed dimension is continuous.
-        remaining_inds = remaining_inds[~(is_converged := last_changed_dims == CONTINUOUS)]
+        remaining_inds = remaining_inds[~((is_converged := last_changed_dims) == CONTINUOUS)]
         last_changed_dims = last_changed_dims[~is_converged]
         if remaining_inds.size == 0:
             return best_xs, best_fvals
