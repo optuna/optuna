@@ -67,7 +67,7 @@ def _gradient_ascent_batched(
         return neg_fvals, grads[:, continuous_indices] * lengthscales
 
     with single_blas_thread_if_scipy_v1_15_or_newer():
-        scaled_cont_x_opts, neg_fval_opts, n_iterations = batched_lbfgsb.batched_lbfgsb(
+        scaled_cont_xs_opt, neg_fvals_opt, n_iterations = batched_lbfgsb.batched_lbfgsb(
             func_and_grad=negative_acqf_with_grad,
             x0_batched=normalized_params[:, continuous_indices] / lengthscales,
             bounds=[(0, 1 / s) for s in lengthscales],
@@ -75,14 +75,15 @@ def _gradient_ascent_batched(
             max_iters=200,
         )
 
-    normalized_params[:, continuous_indices] = scaled_cont_x_opts * lengthscales
+    normalized_params[:, continuous_indices] = scaled_cont_xs_opt * lengthscales
 
     # If any parameter is updated, return the updated parameters and values.
     # Otherwise, return the initial ones.
-    is_updated_batch = (-neg_fval_opts > initial_fvals) & (n_iterations > 0)
+    fvals_opt = -neg_fvals_opt
+    is_updated_batch = (fvals_opt > initial_fvals) & (n_iterations > 0)
     return (
         np.where(is_updated_batch, normalized_params, initial_params_batched),
-        np.where(is_updated_batch, -neg_fval_opts, initial_fvals),
+        np.where(is_updated_batch, fvals_opt, initial_fvals),
         is_updated_batch,
     )
 
