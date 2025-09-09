@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import numpy as np
+from typing import Callable
 
 from optuna._imports import try_import
 from optuna.logging import get_logger
@@ -12,13 +13,7 @@ with try_import() as _imports:
     from greenlet import greenlet
 
 if TYPE_CHECKING:
-    from typing import Protocol
-
     import scipy.optimize as so
-
-    class FuncAndGrad(Protocol):
-        def __call__(self, x: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-            raise NotImplementedError
 
 else:
     from optuna import _LazyImport
@@ -35,7 +30,7 @@ if not _imports.is_successful():
 
 
 def _batched_lbfgsb(
-    func_and_grad: FuncAndGrad,
+    func_and_grad: Callable[[np.ndarray], tuple[np.ndarray, np.ndarray]],
     x0_batched: np.ndarray,
     bounds: list[tuple[float, float]] | None,
     m: int,
@@ -85,7 +80,7 @@ def _batched_lbfgsb(
 
 
 def batched_lbfgsb(
-    func_and_grad: FuncAndGrad,
+    func_and_grad: Callable[[np.ndarray], tuple[np.ndarray, np.ndarray]],
     x0_batched: np.ndarray,
     bounds: list[tuple[float, float]] | None = None,
     m: int = 10,
