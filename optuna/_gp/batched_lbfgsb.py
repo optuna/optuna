@@ -71,9 +71,9 @@ def _batched_lbfgsb(
         assert fvals.ndim == 1 and grads.ndim == 2
         assert len(fvals) == len(grads) == len(x_batched)
         assert grads.shape[1] == x_batched[0].shape[0]
-        # Workaround for older SciPy (e.g., in Python 3.8): Explicitly cast gradient to float64.
+        # Explicitly copy gradient for older SciPy (e.g., in Python 3.8)
         x_batched = [
-            gl.switch((fvals[i].item(), grads[i].astype(np.float64)))
+            gl.switch((fvals[i].item(), grads[i].copy()))  # type: ignore
             for i, gl in enumerate(greenlets)
         ]
         greenlets = [gl for x, gl in zip(x_batched, greenlets) if x is not None]
