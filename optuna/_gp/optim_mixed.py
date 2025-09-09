@@ -81,8 +81,9 @@ def _gradient_ascent_batched(
     # Otherwise, return the initial ones.
     fvals_opt = -neg_fvals_opt
     is_updated_batch = (fvals_opt > initial_fvals) & (n_iterations > 0)
+
     return (
-        np.where(is_updated_batch, normalized_params, initial_params_batched),
+        np.where(is_updated_batch[:, None], normalized_params, initial_params_batched),
         np.where(is_updated_batch, fvals_opt, initial_fvals),
         is_updated_batch,
     )
