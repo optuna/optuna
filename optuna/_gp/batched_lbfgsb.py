@@ -47,8 +47,13 @@ def _batched_lbfgsb(
     n_iterations: List[Any] = [None] * batch_size
 
     def run(i: int) -> None:
+        def _func_and_grad(x: np.ndarray) -> tuple[float, np.ndarray]:
+            fval, grad = greenlet.getcurrent().parent.switch(x)
+            # NOTE(nabenabe): copy is necessary to convert grad to writable.
+            return float(fval), grad.copy()
+
         x_opt, fval_opt, info = so.fmin_l_bfgs_b(
-            func=lambda x: greenlet.getcurrent().parent.switch(x),  # type: ignore
+            func=_func_and_grad,
             x0=x0_batched[i],
             bounds=bounds,
             m=m,
@@ -68,14 +73,7 @@ def _batched_lbfgsb(
 
     while len(x_batched := [x for x in x_batched if x is not None]) > 0:
         fvals, grads = func_and_grad(np.asarray(x_batched))
-        assert fvals.ndim == 1 and grads.ndim == 2
-        assert len(fvals) == len(grads) == len(x_batched)
-        assert grads.shape[1] == x_batched[0].shape[0]
-        # Explicitly copy gradient for older SciPy (e.g., in Python 3.8)
-        x_batched = [
-            gl.switch((fvals[i].item(), grads[i].copy()))  # type: ignore
-            for i, gl in enumerate(greenlets)
-        ]
+        x_batched = [gl.switch((fvals[i], grads[i])) for i, gl in enumerate(greenlets)]
         greenlets = [gl for x, gl in zip(x_batched, greenlets) if x is not None]
 
     return np.array(x_opts), np.array(fval_opts), np.array(n_iterations)
