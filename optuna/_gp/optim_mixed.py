@@ -166,7 +166,7 @@ def _discrete_line_search(
         method="brent",
         tol=xtol,
     )
-    opt_idx = find_nearest_index(res.x)  # type: ignore
+    opt_idx = find_nearest_index(res.x)
     fval_opt = -negative_acqf_with_cache(opt_idx)
 
     # We check both conditions because of numerical errors.
