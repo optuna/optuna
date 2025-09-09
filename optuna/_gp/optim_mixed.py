@@ -80,11 +80,11 @@ def _gradient_ascent_batched(
     # If any parameter is updated, return the updated parameters and values.
     # Otherwise, return the initial ones.
     is_updated_batch = (-neg_fval_opts > initial_fvals) & (n_iterations > 0)
-    final_params = initial_params_batched.copy()
-    final_params[is_updated_batch, :] = normalized_params[is_updated_batch, :]
-    final_fvals = initial_fvals.copy()
-    final_fvals[is_updated_batch] = -neg_fval_opts[is_updated_batch]
-    return final_params, final_fvals, is_updated_batch
+    return (
+        np.where(is_updated_batch, normalized_params, initial_params_batched),
+        np.where(is_updated_batch, -neg_fval_opts, initial_fvals),
+        is_updated_batch,
+    )
 
 
 def _exhaustive_search(
