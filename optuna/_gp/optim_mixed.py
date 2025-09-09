@@ -222,100 +222,51 @@ def _local_search_discrete_batched(
 
 
 def local_search_mixed_batched(
-    acqf: BaseAcquisitionFunc,
-    initial_normalized_params_batched: np.ndarray,
-    *,
-    tol: float = 1e-4,
-    max_iter: int = 100,
+    acqf: BaseAcquisitionFunc, xs0: np.ndarray, *, tol: float = 1e-4, max_iter: int = 100
 ) -> tuple[np.ndarray, np.ndarray]:
-    continuous_indices = acqf.search_space.continuous_indices
-
-    # This is a technique for speeding up optimization.
-    # We use an isotropic kernel, so scaling the gradient will make
-    # the hessian better-conditioned.
+    # This is a technique for speeding up optimization. We use an isotropic kernel, so scaling the
+    # gradient will make the hessian better-conditioned.
     # NOTE: Ideally, separating lengthscales should be used for the constraint functions,
     # but for simplicity, the ones from the objective function are being reused.
     # TODO(kAIto47802): Think of a better way to handle this.
-    lengthscales = acqf.length_scales[continuous_indices]
-
+    lengthscales = acqf.length_scales[cont_inds := acqf.search_space.continuous_indices]
+    discrete_indices = acqf.search_space.discrete_indices
     choices_of_discrete_params = acqf.search_space.get_choices_of_discrete_params()
-
     discrete_xtols = [
         # Terminate discrete optimizations once the change in x becomes smaller than this.
         # Basically, if the change is smaller than min(dx) / 4, it is useless to see more details.
         np.min(np.diff(choices), initial=np.inf) / 4
         for choices in choices_of_discrete_params
     ]
-
-    best_normalized_params_batched = initial_normalized_params_batched.copy()
-    best_fvals = acqf.eval_acqf_no_grad(best_normalized_params_batched)
-
-    batch_size = len(best_normalized_params_batched)
-    INITIALIZED = -1
-    CONTINUOUS = -2
-    last_changed_params = np.full(batch_size, INITIALIZED)
-    is_converged_batch = np.zeros(batch_size, dtype=bool)
+    best_fvals = acqf.eval_acqf_no_grad(best_xs := xs0.copy())
+    CONTINUOUS = -1
+    last_changed_dims = np.full(len(best_xs), CONTINUOUS, dtype=int)
+    remaining_inds = np.arange(len(best_xs))
     for _ in range(max_iter):
-        is_converged_batch[last_changed_params == CONTINUOUS] = True
-        if is_converged_batch.all():
-            return best_normalized_params_batched, best_fvals
-
-        (params, fvals, updated) = _gradient_ascent_batched(
-            acqf,
-            best_normalized_params_batched[~is_converged_batch],
-            best_fvals[~is_converged_batch],
-            continuous_indices,
-            lengthscales,
-            tol,
+        best_xs[remaining_inds], best_fvals[remaining_inds], updated = _gradient_ascent_batched(
+            acqf, best_xs[remaining_inds], best_fvals[remaining_inds], cont_inds, lengthscales, tol
         )
-
-        assert (
-            len(params)
-            == len(fvals)
-            == len(updated)
-            == len(best_normalized_params_batched) - is_converged_batch.sum()
-        )
-
-        best_normalized_params_batched[~is_converged_batch] = params
-        best_fvals[~is_converged_batch] = fvals
-        last_changed_params[~is_converged_batch] = np.where(
-            updated, CONTINUOUS, last_changed_params[~is_converged_batch]
-        )
-
-        for i, choices, xtol in zip(
-            acqf.search_space.discrete_indices, choices_of_discrete_params, discrete_xtols
-        ):
-            is_converged_batch[last_changed_params == i] = True
-            if is_converged_batch.all():
-                return best_normalized_params_batched, best_fvals
-            (params, fvals, updated) = _local_search_discrete_batched(
-                acqf,
-                best_normalized_params_batched[~is_converged_batch],
-                best_fvals[~is_converged_batch],
-                i,
-                choices,
-                xtol,
+        last_changed_dims = np.where(updated, CONTINUOUS, last_changed_dims)
+        for i, choices, xtol in zip(discrete_indices, choices_of_discrete_params, discrete_xtols):
+            last_changed_dims = last_changed_dims[~(is_converged := last_changed_dims == i)]
+            remaining_inds = remaining_inds[~is_converged]
+            if remaining_inds.size == 0:
+                return best_xs, best_fvals
+            best_xs[remaining_inds], best_fvals[remaining_inds], updated = (
+                _local_search_discrete_batched(
+                    acqf, best_xs[remaining_inds], best_fvals[remaining_inds], i, choices, xtol
+                )
             )
-            assert (
-                len(params)
-                == len(fvals)
-                == len(updated)
-                == len(best_normalized_params_batched) - is_converged_batch.sum()
-            )
+            last_changed_dims = np.where(updated, i, last_changed_dims)
 
-            best_normalized_params_batched[~is_converged_batch] = params
-            best_fvals[~is_converged_batch] = fvals
-            last_changed_params[~is_converged_batch] = np.where(
-                updated, i, last_changed_params[~is_converged_batch]
-            )
-
-        # Parameters not changed from the beginning.
-        is_converged_batch[last_changed_params == INITIALIZED] = True
-        if is_converged_batch.all():
-            return best_normalized_params_batched, best_fvals
+        # Parameters not changed from the beginning or last changed dimension is continuous.
+        remaining_inds = remaining_inds[~(is_converged := last_changed_dims == CONTINUOUS)]
+        last_changed_dims = last_changed_dims[~is_converged]
+        if remaining_inds.size == 0:
+            return best_xs, best_fvals
     else:
         _logger.warning("local_search_mixed: Local search did not converge.")
-    return best_normalized_params_batched, best_fvals
+    return best_xs, best_fvals
 
 
 def optimize_acqf_mixed(
