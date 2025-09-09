@@ -243,12 +243,16 @@ def local_search_mixed_batched(
     last_changed_dims = np.full(len(best_xs), CONTINUOUS, dtype=int)
     remaining_inds = np.arange(len(best_xs))
     for _ in range(max_iter):
+        last_changed_dims = last_changed_dims[~(is_converged := last_changed_dims == CONTINUOUS)]
+        remaining_inds = remaining_inds[~is_converged]
+        if remaining_inds.size == 0:
+            return best_xs, best_fvals
         best_xs[remaining_inds], best_fvals[remaining_inds], updated = _gradient_ascent_batched(
             acqf, best_xs[remaining_inds], best_fvals[remaining_inds], cont_inds, lengthscales, tol
         )
         last_changed_dims = np.where(updated, CONTINUOUS, last_changed_dims)
         for i, choices, xtol in zip(discrete_indices, choices_of_discrete_params, discrete_xtols):
-            last_changed_dims = last_changed_dims[~((is_converged := last_changed_dims) == i)]
+            last_changed_dims = last_changed_dims[~(is_converged := last_changed_dims == i)]
             remaining_inds = remaining_inds[~is_converged]
             if remaining_inds.size == 0:
                 return best_xs, best_fvals
