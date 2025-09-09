@@ -204,6 +204,7 @@ def _local_search_discrete_batched(
     choices: np.ndarray,
     xtol: float,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    # TODO(Kaichi-Irie): Actually make it batched.
     best_normalized_params_batched = initial_params_batched.copy()
     best_fvals = initial_fvals.copy()
 
