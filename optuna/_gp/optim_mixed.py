@@ -207,7 +207,7 @@ def _local_search_discrete_batched(
 
     is_updated_batch = np.zeros(len(initial_fvals), dtype=bool)
     for batch, normalized_params in enumerate(initial_params_batched):
-        (best_normalized_params, best_fval, updated) = _local_search_discrete(
+        best_normalized_params, best_fval, updated = _local_search_discrete(
             acqf, normalized_params, best_fvals[batch], param_idx, choices, xtol
         )
         best_normalized_params_batched[batch] = best_normalized_params
