@@ -243,10 +243,6 @@ def local_search_mixed_batched(
     last_changed_dims = np.full(len(best_xs), CONTINUOUS, dtype=int)
     remaining_inds = np.arange(len(best_xs))
     for _ in range(max_iter):
-        last_changed_dims = last_changed_dims[~(is_converged := last_changed_dims == CONTINUOUS)]
-        remaining_inds = remaining_inds[~is_converged]
-        if remaining_inds.size == 0:
-            return best_xs, best_fvals
         best_xs[remaining_inds], best_fvals[remaining_inds], updated = _gradient_ascent_batched(
             acqf, best_xs[remaining_inds], best_fvals[remaining_inds], cont_inds, lengthscales, tol
         )
@@ -264,7 +260,7 @@ def local_search_mixed_batched(
             last_changed_dims = np.where(updated, i, last_changed_dims)
 
         # Parameters not changed from the beginning or last changed dimension is continuous.
-        remaining_inds = remaining_inds[~((is_converged := last_changed_dims) == CONTINUOUS)]
+        remaining_inds = remaining_inds[~(is_converged := last_changed_dims == CONTINUOUS)]
         last_changed_dims = last_changed_dims[~is_converged]
         if remaining_inds.size == 0:
             return best_xs, best_fvals
@@ -282,7 +278,6 @@ def optimize_acqf_mixed(
     tol: float = 1e-4,
     rng: np.random.RandomState | None = None,
 ) -> tuple[np.ndarray, float]:
-
     rng = rng or np.random.RandomState()
 
     if warmstart_normalized_params_array is None:
