@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-from typing import Any
-from typing import List
 from typing import TYPE_CHECKING
 
 import numpy as np
 
 from optuna._imports import try_import
+from optuna.logging import get_logger
 
 
 with try_import() as _imports:
@@ -27,10 +26,18 @@ else:
     so = _LazyImport("scipy.optimize")
 
 
+if not _imports.is_successful():
+    _logger = get_logger(__name__)
+    _logger.warning(
+        "The 'greenlet' package is unavailable, falling back to sequential L-BFGS-B optimization. "
+        "This may lead to slower suggestions."
+    )
+
+
 def _batched_lbfgsb(
     func_and_grad: FuncAndGrad,
     x0_batched: np.ndarray,
-    bounds: list | None,
+    bounds: list[tuple[float, float]] | None,
     m: int,
     factr: float,
     pgtol: float,
@@ -42,9 +49,9 @@ def _batched_lbfgsb(
         x0_batched.ndim == 2
     ), f"The shape of x0 must be (batch_size, dim), but got {x0_batched.shape}."
     batch_size = len(x0_batched)
-    x_opts: List[Any] = [None] * batch_size
-    fval_opts: List[Any] = [None] * batch_size
-    n_iterations: List[Any] = [None] * batch_size
+    xs_opt = np.empty_like(x0_batched)
+    fvals_opt = np.empty(batch_size, dtype=float)
+    n_iterations = np.empty(batch_size, dtype=int)
 
     def run(i: int) -> None:
         def _func_and_grad(x: np.ndarray) -> tuple[float, np.ndarray]:
@@ -62,27 +69,25 @@ def _batched_lbfgsb(
             maxfun=max_evals,
             maxiter=max_iters,
             maxls=max_line_search,
-            iprint=-1,
         )
-        x_opts[i] = x_opt
-        fval_opts[i] = fval_opt
+        xs_opt[i] = x_opt
+        fvals_opt[i] = fval_opt
         n_iterations[i] = info["nit"]
 
     greenlets = [greenlet(run) for _ in range(batch_size)]
     x_batched = [gl.switch(i) for i, gl in enumerate(greenlets)]
-
     while len(x_batched := [x for x in x_batched if x is not None]) > 0:
         fvals, grads = func_and_grad(np.asarray(x_batched))
         x_batched = [gl.switch((fvals[i], grads[i])) for i, gl in enumerate(greenlets)]
         greenlets = [gl for x, gl in zip(x_batched, greenlets) if x is not None]
 
-    return np.array(x_opts), np.array(fval_opts), np.array(n_iterations)
+    return xs_opt, fvals_opt, n_iterations
 
 
 def batched_lbfgsb(
     func_and_grad: FuncAndGrad,
     x0_batched: np.ndarray,
-    bounds: list | None = None,
+    bounds: list[tuple[float, float]] | None = None,
     m: int = 10,
     factr: float = 1e7,
     pgtol: float = 1e-5,
@@ -102,8 +107,8 @@ def batched_lbfgsb(
         fval, grad = func_and_grad(scaled_x[None])
         return fval.item(), grad.ravel()
 
-    if _imports.is_successful():
-        scaled_cont_x_opts, neg_fval_opts, n_iterations = _batched_lbfgsb(
+    if _imports.is_successful() and len(x0_batched) > 1:
+        xs_opt, fvals_opt, n_iterations = _batched_lbfgsb(
             func_and_grad=func_and_grad,
             x0_batched=x0_batched,
             bounds=bounds,
@@ -115,13 +120,13 @@ def batched_lbfgsb(
             max_line_search=max_line_search,
         )
 
-    # fallback to sequential optimization if SciPy version is not supported
+    # fall back to sequential optimization if greenlet is not available.
     else:
-        scaled_cont_x_opts = np.zeros_like(x0_batched)
-        neg_fval_opts = np.zeros(x0_batched.shape[0])
-        n_iterations = np.zeros(x0_batched.shape[0], dtype=int)
-        for batch_index, x0 in enumerate(x0_batched):
-            scaled_cont_x_opt, neg_fval_opt, info = so.fmin_l_bfgs_b(
+        xs_opt = np.empty_like(x0_batched)
+        fvals_opt = np.empty(x0_batched.shape[0])
+        n_iterations = np.empty(x0_batched.shape[0], dtype=int)
+        for i, x0 in enumerate(x0_batched):
+            xs_opt[i], fvals_opt[i], info = so.fmin_l_bfgs_b(
                 func=func_and_grad_1D_wrapper,
                 x0=x0,
                 bounds=bounds,
@@ -132,8 +137,6 @@ def batched_lbfgsb(
                 maxiter=max_iters,
                 maxls=max_line_search,
             )
-            scaled_cont_x_opts[batch_index] = scaled_cont_x_opt
-            neg_fval_opts[batch_index] = neg_fval_opt
-            n_iterations[batch_index] = info["nit"]
+            n_iterations[i] = info["nit"]
 
-    return scaled_cont_x_opts, neg_fval_opts, n_iterations
+    return xs_opt, fvals_opt, n_iterations
