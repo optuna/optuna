@@ -245,9 +245,7 @@ def local_search_mixed_batched(
     ]
 
     best_normalized_params_batched = initial_normalized_params_batched.copy()
-    best_fvals = np.array(
-        [float(acqf.eval_acqf_no_grad(p)) for p in best_normalized_params_batched]
-    )
+    best_fvals = acqf.eval_acqf_no_grad(best_normalized_params_batched)
 
     batch_size = len(best_normalized_params_batched)
     INITIALIZED = -1
