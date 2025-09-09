@@ -91,18 +91,6 @@ def batched_lbfgsb(
     max_line_search: int = 20,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
 
-    def func_and_grad_1D_wrapper(x: np.ndarray) -> tuple[float, np.ndarray]:
-        """A wrapper for `func_and_grad` to handle 1D inputs.
-
-        This is used as a fallback to sequential optimization when the batched
-        L-BFGS-B is not available. It adapts the batched `func_and_grad` for
-        use with optimizers like `scipy.optimize.fmin_l_bfgs_b` that expect
-        a 1D input array.
-        """
-        assert x.ndim == 1
-        fval, grad = func_and_grad(x[None])
-        return fval.item(), grad.ravel()
-
     if _imports.is_successful() and len(x0_batched) > 1:
         xs_opt, fvals_opt, n_iterations = _batched_lbfgsb(
             func_and_grad=func_and_grad,
@@ -123,7 +111,7 @@ def batched_lbfgsb(
         n_iterations = np.empty(x0_batched.shape[0], dtype=int)
         for i, x0 in enumerate(x0_batched):
             xs_opt[i], fvals_opt[i], info = so.fmin_l_bfgs_b(
-                func=func_and_grad_1D_wrapper,
+                func=func_and_grad,
                 x0=x0,
                 bounds=bounds,
                 m=m,
