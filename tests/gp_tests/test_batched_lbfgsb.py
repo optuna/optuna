@@ -1,5 +1,8 @@
+import importlib
+import sys
 from typing import Any
 from typing import Callable
+from unittest.mock import MagicMock
 
 import numpy as np
 import pytest
@@ -96,3 +99,26 @@ def test_batched_lbfgsb_without_bounds(
     kwargs_ours.update(bounds=bounds)
     kwargs_scipy.update(bounds=bounds)
     _verify_results(X0, func_and_grad, kwargs_ours, kwargs_scipy)
+
+
+def test_behavior_with_greenlet(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setitem(sys.modules, "greenlet", MagicMock())
+    import optuna._gp.batched_lbfgsb as my_module
+
+    importlib.reload(my_module)
+    assert my_module._imports.is_successful() is True
+
+
+def test_behavior_without_greenlet(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setitem(sys.modules, "greenlet", None)
+    import optuna._gp.batched_lbfgsb as my_module
+
+    importlib.reload(my_module)
+    assert my_module._imports.is_successful() is False
+
+    # See if optimization still works without greenlet
+    import optuna
+
+    sampler = optuna.samplers.GPSampler(seed=42)
+    study = optuna.create_study(sampler=sampler)
+    study.optimize(lambda trial: trial.suggest_float("x", -10, 10) ** 2, n_trials=15)
