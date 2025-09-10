@@ -50,7 +50,7 @@ def _gradient_ascent_batched(
     As the domain of `x` is [0, 1], that of `z` becomes [0, 1/l].
     """
     if len(continuous_indices) == 0:
-        return initial_params_batched, initial_fvals, np.array([False] * len(initial_fvals))
+        return initial_params_batched, initial_fvals, np.zeros(len(initial_fvals), dtype=bool)
     normalized_params = initial_params_batched.copy()
 
     def negative_acqf_with_grad(scaled_x: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
