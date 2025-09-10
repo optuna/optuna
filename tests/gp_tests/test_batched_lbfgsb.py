@@ -76,7 +76,9 @@ def test_batched_lbfgsb(func_and_grad: Callable, kwargs_ours: Any, kwargs_scipy:
 
 
 @pytest.mark.parametrize("func_and_grad,kwargs_ours,kwargs_scipy", test_params)
-@pytest.mark.parametrize("lower_bound,upper_bound", [(-np.inf, None), (None, np.inf), (-np.inf, np.inf), (None, None)])
+@pytest.mark.parametrize(
+    "lower_bound,upper_bound", [(-np.inf, None), (None, np.inf), (-np.inf, np.inf), (None, None)]
+)
 def test_batched_lbfgsb_without_bounds(
     func_and_grad: Callable,
     kwargs_ours: Any,
