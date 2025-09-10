@@ -50,8 +50,8 @@ def _verify_results(
         fvals_opt2.append(fval.item())
         n_iters2.append(info["nit"])
 
-    assert np.allclose(xs_opt1, np.array(xs_opt2))
-    assert np.allclose(fvals_opt1, np.array(fvals_opt2))
+    assert np.all(n_iters1 == np.array(n_iters2))
+    assert np.all(fvals_opt1 == np.array(fvals_opt2))
     assert np.all(xs_opt1 == np.array(xs_opt2))
 
 
