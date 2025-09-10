@@ -540,11 +540,9 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         if template_trial is not None:
             if template_trial.values is not None and len(template_trial.values) > 1:
                 for objective, value in enumerate(template_trial.values):
-                    self._set_trial_value_without_commit(session, trial.trial_id, objective, value)
+                    self._set_trial_value_without_commit(session, trial, objective, value)
             elif template_trial.value is not None:
-                self._set_trial_value_without_commit(
-                    session, trial.trial_id, 0, template_trial.value
-                )
+                self._set_trial_value_without_commit(session, trial, 0, template_trial.value)
 
             for param_name, param_value in template_trial.params.items():
                 distribution = template_trial.distributions[param_name]
@@ -627,7 +625,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
 
                 if values is not None:
                     for objective, v in enumerate(values):
-                        self._set_trial_value_without_commit(session, trial_id, objective, v)
+                        self._set_trial_value_without_commit(session, trial, objective, v)
 
                 if state == TrialState.RUNNING and trial.state != TrialState.WAITING:
                     return False
@@ -644,16 +642,22 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         return True
 
     def _set_trial_value_without_commit(
-        self, session: "sqlalchemy_orm.Session", trial_id: int, objective: int, value: float
+        self,
+        session: "sqlalchemy_orm.Session",
+        trial: models.TrialModel,
+        objective: int,
+        value: float,
     ) -> None:
-        trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
-        self.check_trial_is_updatable(trial_id, trial.state)
+        self.check_trial_is_updatable(trial.trial_id, trial.state)
         stored_value, value_type = models.TrialValueModel.value_to_stored_repr(value)
 
         trial_value = models.TrialValueModel.find_by_trial_and_objective(trial, objective, session)
         if trial_value is None:
             trial_value = models.TrialValueModel(
-                trial_id=trial_id, objective=objective, value=stored_value, value_type=value_type
+                trial_id=trial.trial_id,
+                objective=objective,
+                value=stored_value,
+                value_type=value_type,
             )
             session.add(trial_value)
         else:
