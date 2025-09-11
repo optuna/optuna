@@ -23,7 +23,9 @@ def rastrigin_and_grad(x: np.ndarray, batch_inds: np.ndarray) -> tuple[np.ndarra
     return fval, grad
 
 
-def styblinski_tang_and_grad(x: np.ndarray, batch_inds: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+def styblinski_tang_and_grad(
+    x: np.ndarray, batch_inds: np.ndarray
+) -> tuple[np.ndarray, np.ndarray]:
     # Styblinski-Tang function, which has multiple local minima.
     if x.ndim == 1:
         x = x[None]
@@ -51,7 +53,9 @@ def _verify_results(
     n_iters2 = []
     for x0 in X0:
         batch_indices = np.array([])
-        x_opt, fval, info = fmin_l_bfgs_b(func=lambda x: func_and_grad(x, batch_indices), x0=x0, **kwargs_scipy)
+        x_opt, fval, info = fmin_l_bfgs_b(
+            func=lambda x: func_and_grad(x, batch_indices), x0=x0, **kwargs_scipy
+        )
         xs_opt2.append(x_opt)
         fvals_opt2.append(float(fval))
         n_iters2.append(info["nit"])
@@ -103,6 +107,7 @@ def test_batched_lbfgsb_without_bounds(
     kwargs_scipy.update(bounds=bounds)
     _verify_results(X0, func_and_grad, kwargs_ours, kwargs_scipy)
 
+
 @pytest.mark.parametrize("func_and_grad,kwargs_ours,kwargs_scipy", test_params)
 def test_batched_lbfgsb_without_greenlet(
     monkeypatch: pytest.MonkeyPatch, func_and_grad: Callable, kwargs_ours: Any, kwargs_scipy: Any
@@ -127,7 +132,9 @@ def test_batched_lbfgsb_without_greenlet(
     n_iters2 = []
     for x0 in X0:
         batch_indices = np.array([])
-        x_opt, fval, info = fmin_l_bfgs_b(func_and_grad, x0=x0,args=(batch_indices,),**kwargs_scipy)
+        x_opt, fval, info = fmin_l_bfgs_b(
+            func_and_grad, x0=x0, args=(batch_indices,), **kwargs_scipy
+        )
         xs_opt2.append(x_opt)
         fvals_opt2.append(float(fval))
         n_iters2.append(info["nit"])
@@ -135,6 +142,7 @@ def test_batched_lbfgsb_without_greenlet(
     assert np.all(n_iters1 == np.array(n_iters2))
     assert np.all(fvals_opt1 == np.array(fvals_opt2))
     assert np.all(xs_opt1 == np.array(xs_opt2))
+
 
 def test_behavior_with_greenlet(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setitem(sys.modules, "greenlet", MagicMock())
