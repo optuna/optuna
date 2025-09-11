@@ -99,6 +99,37 @@ def test_batched_lbfgsb_without_bounds(
     kwargs_scipy.update(bounds=bounds)
     _verify_results(X0, func_and_grad, kwargs_ours, kwargs_scipy)
 
+@pytest.mark.parametrize("func_and_grad,kwargs_ours,kwargs_scipy", test_params)
+def test_batched_lbfgsb_without_greenlet(
+    monkeypatch: pytest.MonkeyPatch, func_and_grad: Callable, kwargs_ours: Any, kwargs_scipy: Any
+) -> None:
+    monkeypatch.setitem(sys.modules, "greenlet", None)
+    import optuna._gp.batched_lbfgsb as my_module
+
+    importlib.reload(my_module)
+    assert my_module._imports.is_successful() is False
+
+    dim = 10
+    n_localopts = 10
+    X0, bounds = X0_and_bounds(dim=dim, n_localopts=n_localopts)
+    kwargs_ours.update(bounds=bounds)
+    kwargs_scipy.update(bounds=bounds)
+
+    xs_opt1, fvals_opt1, n_iters1 = my_module.batched_lbfgsb(
+        func_and_grad=func_and_grad, x0_batched=X0, **kwargs_ours
+    )
+    xs_opt2 = []
+    fvals_opt2 = []
+    n_iters2 = []
+    for x0 in X0:
+        x_opt, fval, info = fmin_l_bfgs_b(func_and_grad, x0=x0, **kwargs_scipy)
+        xs_opt2.append(x_opt)
+        fvals_opt2.append(fval.item())
+        n_iters2.append(info["nit"])
+
+    assert np.all(n_iters1 == np.array(n_iters2))
+    assert np.all(fvals_opt1 == np.array(fvals_opt2))
+    assert np.all(xs_opt1 == np.array(xs_opt2))
 
 def test_behavior_with_greenlet(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setitem(sys.modules, "greenlet", MagicMock())
