@@ -125,7 +125,7 @@ def batched_lbfgsb(
         for i, x0 in enumerate(x0_batched):
             batch_indices = np.array([i])
             xs_opt[i], fvals_opt[i], info = so.fmin_l_bfgs_b(
-                func=lambda x: func_and_grad(x, batch_indices),  # type: ignore[return]
+                func=lambda x: func_and_grad(x, batch_indices),
                 x0=x0,
                 bounds=bounds,
                 m=m,
