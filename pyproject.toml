@@ -91,6 +91,7 @@ optional = [
   "scikit-learn>=0.24.2",  # optuna/importance.
   "scipy",  # optuna/_gp.
   "torch",  # optuna/_gp.
+  "greenlet",  # optuna/_gp. necessary for faster gp.
   "grpcio",  # optuna/storages/_grpc.
   "protobuf>=5.28.1",  # optuna/storages/_grpc.
 ]
@@ -103,6 +104,7 @@ test = [
   "pytest-xdist",
   "scipy>=1.9.2",
   "torch",  # optuna/_gp.
+  "greenlet",  # optuna/_gp.
   "grpcio",  # optuna/storages/_grpc.
   "protobuf>=5.28.1",  # optuna/storages/_grpc.
 ]
