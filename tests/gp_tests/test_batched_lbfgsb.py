@@ -11,7 +11,7 @@ from scipy.optimize import fmin_l_bfgs_b
 from optuna._gp.batched_lbfgsb import batched_lbfgsb
 
 
-def rastrigin_and_grad(x: np.ndarray, batch_indices: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+def rastrigin_and_grad(x: np.ndarray, batch_inds: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     if x.ndim == 1:
         x = x[None]
     A = 10.0
@@ -23,9 +23,8 @@ def rastrigin_and_grad(x: np.ndarray, batch_indices: np.ndarray) -> tuple[np.nda
     return fval, grad
 
 
-def styblinski_tang_and_grad(x: np.ndarray, batch_indices: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+def styblinski_tang_and_grad(x: np.ndarray, batch_inds: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     # Styblinski-Tang function, which has multiple local minima.
-    # Global minimum is at f(-2.903534), where f(-2.903534) = -39.16599 * dim
     if x.ndim == 1:
         x = x[None]
     fval = np.sum(x**4 - 16 * x**2 + 5 * x, axis=-1) / 2
@@ -52,7 +51,7 @@ def _verify_results(
     n_iters2 = []
     for x0 in X0:
         batch_indices = np.array([])
-        x_opt, fval, info = fmin_l_bfgs_b(func_and_grad,x0=x0, args=(batch_indices,), **kwargs_scipy)
+        x_opt, fval, info = fmin_l_bfgs_b(func=lambda x: func_and_grad(x, batch_indices), x0=x0, **kwargs_scipy)
         xs_opt2.append(x_opt)
         fvals_opt2.append(float(fval))
         n_iters2.append(info["nit"])
@@ -112,7 +111,7 @@ def test_batched_lbfgsb_without_greenlet(
     import optuna._gp.batched_lbfgsb as my_module
 
     importlib.reload(my_module)
-    assert my_module._imports.is_successful() is False
+    assert my_module._greenlet_imports.is_successful() is False
 
     dim = 10
     n_localopts = 10
@@ -142,7 +141,7 @@ def test_behavior_with_greenlet(monkeypatch: pytest.MonkeyPatch) -> None:
     import optuna._gp.batched_lbfgsb as my_module
 
     importlib.reload(my_module)
-    assert my_module._imports.is_successful() is True
+    assert my_module._greenlet_imports.is_successful() is True
 
 
 def test_behavior_without_greenlet(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -150,7 +149,7 @@ def test_behavior_without_greenlet(monkeypatch: pytest.MonkeyPatch) -> None:
     import optuna._gp.batched_lbfgsb as my_module
 
     importlib.reload(my_module)
-    assert my_module._imports.is_successful() is False
+    assert my_module._greenlet_imports.is_successful() is False
 
     # See if optimization still works without greenlet
     import optuna
