@@ -76,7 +76,7 @@ def _batched_lbfgsb(
     x_batched = [gl.switch(i) for i, gl in enumerate(greenlets)]
 
     while np.any(is_remaining_batch):
-        remaining_batch_indices = np.where(is_remaining_batch)[0]
+        remaining_batch_indices = np.nonzero(is_remaining_batch)[0]
         fvals, grads = func_and_grad(np.asarray(x_batched), np.asarray(remaining_batch_indices))
 
         x_batched = []
@@ -125,8 +125,7 @@ def batched_lbfgsb(
         for i, x0 in enumerate(x0_batched):
             batch_indices = np.array([i])
             xs_opt[i], fvals_opt[i], info = so.fmin_l_bfgs_b(
-                func=func_and_grad,  # type: ignore[arg-type]
-                args=(batch_indices,),  # type: ignore[arg-type]
+                func=lambda x: func_and_grad(x, batch_indices),  # type: ignore[return]
                 x0=x0,
                 bounds=bounds,
                 m=m,
