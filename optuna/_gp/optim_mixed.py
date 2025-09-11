@@ -51,37 +51,30 @@ def _gradient_ascent_batched(
     """
     if len(continuous_indices) == 0:
         return initial_params_batched, initial_fvals, np.zeros(len(initial_fvals), dtype=bool)
-    normalized_params = initial_params_batched.copy()
+    fixed_params = initial_params_batched.copy()
 
     def negative_acqf_with_grad(
         scaled_x: np.ndarray, batch_indices: np.ndarray
     ) -> tuple[np.ndarray, np.ndarray]:
+        # TODO(Kaichi-Irie): Refactor to avoid using the variable `fixed_params`.
         # Scale back to the original domain, i.e. [0, 1], from [0, 1/s].
-        if scaled_x.ndim == 1:
-            # NOTE(Kaichi-Irie): When scaled_x is 1D, regard it as a single batch.
-            scaled_x = scaled_x[None]
-        assert scaled_x.ndim == 2
-        normalized_params[np.ix_(batch_indices, continuous_indices)] = scaled_x * lengthscales
-        # NOTE(Kaichi-Irie): If fvals.numel() > 1, backward() cannot be computed, so we sum up.
-        x_tensor = torch.from_numpy(normalized_params[batch_indices]).requires_grad_(True)
-        neg_fvals = -acqf.eval_acqf(x_tensor)
-        neg_fvals.sum().backward()
-        grads = x_tensor.grad.detach().numpy()  # type: ignore
-        neg_fvals = neg_fvals.detach().numpy()
+        xs = fixed_params[batch_indices].copy()  # NOTE(Kaichi-Irie): Copy discrete parameters.
+        xs[..., continuous_indices] = scaled_x * lengthscales
+        fvals, grads = acqf.eval_acqf_with_grad(xs)
         # Flip sign because scipy minimizes functions.
         # Let the scaled acqf be g(x) and the acqf be f(sx), then dg/dx = df/dx * s.
-        return np.atleast_1d(neg_fvals), grads[:, continuous_indices] * lengthscales
+        return -fvals, -grads[..., continuous_indices] * lengthscales
 
     with single_blas_thread_if_scipy_v1_15_or_newer():
         scaled_cont_xs_opt, neg_fvals_opt, n_iterations = batched_lbfgsb.batched_lbfgsb(
             func_and_grad=negative_acqf_with_grad,
-            x0_batched=normalized_params[:, continuous_indices] / lengthscales,
+            x0_batched=fixed_params[:, continuous_indices] / lengthscales,
             bounds=[(0, 1 / s) for s in lengthscales],
             pgtol=math.sqrt(tol),
             max_iters=200,
         )
 
-    normalized_params[:, continuous_indices] = scaled_cont_xs_opt * lengthscales
+    fixed_params[:, continuous_indices] = scaled_cont_xs_opt * lengthscales
 
     # If any parameter is updated, return the updated parameters and values.
     # Otherwise, return the initial ones.
@@ -89,7 +82,7 @@ def _gradient_ascent_batched(
     is_updated_batch = (fvals_opt > initial_fvals) & (n_iterations > 0)
 
     return (
-        np.where(is_updated_batch[:, None], normalized_params, initial_params_batched),
+        np.where(is_updated_batch[:, None], fixed_params, initial_params_batched),
         np.where(is_updated_batch, fvals_opt, initial_fvals),
         is_updated_batch,
     )

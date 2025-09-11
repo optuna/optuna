@@ -102,7 +102,7 @@ def batched_lbfgsb(
     max_iters: int = 15000,
     max_line_search: int = 20,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-
+    x0_batched = x0_batched.reshape(-1, x0_batched.shape[-1])  # Make 3+D array 2D.
     if _greenlet_imports.is_successful() and len(x0_batched) > 1:
         # NOTE(Kaichi-Irie): when batch size is 1, using greenlet causes context-switch overhead.
         xs_opt, fvals_opt, n_iterations = _batched_lbfgsb(

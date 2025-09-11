@@ -105,12 +105,18 @@ class BaseAcquisitionFunc(ABC):
         with torch.no_grad():
             return self.eval_acqf(torch.from_numpy(x)).detach().numpy()
 
-    def eval_acqf_with_grad(self, x: np.ndarray) -> tuple[float, np.ndarray]:
-        assert x.ndim == 1
+    def eval_acqf_with_grad(self, x: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+        output_shape = x.shape[:-1]
+        x = np.atleast_2d(x)
+        assert x.ndim == 2
         x_tensor = torch.from_numpy(x).requires_grad_(True)
-        val = self.eval_acqf(x_tensor)
-        val.backward()  # type: ignore
-        return val.item(), x_tensor.grad.detach().numpy()  # type: ignore
+        vals = self.eval_acqf(x_tensor)
+        # NOTE(Kaichi-Irie): If fvals.numel() > 1, backward() cannot be computed, so we sum up.
+        vals.sum().backward()  # type: ignore
+        vals = vals.detach().numpy().reshape(output_shape)
+        assert x_tensor.grad is not None
+        grads = x_tensor.grad.detach().numpy()
+        return vals, grads
 
 
 class LogEI(BaseAcquisitionFunc):
