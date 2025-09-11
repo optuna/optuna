@@ -119,13 +119,17 @@ def batched_lbfgsb(
 
     # fall back to sequential optimization if greenlet is not available.
     else:
+
+        def _func_and_grad_wrapper(x: np.ndarray, batch_id: int) -> tuple[float, np.ndarray]:
+            fval, grad = func_and_grad(x, np.array([batch_id]))
+            return fval.item(), grad
+
         xs_opt = np.empty_like(x0_batched)
         fvals_opt = np.empty(x0_batched.shape[0], dtype=float)
         n_iterations = np.empty(x0_batched.shape[0], dtype=int)
         for i, x0 in enumerate(x0_batched):
-            batch_indices = np.array([i])
             xs_opt[i], fvals_opt[i], info = so.fmin_l_bfgs_b(
-                func=lambda x: func_and_grad(x, batch_indices),
+                func=lambda x: _func_and_grad_wrapper(x, i),
                 x0=x0,
                 bounds=bounds,
                 m=m,
