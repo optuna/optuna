@@ -11,7 +11,6 @@ from scipy.optimize import fmin_l_bfgs_b
 from optuna._gp.batched_lbfgsb import batched_lbfgsb
 
 
-# (B,D) -> (B,) or (D,) -> ()
 def rastrigin_and_grad(x: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     A = 10.0
     dim = x.shape[-1]
