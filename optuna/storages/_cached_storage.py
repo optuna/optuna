@@ -177,7 +177,14 @@ class _CachedStorage(BaseStorage, BaseHeartbeat):
         return self._backend.get_trial_id_from_study_id_trial_number(study_id, trial_number)
 
     def get_best_trial(self, study_id: int) -> FrozenTrial:
-        return self._backend.get_best_trial(study_id)
+        _directions = self.get_study_directions(study_id)
+        if len(_directions) > 1:
+            raise RuntimeError(
+                "Best trial can be obtained only for single-objective optimization."
+            )
+        direction = _directions[0]
+        trial_id = self._backend._get_best_trial_id(study_id, direction)
+        return self.get_trial(trial_id)
 
     def set_trial_state_values(
         self, trial_id: int, state: TrialState, values: Sequence[float] | None = None
