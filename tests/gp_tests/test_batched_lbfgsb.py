@@ -11,7 +11,9 @@ from scipy.optimize import fmin_l_bfgs_b
 from optuna._gp.batched_lbfgsb import batched_lbfgsb
 
 
-def rastrigin_and_grad(x: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+def rastrigin_and_grad(x: np.ndarray, batch_indices: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    if x.ndim == 1:
+        x = x[None]
     A = 10.0
     dim = x.shape[-1]
     _2pi_x = 2 * np.pi * x
@@ -21,9 +23,11 @@ def rastrigin_and_grad(x: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     return fval, grad
 
 
-def styblinski_tang_and_grad(x: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+def styblinski_tang_and_grad(x: np.ndarray, batch_indices: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     # Styblinski-Tang function, which has multiple local minima.
     # Global minimum is at f(-2.903534), where f(-2.903534) = -39.16599 * dim
+    if x.ndim == 1:
+        x = x[None]
     fval = np.sum(x**4 - 16 * x**2 + 5 * x, axis=-1) / 2
     grad = 2 * x**3 - 16 * x + 2.5
     return fval, grad
@@ -47,9 +51,10 @@ def _verify_results(
     fvals_opt2 = []
     n_iters2 = []
     for x0 in X0:
-        x_opt, fval, info = fmin_l_bfgs_b(func_and_grad, x0=x0, **kwargs_scipy)
+        batch_indices = np.array([])
+        x_opt, fval, info = fmin_l_bfgs_b(func_and_grad,x0=x0, args=(batch_indices,), **kwargs_scipy)
         xs_opt2.append(x_opt)
-        fvals_opt2.append(fval.item())
+        fvals_opt2.append(float(fval))
         n_iters2.append(info["nit"])
 
     assert np.all(n_iters1 == np.array(n_iters2))
@@ -122,9 +127,10 @@ def test_batched_lbfgsb_without_greenlet(
     fvals_opt2 = []
     n_iters2 = []
     for x0 in X0:
-        x_opt, fval, info = fmin_l_bfgs_b(func_and_grad, x0=x0, **kwargs_scipy)
+        batch_indices = np.array([])
+        x_opt, fval, info = fmin_l_bfgs_b(func_and_grad, x0=x0,args=(batch_indices,),**kwargs_scipy)
         xs_opt2.append(x_opt)
-        fvals_opt2.append(fval.item())
+        fvals_opt2.append(float(fval))
         n_iters2.append(info["nit"])
 
     assert np.all(n_iters1 == np.array(n_iters2))
