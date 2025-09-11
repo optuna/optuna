@@ -53,19 +53,24 @@ def _gradient_ascent_batched(
         return initial_params_batched, initial_fvals, np.zeros(len(initial_fvals), dtype=bool)
     normalized_params = initial_params_batched.copy()
 
-    def negative_acqf_with_grad(scaled_x: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    def negative_acqf_with_grad(
+        scaled_x: np.ndarray, batch_indices: np.ndarray
+    ) -> tuple[np.ndarray, np.ndarray]:
         # Scale back to the original domain, i.e. [0, 1], from [0, 1/s].
         if scaled_x.ndim == 1:
-            scaled_x = scaled_x[None, :]
-        normalized_params[: len(scaled_x), continuous_indices] = scaled_x * lengthscales
-        x_tensor = torch.from_numpy(normalized_params[: len(scaled_x), :]).requires_grad_(True)
+            # NOTE(Kaichi-Irie): When scaled_x is 1D, regard it as a single batch.
+            scaled_x = scaled_x[None]
+        assert scaled_x.ndim == 2
+        normalized_params[np.ix_(batch_indices, continuous_indices)] = scaled_x * lengthscales
+        # NOTE(Kaichi-Irie): If fvals.numel() > 1, backward() cannot be computed, so we sum up.
+        x_tensor = torch.from_numpy(normalized_params[batch_indices]).requires_grad_(True)
         neg_fvals = -acqf.eval_acqf(x_tensor)
         neg_fvals.sum().backward()
         grads = x_tensor.grad.detach().numpy()  # type: ignore
         neg_fvals = neg_fvals.detach().numpy()
         # Flip sign because scipy minimizes functions.
         # Let the scaled acqf be g(x) and the acqf be f(sx), then dg/dx = df/dx * s.
-        return neg_fvals.reshape(-1), grads[:, continuous_indices] * lengthscales
+        return np.atleast_1d(neg_fvals), grads[:, continuous_indices] * lengthscales
 
     with single_blas_thread_if_scipy_v1_15_or_newer():
         scaled_cont_xs_opt, neg_fvals_opt, n_iterations = batched_lbfgsb.batched_lbfgsb(
