@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -9,10 +8,11 @@ from optuna._imports import try_import
 from optuna.logging import get_logger
 
 
-with try_import() as _imports:
+with try_import() as _greenlet_imports:
     from greenlet import greenlet
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
     import scipy.optimize as so
 
 else:
@@ -21,7 +21,7 @@ else:
     so = _LazyImport("scipy.optimize")
 
 
-if not _imports.is_successful():
+if not _greenlet_imports.is_successful():
     _logger = get_logger(__name__)
     _logger.warning(
         "The 'greenlet' package is unavailable, falling back to sequential L-BFGS-B optimization. "
@@ -91,7 +91,8 @@ def batched_lbfgsb(
     max_line_search: int = 20,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
 
-    if _imports.is_successful() and len(x0_batched) > 1:
+    if _greenlet_imports.is_successful() and len(x0_batched) > 1:
+        # NOTE(Kaichi-Irie): when batch size is 1, using greenlet causes context-switch overhead.
         xs_opt, fvals_opt, n_iterations = _batched_lbfgsb(
             func_and_grad=func_and_grad,
             x0_batched=x0_batched,
@@ -107,7 +108,7 @@ def batched_lbfgsb(
     # fall back to sequential optimization if greenlet is not available.
     else:
         xs_opt = np.empty_like(x0_batched)
-        fvals_opt = np.empty(x0_batched.shape[0])
+        fvals_opt = np.empty(x0_batched.shape[0], dtype=float)
         n_iterations = np.empty(x0_batched.shape[0], dtype=int)
         for i, x0 in enumerate(x0_batched):
             xs_opt[i], fvals_opt[i], info = so.fmin_l_bfgs_b(
