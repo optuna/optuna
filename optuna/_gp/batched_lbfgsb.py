@@ -79,7 +79,7 @@ def _batched_lbfgsb(
     x_and_args = [gl.switch(i) for i, gl in enumerate(greenlets)]
     args_batched = [args for _, args in x_and_args] if args_list is not None else None
     while (x_batched := np.array([x for x, _ in x_and_args if x is not None])).size:
-        fvals, grads = func_and_grad(x_batched, *() if args_batched is None else (args_batched, ))
+        fvals, grads = func_and_grad(x_batched, *() if args_batched is None else (args_batched,))
         x_and_args = [gl.switch((fvals[i], grads[i])) for i, gl in enumerate(greenlets)]
         args_batched = (
             None if args_batched is None else [args for x, args in x_and_args if x is not None]
@@ -108,7 +108,7 @@ def batched_lbfgsb(
             f"The length of args_list must be equal to the batch size, "
             f"but got len(args_list)={len(args_list)} and batch size={len(x0_batched)}."
         )
-    x0_batched = x0_batched.reshape(-1, x0_batched.shape[-1]) # Make 3+D array 2D.
+    x0_batched = x0_batched.reshape(-1, x0_batched.shape[-1])  # Make 3+D array 2D.
     if _greenlet_imports.is_successful() and len(x0_batched) > 1:
         # NOTE(Kaichi-Irie): when batch size is 1, using greenlet causes context-switch overhead.
         xs_opt, fvals_opt, n_iterations = _batched_lbfgsb(
