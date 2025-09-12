@@ -53,9 +53,9 @@ def _gradient_ascent_batched(
         return initial_params_batched, initial_fvals, np.zeros(len(initial_fvals), dtype=bool)
 
     def negative_acqf_with_grad(
-        scaled_x: np.ndarray, fixed_params_list: list[np.ndarray]
+        scaled_x: np.ndarray, args_list: list[tuple[np.ndarray]]
     ) -> tuple[np.ndarray, np.ndarray]:
-        next_params = np.asarray(fixed_params_list)[:, 0]
+        next_params = np.array([args[0] for args in args_list])
         # Scale back to the original domain, i.e. [0, 1], from [0, 1/s].
         if scaled_x.ndim == 1:
             # NOTE(Kaichi-Irie): When scaled_x is 1D, regard it as a single batch.
