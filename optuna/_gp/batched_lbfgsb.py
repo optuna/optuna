@@ -53,8 +53,7 @@ def _batched_lbfgsb(
 
     def run(i: int) -> None:
         def _func_and_grad(x: np.ndarray, *args: Any) -> tuple[float, np.ndarray]:
-            args_ = None if len(args) == 0 else args
-            fval, grad = greenlet.getcurrent().parent.switch(x, args_)
+            fval, grad = greenlet.getcurrent().parent.switch(x, args if len(args) else None)
             # NOTE(nabenabe): copy is necessary to convert grad to writable.
             return float(fval), grad.copy()
 
