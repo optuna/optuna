@@ -128,7 +128,7 @@ def batched_lbfgsb(
     else:
 
         def _func_and_grad_wrapper(x: np.ndarray, *args: Any) -> tuple[float, np.ndarray]:
-            fval, grad = func_and_grad(x, *(list(args),) if len(args) else ())
+            fval, grad = func_and_grad(x, *([args],) if len(args) else ())
             return fval.item(), grad
 
         xs_opt = np.empty_like(x0_batched)
