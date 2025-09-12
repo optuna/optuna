@@ -131,7 +131,7 @@ def batched_lbfgsb(
         n_iterations = np.empty(x0_batched.shape[0], dtype=int)
         for i, x0 in enumerate(x0_batched):
             xs_opt[i], fvals_opt[i], info = so.fmin_l_bfgs_b(
-                func=func_and_grad,  # type: ignore[arg-type]
+                func=func_and_grad,
                 x0=x0,
                 args=([args_list[i]],) if args_list is not None else (),  # type: ignore[arg-type]
                 bounds=bounds,
