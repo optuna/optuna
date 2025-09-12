@@ -133,7 +133,7 @@ def batched_lbfgsb(
             xs_opt[i], fvals_opt[i], info = so.fmin_l_bfgs_b(
                 func=func_and_grad,  # type: ignore[arg-type]
                 x0=x0,
-                args=args_list[i] if args_list is not None else (),
+                args=([args_list[i]],) if args_list is not None else (),  # type: ignore[arg-type]
                 bounds=bounds,
                 m=m,
                 factr=factr,
