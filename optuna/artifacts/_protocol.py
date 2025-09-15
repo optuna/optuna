@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 try:
     from typing import Protocol
 except ImportError:
-    from typing_extensions import Protocol  # type: ignore
+    from typing_extensions import Protocol
 
 
 if TYPE_CHECKING:
