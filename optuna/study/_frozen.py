@@ -1,10 +1,15 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
 from typing import Any
+from typing import TYPE_CHECKING
 
 from optuna import logging
-from optuna.study._study_direction import StudyDirection
+
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from optuna.study._study_direction import StudyDirection
 
 
 _logger = logging.get_logger(__name__)
