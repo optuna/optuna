@@ -104,9 +104,10 @@ class GPRegressor:
         self._X_train = X_train
         self._y_train = y_train
         self._squared_X_diff = (X_train[..., None, :] - X_train[..., None, :, :]).square()
-        self._squared_X_diff[..., self._is_categorical] = (
-            self._squared_X_diff[..., self._is_categorical] > 0.0
-        ).type(torch.float64)
+        if self._is_categorical.any():
+            self._squared_X_diff[..., self._is_categorical] = (
+                self._squared_X_diff[..., self._is_categorical] > 0.0
+            ).type(torch.float64)
         self._cov_Y_Y_inv: torch.Tensor | None = None
         self._cov_Y_Y_inv_Y: torch.Tensor | None = None
         # TODO(nabenabe): Rename the attributes to private with `_`.
