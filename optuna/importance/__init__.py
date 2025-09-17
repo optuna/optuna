@@ -1,15 +1,19 @@
 from __future__ import annotations
 
-from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 from optuna._experimental import warn_experimental_argument
 from optuna.importance._base import BaseImportanceEvaluator
 from optuna.importance._fanova import FanovaImportanceEvaluator
 from optuna.importance._mean_decrease_impurity import MeanDecreaseImpurityImportanceEvaluator
 from optuna.importance._ped_anova import PedAnovaImportanceEvaluator
-from optuna.study import Study
-from optuna.trial import FrozenTrial
 
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from optuna.study import Study
+    from optuna.trial import FrozenTrial
 
 __all__ = [
     "BaseImportanceEvaluator",
