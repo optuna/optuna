@@ -1,10 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Callable
-from collections.abc import Iterable
-from collections.abc import Sequence
 from concurrent.futures import FIRST_COMPLETED
-from concurrent.futures import Future
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import wait
 import copy
@@ -13,7 +9,7 @@ import gc
 import itertools
 import os
 import sys
-from typing import Any
+from typing import TYPE_CHECKING
 import warnings
 
 import optuna
@@ -24,9 +20,17 @@ from optuna.exceptions import ExperimentalWarning
 from optuna.storages._heartbeat import get_heartbeat_thread
 from optuna.storages._heartbeat import is_heartbeat_enabled
 from optuna.study._tell import _tell_with_warning
-from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+    from collections.abc import Iterable
+    from collections.abc import Sequence
+    from concurrent.futures import Future
+    from typing import Any
+
+    from optuna.trial import FrozenTrial
 
 _logger = logging.get_logger(__name__)
 
