@@ -906,20 +906,21 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         )
 
     def get_best_trial(self, study_id: int) -> FrozenTrial:
-        with _create_scoped_session(self.scoped_session) as session:
-            _directions = self.get_study_directions(study_id)
-            if len(_directions) > 1:
-                raise RuntimeError(
-                    "Best trial can be obtained only for single-objective optimization."
-                )
-            direction = _directions[0]
-
-            if direction == StudyDirection.MAXIMIZE:
-                trial_id = models.TrialModel.find_max_value_trial_id(study_id, 0, session)
-            else:
-                trial_id = models.TrialModel.find_min_value_trial_id(study_id, 0, session)
-
+        _directions = self.get_study_directions(study_id)
+        if len(_directions) > 1:
+            raise RuntimeError(
+                "Best trial can be obtained only for single-objective optimization."
+            )
+        direction = _directions[0]
+        trial_id = self._get_best_trial_id(study_id, direction)
         return self.get_trial(trial_id)
+
+    def _get_best_trial_id(self, study_id: int, direction: StudyDirection) -> int:
+        with _create_scoped_session(self.scoped_session) as session:
+            if direction == StudyDirection.MAXIMIZE:
+                return models.TrialModel.find_max_value_trial_id(study_id, 0, session)
+            else:
+                return models.TrialModel.find_min_value_trial_id(study_id, 0, session)
 
     @staticmethod
     def _set_default_engine_kwargs_for_mysql(url: str, engine_kwargs: dict[str, Any]) -> None:
