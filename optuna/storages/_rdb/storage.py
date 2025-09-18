@@ -42,8 +42,8 @@ if TYPE_CHECKING:
     import alembic.script as alembic_script
     import sqlalchemy
     import sqlalchemy.dialects.mysql as sqlalchemy_dialects_mysql
-    import sqlalchemy.dialects.sqlite as sqlalchemy_dialects_sqlite
     import sqlalchemy.dialects.postgresql as sqlalchemy_dialects_postgresql
+    import sqlalchemy.dialects.sqlite as sqlalchemy_dialects_sqlite
     import sqlalchemy.exc as sqlalchemy_exc
     import sqlalchemy.orm as sqlalchemy_orm
     import sqlalchemy.sql.functions as sqlalchemy_sql_functions
@@ -56,8 +56,8 @@ else:
     alembic_script = _LazyImport("alembic.script")
 
     sqlalchemy = _LazyImport("sqlalchemy")
-    sqlalchemy_dialects_postgresql = _LazyImport("sqlalchemy.dialects.postgresql")
     sqlalchemy_dialects_mysql = _LazyImport("sqlalchemy.dialects.mysql")
+    sqlalchemy_dialects_postgresql = _LazyImport("sqlalchemy.dialects.postgresql")
     sqlalchemy_dialects_sqlite = _LazyImport("sqlalchemy.dialects.sqlite")
     sqlalchemy_exc = _LazyImport("sqlalchemy.exc")
     sqlalchemy_orm = _LazyImport("sqlalchemy.orm")
