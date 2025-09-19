@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+import importlib
+import sys
 import warnings
 
 from _pytest.logging import LogCaptureFixture
@@ -110,3 +112,18 @@ def test_constraints_func_nan(n_objectives: int) -> None:
     assert all(0 <= x <= 1 for x in trials[0].params.values())  # The params are normal.
     assert trials[0].values == list(objective(trials[0]))  # The values are normal.
     assert trials[0].system_attrs[_CONSTRAINTS_KEY] is None  # None is set for constraints.
+
+
+def test_behavior_without_greenlet(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setitem(sys.modules, "greenlet", None)
+    import optuna._gp.batched_lbfgsb as my_module
+
+    importlib.reload(my_module)
+    assert my_module._greenlet_imports.is_successful() is False
+
+    # See if optimization still works without greenlet
+    import optuna
+
+    sampler = optuna.samplers.GPSampler(seed=42)
+    study = optuna.create_study(sampler=sampler)
+    study.optimize(lambda trial: trial.suggest_float("x", -10, 10) ** 2, n_trials=15)
