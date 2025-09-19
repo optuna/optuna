@@ -51,19 +51,19 @@ def _gradient_ascent_batched(
     """
     if len(continuous_indices) == 0:
         return initial_params_batched, initial_fvals, np.zeros(len(initial_fvals), dtype=bool)
+    normalized_params = initial_params_batched.copy()
 
     def negative_acqf_with_grad(
-        scaled_x: np.ndarray, fixed_params_list: list[np.ndarray]
+        scaled_x: np.ndarray, batch_indices: np.ndarray
     ) -> tuple[np.ndarray, np.ndarray]:
-        next_params = np.asarray(fixed_params_list)[:, 0]
         # Scale back to the original domain, i.e. [0, 1], from [0, 1/s].
         if scaled_x.ndim == 1:
             # NOTE(Kaichi-Irie): When scaled_x is 1D, regard it as a single batch.
             scaled_x = scaled_x[None]
         assert scaled_x.ndim == 2
-        next_params[:, continuous_indices] = scaled_x * lengthscales
+        normalized_params[np.ix_(batch_indices, continuous_indices)] = scaled_x * lengthscales
         # NOTE(Kaichi-Irie): If fvals.numel() > 1, backward() cannot be computed, so we sum up.
-        x_tensor = torch.from_numpy(next_params).requires_grad_(True)
+        x_tensor = torch.from_numpy(normalized_params[batch_indices]).requires_grad_(True)
         neg_fvals = -acqf.eval_acqf(x_tensor)
         neg_fvals.sum().backward()  # type: ignore[no-untyped-call]
         grads = x_tensor.grad.detach().numpy()  # type: ignore[union-attr]
@@ -75,22 +75,21 @@ def _gradient_ascent_batched(
     with single_blas_thread_if_scipy_v1_15_or_newer():
         scaled_cont_xs_opt, neg_fvals_opt, n_iterations = batched_lbfgsb.batched_lbfgsb(
             func_and_grad=negative_acqf_with_grad,
-            x0_batched=initial_params_batched[:, continuous_indices] / lengthscales,
-            args_list=[(fixed_params,) for fixed_params in initial_params_batched.copy()],
+            x0_batched=normalized_params[:, continuous_indices] / lengthscales,
             bounds=[(0, 1 / s) for s in lengthscales],
             pgtol=math.sqrt(tol),
             max_iters=200,
         )
 
-    xs_opt = initial_params_batched.copy()
-    xs_opt[:, continuous_indices] = scaled_cont_xs_opt * lengthscales
+    normalized_params[:, continuous_indices] = scaled_cont_xs_opt * lengthscales
+
     # If any parameter is updated, return the updated parameters and values.
     # Otherwise, return the initial ones.
     fvals_opt = -neg_fvals_opt
     is_updated_batch = (fvals_opt > initial_fvals) & (n_iterations > 0)
 
     return (
-        np.where(is_updated_batch[:, None], xs_opt, initial_params_batched),
+        np.where(is_updated_batch[:, None], normalized_params, initial_params_batched),
         np.where(is_updated_batch, fvals_opt, initial_fvals),
         is_updated_batch,
     )
