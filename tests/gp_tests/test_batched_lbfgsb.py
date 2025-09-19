@@ -55,7 +55,9 @@ def _verify_results(
     n_iters2 = []
     batch_indices = np.array([])
     for x0 in X0:
-        x_opt, fval, info = fmin_l_bfgs_b(func=func_and_grad, args=(batch_indices,), x0=x0, **kwargs_scipy)
+        x_opt, fval, info = fmin_l_bfgs_b(
+            func=func_and_grad, args=(batch_indices,), x0=x0, **kwargs_scipy
+        )
         xs_opt2.append(x_opt)
         fvals_opt2.append(float(fval))
         n_iters2.append(info["nit"])
@@ -132,7 +134,9 @@ def test_batched_lbfgsb_without_greenlet(
     n_iters2 = []
     batch_indices = np.array([])
     for x0 in X0:
-        x_opt, fval, info = fmin_l_bfgs_b(func_and_grad, args=(batch_indices,), x0=x0, **kwargs_scipy)
+        x_opt, fval, info = fmin_l_bfgs_b(
+            func_and_grad, args=(batch_indices,), x0=x0, **kwargs_scipy
+        )
         xs_opt2.append(x_opt)
         fvals_opt2.append(float(fval))
         n_iters2.append(info["nit"])
