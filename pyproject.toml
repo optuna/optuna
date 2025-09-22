@@ -48,7 +48,7 @@ benchmark = [
   "virtualenv"
 ]
 checking = [
-  "black",
+  "black<25.9.0",  # TODO(nabe): Remove the version constraint after the fix in black.
   "blackdoc",
   "flake8",
   "isort",
