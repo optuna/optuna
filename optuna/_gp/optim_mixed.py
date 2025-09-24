@@ -53,14 +53,16 @@ def _gradient_ascent_batched(
         return initial_params_batched, initial_fvals, np.zeros(len(initial_fvals), dtype=bool)
 
     def negative_acqf_with_grad(
-        scaled_x: np.ndarray, args_list: list[tuple[np.ndarray]]
+        scaled_x: np.ndarray, fixed_params: list[np.ndarray]
     ) -> tuple[np.ndarray, np.ndarray]:
-        next_params = np.array([args[0] for args in args_list])
+        next_params = np.array(fixed_params)  # (B, dim)
+        assert next_params.ndim == 2
         # Scale back to the original domain, i.e. [0, 1], from [0, 1/s].
         if scaled_x.ndim == 1:
             # NOTE(Kaichi-Irie): When scaled_x is 1D, regard it as a single batch.
             scaled_x = scaled_x[None]
         assert scaled_x.ndim == 2
+        assert next_params[:, continuous_indices].shape == scaled_x.shape
         next_params[:, continuous_indices] = scaled_x * lengthscales
         # NOTE(Kaichi-Irie): If fvals.numel() > 1, backward() cannot be computed, so we sum up.
         x_tensor = torch.from_numpy(next_params).requires_grad_(True)
@@ -76,7 +78,7 @@ def _gradient_ascent_batched(
         scaled_cont_xs_opt, neg_fvals_opt, n_iterations = batched_lbfgsb.batched_lbfgsb(
             func_and_grad=negative_acqf_with_grad,
             x0_batched=initial_params_batched[:, continuous_indices] / lengthscales,
-            args_list=[(fixed_params,) for fixed_params in initial_params_batched.copy()],
+            args_tuple=([param for param in initial_params_batched.copy()],),
             bounds=[(0, 1 / s) for s in lengthscales],
             pgtol=math.sqrt(tol),
             max_iters=200,
