@@ -32,10 +32,9 @@ if not _greenlet_imports.is_successful():
 
 
 def _batched_lbfgsb(
-    # TODO(Kaichi-Irie): Add func_and_grad types
-    func_and_grad: Callable,
+    func_and_grad: Callable[..., tuple[np.ndarray, np.ndarray]],
     x0_batched: np.ndarray,
-    args_tuple: tuple[Any] | None, # (P,B,dim) or None
+    args_tuple: tuple[Any] | None,
     bounds: list[tuple[float, float]] | None,
     m: int,
     factr: float,
@@ -94,10 +93,9 @@ def _batched_lbfgsb(
 
 
 def batched_lbfgsb(
-    # TODO(Kaichi-Irie): Add func_and_grad types
-    func_and_grad: Callable,
+    func_and_grad: Callable[..., tuple[np.ndarray, np.ndarray]],
     x0_batched: np.ndarray,
-    args_tuple: tuple[Any] | None = None, # (P,B,dim) or None
+    args_tuple: tuple[Any] | None = None,
     bounds: list[tuple[float, float]] | None = None,
     m: int = 10,
     factr: float = 1e7,
