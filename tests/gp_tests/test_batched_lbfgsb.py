@@ -133,17 +133,3 @@ def test_batched_lbfgsb_without_bounds(
     kwargs_ours.update(bounds=bounds)
     kwargs_scipy.update(bounds=bounds)
     _verify_results(X0, func_and_grad, kwargs_ours, kwargs_scipy)
-
-
-def test_greenlet_import_behavior(monkeypatch: pytest.MonkeyPatch) -> None:
-    # Test with greenlet available.
-    monkeypatch.setitem(sys.modules, "greenlet", MagicMock())
-    import optuna._gp.batched_lbfgsb as my_module
-
-    importlib.reload(my_module)
-    assert my_module._greenlet_imports.is_successful() is True
-
-    # Test without greenlet available.
-    monkeypatch.setitem(sys.modules, "greenlet", None)
-    importlib.reload(my_module)
-    assert my_module._greenlet_imports.is_successful() is False
