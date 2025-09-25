@@ -112,19 +112,30 @@ def test_batched_lbfgsb(
 
 
 @pytest.mark.parametrize("func_and_grad,kwargs_ours,kwargs_scipy", test_params)
+@pytest.mark.parametrize("use_greenlet", [True, False])
 @pytest.mark.parametrize(
     "lower_bound,upper_bound", [(-np.inf, None), (None, np.inf), (-np.inf, np.inf), (None, None)]
 )
 @pytest.mark.parametrize("dim, n_localopts", [(10, 10), (1, 10), (10, 1), (1, 1)])
 def test_batched_lbfgsb_without_bounds(
+    monkeypatch: pytest.MonkeyPatch,
     func_and_grad: Callable,
     kwargs_ours: Any,
     kwargs_scipy: Any,
+    use_greenlet: bool,
     lower_bound: float | None,
     upper_bound: float | None,
     dim: int,
     n_localopts: int,
 ) -> None:
+    if not use_greenlet:
+        monkeypatch.setitem(sys.modules, "greenlet", None)
+
+    import optuna._gp.batched_lbfgsb as my_module
+
+    importlib.reload(my_module)
+    assert my_module._greenlet_imports.is_successful() == use_greenlet
+
     X0, bounds = X0_and_bounds(dim=dim, n_localopts=n_localopts)
     if lower_bound is not None:
         bounds[:, 0] = lower_bound
