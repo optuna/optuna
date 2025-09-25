@@ -101,7 +101,7 @@ def test_batched_lbfgsb(
     import optuna._gp.batched_lbfgsb as my_module
 
     importlib.reload(my_module)
-    assert my_module._greenlet_imports.is_successful() is use_greenlet
+    assert my_module._greenlet_imports.is_successful() == use_greenlet
 
     X0, bounds = X0_and_bounds(dim=dim, n_localopts=n_localopts)
     kwargs_ours.update(bounds=bounds)
