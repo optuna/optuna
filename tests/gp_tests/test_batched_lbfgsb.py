@@ -106,7 +106,11 @@ def test_batched_lbfgsb(
     kwargs_ours.update(bounds=bounds)
     kwargs_scipy.update(bounds=bounds)
     _verify_results(
-        X0, func_and_grad, kwargs_ours, kwargs_scipy, batched_lbfgsb_func=my_module.batched_lbfgsb
+        X0,
+        func_and_grad,
+        kwargs_ours,
+        kwargs_scipy,
+        batched_lbfgsb_func=my_module.batched_lbfgsb,
     )
 
 
@@ -142,4 +146,10 @@ def test_batched_lbfgsb_without_bounds(
         bounds[:, 1] = upper_bound
     kwargs_ours.update(bounds=bounds)
     kwargs_scipy.update(bounds=bounds)
-    _verify_results(X0, func_and_grad, kwargs_ours, kwargs_scipy)
+    _verify_results(
+        X0,
+        func_and_grad,
+        kwargs_ours,
+        kwargs_scipy,
+        batched_lbfgsb_func=my_module.batched_lbfgsb,
+    )
