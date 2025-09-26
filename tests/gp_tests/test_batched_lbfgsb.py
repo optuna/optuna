@@ -97,10 +97,10 @@ def test_batched_lbfgsb(
     if not use_greenlet:
         monkeypatch.setitem(sys.modules, "greenlet", None)
 
-    import optuna._gp.batched_lbfgsb as my_module
+    import optuna._gp.batched_lbfgsb as optimization_module
 
-    importlib.reload(my_module)
-    assert my_module._greenlet_imports.is_successful() == use_greenlet
+    importlib.reload(optimization_module)
+    assert optimization_module._greenlet_imports.is_successful() == use_greenlet
 
     X0, bounds = X0_and_bounds(dim=dim, n_localopts=n_localopts)
     kwargs_ours.update(bounds=bounds)
@@ -110,7 +110,7 @@ def test_batched_lbfgsb(
         func_and_grad,
         kwargs_ours,
         kwargs_scipy,
-        batched_lbfgsb_func=my_module.batched_lbfgsb,
+        batched_lbfgsb_func=optimization_module.batched_lbfgsb,
     )
 
 
@@ -134,10 +134,10 @@ def test_batched_lbfgsb_without_bounds(
     if not use_greenlet:
         monkeypatch.setitem(sys.modules, "greenlet", None)
 
-    import optuna._gp.batched_lbfgsb as my_module
+    import optuna._gp.batched_lbfgsb as optimization_module
 
-    importlib.reload(my_module)
-    assert my_module._greenlet_imports.is_successful() == use_greenlet
+    importlib.reload(optimization_module)
+    assert optimization_module._greenlet_imports.is_successful() == use_greenlet
 
     X0, bounds = X0_and_bounds(dim=dim, n_localopts=n_localopts)
     if lower_bound is not None:
@@ -151,5 +151,5 @@ def test_batched_lbfgsb_without_bounds(
         func_and_grad,
         kwargs_ours,
         kwargs_scipy,
-        batched_lbfgsb_func=my_module.batched_lbfgsb,
+        batched_lbfgsb_func=optimization_module.batched_lbfgsb,
     )

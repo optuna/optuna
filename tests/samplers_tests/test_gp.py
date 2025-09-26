@@ -116,10 +116,10 @@ def test_constraints_func_nan(n_objectives: int) -> None:
 
 def test_behavior_without_greenlet(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setitem(sys.modules, "greenlet", None)
-    import optuna._gp.batched_lbfgsb as my_module
+    import optuna._gp.batched_lbfgsb as optimization_module
 
-    importlib.reload(my_module)
-    assert my_module._greenlet_imports.is_successful() is False
+    importlib.reload(optimization_module)
+    assert optimization_module._greenlet_imports.is_successful() is False
 
     # See if optimization still works without greenlet
     import optuna
