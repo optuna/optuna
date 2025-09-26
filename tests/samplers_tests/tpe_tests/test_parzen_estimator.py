@@ -9,8 +9,12 @@ from optuna import distributions
 from optuna.distributions import CategoricalChoiceType
 from optuna.samplers._tpe.parzen_estimator import _ParzenEstimator
 from optuna.samplers._tpe.parzen_estimator import _ParzenEstimatorParameters
+from optuna.samplers._tpe.probability_distributions import (
+    _BatchedDiscreteTruncLogNormDistributions,
+)
 from optuna.samplers._tpe.probability_distributions import _BatchedCategoricalDistributions
 from optuna.samplers._tpe.probability_distributions import _BatchedDiscreteTruncNormDistributions
+from optuna.samplers._tpe.probability_distributions import _BatchedTruncLogNormDistributions
 from optuna.samplers._tpe.probability_distributions import _BatchedTruncNormDistributions
 from optuna.samplers._tpe.probability_distributions import _MixtureOfProductDistribution
 from optuna.samplers._tpe.sampler import default_weights
@@ -72,11 +76,11 @@ def test_init_parzen_estimator(multivariate: bool) -> None:
                 low=1.0,
                 high=100.0,
             ),
-            _BatchedTruncNormDistributions(
+            _BatchedTruncLogNormDistributions(
                 mu=np.array([np.log(1.0), np.log(100) / 2.0]),
                 sigma=np.array([np.log(100) / 2, np.log(100)]),
-                low=np.log(1.0),
-                high=np.log(100.0),
+                low=1.0,
+                high=100.0,
             ),
             _BatchedDiscreteTruncNormDistributions(
                 mu=np.array([1.0, 50.5]),
@@ -92,11 +96,12 @@ def test_init_parzen_estimator(multivariate: bool) -> None:
                 high=100,
                 step=1,
             ),
-            _BatchedTruncNormDistributions(
+            _BatchedDiscreteTruncLogNormDistributions(
                 mu=np.array([np.log(1.0), (np.log(100.5) + np.log(0.5)) / 2.0]),
                 sigma=np.array([(np.log(100.5) + np.log(0.5)) / 2, np.log(100.5) - np.log(0.5)]),
-                low=np.log(0.5),
-                high=np.log(100.5),
+                low=1,
+                high=100,
+                step=1,
             ),
             _BatchedCategoricalDistributions(
                 np.array([[0.2, 0.6, 0.2], [1.0 / 3.0, 1.0 / 3.0, 1.0 / 3.0]])
@@ -121,11 +126,11 @@ def test_init_parzen_estimator(multivariate: bool) -> None:
                 low=1.0,
                 high=100.0,
             ),
-            _BatchedTruncNormDistributions(
+            _BatchedTruncLogNormDistributions(
                 mu=np.array([np.log(1.0), np.log(100) / 2.0]),
                 sigma=np.array([SIGMA0 * np.log(100), np.log(100)]),
-                low=np.log(1.0),
-                high=np.log(100.0),
+                low=1.0,
+                high=100.0,
             ),
             _BatchedDiscreteTruncNormDistributions(
                 mu=np.array([1.0, 50.5]),
@@ -141,13 +146,14 @@ def test_init_parzen_estimator(multivariate: bool) -> None:
                 high=100,
                 step=1,
             ),
-            _BatchedTruncNormDistributions(
+            _BatchedDiscreteTruncLogNormDistributions(
                 mu=np.array([np.log(1.0), (np.log(100.5) + np.log(0.5)) / 2.0]),
                 sigma=np.array(
                     [SIGMA0 * (np.log(100.5) - np.log(0.5)), np.log(100.5) - np.log(0.5)]
                 ),
-                low=np.log(0.5),
-                high=np.log(100.5),
+                low=1,
+                high=100,
+                step=1,
             ),
             _BatchedCategoricalDistributions(
                 np.array([[0.2, 0.6, 0.2], [1.0 / 3.0, 1.0 / 3.0, 1.0 / 3.0]])
