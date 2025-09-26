@@ -9,7 +9,8 @@ import numpy as np
 import pytest
 from scipy.optimize import fmin_l_bfgs_b
 
-from optuna._gp.batched_lbfgsb import batched_lbfgsb
+
+RADIUS = 5.12
 
 
 def rastrigin_and_grad(x: np.ndarray, batch_indices: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
@@ -35,11 +36,12 @@ def styblinski_tang_and_grad(
     return fval, grad
 
 
-def X0_and_bounds(dim: int, n_localopts: int) -> tuple[np.ndarray, np.ndarray]:
-    R = 5.12
+def X0_and_bounds(
+    dim: int, n_localopts: int, lower_bound: float, upper_bound: float
+) -> tuple[np.ndarray, np.ndarray]:
     rng = np.random.RandomState(0)
-    X0 = rng.random((n_localopts, dim)) * 2 * R - R
-    bounds = np.array([[-R, R]] * dim)
+    X0 = rng.random((n_localopts, dim)) * 2 * RADIUS - RADIUS
+    bounds = np.array([[lower_bound, upper_bound]] * dim)
     return X0, bounds
 
 
@@ -48,10 +50,8 @@ def _verify_results(
     func_and_grad: Callable,
     kwargs_ours: Any,
     kwargs_scipy: Any,
-    batched_lbfgsb_func: Callable | None = None,
+    batched_lbfgsb_func: Callable,
 ) -> None:
-    if batched_lbfgsb_func is None:
-        batched_lbfgsb_func = batched_lbfgsb
     xs_opt1, fvals_opt1, n_iters1 = batched_lbfgsb_func(
         func_and_grad=func_and_grad, x0_batched=X0, **kwargs_ours
     )
@@ -84,6 +84,10 @@ test_params = [
 
 @pytest.mark.parametrize("func_and_grad,kwargs_ours,kwargs_scipy", test_params)
 @pytest.mark.parametrize("use_greenlet", [True, False])
+@pytest.mark.parametrize(
+    "lower_bound,upper_bound",
+    [(-RADIUS, RADIUS), (-np.inf, RADIUS), (-RADIUS, np.inf), (-np.inf, np.inf)],
+)
 @pytest.mark.parametrize("dim, n_localopts", [(10, 10), (1, 10), (10, 1), (1, 1)])
 def test_batched_lbfgsb(
     monkeypatch: pytest.MonkeyPatch,
@@ -91,6 +95,8 @@ def test_batched_lbfgsb(
     kwargs_ours: Any,
     kwargs_scipy: Any,
     use_greenlet: bool,
+    lower_bound: float,
+    upper_bound: float,
     dim: int,
     n_localopts: int,
 ) -> None:
@@ -102,48 +108,9 @@ def test_batched_lbfgsb(
     importlib.reload(optimization_module)
     assert optimization_module._greenlet_imports.is_successful() == use_greenlet
 
-    X0, bounds = X0_and_bounds(dim=dim, n_localopts=n_localopts)
-    kwargs_ours.update(bounds=bounds)
-    kwargs_scipy.update(bounds=bounds)
-    _verify_results(
-        X0,
-        func_and_grad,
-        kwargs_ours,
-        kwargs_scipy,
-        batched_lbfgsb_func=optimization_module.batched_lbfgsb,
+    X0, bounds = X0_and_bounds(
+        dim=dim, n_localopts=n_localopts, lower_bound=lower_bound, upper_bound=upper_bound
     )
-
-
-@pytest.mark.parametrize("func_and_grad,kwargs_ours,kwargs_scipy", test_params)
-@pytest.mark.parametrize("use_greenlet", [True, False])
-@pytest.mark.parametrize(
-    "lower_bound,upper_bound", [(-np.inf, None), (None, np.inf), (-np.inf, np.inf), (None, None)]
-)
-@pytest.mark.parametrize("dim, n_localopts", [(10, 10), (1, 10), (10, 1), (1, 1)])
-def test_batched_lbfgsb_without_bounds(
-    monkeypatch: pytest.MonkeyPatch,
-    func_and_grad: Callable,
-    kwargs_ours: Any,
-    kwargs_scipy: Any,
-    use_greenlet: bool,
-    lower_bound: float | None,
-    upper_bound: float | None,
-    dim: int,
-    n_localopts: int,
-) -> None:
-    if not use_greenlet:
-        monkeypatch.setitem(sys.modules, "greenlet", None)
-
-    import optuna._gp.batched_lbfgsb as optimization_module
-
-    importlib.reload(optimization_module)
-    assert optimization_module._greenlet_imports.is_successful() == use_greenlet
-
-    X0, bounds = X0_and_bounds(dim=dim, n_localopts=n_localopts)
-    if lower_bound is not None:
-        bounds[:, 0] = lower_bound
-    if upper_bound is not None:
-        bounds[:, 1] = upper_bound
     kwargs_ours.update(bounds=bounds)
     kwargs_scipy.update(bounds=bounds)
     _verify_results(
