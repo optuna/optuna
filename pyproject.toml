@@ -49,7 +49,7 @@ benchmark = [
 ]
 checking = [
   "black<25.9.0",  # TODO(nabe): Remove the version constraint after the fix in black.
-  "blackdoc",
+  "blackdoc<0.4.2",  # TODO(not522): Remove the version constraint after the fix in blackdoc.
   "flake8",
   "isort",
   "mypy",
