@@ -67,12 +67,12 @@ def _gradient_ascent_batched(
         # NOTE(Kaichi-Irie): If fvals.numel() > 1, backward() cannot be computed, so we sum up.
         x_tensor = torch.from_numpy(next_params).requires_grad_(True)
         neg_fvals = -acqf.eval_acqf(x_tensor)
-        neg_fvals.sum().backward()
-        grads = x_tensor.grad.detach().numpy()  # type: ignore
-        neg_fvals = neg_fvals.detach().numpy()
+        neg_fvals.sum().backward()  # type: ignore[no-untyped-call]
+        grads = x_tensor.grad.detach().numpy()  # type: ignore[union-attr]
+        neg_fvals_ = np.atleast_1d(neg_fvals.detach().numpy())
         # Flip sign because scipy minimizes functions.
         # Let the scaled acqf be g(x) and the acqf be f(sx), then dg/dx = df/dx * s.
-        return np.atleast_1d(neg_fvals), grads[:, continuous_indices] * lengthscales
+        return neg_fvals_, grads[:, continuous_indices] * lengthscales
 
     with single_blas_thread_if_scipy_v1_15_or_newer():
         scaled_cont_xs_opt, neg_fvals_opt, n_iterations = batched_lbfgsb.batched_lbfgsb(

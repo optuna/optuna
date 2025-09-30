@@ -103,6 +103,11 @@ class GPRegressor:
         self._is_categorical = is_categorical
         self._X_train = X_train
         self._y_train = y_train
+        self._squared_X_diff = (X_train[..., None, :] - X_train[..., None, :, :]).square()
+        if self._is_categorical.any():
+            self._squared_X_diff[..., self._is_categorical] = (
+                self._squared_X_diff[..., self._is_categorical] > 0.0
+            ).type(torch.float64)
         self._cov_Y_Y_inv: torch.Tensor | None = None
         self._cov_Y_Y_inv_Y: torch.Tensor | None = None
         # TODO(nabenabe): Rename the attributes to private with `_`.
@@ -119,7 +124,7 @@ class GPRegressor:
             self._cov_Y_Y_inv is None and self._cov_Y_Y_inv_Y is None
         ), "Cannot call cache_matrix more than once."
         with torch.no_grad():
-            cov_Y_Y = self.kernel(self._X_train, self._X_train).detach().numpy()
+            cov_Y_Y = self.kernel().detach().numpy()
 
         cov_Y_Y[np.diag_indices(self._X_train.shape[0])] += self.noise_var.item()
         cov_Y_Y_inv = np.linalg.inv(cov_Y_Y)
@@ -134,7 +139,9 @@ class GPRegressor:
         self.noise_var = self.noise_var.detach()
         self.noise_var.grad = None
 
-    def kernel(self, X1: torch.Tensor, X2: torch.Tensor) -> torch.Tensor:
+    def kernel(
+        self, X1: torch.Tensor | None = None, X2: torch.Tensor | None = None
+    ) -> torch.Tensor:
         """
         Return the kernel matrix with the shape of (..., n_A, n_B) given X1 and X2 each with the
         shapes of (..., n_A, len(params)) and (..., n_B, len(params)).
@@ -147,8 +154,18 @@ class GPRegressor:
         categorical, d2(x1, x2)[i] = int(x1[i] != x2[i]).
         Note that the distance for categorical parameters is the Hamming distance.
         """
-        d2 = (X1[..., :, None, :] - X2[..., None, :, :]) ** 2
-        d2[..., self._is_categorical] = (d2[..., self._is_categorical] > 0.0).type(torch.float64)
+        if X1 is None:
+            assert X2 is None
+            d2 = self._squared_X_diff
+        else:
+            if X2 is None:
+                X2 = self._X_train
+
+            d2 = (X1 - X2) ** 2 if X1.ndim == 1 else (X1[..., None, :] - X2[..., None, :, :]) ** 2
+            if self._is_categorical.any():
+                d2[..., self._is_categorical] = (d2[..., self._is_categorical] > 0.0).type(
+                    torch.float64
+                )
         d2 = (d2 * self.inverse_squared_lengthscales).sum(dim=-1)
         return Matern52Kernel.apply(d2) * self.kernel_scale  # type: ignore
 
@@ -166,7 +183,7 @@ class GPRegressor:
         assert (
             self._cov_Y_Y_inv is not None and self._cov_Y_Y_inv_Y is not None
         ), "Call cache_matrix before calling posterior."
-        cov_fx_fX = self.kernel(x[..., None, :], self._X_train)[..., 0, :]
+        cov_fx_fX = self.kernel(x)
         cov_fx_fx = self.kernel_scale  # kernel(x, x) = kernel_scale
         mean = cov_fx_fX @ self._cov_Y_Y_inv_Y
         var = cov_fx_fx - (cov_fx_fX * (cov_fx_fX @ self._cov_Y_Y_inv)).sum(dim=-1)
@@ -200,9 +217,7 @@ class GPRegressor:
         """
         n_points = self._X_train.shape[0]
         const = -0.5 * n_points * math.log(2 * math.pi)
-        cov_Y_Y = self.kernel(self._X_train, self._X_train) + self.noise_var * torch.eye(
-            n_points, dtype=torch.float64
-        )
+        cov_Y_Y = self.kernel() + self.noise_var * torch.eye(n_points, dtype=torch.float64)
         L = torch.linalg.cholesky(cov_Y_Y)
         logdet_part = -L.diagonal().log().sum()
         inv_L_y = torch.linalg.solve_triangular(L, self._y_train[:, None], upper=False)[:, 0]
