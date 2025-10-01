@@ -42,12 +42,8 @@ The :mod:`~optuna.samplers` module defines a base class for parameter sampling a
 | Recommended budgets (#trials) (**) |      as many as one likes       |          as many as one likes           |               100–1000               |                –500                 |               1000–10000               |                                   100–10000                                   |                                   100–10000                                   |        number of combinations         |         as many as one likes         |                    10–100                      |                              number of combinations                             |
 +------------------------------------+---------------------------------+-----------------------------------------+--------------------------------------+-------------------------------------+----------------------------------------+-------------------------------------------------------------------------------+-------------------------------------------------------------------------------+---------------------------------------+--------------------------------------+------------------------------------------------+---------------------------------------------------------------------------------+
 
-
 .. |AutoSampler| replace:: ``AutoSampler``
 .. _AutoSampler: https://hub.optuna.org/samplers/auto_sampler/
-
-.. |BoTorchSampler| replace:: ``BoTorchSampler``
-.. _BoTorchSampler: https://optuna-integration.readthedocs.io/en/latest/reference/generated/optuna_integration.BoTorchSampler.html
 
 .. note::
    :math:`\color{green}\checkmark`: Supports this feature.
