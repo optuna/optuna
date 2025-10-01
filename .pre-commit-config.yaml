@@ -6,6 +6,7 @@ default_language_version:
   python: python3
 
 repos:
+  # Args are based on setup.cfg.
   - repo: https://github.com/psf/black
     rev: 25.1.0
     hooks:
@@ -15,7 +16,11 @@ repos:
     hooks:
       - id: flake8
         exclude: tutorial|docs/visualization_examples|docs/visualization_matplotlib_examples|optuna/storages/_grpc/auto_generated
-
+        args: [
+            "--max-line-length=99",
+            "--ignore=E203,E704,W503",
+            "--statistics",
+        ]
   - repo: https://github.com/pycqa/isort
     rev: 6.0.1
     hooks:
