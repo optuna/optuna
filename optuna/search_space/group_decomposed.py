@@ -43,7 +43,7 @@ class _GroupDecomposedSearchSpace:
         self._study_id: int | None = None
         self._include_pruned = include_pruned
 
-    def calculate(self, study: Study) -> _SearchSpaceGroup:
+    def calculate(self, study: Study, use_cache: bool = False) -> _SearchSpaceGroup:
         if self._study_id is None:
             self._study_id = study._study_id
         else:
@@ -60,7 +60,9 @@ class _GroupDecomposedSearchSpace:
         else:
             states_of_interest = (TrialState.COMPLETE,)
 
-        for trial in study._get_trials(deepcopy=False, states=states_of_interest, use_cache=False):
+        for trial in study._get_trials(
+            deepcopy=False, states=states_of_interest, use_cache=use_cache
+        ):
             self._search_space.add_distributions(trial.distributions)
 
         return copy.deepcopy(self._search_space)

@@ -81,13 +81,15 @@ class IntersectionSearchSpace:
 
         self._include_pruned = include_pruned
 
-    def calculate(self, study: Study) -> dict[str, BaseDistribution]:
+    def calculate(self, study: Study, use_cache: bool = False) -> dict[str, BaseDistribution]:
         """Returns the intersection search space of the :class:`~optuna.study.Study`.
 
         Args:
             study:
                 A study with completed trials. The same study must be passed for one instance
                 of this class through its lifetime.
+            use_cache:
+                An option to use cached trials for each trial.
 
         Returns:
             A dictionary containing the parameter names and parameter's distributions sorted by
@@ -105,7 +107,7 @@ class IntersectionSearchSpace:
                 raise ValueError("`IntersectionSearchSpace` cannot handle multiple studies.")
 
         self._search_space, self._cached_trial_number = _calculate(
-            study.get_trials(deepcopy=False),
+            study._get_trials(deepcopy=False, use_cache=use_cache),
             self._include_pruned,
             self._search_space,
             self._cached_trial_number,
