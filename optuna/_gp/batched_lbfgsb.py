@@ -34,7 +34,7 @@ if not _greenlet_imports.is_successful():
 def _batched_lbfgsb(
     func_and_grad: Callable[..., tuple[np.ndarray, np.ndarray]],
     x0_batched: np.ndarray,
-    args_tuple: tuple[Any] | None,
+    args_tuple: tuple[Any, ...],
     bounds: list[tuple[float, float]] | None,
     m: int,
     factr: float,
@@ -53,14 +53,14 @@ def _batched_lbfgsb(
 
     def run(i: int) -> None:
         def _func_and_grad(x: np.ndarray, *args: Any) -> tuple[float, np.ndarray]:
-            fval, grad = greenlet.getcurrent().parent.switch(x, args if len(args) else None)
+            fval, grad = greenlet.getcurrent().parent.switch(x, args if args else None)
             # NOTE(nabenabe): copy is necessary to convert grad to writable.
             return float(fval), grad.copy()
 
         x_opt, fval_opt, info = so.fmin_l_bfgs_b(
             func=_func_and_grad,
             x0=x0_batched[i],
-            args=tuple(arg[i] for arg in args_tuple) if args_tuple is not None else (),
+            args=tuple(arg[i] for arg in args_tuple) if args_tuple else (),
             bounds=bounds,
             m=m,
             factr=factr,
@@ -104,7 +104,7 @@ def _batched_lbfgsb(
 def batched_lbfgsb(
     func_and_grad: Callable[..., tuple[np.ndarray, np.ndarray]],
     x0_batched: np.ndarray,
-    args_tuple: tuple[Any] | None = None,
+    args_tuple: tuple[Any, ...] = (),
     bounds: list[tuple[float, float]] | None = None,
     m: int = 10,
     factr: float = 1e7,
@@ -113,7 +113,7 @@ def batched_lbfgsb(
     max_iters: int = 15000,
     max_line_search: int = 20,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    if args_tuple is not None and x0_batched.ndim > 2:
+    if args_tuple and x0_batched.ndim > 2:
         raise ValueError("x0_batched must be 2D when args_tuple is provided.")
     x0_batched = x0_batched.reshape(-1, x0_batched.shape[-1])  # Make 3+D array 2D.
     if _greenlet_imports.is_successful() and len(x0_batched) > 1:
@@ -149,7 +149,7 @@ def batched_lbfgsb(
             xs_opt[i], fvals_opt[i], info = so.fmin_l_bfgs_b(
                 func=_func_and_grad_wrapper,
                 x0=x0,
-                args=tuple(arg[i] for arg in args_tuple) if args_tuple is not None else (),
+                args=tuple(arg[i] for arg in args_tuple) if args_tuple else (),
                 bounds=bounds,
                 m=m,
                 factr=factr,
