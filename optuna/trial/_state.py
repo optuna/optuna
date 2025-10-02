@@ -24,9 +24,6 @@ class TrialState(enum.IntEnum):
     FAIL = 3
     WAITING = 4
 
-    def __repr__(self) -> str:
-        return enum.Enum.__str__(self)
-
     def is_finished(self) -> bool:
         """Return a bool value to represent whether the trial state is unfinished or not.
 
