@@ -763,7 +763,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
             )
             session.execute(pg_upsert_stmt)
         else:
-            # TODO(porink0424): Add support for other databases, e.g., PostgreSQL.
+            # TODO(porink0424): Add support for other databases.
             attribute = model_cls.find_by_trial_and_key(trial, key, session)
             if attribute is None:
                 attribute = model_cls(trial_id=trial_id, key=key, value_json=json.dumps(value))
