@@ -389,10 +389,13 @@ class TPESampler(BaseSampler):
             return {}
 
         search_space: dict[str, BaseDistribution] = {}
+        use_trial_cache = self._multivariate or not self._constant_liar
 
         if self._group:
             assert self._group_decomposed_search_space is not None
-            self._search_space_group = self._group_decomposed_search_space.calculate(study)
+            self._search_space_group = self._group_decomposed_search_space.calculate(
+                study, use_trial_cache
+            )
             for sub_space in self._search_space_group.search_spaces:
                 # Sort keys because Python's string hashing is nondeterministic.
                 for name, distribution in sorted(sub_space.items()):
@@ -401,7 +404,7 @@ class TPESampler(BaseSampler):
                     search_space[name] = distribution
             return search_space
 
-        for name, distribution in self._search_space.calculate(study).items():
+        for name, distribution in self._search_space.calculate(study, use_trial_cache).items():
             if distribution.single():
                 continue
             search_space[name] = distribution
