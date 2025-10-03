@@ -4,6 +4,9 @@ import os
 from pathlib import Path
 import sys
 import warnings
+from warnings import catch_warnings
+from warnings import filterwarnings
+from warnings import simplefilter
 
 
 _OPTUNA_MODULE_ROOT: str = (str(Path(__file__).resolve().parent) + os.sep).casefold()
@@ -30,7 +33,7 @@ def find_stacklevel() -> int:
 def warn(
     message: str,
     category: type[Warning] = UserWarning,
-    stacklevel=None,
+    stacklevel: int | None = None,
 ) -> None:
     """
     Warning utility that automatically sets the stacklevel to point to the user code.
@@ -39,4 +42,4 @@ def warn(
     warnings.warn(message, category, stacklevel=stacklevel)
 
 
-__all__ = ["warn"]
+__all__ = ["warn", "catch_warnings", "filterwarnings", "simplefilter"]
