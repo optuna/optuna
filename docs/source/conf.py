@@ -181,6 +181,7 @@ intersphinx_mapping = {
     "torch": ("https://pytorch.org/docs/stable", None),
     "pandas": ("https://pandas.pydata.org/docs", None),
     "plotly": ("https://plotly.com/python-api-reference", None),
+    "optuna_integration": ("https://optuna-integration.readthedocs.io/en/latest/", None),
 }
 
 # -- Extension configuration -------------------------------------------------
