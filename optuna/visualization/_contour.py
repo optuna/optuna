@@ -4,10 +4,10 @@ from collections.abc import Callable
 import math
 from typing import Any
 from typing import NamedTuple
-import warnings
 
 import numpy as np
 
+from optuna import _warnings as warnings
 from optuna.logging import get_logger
 from optuna.samplers._base import _CONSTRAINTS_KEY
 from optuna.study import Study

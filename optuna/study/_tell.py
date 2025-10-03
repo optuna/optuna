@@ -3,9 +3,9 @@ from __future__ import annotations
 from collections.abc import Sequence
 import math
 from typing import TYPE_CHECKING
-import warnings
 
 import optuna
+from optuna import _warnings as warnings
 from optuna import logging
 from optuna import pruners
 from optuna.trial import FrozenTrial

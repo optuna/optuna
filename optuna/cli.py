@@ -15,12 +15,12 @@ import logging
 import os
 import sys
 from typing import Any
-import warnings
 
 import sqlalchemy.exc
 import yaml
 
 import optuna
+from optuna import _warnings as warnings
 from optuna._imports import _LazyImport
 from optuna.exceptions import CLIUsageError
 from optuna.exceptions import ExperimentalWarning

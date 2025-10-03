@@ -5,10 +5,10 @@ import textwrap
 from typing import Any
 from typing import TYPE_CHECKING
 from typing import TypeVar
-import warnings
 
 from packaging import version
 
+from optuna import _warnings as warnings
 from optuna._experimental import _get_docstring_indent
 from optuna._experimental import _validate_version
 
