@@ -5,11 +5,11 @@ from collections.abc import Sequence
 import json
 from typing import Any
 from typing import cast
-import warnings
 
 import numpy as np
 
 import optuna
+from optuna import _warnings as warnings
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution

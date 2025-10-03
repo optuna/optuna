@@ -22,10 +22,10 @@ from __future__ import annotations
 import math
 from typing import Any
 from typing import TYPE_CHECKING
-import warnings
 
 import numpy as np
 
+from optuna import _warnings as warnings
 from optuna._gp.scipy_blas_thread_patch import single_blas_thread_if_scipy_v1_15_or_newer
 from optuna.logging import get_logger
 

@@ -8,12 +8,12 @@ from typing import Any
 from typing import cast
 from typing import TYPE_CHECKING
 from typing import Union
-import warnings
 
 import numpy as np
 
 import optuna
 from optuna import _deprecated
+from optuna import _warnings as warnings
 from optuna import logging
 from optuna._experimental import warn_experimental_argument
 from optuna._imports import _LazyImport

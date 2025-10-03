@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-import warnings
 
 import numpy as np
 
+from optuna import _warnings as warnings
 from optuna._experimental import experimental_class
 from optuna.distributions import BaseDistribution
 from optuna.importance._base import _get_distributions

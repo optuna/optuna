@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-import warnings
 
 import numpy as np
 
+from optuna import _warnings as warnings
 from optuna.samplers._base import _CONSTRAINTS_KEY
 from optuna.study import StudyDirection
 from optuna.study._multi_objective import _dominates

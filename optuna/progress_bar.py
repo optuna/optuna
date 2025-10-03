@@ -3,10 +3,10 @@ from __future__ import annotations
 import logging
 from typing import Any
 from typing import TYPE_CHECKING
-import warnings
 
 from tqdm.auto import tqdm
 
+from optuna import _warnings as warnings
 from optuna import logging as optuna_logging
 
 

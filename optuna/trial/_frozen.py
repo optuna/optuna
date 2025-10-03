@@ -8,8 +8,8 @@ from typing import Any
 from typing import cast
 from typing import Dict
 from typing import overload
-import warnings
 
+from optuna import _warnings as warnings
 from optuna import distributions
 from optuna import logging
 from optuna._convert_positional_args import convert_positional_args

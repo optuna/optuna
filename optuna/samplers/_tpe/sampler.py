@@ -8,11 +8,11 @@ import math
 from typing import Any
 from typing import cast
 from typing import TYPE_CHECKING
-import warnings
 
 import numpy as np
 
 from optuna import _deprecated
+from optuna import _warnings as warnings
 from optuna._convert_positional_args import convert_positional_args
 from optuna._experimental import warn_experimental_argument
 from optuna._hypervolume import compute_hypervolume

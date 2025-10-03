@@ -10,9 +10,9 @@ import itertools
 import os
 import sys
 from typing import TYPE_CHECKING
-import warnings
 
 import optuna
+from optuna import _warnings as warnings
 from optuna import exceptions
 from optuna import logging
 from optuna import progress_bar as pbar_module

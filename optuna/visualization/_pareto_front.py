@@ -4,10 +4,10 @@ from collections.abc import Callable
 from collections.abc import Sequence
 from typing import Any
 from typing import NamedTuple
-import warnings
 
 import optuna
 from optuna import _deprecated
+from optuna import _warnings as warnings
 from optuna.samplers._base import _CONSTRAINTS_KEY
 from optuna.study import Study
 from optuna.study._multi_objective import _get_pareto_front_trials_by_trials

@@ -6,8 +6,8 @@ from inspect import signature
 from typing import Any
 from typing import TYPE_CHECKING
 from typing import TypeVar
-import warnings
 
+from optuna import _warnings as warnings
 from optuna._deprecated import _validate_two_version
 from optuna._experimental import _validate_version
 

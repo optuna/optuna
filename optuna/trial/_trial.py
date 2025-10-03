@@ -6,9 +6,9 @@ import copy
 import datetime
 from typing import Any
 from typing import overload
-import warnings
 
 import optuna
+from optuna import _warnings as warnings
 from optuna import distributions
 from optuna import logging
 from optuna import pruners

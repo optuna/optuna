@@ -5,8 +5,8 @@ import textwrap
 from typing import Any
 from typing import TYPE_CHECKING
 from typing import TypeVar
-import warnings
 
+from optuna import _warnings as warnings
 from optuna.exceptions import ExperimentalWarning
 
 
