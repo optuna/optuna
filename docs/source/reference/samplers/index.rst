@@ -88,16 +88,16 @@ The :mod:`~optuna.samplers` module defines a base class for parameter sampling a
     :nosignatures:
 
     BaseSampler
-    GridSampler
     RandomSampler
     TPESampler
-    CmaEsSampler
     GPSampler
-    PartialFixedSampler
+    CmaEsSampler
     NSGAIISampler
     NSGAIIISampler
+    GridSampler
     QMCSampler
     BruteForceSampler
+    PartialFixedSampler
 
 .. note::
     The following :mod:`optuna.samplers.nsgaii` module defines crossover operations used by :class:`~optuna.samplers.NSGAIISampler`.
