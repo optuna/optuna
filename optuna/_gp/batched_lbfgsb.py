@@ -127,10 +127,10 @@ def batched_lbfgsb(
 
     # fall back to sequential optimization if greenlet is not available.
     else:
-        # args: (P,dim) -> (P,1,dim)
+
         def _func_and_grad_wrapper(x: np.ndarray, *args: Any) -> tuple[float, np.ndarray]:
-            args_ = ([arg] for arg in args)  # (P,1,dim)
-            fval, grad = func_and_grad(x, *args_)
+            reshaped_args = ([arg] for arg in args)
+            fval, grad = func_and_grad(x, *reshaped_args)
             return fval.item(), grad
 
         xs_opt = np.empty_like(x0_batched)
