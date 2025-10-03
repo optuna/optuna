@@ -53,7 +53,7 @@ def _batched_lbfgsb(
 
     def run(i: int) -> None:
         def _func_and_grad(x: np.ndarray, *args: Any) -> tuple[float, np.ndarray]:
-            fval, grad = greenlet.getcurrent().parent.switch(x, args if args else None)
+            fval, grad = greenlet.getcurrent().parent.switch(x, args)
             # NOTE(nabenabe): copy is necessary to convert grad to writable.
             return float(fval), grad.copy()
 
@@ -80,13 +80,8 @@ def _batched_lbfgsb(
         x_batched_list = [pair[0] for pair in x_and_argsT_pairs if pair is not None]
         args_tuple_transposed = [pair[1] for pair in x_and_argsT_pairs if pair is not None]
         x_batched = np.array(x_batched_list)
-
-        if args_tuple_transposed and all(a is not None for a in args_tuple_transposed):
-            current_args_tuple = tuple(zip(*args_tuple_transposed))
-            fvals, grads = func_and_grad(x_batched, *current_args_tuple)
-        else:
-            fvals, grads = func_and_grad(x_batched)
-
+        current_args_tuple = tuple(zip(*args_tuple_transposed))
+        fvals, grads = func_and_grad(x_batched, *current_args_tuple)
         results = [gl.switch((fvals[i], grads[i])) for i, gl in enumerate(greenlets)]
 
         live_pairs_and_greenlets = [
@@ -95,7 +90,6 @@ def _batched_lbfgsb(
 
         if not live_pairs_and_greenlets:
             break
-
         x_and_argsT_pairs, greenlets = map(list, zip(*live_pairs_and_greenlets))
 
     return xs_opt, fvals_opt, n_iterations
@@ -135,11 +129,8 @@ def batched_lbfgsb(
     else:
         # args: (P,dim) -> (P,1,dim)
         def _func_and_grad_wrapper(x: np.ndarray, *args: Any) -> tuple[float, np.ndarray]:
-            if args:
-                args_ = ([arg] for arg in args)  # (P,1,dim)
-                fval, grad = func_and_grad(x, *args_)
-            else:
-                fval, grad = func_and_grad(x)
+            args_ = ([arg] for arg in args)  # (P,1,dim)
+            fval, grad = func_and_grad(x, *args_)
             return fval.item(), grad
 
         xs_opt = np.empty_like(x0_batched)
@@ -149,7 +140,7 @@ def batched_lbfgsb(
             xs_opt[i], fvals_opt[i], info = so.fmin_l_bfgs_b(
                 func=_func_and_grad_wrapper,
                 x0=x0,
-                args=tuple(arg[i] for arg in args_tuple) if args_tuple else (),
+                args=tuple(arg[i] for arg in args_tuple),
                 bounds=bounds,
                 m=m,
                 factr=factr,
