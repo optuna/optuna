@@ -103,6 +103,11 @@ class GPRegressor:
         self._is_categorical = is_categorical
         self._X_train = X_train
         self._y_train = y_train
+        self._squared_X_diff = (X_train[..., None, :] - X_train[..., None, :, :]).square()
+        if self._is_categorical.any():
+            self._squared_X_diff[..., self._is_categorical] = (
+                self._squared_X_diff[..., self._is_categorical] > 0.0
+            ).type(torch.float64)
         self._cov_Y_Y_inv: torch.Tensor | None = None
         self._cov_Y_Y_inv_Y: torch.Tensor | None = None
         # TODO(nabenabe): Rename the attributes to private with `_`.
@@ -115,8 +120,11 @@ class GPRegressor:
         return 1.0 / np.sqrt(self.inverse_squared_lengthscales.detach().numpy())
 
     def _cache_matrix(self) -> None:
+        assert (
+            self._cov_Y_Y_inv is None and self._cov_Y_Y_inv_Y is None
+        ), "Cannot call cache_matrix more than once."
         with torch.no_grad():
-            cov_Y_Y = self.kernel(self._X_train, self._X_train).detach().numpy()
+            cov_Y_Y = self.kernel().detach().numpy()
 
         cov_Y_Y[np.diag_indices(self._X_train.shape[0])] += self.noise_var.item()
         cov_Y_Y_inv = np.linalg.inv(cov_Y_Y)
@@ -124,8 +132,16 @@ class GPRegressor:
         # NOTE(nabenabe): Here we use NumPy to guarantee the reproducibility from the past.
         self._cov_Y_Y_inv = torch.from_numpy(cov_Y_Y_inv)
         self._cov_Y_Y_inv_Y = torch.from_numpy(cov_Y_Y_inv_Y)
+        self.inverse_squared_lengthscales = self.inverse_squared_lengthscales.detach()
+        self.inverse_squared_lengthscales.grad = None
+        self.kernel_scale = self.kernel_scale.detach()
+        self.kernel_scale.grad = None
+        self.noise_var = self.noise_var.detach()
+        self.noise_var.grad = None
 
-    def kernel(self, X1: torch.Tensor, X2: torch.Tensor) -> torch.Tensor:
+    def kernel(
+        self, X1: torch.Tensor | None = None, X2: torch.Tensor | None = None
+    ) -> torch.Tensor:
         """
         Return the kernel matrix with the shape of (..., n_A, n_B) given X1 and X2 each with the
         shapes of (..., n_A, len(params)) and (..., n_B, len(params)).
@@ -138,8 +154,18 @@ class GPRegressor:
         categorical, d2(x1, x2)[i] = int(x1[i] != x2[i]).
         Note that the distance for categorical parameters is the Hamming distance.
         """
-        d2 = (X1[..., :, None, :] - X2[..., None, :, :]) ** 2
-        d2[..., self._is_categorical] = (d2[..., self._is_categorical] > 0.0).type(torch.float64)
+        if X1 is None:
+            assert X2 is None
+            d2 = self._squared_X_diff
+        else:
+            if X2 is None:
+                X2 = self._X_train
+
+            d2 = (X1 - X2) ** 2 if X1.ndim == 1 else (X1[..., None, :] - X2[..., None, :, :]) ** 2
+            if self._is_categorical.any():
+                d2[..., self._is_categorical] = (d2[..., self._is_categorical] > 0.0).type(
+                    torch.float64
+                )
         d2 = (d2 * self.inverse_squared_lengthscales).sum(dim=-1)
         return Matern52Kernel.apply(d2) * self.kernel_scale  # type: ignore
 
@@ -157,7 +183,7 @@ class GPRegressor:
         assert (
             self._cov_Y_Y_inv is not None and self._cov_Y_Y_inv_Y is not None
         ), "Call cache_matrix before calling posterior."
-        cov_fx_fX = self.kernel(x[..., None, :], self._X_train)[..., 0, :]
+        cov_fx_fX = self.kernel(x)
         cov_fx_fx = self.kernel_scale  # kernel(x, x) = kernel_scale
         mean = cov_fx_fX @ self._cov_Y_Y_inv_Y
         var = cov_fx_fx - (cov_fx_fX * (cov_fx_fX @ self._cov_Y_Y_inv)).sum(dim=-1)
@@ -191,96 +217,78 @@ class GPRegressor:
         """
         n_points = self._X_train.shape[0]
         const = -0.5 * n_points * math.log(2 * math.pi)
-        cov_Y_Y = self.kernel(self._X_train, self._X_train) + self.noise_var * torch.eye(
-            n_points, dtype=torch.float64
-        )
+        cov_Y_Y = self.kernel() + self.noise_var * torch.eye(n_points, dtype=torch.float64)
         L = torch.linalg.cholesky(cov_Y_Y)
         logdet_part = -L.diagonal().log().sum()
         inv_L_y = torch.linalg.solve_triangular(L, self._y_train[:, None], upper=False)[:, 0]
         quad_part = -0.5 * (inv_L_y @ inv_L_y)
         return logdet_part + const + quad_part
 
+    def _fit_kernel_params(
+        self,
+        log_prior: Callable[[GPRegressor], torch.Tensor],
+        minimum_noise: float,
+        deterministic_objective: bool,
+        gtol: float,
+    ) -> GPRegressor:
+        n_params = self._X_train.shape[1]
 
-def _fit_kernel_params(
-    X: np.ndarray,
-    Y: np.ndarray,
-    is_categorical: np.ndarray,
-    log_prior: Callable[[GPRegressor], torch.Tensor],
-    minimum_noise: float,
-    deterministic_objective: bool,
-    gpr_cache: GPRegressor,
-    gtol: float,
-) -> GPRegressor:
-    n_params = X.shape[1]
-
-    # We apply log transform to enforce the positivity of the kernel parameters.
-    # Note that we cannot just use the constraint because of the numerical unstability
-    # of the marginal log likelihood.
-    # We also enforce the noise parameter to be greater than `minimum_noise` to avoid
-    # pathological behavior of maximum likelihood estimation.
-    initial_raw_params = np.concatenate(
-        [
-            np.log(gpr_cache.inverse_squared_lengthscales.detach().numpy()),
+        # We apply log transform to enforce the positivity of the kernel parameters.
+        # Note that we cannot just use the constraint because of the numerical unstability
+        # of the marginal log likelihood.
+        # We also enforce the noise parameter to be greater than `minimum_noise` to avoid
+        # pathological behavior of maximum likelihood estimation.
+        initial_raw_params = np.concatenate(
             [
-                np.log(gpr_cache.kernel_scale.item()),
-                # We add 0.01 * minimum_noise to initial noise_var to avoid instability.
-                np.log(gpr_cache.noise_var.item() - 0.99 * minimum_noise),
-            ],
-        ]
-    )
+                np.log(self.inverse_squared_lengthscales.detach().numpy()),
+                [
+                    np.log(self.kernel_scale.item()),
+                    # We add 0.01 * minimum_noise to initial noise_var to avoid instability.
+                    np.log(self.noise_var.item() - 0.99 * minimum_noise),
+                ],
+            ]
+        )
 
-    def loss_func(raw_params: np.ndarray) -> tuple[float, np.ndarray]:
-        raw_params_tensor = torch.from_numpy(raw_params)
-        raw_params_tensor.requires_grad_(True)
-        with torch.enable_grad():  # type: ignore[no-untyped-call]
-            gpr = GPRegressor(
-                is_categorical=torch.from_numpy(is_categorical),
-                X_train=torch.from_numpy(X),
-                y_train=torch.from_numpy(Y),
-                inverse_squared_lengthscales=torch.exp(raw_params_tensor[:n_params]),
-                kernel_scale=torch.exp(raw_params_tensor[n_params]),
-                noise_var=(
+        def loss_func(raw_params: np.ndarray) -> tuple[float, np.ndarray]:
+            raw_params_tensor = torch.from_numpy(raw_params).requires_grad_(True)
+            with torch.enable_grad():  # type: ignore[no-untyped-call]
+                self.inverse_squared_lengthscales = torch.exp(raw_params_tensor[:n_params])
+                self.kernel_scale = torch.exp(raw_params_tensor[n_params])
+                self.noise_var = (
                     torch.tensor(minimum_noise, dtype=torch.float64)
                     if deterministic_objective
                     else torch.exp(raw_params_tensor[n_params + 1]) + minimum_noise
-                ),
+                )
+                loss = -self.marginal_log_likelihood() - log_prior(self)
+                loss.backward()  # type: ignore
+                # scipy.minimize requires all the gradients to be zero for termination.
+                raw_noise_var_grad = raw_params_tensor.grad[n_params + 1]  # type: ignore
+                assert not deterministic_objective or raw_noise_var_grad == 0
+            return loss.item(), raw_params_tensor.grad.detach().numpy()  # type: ignore
+
+        with single_blas_thread_if_scipy_v1_15_or_newer():
+            # jac=True means loss_func returns the gradient for gradient descent.
+            res = so.minimize(
+                # Too small `gtol` causes instability in loss_func optimization.
+                loss_func,
+                initial_raw_params,
+                jac=True,
+                method="l-bfgs-b",
+                options={"gtol": gtol},
             )
-            loss = -gpr.marginal_log_likelihood() - log_prior(gpr)
-            loss.backward()  # type: ignore
-            # scipy.minimize requires all the gradients to be zero for termination.
-            raw_noise_var_grad = raw_params_tensor.grad[n_params + 1]  # type: ignore
-            assert not deterministic_objective or raw_noise_var_grad == 0
-        return loss.item(), raw_params_tensor.grad.detach().numpy()  # type: ignore
+        if not res.success:
+            raise RuntimeError(f"Optimization failed: {res.message}")
 
-    with single_blas_thread_if_scipy_v1_15_or_newer():
-        # jac=True means loss_func returns the gradient for gradient descent.
-        res = so.minimize(
-            # Too small `gtol` causes instability in loss_func optimization.
-            loss_func,
-            initial_raw_params,
-            jac=True,
-            method="l-bfgs-b",
-            options={"gtol": gtol},
-        )
-    if not res.success:
-        raise RuntimeError(f"Optimization failed: {res.message}")
-
-    raw_params_opt_tensor = torch.from_numpy(res.x)
-
-    gpr = GPRegressor(
-        is_categorical=torch.from_numpy(is_categorical),
-        X_train=torch.from_numpy(X),
-        y_train=torch.from_numpy(Y),
-        inverse_squared_lengthscales=torch.exp(raw_params_opt_tensor[:n_params]),
-        kernel_scale=torch.exp(raw_params_opt_tensor[n_params]),
-        noise_var=(
+        raw_params_opt_tensor = torch.from_numpy(res.x)
+        self.inverse_squared_lengthscales = torch.exp(raw_params_opt_tensor[:n_params])
+        self.kernel_scale = torch.exp(raw_params_opt_tensor[n_params])
+        self.noise_var = (
             torch.tensor(minimum_noise, dtype=torch.float64)
             if deterministic_objective
             else minimum_noise + torch.exp(raw_params_opt_tensor[n_params + 1])
-        ),
-    )
-    gpr._cache_matrix()
-    return gpr
+        )
+        self._cache_matrix()
+        return self
 
 
 def fit_kernel_params(
@@ -294,16 +302,21 @@ def fit_kernel_params(
     gtol: float = 1e-2,
 ) -> GPRegressor:
     default_kernel_params = torch.ones(X.shape[1] + 2, dtype=torch.float64)
-    default_gpr_cache = GPRegressor(
-        is_categorical=torch.from_numpy(is_categorical),
-        X_train=torch.from_numpy(X),
-        y_train=torch.from_numpy(Y),
-        inverse_squared_lengthscales=default_kernel_params[:-2].clone(),
-        kernel_scale=default_kernel_params[-2].clone(),
-        noise_var=default_kernel_params[-1].clone(),
-    )
+    # TODO: Move this function into a method of `GPRegressor`
+
+    def _default_gpr() -> GPRegressor:
+        return GPRegressor(
+            is_categorical=torch.from_numpy(is_categorical),
+            X_train=torch.from_numpy(X),
+            y_train=torch.from_numpy(Y),
+            inverse_squared_lengthscales=default_kernel_params[:-2].clone(),
+            kernel_scale=default_kernel_params[-2].clone(),
+            noise_var=default_kernel_params[-1].clone(),
+        )
+
+    default_gpr_cache = _default_gpr()
     if gpr_cache is None:
-        gpr_cache = default_gpr_cache
+        gpr_cache = _default_gpr()
 
     error = None
     # First try optimizing the kernel params with the provided kernel parameters in gpr_cache,
@@ -311,13 +324,16 @@ def fit_kernel_params(
     # This increases the robustness of the optimization.
     for gpr_cache_to_use in [gpr_cache, default_gpr_cache]:
         try:
-            return _fit_kernel_params(
-                X=X,
-                Y=Y,
-                is_categorical=is_categorical,
+            return GPRegressor(
+                is_categorical=torch.from_numpy(is_categorical),
+                X_train=torch.from_numpy(X),
+                y_train=torch.from_numpy(Y),
+                inverse_squared_lengthscales=gpr_cache_to_use.inverse_squared_lengthscales,
+                kernel_scale=gpr_cache_to_use.kernel_scale,
+                noise_var=gpr_cache_to_use.noise_var,
+            )._fit_kernel_params(
                 log_prior=log_prior,
                 minimum_noise=minimum_noise,
-                gpr_cache=gpr_cache_to_use,
                 deterministic_objective=deterministic_objective,
                 gtol=gtol,
             )
@@ -328,13 +344,6 @@ def fit_kernel_params(
         f"The optimization of kernel parameters failed: \n{error}\n"
         "The default initial kernel parameters will be used instead."
     )
-    default_gpr = GPRegressor(
-        is_categorical=torch.from_numpy(is_categorical),
-        X_train=torch.from_numpy(X),
-        y_train=torch.from_numpy(Y),
-        inverse_squared_lengthscales=default_kernel_params[:-2].clone(),
-        kernel_scale=default_kernel_params[-2].clone(),
-        noise_var=default_kernel_params[-1].clone(),
-    )
+    default_gpr = _default_gpr()
     default_gpr._cache_matrix()
     return default_gpr

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 import numpy as np
 
@@ -13,8 +13,13 @@ from optuna.importance._base import _param_importances_to_dict
 from optuna.importance._base import _sort_dict_by_importance
 from optuna.importance._base import BaseImportanceEvaluator
 from optuna.importance._fanova._fanova import _Fanova
-from optuna.study import Study
-from optuna.trial import FrozenTrial
+
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from optuna.study import Study
+    from optuna.trial import FrozenTrial
 
 
 class FanovaImportanceEvaluator(BaseImportanceEvaluator):

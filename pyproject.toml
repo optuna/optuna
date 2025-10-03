@@ -48,8 +48,8 @@ benchmark = [
   "virtualenv"
 ]
 checking = [
-  "black",
-  "blackdoc",
+  "black<25.9.0",  # TODO(nabe): Remove the version constraint after the fix in black.
+  "blackdoc<0.4.2",  # TODO(not522): Remove the version constraint after the fix in blackdoc.
   "flake8",
   "isort",
   "mypy",
@@ -91,6 +91,7 @@ optional = [
   "scikit-learn>=0.24.2",  # optuna/importance.
   "scipy",  # optuna/_gp.
   "torch",  # optuna/_gp.
+  "greenlet",  # optuna/_gp. necessary for faster gp.
   "grpcio",  # optuna/storages/_grpc.
   "protobuf>=5.28.1",  # optuna/storages/_grpc.
 ]
@@ -103,6 +104,7 @@ test = [
   "pytest-xdist",
   "scipy>=1.9.2",
   "torch",  # optuna/_gp.
+  "greenlet",  # optuna/_gp.
   "grpcio",  # optuna/storages/_grpc.
   "protobuf>=5.28.1",  # optuna/storages/_grpc.
 ]
