@@ -42,6 +42,7 @@ if TYPE_CHECKING:
     import alembic.script as alembic_script
     import sqlalchemy
     import sqlalchemy.dialects.mysql as sqlalchemy_dialects_mysql
+    import sqlalchemy.dialects.postgresql as sqlalchemy_dialects_postgresql
     import sqlalchemy.dialects.sqlite as sqlalchemy_dialects_sqlite
     import sqlalchemy.exc as sqlalchemy_exc
     import sqlalchemy.orm as sqlalchemy_orm
@@ -56,6 +57,7 @@ else:
 
     sqlalchemy = _LazyImport("sqlalchemy")
     sqlalchemy_dialects_mysql = _LazyImport("sqlalchemy.dialects.mysql")
+    sqlalchemy_dialects_postgresql = _LazyImport("sqlalchemy.dialects.postgresql")
     sqlalchemy_dialects_sqlite = _LazyImport("sqlalchemy.dialects.sqlite")
     sqlalchemy_exc = _LazyImport("sqlalchemy.exc")
     sqlalchemy_orm = _LazyImport("sqlalchemy.orm")
@@ -751,8 +753,17 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                 set_=dict(value_json=sqlite_insert_stmt.excluded.value_json),
             )
             session.execute(sqlite_upsert_stmt)
+        elif self.engine.name == "postgresql":
+            pg_insert_stmt = sqlalchemy_dialects_postgresql.insert(model_cls).values(
+                trial_id=trial_id, key=key, value_json=json.dumps(value)
+            )
+            pg_upsert_stmt = pg_insert_stmt.on_conflict_do_update(
+                index_elements=[model_cls.trial_id, model_cls.key],
+                set_=dict(value_json=pg_insert_stmt.excluded.value_json),
+            )
+            session.execute(pg_upsert_stmt)
         else:
-            # TODO(porink0424): Add support for other databases, e.g., PostgreSQL.
+            # TODO(porink0424): Add support for other databases.
             attribute = model_cls.find_by_trial_and_key(trial, key, session)
             if attribute is None:
                 attribute = model_cls(trial_id=trial_id, key=key, value_json=json.dumps(value))
