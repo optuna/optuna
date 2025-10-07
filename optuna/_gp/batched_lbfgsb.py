@@ -118,6 +118,24 @@ def batched_lbfgsb(
     if x0_batched.ndim != 2:
         raise ValueError("x0_batched must be 2D array.")
 
+    batch_size, dim = x0_batched.shape
+    # Validate args_tuple shapes: each arg must be a sequence of length B
+    for j, arg in enumerate(args_tuple):
+        try:
+            if len(arg) != batch_size:
+                raise ValueError(f"args_tuple[{j}] must have length {batch_size}, got {len(arg)}.")
+        except TypeError as e:
+            raise TypeError(
+                f"Each element of args_tuple must be a sequence with length {batch_size}."
+            ) from e
+
+    # Validate bounds
+    if bounds is not None:
+        if len(bounds) != dim:
+            raise ValueError(f"bounds must have length {dim}, got {len(bounds)}.")
+        for k, (lb, ub) in enumerate(bounds):
+            if lb > ub:
+                raise ValueError(f"Lower bound must be <= upper bound at index {k}.")
     if _greenlet_imports.is_successful() and len(x0_batched) > 1:
         # NOTE(Kaichi-Irie): when batch size is 1, using greenlet causes context-switch overhead.
         xs_opt, fvals_opt, n_iterations = _batched_lbfgsb(
