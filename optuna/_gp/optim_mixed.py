@@ -49,6 +49,7 @@ def _gradient_ascent_batched(
     speeds up the convergence.
     As the domain of `x` is [0, 1], that of `z` becomes [0, 1/l].
     """
+    assert initial_params_batched.ndim == 2
     if len(continuous_indices) == 0:
         return initial_params_batched, initial_fvals, np.zeros(len(initial_fvals), dtype=bool)
 
@@ -58,9 +59,6 @@ def _gradient_ascent_batched(
         next_params = np.array(fixed_params)  # (B, dim)
         assert next_params.ndim == 2
         # Scale back to the original domain, i.e. [0, 1], from [0, 1/s].
-        if scaled_x.ndim == 1:
-            # NOTE(Kaichi-Irie): When scaled_x is 1D, regard it as a single batch.
-            scaled_x = scaled_x[None]
         assert scaled_x.ndim == 2
         assert next_params[:, continuous_indices].shape == scaled_x.shape
         next_params[:, continuous_indices] = scaled_x * lengthscales
