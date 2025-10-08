@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Iterator
 import json
 import time
-from collections.abc import Iterator
 from typing import Any
 
 from optuna._deprecated import deprecated_class

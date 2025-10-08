@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from collections.abc import Container
-from collections.abc import Sequence
 from collections.abc import Iterator
+from collections.abc import Sequence
 import copy
 import datetime
 import enum

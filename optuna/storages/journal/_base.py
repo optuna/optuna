@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import abc
-from typing import Any
 from collections.abc import Iterator
+from typing import Any
 
 from optuna._deprecated import deprecated_class
 
