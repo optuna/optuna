@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Iterator
+from collections.abc import Iterable
 import json
 import time
 from typing import Any
@@ -53,7 +53,7 @@ class JournalRedisBackend(BaseJournalBackend, BaseJournalSnapshot):
         self.__dict__.update(state)
         self._redis = redis.Redis.from_url(self._url)
 
-    def read_logs(self, log_number_from: int) -> Iterator[dict[str, Any]]:
+    def read_logs(self, log_number_from: int) -> Iterable[dict[str, Any]]:
         max_log_number_bytes = self._redis.get(f"{self._prefix}:log_number")
         if max_log_number_bytes is None:
             return
