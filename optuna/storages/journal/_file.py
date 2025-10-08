@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import abc
-from collections.abc import Iterable
+from collections.abc import Generator
 from collections.abc import Iterator
 from contextlib import contextmanager
 import errno
@@ -60,7 +60,7 @@ class JournalFileBackend(BaseJournalBackend):
             open(self._file_path, "ab").close()  # Create a file if it does not exist.
         self._log_number_offset: dict[int, int] = {0: 0}
 
-    def read_logs(self, log_number_from: int) -> Iterable[dict[str, Any]]:
+    def read_logs(self, log_number_from: int) -> Generator[dict[str, Any], None, None]:
         with open(self._file_path, "rb") as f:
             # Maintain remaining_log_size to allow writing by another process
             # while reading the log.
