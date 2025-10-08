@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import abc
-from collections.abc import Iterable, Iterator
+from collections.abc import Iterable
+from collections.abc import Iterator
 from contextlib import contextmanager
 import errno
 import json
