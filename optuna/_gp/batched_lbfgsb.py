@@ -129,7 +129,7 @@ def batched_lbfgsb(
                 f"Each element of args_tuple must be a sequence with length {batch_size}."
             ) from e
 
-    # Validate bounds
+    # Validate bounds.
     if bounds is not None:
         if len(bounds) != dim:
             raise ValueError(f"bounds must have length {dim}, got {len(bounds)}.")
