@@ -119,7 +119,7 @@ def batched_lbfgsb(
         raise ValueError("x0_batched must be 2D array.")
 
     batch_size, dim = x0_batched.shape
-    # Validate args_tuple shapes: each arg must be a sequence of length B
+    # Validate args_tuple shapes: each arg must be a sequence of length B.
     for j, arg in enumerate(args_tuple):
         try:
             if len(arg) != batch_size:
