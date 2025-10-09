@@ -129,6 +129,8 @@ class GPRegressor:
         cov_Y_Y[np.diag_indices(self._X_train.shape[0])] += self.noise_var.item()
         cov_Y_Y_chol = np.linalg.cholesky(cov_Y_Y)
         # cov_Y_Y_inv @ y = v --> y = cov_Y_Y @ v --> y = cov_Y_Y_chol @ cov_Y_Y_chol.T @ v
+        # NOTE(nabenabe): Don't use np.linalg.inv because it is too slow und unstable.
+        # cf. https://github.com/optuna/optuna/issues/6230
         cov_Y_Y_inv_Y = scipy.linalg.solve_triangular(
             cov_Y_Y_chol.T,
             scipy.linalg.solve_triangular(cov_Y_Y_chol, self._y_train.numpy(), lower=True),
