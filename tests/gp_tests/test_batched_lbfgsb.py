@@ -9,6 +9,8 @@ import numpy as np
 import pytest
 from scipy.optimize import fmin_l_bfgs_b
 
+from optuna._gp.batched_lbfgsb import batched_lbfgsb
+
 
 RADIUS = 5.12
 
@@ -115,3 +117,26 @@ def test_batched_lbfgsb(
         kwargs_scipy,
         batched_lbfgsb_func=optimization_module.batched_lbfgsb,
     )
+
+
+def test_batched_lbfgsb_invalid_args_tuple_shape() -> None:
+    batch_size = 10
+    dimension = 2
+    x0_batched = np.random.rand(batch_size, dimension)
+
+    def dummy_func_and_grad(x: np.ndarray, _arg: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+        return np.sum(x, axis=1), np.ones_like(x)
+
+    with pytest.raises(ValueError, match=f"args_tuple[0] must have length {batch_size}, got 5."):
+        batched_lbfgsb(
+            func_and_grad=dummy_func_and_grad,
+            x0_batched=x0_batched,
+            args_tuple=(np.random.rand(5),),
+        )
+
+    with pytest.raises(TypeError, match="Each element of args_tuple must be a sequence"):
+        batched_lbfgsb(
+            func_and_grad=dummy_func_and_grad,
+            x0_batched=x0_batched,
+            args_tuple=(1.0,),
+        )
