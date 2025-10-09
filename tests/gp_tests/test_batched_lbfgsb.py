@@ -127,7 +127,9 @@ def test_batched_lbfgsb_invalid_args_tuple_shape() -> None:
     def dummy_func_and_grad(x: np.ndarray, _arg: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         return np.sum(x, axis=1), np.ones_like(x)
 
-    with pytest.raises(ValueError, match=rf"args_tuple\[0\] must have length {batch_size}, got 5."):
+    with pytest.raises(
+        ValueError, match=rf"args_tuple\[0\] must have length {batch_size}, got 5."
+    ):
         batched_lbfgsb(
             func_and_grad=dummy_func_and_grad,
             x0_batched=x0_batched,
