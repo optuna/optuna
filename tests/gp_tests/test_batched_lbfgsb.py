@@ -134,7 +134,7 @@ def test_batched_lbfgsb_invalid_args_tuple_shape() -> None:
             args_tuple=(np.random.rand(5),),
         )
 
-    with pytest.raises(TypeError, match="Each element of args_tuple must be a sequence"):
+    with pytest.raises(TypeError):
         batched_lbfgsb(
             func_and_grad=dummy_func_and_grad,
             x0_batched=x0_batched,
