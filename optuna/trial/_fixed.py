@@ -4,8 +4,8 @@ from collections.abc import Sequence
 import datetime
 from typing import Any
 from typing import overload
-import warnings
 
+from optuna import _warnings as warnings
 from optuna import distributions
 from optuna._convert_positional_args import convert_positional_args
 from optuna._deprecated import deprecated_func

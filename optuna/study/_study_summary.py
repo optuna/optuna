@@ -3,8 +3,8 @@ from __future__ import annotations
 from collections.abc import Sequence
 import datetime
 from typing import Any
-import warnings
 
+from optuna import _warnings as warnings
 from optuna import logging
 from optuna import trial
 from optuna.study._study_direction import StudyDirection

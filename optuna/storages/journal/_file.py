@@ -9,8 +9,8 @@ import os
 import time
 from typing import Any
 import uuid
-import warnings
 
+from optuna import _warnings as warnings
 from optuna._deprecated import deprecated_class
 from optuna.storages.journal._base import BaseJournalBackend
 

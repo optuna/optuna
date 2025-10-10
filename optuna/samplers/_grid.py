@@ -7,10 +7,10 @@ from numbers import Real
 from typing import Any
 from typing import TYPE_CHECKING
 from typing import Union
-import warnings
 
 import numpy as np
 
+from optuna import _warnings as warnings
 from optuna.distributions import BaseDistribution
 from optuna.logging import get_logger
 from optuna.samplers import BaseSampler

@@ -4,10 +4,10 @@ import math
 import sys
 from typing import cast
 from typing import TYPE_CHECKING
-import warnings
 
 import numpy as np
 
+from optuna import _warnings as warnings
 from optuna._experimental import experimental_class
 from optuna.samplers._lazy_random_state import LazyRandomState
 from optuna.search_space import intersection_search_space
