@@ -289,7 +289,7 @@ def _compute_gp_posterior(
 def _posterior_of_batched_theta(
     gpr: gp.GPRegressor,
     X: torch.Tensor,  # [len(trials), len(params)]
-    cov_Y_Y_inv: torch.Tensor,  # [len(trials), len(trials)]
+    cov_Y_Y_chol: torch.Tensor,  # [len(trials), len(trials)]
     cov_Y_Y_inv_Y: torch.Tensor,  # [len(trials)]
     theta: torch.Tensor,  # [batch, len(params)]
 ) -> tuple[torch.Tensor, torch.Tensor]:  # (mean: [(batch,)], var: [(batch,batch)])
@@ -299,7 +299,7 @@ def _posterior_of_batched_theta(
     assert len(theta.shape) == 2
     len_batch = theta.shape[0]
     assert theta.shape == (len_batch, len_params)
-    assert cov_Y_Y_inv.shape == (len_trials, len_trials)
+    assert cov_Y_Y_chol.shape == (len_trials, len_trials)
     assert cov_Y_Y_inv_Y.shape == (len_trials,)
 
     cov_ftheta_fX = gpr.kernel(theta[..., None, :], X)[..., 0, :]
@@ -312,7 +312,13 @@ def _posterior_of_batched_theta(
 
     mean = cov_ftheta_fX @ cov_Y_Y_inv_Y
     assert mean.shape == (len_batch,)
-    var = cov_ftheta_ftheta - cov_ftheta_fX @ cov_Y_Y_inv @ cov_ftheta_fX.T
+    V = torch.linalg.solve_triangular(
+        cov_Y_Y_chol,
+        torch.linalg.solve_triangular(cov_Y_Y_chol.T, cov_ftheta_fX, upper=True, left=False),
+        upper=False,
+        left=False,
+    )
+    var = cov_ftheta_ftheta - torch.linalg.vecdot(cov_ftheta_fX, V)
     assert var.shape == (len_batch, len_batch)
 
     # We need to clamp the variance to avoid negative values due to numerical errors.
@@ -339,13 +345,13 @@ def _compute_gp_posterior_cov_two_thetas(
 
     assert normalized_params.shape[0] == standarized_score_vals.shape[0]
 
-    cov_Y_Y_inv = gpr._cov_Y_Y_inv
+    cov_Y_Y_chol = gpr._cov_Y_Y_chol
     cov_Y_Y_inv_Y = gpr._cov_Y_Y_inv_Y
-    assert cov_Y_Y_inv is not None and cov_Y_Y_inv_Y is not None
+    assert cov_Y_Y_chol is not None and cov_Y_Y_inv_Y is not None
     _, var = _posterior_of_batched_theta(
         gpr,
         gpr._X_train,
-        cov_Y_Y_inv,
+        cov_Y_Y_chol,
         cov_Y_Y_inv_Y,
         torch.from_numpy(normalized_params[[theta1_index, theta2_index]]),
     )
