@@ -58,6 +58,7 @@ class Trial(BaseTrial):
 
         self.study.sampler.before_trial(study, self._cached_frozen_trial)
 
+        # NOTE(not522): Evaluate it lazily to get as latest search as possible.
         self.relative_search_space: dict[str, BaseDistribution] | None = None
         self._relative_params: dict[str, Any] | None = None
         self._fixed_params = self._cached_frozen_trial.system_attrs.get("fixed_params", {})
