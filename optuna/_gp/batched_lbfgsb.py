@@ -95,7 +95,7 @@ def _batched_lbfgsb(
 def batched_lbfgsb(
     func_and_grad: Callable[..., tuple[np.ndarray, np.ndarray]],
     x0_batched: np.ndarray,  # shape (batch_size, dim)
-    args_tuple: tuple[Any, ...] = (),
+    args_tuple: tuple[list[Any], ...] = (),
     bounds: list[tuple[float, float]] | None = None,
     m: int = 10,
     factr: float = 1e7,
@@ -115,19 +115,13 @@ def batched_lbfgsb(
       `func_and_grad(x0_batched, [alpha1, ..., alphaB], [beta1, ..., betaB])`. Note that each
       argument in `args_tuple` is expected to be a list of length `B` (batch size).
     """
-    if x0_batched.ndim != 2:
-        raise ValueError("x0_batched must be 2D array.")
+    assert x0_batched.ndim == 2
 
     batch_size, dim = x0_batched.shape
     # Validate args_tuple shapes: each arg must be a sequence of length B.
     for j, arg in enumerate(args_tuple):
-        try:
-            if len(arg) != batch_size:
-                raise ValueError(f"args_tuple[{j}] must have length {batch_size}, got {len(arg)}.")
-        except TypeError as e:
-            raise TypeError(
-                f"Each element of args_tuple must be a sequence with length {batch_size}."
-            ) from e
+        if len(arg) != batch_size:
+            raise ValueError(f"args_tuple[{j}] must have length {batch_size}, got {len(arg)}.")
 
     # Validate bounds.
     if bounds is not None:
@@ -155,8 +149,7 @@ def batched_lbfgsb(
     else:
 
         def _func_and_grad_wrapper(x_1d: np.ndarray, *args_1d: Any) -> tuple[float, np.ndarray]:
-            if x_1d.ndim != 1:
-                raise ValueError("x must be 1D array.")
+            assert x_1d.ndim == 1
             args_2d = ([arg] for arg in args_1d)
             x_2d = x_1d[None, :]  # (dim,) -> (1, dim)
             fval, grad = func_and_grad(x_2d, *args_2d)

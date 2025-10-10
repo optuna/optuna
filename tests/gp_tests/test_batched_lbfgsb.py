@@ -119,11 +119,19 @@ def test_batched_lbfgsb(
     )
 
 
-def test_batched_lbfgsb_invalid_args_tuple_shape() -> None:
-    batch_size = 10
+def test_batched_lbfgsb_invalid_input() -> None:
+    batch_size = 3
     dimension = 2
     x0_batched = np.random.rand(batch_size, dimension)
 
+    # x0_batched validation
+    with pytest.raises(AssertionError):
+        batched_lbfgsb(
+            func_and_grad=lambda x: (np.sum(x, axis=1), np.ones_like(x)),
+            x0_batched=x0_batched[0],  # not 2D
+        )
+
+    # args_tuple validation
     def dummy_func_and_grad(x: np.ndarray, _arg: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         return np.sum(x, axis=1), np.ones_like(x)
 
@@ -131,12 +139,5 @@ def test_batched_lbfgsb_invalid_args_tuple_shape() -> None:
         batched_lbfgsb(
             func_and_grad=dummy_func_and_grad,
             x0_batched=x0_batched,
-            args_tuple=(np.random.rand(5),),
-        )
-
-    with pytest.raises(TypeError):
-        batched_lbfgsb(
-            func_and_grad=dummy_func_and_grad,
-            x0_batched=x0_batched,
-            args_tuple=(1.0,),
+            args_tuple=([0] * (batch_size + 1),),  # wrong length
         )
