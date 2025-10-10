@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Generator
 import json
 import time
 from typing import Any
@@ -52,13 +53,12 @@ class JournalRedisBackend(BaseJournalBackend, BaseJournalSnapshot):
         self.__dict__.update(state)
         self._redis = redis.Redis.from_url(self._url)
 
-    def read_logs(self, log_number_from: int) -> list[dict[str, Any]]:
+    def read_logs(self, log_number_from: int) -> Generator[dict[str, Any], None, None]:
         max_log_number_bytes = self._redis.get(f"{self._prefix}:log_number")
         if max_log_number_bytes is None:
-            return []
+            return
         max_log_number = int(max_log_number_bytes)
 
-        logs = []
         for log_number in range(log_number_from, max_log_number + 1):
             sleep_secs = 0.1
             while True:
@@ -68,11 +68,10 @@ class JournalRedisBackend(BaseJournalBackend, BaseJournalSnapshot):
                 time.sleep(sleep_secs)
                 sleep_secs = min(sleep_secs * 2, 10)
             try:
-                logs.append(json.loads(log))
+                yield json.loads(log)
             except json.JSONDecodeError as err:
                 if log_number != max_log_number:
                     raise err
-        return logs
 
     def append_logs(self, logs: list[dict[str, Any]]) -> None:
         self._redis.setnx(f"{self._prefix}:log_number", -1)

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Container
+from collections.abc import Iterable
 from collections.abc import Sequence
 import copy
 import datetime
@@ -414,7 +415,7 @@ class JournalStorageReplayResult:
         self._next_study_id: int = 0
         self._worker_id_to_owned_trial_id: dict[str, int] = {}
 
-    def apply_logs(self, logs: list[dict[str, Any]]) -> None:
+    def apply_logs(self, logs: Iterable[dict[str, Any]]) -> None:
         for log in logs:
             self.log_number_read += 1
             op = log["op_code"]
