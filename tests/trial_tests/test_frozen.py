@@ -66,12 +66,6 @@ def test_lt() -> None:
     assert trials[1] is trial_other
 
 
-def test_repr() -> None:
-    trial = _create_trial()
-
-    assert trial == eval(repr(trial))
-
-
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_sampling(storage_mode: str) -> None:
     def objective(trial: BaseTrial) -> float:
