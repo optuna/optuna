@@ -11,14 +11,11 @@ from warnings import simplefilter
 
 _OPTUNA_MODULE_ROOT: str = (str(Path(__file__).resolve().parent) + os.sep).casefold()
 
-# print(_OPTUNA_MODULE_ROOT)
-
 
 def find_stacklevel() -> int:
     level = 1
     try:
         while True:
-            # print(getattr(sys._getframe(level).f_code, "co_filename", ""))
             if (
                 not getattr(sys._getframe(level).f_code, "co_filename", "")
                 .casefold()
