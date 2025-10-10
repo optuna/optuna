@@ -57,10 +57,8 @@ def _gradient_ascent_batched(
         scaled_x: np.ndarray, fixed_params: list[np.ndarray]
     ) -> tuple[np.ndarray, np.ndarray]:
         next_params = np.array(fixed_params)  # (B, dim)
-        assert next_params.ndim == 2
         # Scale back to the original domain, i.e. [0, 1], from [0, 1/s].
-        assert scaled_x.ndim == 2
-        assert next_params[:, continuous_indices].shape == scaled_x.shape
+        assert scaled_x.ndim == 2 and next_params.ndim == 2
         next_params[:, continuous_indices] = scaled_x * lengthscales
         # NOTE(Kaichi-Irie): If fvals.numel() > 1, backward() cannot be computed, so we sum up.
         x_tensor = torch.from_numpy(next_params).requires_grad_(True)
