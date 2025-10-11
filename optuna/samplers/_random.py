@@ -3,16 +3,16 @@ from __future__ import annotations
 from typing import Any
 from typing import TYPE_CHECKING
 
-from optuna import distributions
 from optuna._transform import _SearchSpaceTransform
-from optuna.distributions import BaseDistribution
 from optuna.samplers import BaseSampler
 from optuna.samplers._lazy_random_state import LazyRandomState
-from optuna.trial import FrozenTrial
 
 
 if TYPE_CHECKING:
+    from optuna import distributions
+    from optuna.distributions import BaseDistribution
     from optuna.study import Study
+    from optuna.trial import FrozenTrial
 
 
 class RandomSampler(BaseSampler):
