@@ -177,6 +177,10 @@ markers = [
   "slow: marks tests as slow (deselect with '-m \"not slow\"')"
 ]
 
+[tool.coverage.run]
+concurrency = ["multiprocessing", "thread"]
+source = ["optuna/"]
+
 [tool.mypy]
 # Options configure mypy's strict mode.
 warn_unused_configs = true
