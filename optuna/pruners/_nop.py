@@ -1,6 +1,7 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
-import optuna  # noqa: F401, TC001
 from optuna.pruners import BasePruner
 
 
@@ -50,5 +51,5 @@ class NopPruner(BasePruner):
             study.optimize(objective, n_trials=20)
     """
 
-    def prune(self, study: "Study", trial: "FrozenTrial") -> bool:
+    def prune(self, study: Study, trial: FrozenTrial) -> bool:
         return False
