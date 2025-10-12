@@ -318,7 +318,7 @@ def _posterior_of_batched_theta(
         upper=False,
         left=False,
     )
-    var = cov_ftheta_ftheta - torch.linalg.vecdot(cov_ftheta_fX, V)
+    var = cov_ftheta_ftheta - V @ cov_ftheta_fX.T
     assert var.shape == (len_batch, len_batch)
 
     # We need to clamp the variance to avoid negative values due to numerical errors.
