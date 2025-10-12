@@ -191,7 +191,8 @@ class GPRegressor:
             self._cov_Y_Y_chol is not None and self._cov_Y_Y_inv_Y is not None
         ), "Call cache_matrix before calling posterior."
         is_single_point = x.ndim == 1
-        cov_fx_fX = self.kernel(x) if not is_single_point else self.kernel(x.unsqueeze(0))
+        x_ = x if not is_single_point else x.unsqueeze(0)
+        cov_fx_fX = self.kernel(x_)
         cov_fx_fx = self.kernel_scale  # kernel(x, x) = kernel_scale
         mean = cov_fx_fX @ self._cov_Y_Y_inv_Y
         # K @ inv(C) = V --> K = V @ C --> K = V @ L @ L.T
