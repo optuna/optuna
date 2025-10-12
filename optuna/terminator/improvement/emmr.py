@@ -286,45 +286,6 @@ def _compute_gp_posterior(
     return float(mean[0]), float(var[0])
 
 
-def _posterior_of_batched_theta(
-    gpr: gp.GPRegressor,
-    X: torch.Tensor,  # [len(trials), len(params)]
-    cov_Y_Y_chol: torch.Tensor,  # [len(trials), len(trials)]
-    cov_Y_Y_inv_Y: torch.Tensor,  # [len(trials)]
-    theta: torch.Tensor,  # [batch, len(params)]
-) -> tuple[torch.Tensor, torch.Tensor]:  # (mean: [(batch,)], var: [(batch,batch)])
-
-    assert len(X.shape) == 2
-    len_trials, len_params = X.shape
-    assert len(theta.shape) == 2
-    len_batch = theta.shape[0]
-    assert theta.shape == (len_batch, len_params)
-    assert cov_Y_Y_chol.shape == (len_trials, len_trials)
-    assert cov_Y_Y_inv_Y.shape == (len_trials,)
-
-    cov_ftheta_fX = gpr.kernel(theta[..., None, :], X)[..., 0, :]
-    assert cov_ftheta_fX.shape == (len_batch, len_trials)
-    cov_ftheta_ftheta = gpr.kernel(theta[..., None, :], theta)[..., 0, :]
-    assert cov_ftheta_ftheta.shape == (len_batch, len_batch)
-
-    assert torch.allclose(cov_ftheta_ftheta.diag(), gpr.kernel_scale)
-    assert torch.allclose(cov_ftheta_ftheta, cov_ftheta_ftheta.T)
-
-    mean = cov_ftheta_fX @ cov_Y_Y_inv_Y
-    assert mean.shape == (len_batch,)
-    V = torch.linalg.solve_triangular(
-        cov_Y_Y_chol,
-        torch.linalg.solve_triangular(cov_Y_Y_chol.T, cov_ftheta_fX, upper=True, left=False),
-        upper=False,
-        left=False,
-    )
-    var = cov_ftheta_ftheta - V @ cov_ftheta_fX.T
-    assert var.shape == (len_batch, len_batch)
-
-    # We need to clamp the variance to avoid negative values due to numerical errors.
-    return mean, torch.clamp(var, min=0.0)
-
-
 def _compute_gp_posterior_cov_two_thetas(
     search_space: gp_search_space.SearchSpace,
     normalized_params: np.ndarray,
@@ -348,13 +309,8 @@ def _compute_gp_posterior_cov_two_thetas(
     cov_Y_Y_chol = gpr._cov_Y_Y_chol
     cov_Y_Y_inv_Y = gpr._cov_Y_Y_inv_Y
     assert cov_Y_Y_chol is not None and cov_Y_Y_inv_Y is not None
-    _, var = _posterior_of_batched_theta(
-        gpr,
-        gpr._X_train,
-        cov_Y_Y_chol,
-        cov_Y_Y_inv_Y,
-        torch.from_numpy(normalized_params[[theta1_index, theta2_index]]),
+    _, covar = gpr.posterior(
+        torch.from_numpy(normalized_params[[theta1_index, theta2_index]]), joint=True
     )
-    assert var.shape == (2, 2)
-    var = var.detach().numpy()[0, 1]
-    return float(var)
+    assert covar.shape == (2, 2)
+    return covar[0, 1].item()
