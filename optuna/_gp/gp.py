@@ -11,7 +11,7 @@ cov_Y_Y_inv:
     (len(trials), len(trials)).
 cov_Y_Y_inv_Y: `cov_Y_Y_inv @ y` with the shape of (len(trials), ).
 max_Y: The maximum of Y (Note that we transform the objective values such that it is maximized.)
-d2: The squared distance between two points.
+sqd: The squared differences of each dimension between two points.
 is_categorical:
     A boolean array with the shape of (len(params), ). If is_categorical[i] is True, the i-th
     parameter is categorical.
@@ -103,7 +103,7 @@ class GPRegressor:
         self._is_categorical = is_categorical
         self._X_train = X_train
         self._y_train = y_train
-        self._squared_X_diff = (X_train[..., None, :] - X_train[..., None, :, :]).square()
+        self._squared_X_diff = (X_train.unsqueeze(-2) - X_train.unsqueeze(-3)).square_()
         if self._is_categorical.any():
             self._squared_X_diff[..., self._is_categorical] = (
                 self._squared_X_diff[..., self._is_categorical] > 0.0
@@ -148,26 +148,27 @@ class GPRegressor:
 
         If x1 and x2 have the shape of (len(params), ), kernel(x1, x2) is computed as:
             kernel_scale * Matern52Kernel.apply(
-                d2(x1, x2) @ inverse_squared_lengthscales
+                sqd(x1, x2) @ inverse_squared_lengthscales
             )
-        where if x1[i] is continuous, d2(x1, x2)[i] = (x1[i] - x2[i]) ** 2 and if x1[i] is
-        categorical, d2(x1, x2)[i] = int(x1[i] != x2[i]).
+        where if x1[i] is continuous, sqd(x1, x2)[i] = (x1[i] - x2[i]) ** 2 and if x1[i] is
+        categorical, sqd(x1, x2)[i] = int(x1[i] != x2[i]).
         Note that the distance for categorical parameters is the Hamming distance.
         """
         if X1 is None:
             assert X2 is None
-            d2 = self._squared_X_diff
+            sqd = self._squared_X_diff
         else:
             if X2 is None:
                 X2 = self._X_train
 
-            d2 = (X1 - X2) ** 2 if X1.ndim == 1 else (X1[..., None, :] - X2[..., None, :, :]) ** 2
+            sqd = (X1 - X2 if X1.ndim == 1 else X1.unsqueeze(-2) - X2.unsqueeze(-3)).square_()
             if self._is_categorical.any():
-                d2[..., self._is_categorical] = (d2[..., self._is_categorical] > 0.0).type(
+                sqd[..., self._is_categorical] = (sqd[..., self._is_categorical] > 0.0).type(
                     torch.float64
                 )
-        d2 = (d2 * self.inverse_squared_lengthscales).sum(dim=-1)
-        return Matern52Kernel.apply(d2) * self.kernel_scale  # type: ignore
+        return Matern52Kernel.apply(
+            sqd.matmul(self.inverse_squared_lengthscales)
+        ) * self.kernel_scale  # type: ignore
 
     def posterior(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         """
