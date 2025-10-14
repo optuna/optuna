@@ -174,49 +174,17 @@ class EMMREvaluator(BaseImprovementEvaluator):
         theta_t1_star_index = int(np.argmax(standarized_score_vals[:-1]))
         theta_t_star = normalized_params[theta_t_star_index, :]
         theta_t1_star = normalized_params[theta_t1_star_index, :]
-
         cov_t_between_theta_t_star_and_theta_t1_star = _compute_gp_posterior_cov_two_thetas(
-            search_space,
-            normalized_params,
-            standarized_score_vals,
-            gpr_t,
-            theta_t_star_index,
-            theta_t1_star_index,
+            normalized_params, gpr_t, theta_t_star_index, theta_t1_star_index
         )
-
+        # Use gpr_t instead of gpr_t1 because KL Div. requires the same prior for both posterior.
+        # cf. Sec. 4.4 of https://proceedings.mlr.press/v206/ishibashi23a/ishibashi23a.pdf
         mu_t1_theta_t_with_nu_t, variance_t1_theta_t_with_nu_t = _compute_gp_posterior(
-            search_space,
-            normalized_params[:-1, :],
-            standarized_score_vals[:-1],
-            normalized_params[-1, :],
-            gpr_t,
-            # Use gpr_t instead of gpr_t1.
-            # Use "t" under the assumption that "t" and "t1" are approximately the same.
-            # This is because kernel should same when computing KLD.
-            # For detailed information, please see section 4.4 of the paper:
-            # https://proceedings.mlr.press/v206/ishibashi23a/ishibashi23a.pdf
+            normalized_params[-1, :], gpr_t
         )
-        _, variance_t_theta_t1_star = _compute_gp_posterior(
-            search_space,
-            normalized_params,
-            standarized_score_vals,
-            theta_t1_star,
-            gpr_t,
-        )
-        mu_t_theta_t_star, variance_t_theta_t_star = _compute_gp_posterior(
-            search_space,
-            normalized_params,
-            standarized_score_vals,
-            theta_t_star,
-            gpr_t,
-        )
-        mu_t1_theta_t1_star, _ = _compute_gp_posterior(
-            search_space,
-            normalized_params[:-1, :],
-            standarized_score_vals[:-1],
-            theta_t1_star,
-            gpr_t1,
-        )
+        _, variance_t_theta_t1_star = _compute_gp_posterior(theta_t1_star, gpr_t)
+        mu_t_theta_t_star, variance_t_theta_t_star = _compute_gp_posterior(theta_t_star, gpr_t)
+        mu_t1_theta_t1_star, _ = _compute_gp_posterior(theta_t1_star, gpr_t1)
 
         y_t = standarized_score_vals[-1]
         kappa_t1 = _compute_standardized_regret_bound(
@@ -270,45 +238,21 @@ class EMMREvaluator(BaseImprovementEvaluator):
         )
 
 
-def _compute_gp_posterior(
-    search_space: gp_search_space.SearchSpace,
-    X: np.ndarray,
-    Y: np.ndarray,
-    x_params: np.ndarray,
-    gpr: gp.GPRegressor,
-) -> tuple[float, float]:  # mean, var
+def _compute_gp_posterior(x_params: np.ndarray, gpr: gp.GPRegressor) -> tuple[float, float]:
     mean_tensor, var_tensor = gpr.posterior(
         torch.from_numpy(x_params),  # best_params or normalized_params[..., -1, :]),
     )
-    mean = mean_tensor.detach().numpy().flatten()
-    var = var_tensor.detach().numpy().flatten()
-    assert len(mean) == 1 and len(var) == 1
-    return float(mean[0]), float(var[0])
+    return mean_tensor.item(), var_tensor.item()
 
 
 def _compute_gp_posterior_cov_two_thetas(
-    search_space: gp_search_space.SearchSpace,
-    normalized_params: np.ndarray,
-    standarized_score_vals: np.ndarray,
-    gpr: gp.GPRegressor,
-    theta1_index: int,
-    theta2_index: int,
+    normalized_params: np.ndarray, gpr: gp.GPRegressor, theta1_index: int, theta2_index: int
 ) -> float:  # cov
 
     if theta1_index == theta2_index:
-        return _compute_gp_posterior(
-            search_space,
-            normalized_params,
-            standarized_score_vals,
-            normalized_params[theta1_index],
-            gpr,
-        )[1]
+        _, var = gpr.posterior(torch.from_numpy(normalized_params[theta1_index]))
+        return var.item()
 
-    assert normalized_params.shape[0] == standarized_score_vals.shape[0]
-
-    cov_Y_Y_chol = gpr._cov_Y_Y_chol
-    cov_Y_Y_inv_Y = gpr._cov_Y_Y_inv_Y
-    assert cov_Y_Y_chol is not None and cov_Y_Y_inv_Y is not None
     _, covar = gpr.posterior(
         torch.from_numpy(normalized_params[[theta1_index, theta2_index]]), joint=True
     )
