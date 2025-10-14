@@ -106,7 +106,9 @@ def test_fit_kernel_params(
         )
 
 
-@pytest.mark.parametrize("x_shape", [(1, 3), (2, 3), (3, 3), (4, 3)])
+@pytest.mark.parametrize(
+    "x_shape", [(1, 3), (2, 3), (1, 2, 3), (2, 1, 3), (2, 2, 3), (2, 2, 2, 3)]
+)
 def test_posterior(x_shape: tuple[int, ...]) -> None:
     rng = np.random.RandomState(0)
     X = rng.random(size=(10, x_shape[-1]))
@@ -133,9 +135,8 @@ def test_posterior(x_shape: tuple[int, ...]) -> None:
     mean, var_ = gpr.posterior(torch.from_numpy(x), joint=False)
     assert mean_joint.shape == mean.shape and torch.allclose(mean, mean_joint)
     assert covar.shape == (*x_shape[:-1], x_shape[-2])
-    assert (
-        covar.diagonal(dim1=-2, dim2=-1).shape == var_.shape
-        and torch.allclose(covar.diagonal(dim1=-2, dim2=-1), var_)
+    assert covar.diagonal(dim1=-2, dim2=-1).shape == var_.shape and torch.allclose(
+        covar.diagonal(dim1=-2, dim2=-1), var_
     ), "Diagonal Check."
     assert torch.allclose(covar, covar.transpose(-2, -1)), "Symmetric Check."
     assert torch.all(torch.det(covar) >= 0.0), "Postive Semi-definite Check."
