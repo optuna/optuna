@@ -127,9 +127,7 @@ def _is_pareto_front_nd(unique_lexsorted_loss_values: np.ndarray) -> np.ndarray:
     loss_values = unique_lexsorted_loss_values[:, 1:]
     n_trials = loss_values.shape[0]
     on_front = np.zeros(n_trials, dtype=bool)
-    # TODO(nabenabe): Replace with the following once Python 3.8 is dropped.
-    # remaining_indices: np.ndarray[tuple[int], np.dtype[np.signedinteger]] = ...
-    remaining_indices: np.ndarray[tuple[int, ...], np.dtype[np.signedinteger]] = np.arange(
+    remaining_indices: np.ndarray[tuple[int], np.dtype[np.signedinteger]] = np.arange(
         n_trials
     )
     while len(remaining_indices):
