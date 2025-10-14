@@ -166,9 +166,8 @@ class GPRegressor:
                 sqd[..., self._is_categorical] = (sqd[..., self._is_categorical] > 0.0).type(
                     torch.float64
                 )
-        return Matern52Kernel.apply(
-            sqd.matmul(self.inverse_squared_lengthscales)
-        ) * self.kernel_scale  # type: ignore
+        sqdist = sqd.matmul(self.inverse_squared_lengthscales)
+        return Matern52Kernel.apply(sqdist) * self.kernel_scale  # type: ignore
 
     def posterior(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         """
