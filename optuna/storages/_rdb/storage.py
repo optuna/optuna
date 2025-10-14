@@ -607,6 +607,26 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
 
         trial_param.check_and_add(session, trial.study_id)
 
+    def _set_trial_param_without_check(
+        self,
+        trial_id: int,
+        param_name: str,
+        param_value_internal: float,
+        distribution: distributions.BaseDistribution,
+    ) -> None:
+        with _create_scoped_session(self.scoped_session, True) as session:
+            trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
+            self.check_trial_is_updatable(trial_id, trial.state)
+
+            trial_param = models.TrialParamModel(
+                trial_id=trial_id,
+                param_name=param_name,
+                param_value=param_value_internal,
+                distribution_json=distributions.distribution_to_json(distribution),
+            )
+
+            session.add(trial_param)
+
     def get_trial_param(self, trial_id: int, param_name: str) -> float:
         with _create_scoped_session(self.scoped_session) as session:
             trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
