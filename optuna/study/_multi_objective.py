@@ -127,9 +127,7 @@ def _is_pareto_front_nd(unique_lexsorted_loss_values: np.ndarray) -> np.ndarray:
     loss_values = unique_lexsorted_loss_values[:, 1:]
     n_trials = loss_values.shape[0]
     on_front = np.zeros(n_trials, dtype=bool)
-    remaining_indices: np.ndarray[tuple[int], np.dtype[np.signedinteger]] = np.arange(
-        n_trials
-    )
+    remaining_indices: np.ndarray[tuple[int], np.dtype[np.signedinteger]] = np.arange(n_trials)
     while len(remaining_indices):
         # NOTE: trials[j] cannot dominate trials[i] for i < j because of lexsort.
         # Therefore, remaining_indices[0] is always non-dominated.
