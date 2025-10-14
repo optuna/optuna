@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from typing import cast
 
 import numpy as np
 
@@ -138,9 +139,10 @@ def _is_pareto_front_nd(unique_lexsorted_loss_values: np.ndarray) -> np.ndarray:
         nondominated_and_not_top = np.any(
             loss_values[remaining_indices] < loss_values[new_nondominated_index], axis=1
         )
-        # TODO(nabenabe): Replace with the following once Python 3.8 is dropped.
-        # ... = cast(np.ndarray[tuple[int], np.dtype[np.signedinteger]], ...)
-        remaining_indices = remaining_indices[nondominated_and_not_top]
+        remaining_indices = cast(
+            np.ndarray[tuple[int], np.dtype[np.signedinteger]],
+            remaining_indices[nondominated_and_not_top],
+        )
 
     return on_front
 
