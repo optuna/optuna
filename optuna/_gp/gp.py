@@ -203,6 +203,7 @@ class GPRegressor:
             left=False,
         )
         if joint:
+            assert not is_single_point, "Call posterior with joint=True for a single point."
             cov_fx_fx = self.kernel(x_, x_)
             # NOTE(nabenabe): Indeed, var_ here is a covariance matrix.
             var_ = cov_fx_fx - cov_fx_fX_cov_Y_Y_inv @ cov_fx_fX.transpose(-1, -2)
