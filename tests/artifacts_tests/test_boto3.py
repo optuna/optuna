@@ -13,9 +13,9 @@ from optuna.artifacts.exceptions import ArtifactNotFound
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
+    from typing import Annotated
 
     from mypy_boto3_s3 import S3Client
-    from typing import Annotated
 
 
 @pytest.fixture()
