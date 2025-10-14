@@ -9,6 +9,8 @@ from optuna.samplers._lazy_random_state import LazyRandomState
 
 
 if TYPE_CHECKING:
+    from typing import Any
+
     from optuna import distributions
     from optuna.distributions import BaseDistribution
     from optuna.study import Study
