@@ -193,10 +193,9 @@ class GPRegressor:
         ), "Call cache_matrix before calling posterior."
         is_single_point = x.ndim == 1
         x_ = x if not is_single_point else x.unsqueeze(0)
-        cov_fx_fX = self.kernel(x_)
-        mean = cov_fx_fX @ self._cov_Y_Y_inv_Y
+        mean = torch.linalg.vecdot(cov_fx_fX := self.kernel(x_), self._cov_Y_Y_inv_Y)
         # K @ inv(C) = V --> K = V @ C --> K = V @ L @ L.T
-        cov_fx_fX_cov_Y_Y_inv = torch.linalg.solve_triangular(
+        V = torch.linalg.solve_triangular(
             self._cov_Y_Y_chol,
             torch.linalg.solve_triangular(self._cov_Y_Y_chol.T, cov_fx_fX, upper=True, left=False),
             upper=False,
@@ -206,11 +205,11 @@ class GPRegressor:
             assert not is_single_point, "Call posterior with joint=False for a single point."
             cov_fx_fx = self.kernel(x_, x_)
             # NOTE(nabenabe): Indeed, var_ here is a covariance matrix.
-            var_ = cov_fx_fx - cov_fx_fX_cov_Y_Y_inv @ cov_fx_fX.transpose(-1, -2)
+            var_ = cov_fx_fx - V.matmul(cov_fx_fX.transpose(-1, -2))
             var_.diagonal(dim1=-2, dim2=-1).clamp_min_(0.0)
         else:
             cov_fx_fx = self.kernel_scale  # kernel(x, x) = kernel_scale
-            var_ = cov_fx_fx - torch.linalg.vecdot(cov_fx_fX, cov_fx_fX_cov_Y_Y_inv)
+            var_ = cov_fx_fx - torch.linalg.vecdot(cov_fx_fX, V)
             var_.clamp_min_(0.0)
         return (mean.squeeze(0), var_.squeeze(0)) if is_single_point else (mean, var_)
 
