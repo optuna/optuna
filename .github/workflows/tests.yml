@@ -25,11 +25,11 @@ jobs:
           - ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && 'Scheduled' || '' }}
         exclude:
           - test-trigger-type: ""
-            python-version: "3.9"
-          - test-trigger-type: ""
             python-version: "3.10"
           - test-trigger-type: ""
             python-version: "3.11"
+          - test-trigger-type: ""
+            python-version: "3.12"
 
     services:
       redis:
