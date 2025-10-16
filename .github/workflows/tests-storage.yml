@@ -23,12 +23,10 @@ jobs:
 
     strategy:
       matrix:
-        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13']
+        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
         test-trigger-type:
           - ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && 'Scheduled' || '' }}
         exclude:
-          - test-trigger-type: ""
-            python-version: "3.9"
           - test-trigger-type: ""
             python-version: "3.10"
           - test-trigger-type: ""
@@ -105,11 +103,6 @@ jobs:
 
         pip install --progress-bar off .[test] --extra-index-url https://download.pytorch.org/whl/cpu
         pip install --progress-bar off .[optional] --extra-index-url https://download.pytorch.org/whl/cpu
-
-        if [ "${{ matrix.python-version }}" = "3.8" ] ; then
-          # TODO(nabe): Remove this line once Python 3.8 is dropped.
-          pip install --upgrade "fakeredis[lua]<2.30.0"
-        fi
 
     - name: Install DB bindings
       run: |
