@@ -43,8 +43,7 @@ def _batched_lbfgsb(
     max_iters: int,
     max_line_search: int,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    if x0_batched.ndim != 2:
-        raise ValueError("x0_batched must be 2D array.")
+    assert x0_batched.ndim == 2
     batch_size = len(x0_batched)
     xs_opt = np.empty_like(x0_batched)
     fvals_opt = np.empty(batch_size, dtype=float)
