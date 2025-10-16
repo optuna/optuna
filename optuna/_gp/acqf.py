@@ -23,6 +23,13 @@ else:
     torch = _LazyImport("torch")
 
 
+_SQRT_HALF = math.sqrt(0.5)
+_INV_SQRT_2PI = 1 / math.sqrt(2 * math.pi)
+_SQRT_HALF_PI = math.sqrt(0.5 * math.pi)
+_LOG_SQRT_2PI = math.log(math.sqrt(2 * math.pi))
+_EPS = 1e-12  # NOTE(nabenabe): grad becomes nan when EPS=0.
+
+
 def _sample_from_normal_sobol(dim: int, n_samples: int, seed: int | None) -> torch.Tensor:
     # NOTE(nabenabe): Normal Sobol sampling based on BoTorch.
     # https://github.com/pytorch/botorch/blob/v0.13.0/botorch/sampling/qmc.py#L26-L97
@@ -38,7 +45,7 @@ def _sample_from_normal_sobol(dim: int, n_samples: int, seed: int | None) -> tor
 def logehvi(
     Y_post: torch.Tensor,  # (..., n_qmc_samples, n_objectives)
     non_dominated_box_lower_bounds: torch.Tensor,  # (n_boxes, n_objectives)
-    non_dominated_box_upper_bounds: torch.Tensor,  # (n_boxes, n_objectives)
+    non_dominated_box_intervals: torch.Tensor,  # (n_boxes, n_objectives)
 ) -> torch.Tensor:  # (..., )
     log_n_qmc_samples = float(np.log(Y_post.shape[-2]))
     # This function calculates Eq. (1) of https://arxiv.org/abs/2006.05078.
@@ -48,46 +55,41 @@ def logehvi(
     # Check the implementations here:
     # https://github.com/pytorch/botorch/blob/v0.13.0/botorch/utils/safe_math.py
     # https://github.com/pytorch/botorch/blob/v0.13.0/botorch/acquisition/multi_objective/logei.py#L146-L266
-    _EPS = torch.tensor(1e-12, dtype=torch.float64)  # NOTE(nabenabe): grad becomes nan when EPS=0.
-    diff = torch.maximum(
-        _EPS,
-        torch.minimum(Y_post[..., torch.newaxis, :], non_dominated_box_upper_bounds)
-        - non_dominated_box_lower_bounds,
-    )
+    diff = Y_post.unsqueeze(-2) - non_dominated_box_lower_bounds
+    diff.clamp_(min=torch.tensor(_EPS, dtype=torch.float64), max=non_dominated_box_intervals)
     # NOTE(nabenabe): logsumexp with dim=-1 is for the HVI calculation and that with dim=-2 is for
     # expectation of the HVIs over the fixed_samples.
     return torch.special.logsumexp(diff.log().sum(dim=-1), dim=(-2, -1)) - log_n_qmc_samples
 
 
 def standard_logei(z: torch.Tensor) -> torch.Tensor:
-    # Return E_{x ~ N(0, 1)}[max(0, x+z)]
+    """
+    Return E_{x ~ N(0, 1)}[max(0, x+z)]
+    The calculation depends on the value of z for numerical stability.
+    Please refer to Eq. (9) in the following paper for more details:
+        https://arxiv.org/pdf/2310.20708.pdf
 
-    # We switch the implementation depending on the value of z to
-    # avoid numerical instability.
-    small = z < -25
-
-    vals = torch.empty_like(z)
-    # Eq. (9) in ref: https://arxiv.org/pdf/2310.20708.pdf
-    # NOTE: We do not use the third condition because ours is good enough.
-    z_small = z[small]
-    z_normal = z[~small]
-    sqrt_2pi = math.sqrt(2 * math.pi)
-    # First condition
-    cdf = 0.5 * torch.special.erfc(-z_normal * math.sqrt(0.5))
-    pdf = torch.exp(-0.5 * z_normal**2) * (1 / sqrt_2pi)
-    vals[~small] = torch.log(z_normal * cdf + pdf)
-    # Second condition
-    r = math.sqrt(0.5 * math.pi) * torch.special.erfcx(-z_small * math.sqrt(0.5))
-    vals[small] = -0.5 * z_small**2 + torch.log((z_small * r + 1) * (1 / sqrt_2pi))
-    return vals
+    NOTE: We do not use the third condition because [-10**100, 10**100] is an overly high range.
+    """
+    # First condition (most z falls into this condition, so we calculate it first)
+    # NOTE: ei(z) = z * cdf(z) + pdf(z)
+    out = (
+        (z_half := 0.5 * z) * torch.special.erfc(-_SQRT_HALF * z)  # z * cdf(z)
+        + (-z_half * z).exp() * _INV_SQRT_2PI  # pdf(z)
+    ).log()
+    if (z_small := z[(small := z < -25)]).numel():
+        # Second condition (does not happen often, so we calculate it only if necessary)
+        out[small] = (
+            -0.5 * z_small**2
+            - _LOG_SQRT_2PI
+            + (1 + _SQRT_HALF_PI * z_small * torch.special.erfcx(-_SQRT_HALF * z_small)).log()
+        )
+    return out
 
 
 def logei(mean: torch.Tensor, var: torch.Tensor, f0: float) -> torch.Tensor:
     # Return E_{y ~ N(mean, var)}[max(0, y-f0)]
-    sigma = torch.sqrt(var)
-    st_val = standard_logei((mean - f0) / sigma)
-    val = torch.log(sigma) + st_val
-    return val
+    return standard_logei((mean - f0) / (sigma := var.sqrt_())) + sigma.log()
 
 
 class BaseAcquisitionFunc(ABC):
@@ -149,12 +151,13 @@ class LogPI(BaseAcquisitionFunc):
         super().__init__(gpr.length_scales, search_space)
 
     def eval_acqf(self, x: torch.Tensor) -> torch.Tensor:
-        # Return the integral of N(mean, var) from -inf to f0
-        # This is identical to the integral of N(0, 1) from -inf to (f0-mean)/sigma
-        # Return E_{y ~ N(mean, var)}[bool(y <= f0)]
+        # Return the integral of N(mean, var) from f0 to inf.
+        # This is identical to the integral of N(0, 1) from (f0-mean)/sigma to inf.
+        # Return E_{y ~ N(mean, var)}[bool(y >= f0)]
         mean, var = self._gpr.posterior(x)
         sigma = torch.sqrt(var + self._stabilizing_noise)
-        return torch.special.log_ndtr((self._threshold - mean) / sigma)
+        # NOTE(nabenabe): integral from a to b of f(x) is integral from -b to -a of f(-x).
+        return torch.special.log_ndtr((mean - self._threshold) / sigma)
 
 
 class UCB(BaseAcquisitionFunc):
@@ -242,9 +245,12 @@ class LogEHVI(BaseAcquisitionFunc):
         self._fixed_samples = _sample_from_normal_sobol(
             dim=Y_train.shape[-1], n_samples=n_qmc_samples, seed=qmc_seed
         )
-        self._non_dominated_box_lower_bounds, self._non_dominated_box_upper_bounds = (
+        self._non_dominated_box_lower_bounds, non_dominated_box_upper_bounds = (
             _get_non_dominated_box_bounds()
         )
+        self._non_dominated_box_intervals = (
+            non_dominated_box_upper_bounds - self._non_dominated_box_lower_bounds
+        ).clamp_min_(_EPS)
         # Since all the objectives are equally important, we simply use the mean of
         # inverse of squared mean lengthscales over all the objectives.
         # inverse_squared_lengthscales is used in optim_mixed.py.
@@ -260,17 +266,15 @@ class LogEHVI(BaseAcquisitionFunc):
             # deterministic, making it possible to optimize the acqf by l-BFGS.
             # Sobol is better than the standard Monte-Carlo w.r.t. the approximation stability.
             # cf. Appendix D of https://arxiv.org/pdf/2006.05078
-            Y_post.append(
-                mean[..., torch.newaxis] + stdev[..., torch.newaxis] * self._fixed_samples[..., i]
-            )
+            Y_post.append(mean[..., None] + stdev[..., None] * self._fixed_samples[..., i])
 
         # NOTE(nabenabe): Use the following once multi-task GP is supported.
         # L = torch.linalg.cholesky(cov)
-        # Y_post = means[..., torch.newaxis, :] + torch.einsum("...MM,SM->...SM", L, fixed_samples)
+        # Y_post = means[..., None, :] + torch.einsum("...MM,SM->...SM", L, fixed_samples)
         return logehvi(
             Y_post=torch.stack(Y_post, dim=-1),
             non_dominated_box_lower_bounds=self._non_dominated_box_lower_bounds,
-            non_dominated_box_upper_bounds=self._non_dominated_box_upper_bounds,
+            non_dominated_box_intervals=self._non_dominated_box_intervals,
         )
 
 

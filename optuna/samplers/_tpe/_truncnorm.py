@@ -45,6 +45,7 @@ from optuna.samplers._tpe._erf import erf
 _norm_pdf_C = math.sqrt(2 * math.pi)
 _norm_pdf_logC = math.log(_norm_pdf_C)
 _ndtri_exp_approx_C = math.sqrt(3) / math.pi
+_log_2 = math.log(2)
 
 
 def _log_sum(log_p: np.ndarray, log_q: np.ndarray) -> np.ndarray:
@@ -148,7 +149,7 @@ def _log_gauss_mass(a: np.ndarray, b: np.ndarray) -> np.ndarray:
     return np.real(out)  # discard ~0j
 
 
-def _ndtri_exp_single(y: float) -> float:
+def _ndtri_exp(y: np.ndarray) -> np.ndarray:
     """
     Use the Newton method to efficiently find the root.
 
@@ -165,7 +166,11 @@ def _ndtri_exp_single(y: float) -> float:
     First recall that y is a non-positive value and y = log_ndtr(inf) = 0 and
     y = log_ndtr(-inf) = -inf.
 
-    If abs(y) is very small, x is very large, meaning that x**2 >> log(x) and
+    If abs(y) is very small, we first derive -x such that z = log_ndtr(-x) and then flip the sign.
+    Please note that the following holds:
+        z = log_ndtr(-x) --> z = log(1 - ndtr(x)) = log(1 - exp(y)) = log(-expm1(y)).
+    Recall that as long as ndtr(x) = exp(y) > 0.5 --> y > -log(2) = -0.693..., x becomes positive.
+
     ndtr(x) = exp(y) \\simeq 1 + y --> -y \\simeq 1 - ndtr(x). From this, we can calculate:
         log(1 - ndtr(x)) \\simeq log(-y) \\simeq -1/2 * x**2 - 1/2 * log(2pi) - log(x).
     Because x**2 >> log(x), we can ignore the second and third terms, leading to:
@@ -190,32 +195,30 @@ def _ndtri_exp_single(y: float) -> float:
         --> log(exp(-y) - 1) \\simeq -pi * x / sqrt(3)
         --> x \\simeq -sqrt(3) / pi * log(exp(-y) - 1).
     """
-    if y > -sys.float_info.min:
-        return math.inf if y <= 0 else math.nan
-
-    if y > -1e-2:  # Case 1. abs(y) << 1.
-        u = -2.0 * math.log(-y)
-        x = math.sqrt(u - math.log(u))
-    elif y < -5:  # Case 2. abs(y) >> 1.
-        x = -math.sqrt(-2.0 * (y + _norm_pdf_logC))
-    else:  # Case 3. Moderate y.
-        x = -_ndtri_exp_approx_C * math.log(math.exp(-y) - 1)
+    # Flip the sign of y close to zero for better numerical stability and flip back the sign later.
+    flipped = y > -1e-2
+    z = y.copy()
+    z[flipped] = np.log(-np.expm1(y[flipped]))
+    x = np.empty_like(y)
+    if (small_inds := np.nonzero(z < -5))[0].size:
+        x[small_inds] = -np.sqrt(-2.0 * (z[small_inds] + _norm_pdf_logC))
+    if (moderate_inds := np.nonzero(z >= -5))[0].size:
+        x[moderate_inds] = -_ndtri_exp_approx_C * np.log(np.expm1(-z[moderate_inds]))
 
     for _ in range(100):
-        log_ndtr_x = _log_ndtr_single(x)
+        log_ndtr_x = _log_ndtr(x)
         log_norm_pdf_x = -0.5 * x**2 - _norm_pdf_logC
         # NOTE(nabenabe): Use exp(log_ndtr_x - log_norm_pdf_x) instead of ndtr_x / norm_pdf_x for
         # numerical stability.
-        dx = (log_ndtr_x - y) * math.exp(log_ndtr_x - log_norm_pdf_x)
+        dx = (log_ndtr_x - z) * np.exp(log_ndtr_x - log_norm_pdf_x)
         x -= dx
-        if abs(dx) < 1e-8 * abs(x):  # Equivalent to np.isclose with atol=0.0 and rtol=1e-8.
+        if np.all(np.abs(dx) < 1e-8 * np.abs(x)):  # NOTE: rtol controls the precision.
+            # Equivalent to np.isclose with atol=0.0 and rtol=1e-8.
             break
-
+    x[flipped] *= -1
+    # NOTE(nabe): x[y == 0.0] = np.inf, x[np.isneginf(y)] = -np.inf are necessary for the accurate
+    # computation, but we omit them as the ppf applies clipping, removing the need for them.
     return x
-
-
-def _ndtri_exp(y: np.ndarray) -> np.ndarray:
-    return np.frompyfunc(_ndtri_exp_single, 1, 1)(y).astype(float)
 
 
 def ppf(q: np.ndarray, a: np.ndarray | float, b: np.ndarray | float) -> np.ndarray:

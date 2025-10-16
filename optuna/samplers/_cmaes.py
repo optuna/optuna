@@ -370,17 +370,6 @@ class CmaEsSampler(BaseSampler):
         if len(completed_trials) < self._n_startup_trials:
             return {}
 
-        if len(search_space) == 1:
-            if self._warn_independent_sampling:
-                _logger.warning(
-                    "`CmaEsSampler` only supports two or more dimensional continuous "
-                    "search space. `{}` is used instead of `CmaEsSampler`.".format(
-                        self._independent_sampler.__class__.__name__
-                    )
-                )
-                self._warn_independent_sampling = False
-            return {}
-
         # When `with_margin=True`, bounds in discrete dimensions are handled inside `CMAwM`.
         trans = _SearchSpaceTransform(
             search_space, transform_step=not self._with_margin, transform_0_1=True
@@ -530,14 +519,21 @@ class CmaEsSampler(BaseSampler):
         sigma0 = max(sigma0, _EPS)
 
         if self._use_separable_cma:
-            return cmaes.SepCMA(
-                mean=mean,
-                sigma=sigma0,
-                bounds=trans.bounds,
-                seed=self._cma_rng.rng.randint(1, 2**31 - 2),
-                n_max_resampling=10 * n_dimension,
-                population_size=self._popsize,
-            )
+            if len(trans.bounds) == 1:
+                warnings.warn(
+                    "Separable CMA-ES does not operate meaningfully on single-dimensional "
+                    "search spaces. The setting `use_separable_cma=True` will be ignored.",
+                    UserWarning,
+                )
+            else:
+                return cmaes.SepCMA(
+                    mean=mean,
+                    sigma=sigma0,
+                    bounds=trans.bounds,
+                    seed=self._cma_rng.rng.randint(1, 2**31 - 2),
+                    n_max_resampling=10 * n_dimension,
+                    population_size=self._popsize,
+                )
 
         if self._with_margin:
             steps = np.empty(len(trans._search_space), dtype=float)

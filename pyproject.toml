@@ -15,7 +15,6 @@ classifiers = [
   "Intended Audience :: Developers",
   "License :: OSI Approved :: MIT License",
   "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.8",
   "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
@@ -29,7 +28,7 @@ classifiers = [
   "Topic :: Software Development :: Libraries",
   "Topic :: Software Development :: Libraries :: Python Modules",
 ]
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 dependencies = [
   "alembic>=1.5.0",
   "colorlog",
@@ -48,8 +47,8 @@ benchmark = [
   "virtualenv"
 ]
 checking = [
-  "black",
-  "blackdoc",
+  "black<25.9.0",  # TODO(nabe): Remove the version constraint after the fix in black.
+  "blackdoc<0.4.2",  # TODO(not522): Remove the version constraint after the fix in blackdoc.
   "flake8",
   "isort",
   "mypy",
@@ -63,7 +62,7 @@ checking = [
 ]
 document = [
   "ase",
-  "cmaes>=0.10.0",  # optuna/samplers/_cmaes.py.
+  "cmaes>=0.12.0",  # optuna/samplers/_cmaes.py.
   "fvcore",
   "kaleido<0.4",  # TODO(nzw0301): Remove the version constraint by installing browser separately.
   "lightgbm",
@@ -82,7 +81,7 @@ document = [
 ]
 optional = [
   "boto3",  # optuna/artifacts/_boto3.py.
-  "cmaes>=0.10.0",  # optuna/samplers/_cmaes.py.
+  "cmaes>=0.12.0",  # optuna/samplers/_cmaes.py.
   "google-cloud-storage",  # optuna/artifacts/_gcs.py.
   "matplotlib!=3.6.0",  # optuna/visualization/matplotlib.
   "pandas",  # optuna/study/_dataframe.py.
@@ -90,7 +89,8 @@ optional = [
   "redis",  # optuna/storages/journal/_redis.py.
   "scikit-learn>=0.24.2",  # optuna/importance.
   "scipy",  # optuna/_gp.
-  "torch; python_version<='3.12'",  # TODO(gen740): Remove this line when 'torch', a dependency of 'optuna/_gp', supports Python 3.13
+  "torch",  # optuna/_gp.
+  "greenlet",  # optuna/_gp. necessary for faster gp.
   "grpcio",  # optuna/storages/_grpc.
   "protobuf>=5.28.1",  # optuna/storages/_grpc.
 ]
@@ -102,7 +102,8 @@ test = [
   "pytest",
   "pytest-xdist",
   "scipy>=1.9.2",
-  "torch; python_version<='3.12'",  # TODO(gen740): Remove this line when 'torch', a dependency of 'optuna/_gp', supports Python 3.13
+  "torch",  # optuna/_gp.
+  "greenlet",  # optuna/_gp.
   "grpcio",  # optuna/storages/_grpc.
   "protobuf>=5.28.1",  # optuna/storages/_grpc.
 ]
@@ -174,6 +175,10 @@ markers = [
   "skip_coverage: marks tests are skipped when calculating the coverage",
   "slow: marks tests as slow (deselect with '-m \"not slow\"')"
 ]
+
+[tool.coverage.run]
+concurrency = ["multiprocessing", "thread"]
+source = ["optuna/"]
 
 [tool.mypy]
 # Options configure mypy's strict mode.
