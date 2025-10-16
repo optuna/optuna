@@ -120,7 +120,7 @@ def batched_lbfgsb(
     # Validate args_tuple shapes: each arg must be a sequence of length B.
     for j, arg in enumerate(args_tuple):
         if len(arg) != batch_size:
-            raise ValueError(f"args_tuple[{j}] must have length {batch_size}, got {len(arg)}.")
+            raise ValueError(f"args_tuple[{j}] must have length {batch_size}, but got {len(arg)}.")
 
     # Validate bounds.
     if bounds is not None:
