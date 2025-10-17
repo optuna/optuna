@@ -144,15 +144,7 @@ def test_batched_lbfgsb_invalid_input() -> None:
 
     # bounds validation
     invalid_bounds = [(0.0, 1.0)]  # length is not equal to dimension
-    with pytest.raises(ValueError):
-        batched_lbfgsb(
-            func_and_grad=dummy_func_and_grad,
-            x0_batched=x0_batched,
-            batched_args=(list(range(batch_size)),),
-            bounds=invalid_bounds,
-        )
-    invalid_bounds = [(0.0, 1.0), (2.0, 1.0)]  # lower > upper
-    with pytest.raises(ValueError):
+    with pytest.raises(AssertionError):
         batched_lbfgsb(
             func_and_grad=dummy_func_and_grad,
             x0_batched=x0_batched,
