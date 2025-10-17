@@ -114,8 +114,6 @@ def batched_lbfgsb(
       `func_and_grad(x0_batched, [alpha1, ..., alphaB], [beta1, ..., betaB])`. Note that each
       argument in `args_tuple` is expected to be a list of length `B` (batch size).
     """
-    assert x0_batched.ndim == 2
-
     batch_size, dim = x0_batched.shape
     # Validate args_tuple shapes: each arg must be a sequence of length B.
     for j, arg in enumerate(args_tuple):
@@ -123,12 +121,9 @@ def batched_lbfgsb(
             raise ValueError(f"args_tuple[{j}] must have length {batch_size}, but got {len(arg)}.")
 
     # Validate bounds.
-    if bounds is not None:
-        if len(bounds) != dim:
-            raise ValueError(f"bounds must have length {dim}, got {len(bounds)}.")
-        for k, (lb, ub) in enumerate(bounds):
-            if lb > ub:
-                raise ValueError(f"Lower bound must be <= upper bound at index {k}.")
+    if bounds is not None and len(bounds) != dim:
+        raise ValueError(f"bounds must have length {dim}, but got {len(bounds)}.")
+
     if _greenlet_imports.is_successful() and len(x0_batched) > 1:
         # NOTE(Kaichi-Irie): when batch size is 1, using greenlet causes context-switch overhead.
         xs_opt, fvals_opt, n_iterations = _batched_lbfgsb(
