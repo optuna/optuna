@@ -125,7 +125,7 @@ def test_batched_lbfgsb_invalid_input() -> None:
     x0_batched = np.random.rand(batch_size, dimension)
 
     # x0_batched validation
-    with pytest.raises(AssertionError):
+    with pytest.raises(ValueError):
         batched_lbfgsb(
             func_and_grad=lambda x: (np.sum(x, axis=1), np.ones_like(x)),
             x0_batched=x0_batched[0],  # not 2D
