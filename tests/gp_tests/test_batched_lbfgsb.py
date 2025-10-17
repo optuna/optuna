@@ -135,7 +135,7 @@ def test_batched_lbfgsb_invalid_input() -> None:
     def dummy_func_and_grad(x: np.ndarray, _arg: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         return np.sum(x, axis=1), np.ones_like(x)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(AssertionError):
         batched_lbfgsb(
             func_and_grad=dummy_func_and_grad,
             x0_batched=x0_batched,
