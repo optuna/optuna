@@ -34,7 +34,7 @@ if not _greenlet_imports.is_successful():
 def _batched_lbfgsb(
     func_and_grad: Callable[..., tuple[np.ndarray, np.ndarray]],
     x0_batched: np.ndarray,
-    args_tuple: tuple[Any, ...],
+    batched_args: tuple[Any, ...],
     bounds: list[tuple[float, float]] | None,
     m: int,
     factr: float,
@@ -58,7 +58,7 @@ def _batched_lbfgsb(
         x_opt, fval_opt, info = so.fmin_l_bfgs_b(
             func=_func_and_grad,
             x0=x0_batched[i],
-            args=tuple(arg[i] for arg in args_tuple),
+            args=tuple(arg[i] for arg in batched_args),
             bounds=bounds,
             m=m,
             factr=factr,
@@ -76,9 +76,9 @@ def _batched_lbfgsb(
 
     while x_and_argsT_pairs:
         x_batched_list = [pair[0] for pair in x_and_argsT_pairs if pair is not None]
-        args_tuple_transposed = [pair[1] for pair in x_and_argsT_pairs if pair is not None]
+        batched_args_transposed = [pair[1] for pair in x_and_argsT_pairs if pair is not None]
         x_batched = np.array(x_batched_list)
-        current_args_tuple = tuple(zip(*args_tuple_transposed))
+        current_args_tuple = tuple(zip(*batched_args_transposed))
         fvals, grads = func_and_grad(x_batched, *current_args_tuple)
         results = [gl.switch((fvals[i], grads[i])) for i, gl in enumerate(greenlets)]
         live_pairs_and_greenlets = [
@@ -94,7 +94,7 @@ def _batched_lbfgsb(
 def batched_lbfgsb(
     func_and_grad: Callable[..., tuple[np.ndarray, np.ndarray]],
     x0_batched: np.ndarray,  # shape (batch_size, dim)
-    args_tuple: tuple[list[Any], ...] = (),
+    batched_args: tuple[list[Any], ...] = (),
     bounds: list[tuple[float, float]] | None = None,
     m: int = 10,
     factr: float = 1e7,
@@ -108,17 +108,19 @@ def batched_lbfgsb(
     - `func_and_grad` is expected to take a 2D array as the first argument and return a tuple of
       a 1D array of function values and a 2D array of gradients.
     - `x0_batched` is a 2D array where each row is an initial point for optimization.
-    - `args_tuple` is a tuple of additional arguments to pass to `func_and_grad`. e.g., if
-      `args_tuple` is `([alpha1, ..., alphaB], [beta1, ..., betaB])`, then
+    - `batched_args` is a tuple of additional arguments to pass to `func_and_grad`. e.g., if
+      `batched_args` is `([alpha1, ..., alphaB], [beta1, ..., betaB])`, then
       `func_and_grad` is called as
       `func_and_grad(x0_batched, [alpha1, ..., alphaB], [beta1, ..., betaB])`. Note that each
-      argument in `args_tuple` is expected to be a list of length `B` (batch size).
+      argument in `batched_args` is expected to be a list of length `B` (batch size).
     """
     batch_size, dim = x0_batched.shape
-    # Validate args_tuple shapes: each arg must be a sequence of length B.
-    for j, arg in enumerate(args_tuple):
+    # Validate batched_args shapes: each arg must be a sequence of length B.
+    for j, arg in enumerate(batched_args):
         if len(arg) != batch_size:
-            raise ValueError(f"args_tuple[{j}] must have length {batch_size}, but got {len(arg)}.")
+            raise ValueError(
+                f"batched_args[{j}] must have length {batch_size}, but got {len(arg)}."
+            )
 
     # Validate bounds.
     if bounds is not None and len(bounds) != dim:
@@ -129,7 +131,7 @@ def batched_lbfgsb(
         xs_opt, fvals_opt, n_iterations = _batched_lbfgsb(
             func_and_grad=func_and_grad,
             x0_batched=x0_batched,
-            args_tuple=args_tuple,
+            batched_args=batched_args,
             bounds=bounds,
             m=m,
             factr=factr,
@@ -156,7 +158,7 @@ def batched_lbfgsb(
             xs_opt[i], fvals_opt[i], info = so.fmin_l_bfgs_b(
                 func=_func_and_grad_wrapper,
                 x0=x0,
-                args=tuple(arg[i] for arg in args_tuple),
+                args=tuple(arg[i] for arg in batched_args),
                 bounds=bounds,
                 m=m,
                 factr=factr,

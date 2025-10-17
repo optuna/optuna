@@ -74,7 +74,7 @@ def _gradient_ascent_batched(
         scaled_cont_xs_opt, neg_fvals_opt, n_iterations = batched_lbfgsb.batched_lbfgsb(
             func_and_grad=negative_acqf_with_grad,
             x0_batched=initial_params_batched[:, continuous_indices] / lengthscales,
-            args_tuple=([param for param in initial_params_batched.copy()],),
+            batched_args=([param for param in initial_params_batched.copy()],),
             bounds=[(0, 1 / s) for s in lengthscales],
             pgtol=math.sqrt(tol),
             max_iters=200,
