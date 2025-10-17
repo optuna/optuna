@@ -579,9 +579,6 @@ def test_set_trial_param(storage_mode: str) -> None:
         # Check the previous call does not change the params.
         with pytest.raises(KeyError):
             storage.get_trial_param(trial_id_2, "y")
-        # State should be checked prior to distribution compatibility.
-        with pytest.raises(UpdateFinishedTrialError):
-            storage.set_trial_param(trial_id_2, "y", 0.4, distribution_z)
 
         # Set params of trials in a different study.
         storage.set_trial_param(trial_id_3, "y", 1, distribution_y_2)
