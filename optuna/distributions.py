@@ -669,8 +669,8 @@ def _adjust_discrete_uniform_high(low: float, high: float, step: float) -> float
         old_high = high
         high = float((d_r // d_step) * d_step + d_low)
         warnings.warn(
-            f"The distribution is specified by [{low=}, high={old_high}] and {step=}, but "
-            f"the range is not divisible by `step`. It will be replaced with [{low=}, {high=}]."
+            f"The distribution is specified by [{low}, {old_high}] and {step=}, but the range is "
+            f"not divisible by `step`. It will be replaced with [{low}, {high}]."
         )
 
     return high
@@ -682,8 +682,8 @@ def _adjust_int_uniform_high(low: int, high: int, step: int) -> int:
         old_high = high
         high = r // step * step + low
         warnings.warn(
-            f"The distribution is specified by [{low=}, high={old_high}] and {step=}, but "
-            f"the range is not divisible by `step`. It will be replaced with [{low=}, {high=}]."
+            f"The distribution is specified by [{low}, {old_high}] and {step=}, but the range is "
+            f"not divisible by `step`. It will be replaced with [{low}, {high}]."
         )
     return high
 
