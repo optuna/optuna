@@ -172,11 +172,15 @@ class _CachedStorage(BaseStorage, BaseHeartbeat):
             study_id, _ = self._trial_id_to_study_id_and_number[trial_id]
             cached_dist = self._studies[study_id].param_distribution.get(param_name)
             if cached_dist is None:
-                self._backend.set_trial_param(trial_id, param_name, param_value_internal, distribution)
+                self._backend.set_trial_param(
+                    trial_id, param_name, param_value_internal, distribution
+                )
                 self._studies[study_id].param_distribution[param_name] = distribution
             else:
                 distributions.check_distribution_compatibility(cached_dist, distribution)
-                self._backend._set_trial_param_without_check(trial_id, param_name, param_value_internal, distribution)
+                self._backend._set_trial_param_without_check(
+                    trial_id, param_name, param_value_internal, distribution
+                )
 
     def get_trial_id_from_study_id_trial_number(self, study_id: int, trial_number: int) -> int:
         key = (study_id, trial_number)
