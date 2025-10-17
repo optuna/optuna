@@ -118,8 +118,9 @@ def batched_lbfgsb(
             )
 
     # Validate bounds.
-    if bounds is not None and len(bounds) != dim:
-        raise ValueError(f"bounds must have length {dim}, but got {len(bounds)}.")
+    assert bounds is None or np.shape(bounds) == (dim, 2), (
+        f"The shape of bounds must be ({dim=}, 2), but got {np.shape(bounds)}."
+    )
 
     if _greenlet_imports.is_successful() and len(x0_batched) > 1:
         # NOTE(Kaichi-Irie): when batch size is 1, using greenlet causes context-switch overhead.
