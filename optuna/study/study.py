@@ -12,11 +12,11 @@ from typing import cast
 from typing import Sequence
 from typing import TYPE_CHECKING
 from typing import Union
-import warnings
 
 import numpy as np
 
 import optuna
+from optuna import _warnings as warnings
 from optuna import exceptions
 from optuna import logging
 from optuna import pruners
