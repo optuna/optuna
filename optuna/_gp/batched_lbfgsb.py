@@ -70,23 +70,18 @@ def _batched_lbfgsb(
         xs_opt[i] = x_opt
         fvals_opt[i] = fval_opt
         n_iterations[i] = info["nit"]
+        greenlet.getcurrent().parent.switch(None, None)
 
     greenlets = [greenlet(run) for _ in range(batch_size)]
-    x_and_argsT_pairs = [gl.switch(i) for i, gl in enumerate(greenlets)]
-
-    while x_and_argsT_pairs:
-        x_batched_list = [pair[0] for pair in x_and_argsT_pairs if pair is not None]
-        batched_args_transposed = [pair[1] for pair in x_and_argsT_pairs if pair is not None]
-        x_batched = np.array(x_batched_list)
-        current_args_tuple = tuple(zip(*batched_args_transposed))
-        fvals, grads = func_and_grad(x_batched, *current_args_tuple)
-        results = [gl.switch((fvals[i], grads[i])) for i, gl in enumerate(greenlets)]
-        live_pairs_and_greenlets = [
-            (pair, gl) for pair, gl in zip(results, greenlets) if pair is not None
-        ]
-        if not live_pairs_and_greenlets:
-            break
-        x_and_argsT_pairs, greenlets = map(list, zip(*live_pairs_and_greenlets))
+    x_and_args_list = [gl.switch(i) for i, gl in enumerate(greenlets)]
+    x_batched = np.array([x for x, _ in x_and_args_list if x is not None])
+    batched_args = tuple(zip(*[args for _, args in x_and_args_list if args is not None]))
+    while x_batched.size:
+        fvals, grads = func_and_grad(x_batched, *batched_args)
+        x_and_args_list = [gl.switch(fvals[i], grads[i]) for i, gl in enumerate(greenlets)]
+        x_batched = np.array([x for x, _ in x_and_args_list if x is not None])
+        batched_args = tuple(zip(*[args for _, args in x_and_args_list if args is not None]))
+        greenlets = [gl for (x, _), gl in zip(x_and_args_list, greenlets) if x is not None]
 
     return xs_opt, fvals_opt, n_iterations
 
