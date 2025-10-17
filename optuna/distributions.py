@@ -495,9 +495,9 @@ class CategoricalDistribution(BaseDistribution):
         for choice in choices:
             if choice is not None and not isinstance(choice, (bool, int, float, str)):
                 message = (
-                    "Choices for a categorical distribution should be a tuple of None, bool, "
-                    f"int, float and str for persistent storage but contains {choice} which is of type "
-                    f"{type(choice).__name__}."
+                    "Choices for a categorical distribution should be a tuple of None, bool, int, "
+                    "float and str for persistent storage but contains"
+                    f"{choice} which is of type {type(choice).__name__}."
                 )
                 warnings.warn(message)
 
