@@ -119,8 +119,7 @@ def batched_lbfgsb(
 
     # Validate bounds.
     assert bounds is None or np.shape(bounds) == (
-        dim,
-        2,
+        dim, 2
     ), f"The shape of bounds must be ({dim=}, 2), but got {np.shape(bounds)}."
 
     if _greenlet_imports.is_successful() and len(x0_batched) > 1:
