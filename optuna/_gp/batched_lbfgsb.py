@@ -112,10 +112,9 @@ def batched_lbfgsb(
     batch_size, dim = x0_batched.shape
     # Validate batched_args shapes: each arg must be a sequence of length B.
     for j, arg in enumerate(batched_args):
-        if len(arg) != batch_size:
-            raise ValueError(
-                f"batched_args[{j}] must have length {batch_size}, but got {len(arg)}."
-            )
+        assert len(arg) == batch_size, (
+            f"batched_args[{j}] must have length {batch_size}, but got {len(arg)}."
+        )
 
     # Validate bounds.
     assert bounds is None or np.shape(bounds) == (
