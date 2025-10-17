@@ -117,8 +117,8 @@ def batched_lbfgsb(
         ), f"batched_args[{j}] must have length {batch_size}, but got {len(arg)}."
 
     # Validate bounds.
-    assert bounds is None or np.shape(bounds) == (
-        dim, 2
+    assert (
+        bounds is None or np.shape(bounds) == (dim, 2)
     ), f"The shape of bounds must be ({dim=}, 2), but got {np.shape(bounds)}."
 
     if _greenlet_imports.is_successful() and len(x0_batched) > 1:
