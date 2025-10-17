@@ -1,5 +1,13 @@
-import optuna
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from optuna.pruners import BasePruner
+
+
+if TYPE_CHECKING:
+    from optuna.study import Study
+    from optuna.trial import FrozenTrial
 
 
 class NopPruner(BasePruner):
@@ -43,5 +51,5 @@ class NopPruner(BasePruner):
             study.optimize(objective, n_trials=20)
     """
 
-    def prune(self, study: "optuna.study.Study", trial: "optuna.trial.FrozenTrial") -> bool:
+    def prune(self, study: Study, trial: FrozenTrial) -> bool:
         return False
