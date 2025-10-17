@@ -105,7 +105,7 @@ def batched_lbfgsb(
     - `x0_batched` is a 2D array where each row is an initial point for optimization.
     - `batched_args` is a tuple of additional arguments to pass to `func_and_grad`. e.g., if
       `batched_args` is `([alpha1, ..., alphaB], [beta1, ..., betaB])`, then
-      `func_and_grad` is called as
+      `func_and_grad` is called by
       `func_and_grad(x0_batched, [alpha1, ..., alphaB], [beta1, ..., betaB])`. Note that each
       argument in `batched_args` is expected to be a list of length `B` (batch size).
     """
@@ -118,9 +118,10 @@ def batched_lbfgsb(
             )
 
     # Validate bounds.
-    assert bounds is None or np.shape(bounds) == (dim, 2), (
-        f"The shape of bounds must be ({dim=}, 2), but got {np.shape(bounds)}."
-    )
+    assert bounds is None or np.shape(bounds) == (
+        dim,
+        2,
+    ), f"The shape of bounds must be ({dim=}, 2), but got {np.shape(bounds)}."
 
     if _greenlet_imports.is_successful() and len(x0_batched) > 1:
         # NOTE(Kaichi-Irie): when batch size is 1, using greenlet causes context-switch overhead.
