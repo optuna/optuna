@@ -113,7 +113,7 @@ def batched_lbfgsb(
     # Validate batched_args shapes: each arg must be a sequence of length B.
     for j, arg in enumerate(batched_args):
         assert (
-            len(arg) == batch_size
+            len(arg) != batch_size
         ), f"batched_args[{j}] must have length {batch_size}, but got {len(arg)}."
 
     # Validate bounds.
