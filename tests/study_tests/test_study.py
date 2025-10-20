@@ -468,9 +468,10 @@ def test_delete_study(storage_mode: str) -> None:
 @pytest.mark.parametrize("from_storage_mode", STORAGE_MODES)
 @pytest.mark.parametrize("to_storage_mode", STORAGE_MODES)
 def test_copy_study(from_storage_mode: str, to_storage_mode: str) -> None:
-    with StorageSupplier(from_storage_mode) as from_storage, StorageSupplier(
-        to_storage_mode
-    ) as to_storage:
+    with (
+        StorageSupplier(from_storage_mode) as from_storage,
+        StorageSupplier(to_storage_mode) as to_storage,
+    ):
         from_study = create_study(storage=from_storage, directions=["maximize", "minimize"])
         from_study._storage.set_study_system_attr(from_study._study_id, "foo", "bar")
         from_study.set_user_attr("baz", "qux")
@@ -498,9 +499,10 @@ def test_copy_study(from_storage_mode: str, to_storage_mode: str) -> None:
 @pytest.mark.parametrize("from_storage_mode", STORAGE_MODES)
 @pytest.mark.parametrize("to_storage_mode", STORAGE_MODES)
 def test_copy_study_to_study_name(from_storage_mode: str, to_storage_mode: str) -> None:
-    with StorageSupplier(from_storage_mode) as from_storage, StorageSupplier(
-        to_storage_mode
-    ) as to_storage:
+    with (
+        StorageSupplier(from_storage_mode) as from_storage,
+        StorageSupplier(to_storage_mode) as to_storage,
+    ):
         from_study = create_study(study_name="foo", storage=from_storage)
         _ = create_study(study_name="foo", storage=to_storage)
 
