@@ -587,6 +587,24 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                 session, trial_id, param_name, param_value_internal, distribution
             )
 
+    def _set_trial_param(
+        self,
+        trial_id: int,
+        param_name: str,
+        param_value_internal: float,
+        distribution: distributions.BaseDistribution,
+        previous_distribution: distributions.BaseDistribution | None,
+    ) -> None:
+        with _create_scoped_session(self.scoped_session, True) as session:
+            self._set_trial_param_without_commit(
+                session,
+                trial_id,
+                param_name,
+                param_value_internal,
+                distribution,
+                previous_distribution,
+            )
+
     def _set_trial_param_without_commit(
         self,
         session: "sqlalchemy_orm.Session",
@@ -594,9 +612,26 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         param_name: str,
         param_value_internal: float,
         distribution: distributions.BaseDistribution,
+        previous_distribution: distributions.BaseDistribution | None = None,
     ) -> None:
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
         self.check_trial_is_updatable(trial_id, trial.state)
+
+        if previous_distribution is None:
+            previous_record = (
+                session.query(models.TrialParamModel)
+                .join(models.TrialModel)
+                .filter(models.TrialModel.study_id == trial.study_id)
+                .filter(models.TrialParamModel.param_name == param_name)
+                .first()
+            )
+            if previous_record is not None:
+                previous_distribution = distributions.json_to_distribution(
+                    previous_record.distribution_json
+                )
+
+        if previous_distribution is not None:
+            distributions.check_distribution_compatibility(previous_distribution, distribution)
 
         trial_param = models.TrialParamModel(
             trial_id=trial_id,
@@ -605,7 +640,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
             distribution_json=distributions.distribution_to_json(distribution),
         )
 
-        trial_param.check_and_add(session, trial.study_id)
+        session.add(trial_param)
 
     def get_trial_param(self, trial_id: int, param_name: str) -> float:
         with _create_scoped_session(self.scoped_session) as session:
