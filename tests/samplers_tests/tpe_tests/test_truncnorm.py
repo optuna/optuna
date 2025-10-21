@@ -26,7 +26,7 @@ def test_ppf(a: float, b: float) -> None:
     ):
         assert truncnorm_ours.ppf(x, a, b) == pytest.approx(
             truncnorm_scipy.ppf(x, a, b), nan_ok=True
-        ), f"ppf(x={x}, a={a}, b={b})"
+        ), f"ppf({x=}, {a=}, {b=})"
 
 
 @pytest.mark.filterwarnings("ignore::RuntimeWarning")
@@ -42,7 +42,7 @@ def test_logpdf(a: float, b: float, loc: float, scale: float) -> None:
     ):
         assert truncnorm_ours.logpdf(x, a, b, loc, scale) == pytest.approx(
             truncnorm_scipy.logpdf(x, a, b, loc, scale), nan_ok=True
-        ), f"logpdf(x={x}, a={a}, b={b})"
+        ), f"logpdf({x=}, {a=}, {b=})"
 
 
 @pytest.mark.skipif(
@@ -57,7 +57,7 @@ def test_log_gass_mass(a: float, b: float) -> None:
     a_arr, b_arr = np.array([a]), np.array([b])
     assert truncnorm_ours._log_gauss_mass(a_arr, b_arr) == pytest.approx(
         _log_gauss_mass_scipy(a_arr, b_arr), nan_ok=True
-    ), f"_log_gauss_mass(a={a}, b={b})"
+    ), f"_log_gauss_mass({a=}, {b=})"
 
 
 @pytest.mark.skipif(
