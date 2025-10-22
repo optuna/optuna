@@ -104,7 +104,7 @@ class StorageSupplier(AbstractContextManager):
             self.storage = optuna.storages.InMemoryStorage()
         elif "sqlite" in self.storage_specifier:
             self.tempfile = NamedTemporaryFilePool().tempfile()
-            url = "sqlite:///{}".format(self.tempfile.name)
+            url = f"sqlite:///{self.tempfile.name}"
             rdb_storage = optuna.storages.RDBStorage(
                 url,
                 engine_kwargs={"connect_args": {"timeout": SQLITE3_TIMEOUT}},
@@ -139,7 +139,7 @@ class StorageSupplier(AbstractContextManager):
             self.storage = optuna.storages.JournalStorage(file_storage)
         elif self.storage_specifier == "grpc_rdb":
             self.tempfile = NamedTemporaryFilePool().tempfile()
-            url = "sqlite:///{}".format(self.tempfile.name)
+            url = f"sqlite:///{self.tempfile.name}"
             self.backend_storage = optuna.storages.RDBStorage(url)
             self.storage = self._create_proxy(self.backend_storage)
         elif self.storage_specifier == "grpc_proxy":

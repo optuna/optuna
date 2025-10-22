@@ -656,9 +656,9 @@ class Trial(BaseTrial):
         contained = distribution._contains(param_value_in_internal_repr)
         if not contained:
             warnings.warn(
-                "Fixed parameter '{}' with value {} is out of range "
-                "for distribution {}.".format(name, param_value, distribution)
-            )
+                f"Fixed parameter '{name}' with value {param_value} is out of range "
+                f"for distribution {distribution}."
+                )
         return True
 
     def _is_relative_param(self, name: str, distribution: BaseDistribution) -> bool:
@@ -669,8 +669,8 @@ class Trial(BaseTrial):
 
         if name not in self.relative_search_space:
             raise ValueError(
-                "The parameter '{}' was sampled by `sample_relative` method "
-                "but it is not contained in the relative search space.".format(name)
+                f"The parameter '{name}' was sampled by `sample_relative` method "
+                "but it is not contained in the relative search space."
             )
 
         relative_distribution = self.relative_search_space[name]
@@ -684,13 +684,13 @@ class Trial(BaseTrial):
         old_distribution = self._cached_frozen_trial.distributions.get(name, distribution)
         if old_distribution != distribution:
             warnings.warn(
-                'Inconsistent parameter values for distribution with name "{}"! '
+                f'Inconsistent parameter values for distribution with name "{name}"! '
                 "This might be a configuration mistake. "
                 "Optuna allows to call the same distribution with the same "
                 "name more than once in a trial. "
                 "When the parameter values are inconsistent optuna only "
                 "uses the values of the first call and ignores all following. "
-                "Using these values: {}".format(name, old_distribution._asdict()),
+                f"Using these values: {old_distribution._asdict()}",
                 RuntimeWarning,
             )
 

@@ -94,8 +94,8 @@ def _get_intermediate_plot(info: _IntermediatePlotInfo) -> "go.Figure":
                 if tinfo.feasible
                 else {**default_marker, "color": "#CCCCCC"}  # type: ignore[dict-item]
             ),
-            name="Trial{}".format(tinfo.trial_number),
-        )
+            name=f"Trial{tinfo.trial_number}"
+            )
         for tinfo in trial_infos
     ]
 
