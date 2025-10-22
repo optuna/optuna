@@ -37,7 +37,7 @@ def objective(trial):
 if __name__ == "__main__":
     study = optuna.create_study()
     study.optimize(objective, n_trials=100)
-    print("Best value: {} (params: {})\n".format(study.best_value, study.best_params))
+    print(f"Best value: {study.best_value} (params: {study.best_params})\n")
 
 ###################################################################################################
 # However, if we cannot write ``objective`` explicitly in Python code such as developing a new

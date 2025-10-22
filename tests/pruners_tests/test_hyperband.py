@@ -131,7 +131,7 @@ def test_hyperband_filter_study(
                 reduction_factor=REDUCTION_FACTOR,
             )
             with mock.patch(
-                "optuna.samplers.{}.{}".format(sampler.__class__.__name__, method_name),
+                f"optuna.samplers.{sampler.__class__.__name__}.{method_name}",
                 wraps=getattr(sampler, method_name),
             ) as method_mock:
                 study = optuna.study.create_study(sampler=sampler, pruner=pruner)
@@ -166,7 +166,7 @@ def test_hyperband_no_filter_study(
         sampler = optuna.samplers.RandomSampler()
         pruner = pruner_init_func()
         with mock.patch(
-            "optuna.samplers.{}.{}".format(sampler.__class__.__name__, method_name),
+            f"optuna.samplers.{sampler.__class__.__name__}.{method_name}",
             wraps=getattr(sampler, method_name),
         ) as method_mock:
             study = optuna.study.create_study(sampler=sampler, pruner=pruner)

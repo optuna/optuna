@@ -100,7 +100,7 @@ class _ProgressBar:
                 self._progress_bar.update(1)
                 if self._timeout is not None:
                     self._progress_bar.set_postfix_str(
-                        "{:.02f}/{} seconds".format(elapsed_seconds, self._timeout)
+                        f"{(elapsed_seconds):.02f}/{self._timeout} seconds"
                     )
 
             elif self._timeout is not None:

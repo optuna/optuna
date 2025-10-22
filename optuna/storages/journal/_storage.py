@@ -162,7 +162,7 @@ class JournalStorage(BaseStorage):
                 if frozen_study.study_name != study_name:
                     continue
 
-                _logger.info("A new study created in Journal with name: {}".format(study_name))
+                _logger.info(f"A new study created in Journal with name: {study_name}")
                 study_id = frozen_study._study_id
 
                 # Dump snapshot here.
@@ -300,9 +300,7 @@ class JournalStorage(BaseStorage):
             self._sync_with_backend()
             if len(self._replay_result._study_id_to_trial_ids[study_id]) <= trial_number:
                 raise KeyError(
-                    "No trial with trial number {} exists in study with study_id {}.".format(
-                        trial_number, study_id
-                    )
+                    f"No trial with trial number {trial_number} exists in study with study_id {study_id}."
                 )
             return self._replay_result._study_id_to_trial_ids[study_id][trial_number]
 
@@ -492,11 +490,11 @@ class JournalStorageReplayResult:
         if study_name in [s.study_name for s in self._studies.values()]:
             if self._is_issued_by_this_worker(log):
                 raise DuplicatedStudyError(
-                    "Another study with name '{}' already exists. "
+                    f"Another study with name '{study_name}' already exists. "
                     "Please specify a different name, or reuse the existing one "
                     "by setting `load_if_exists` (for Python API) or "
-                    "`--skip-if-exists` flag (for CLI).".format(study_name)
-                )
+                    "`--skip-if-exists` flag (for CLI)."
+                    )
             return
 
         study_id = self._next_study_id

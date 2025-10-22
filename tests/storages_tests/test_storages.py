@@ -1149,7 +1149,7 @@ def _setup_studies(
     study_id_to_frozen_study: dict[int, FrozenStudy] = {}
     study_id_to_trials: dict[int, dict[int, FrozenTrial]] = {}
     for i in range(n_study):
-        study_name = "test-study-name-{}".format(i)
+        study_name = f"test-study-name-{i}"
         if direction is None:
             direction = generator.choice([StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE])
         study_id = storage.create_new_study(directions=(direction,), study_name=study_name)

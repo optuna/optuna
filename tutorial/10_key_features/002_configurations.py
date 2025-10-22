@@ -80,7 +80,7 @@ def objective(trial):
 #
 #         layers = []
 #         for i in range(n_layers):
-#             n_units = trial.suggest_int("n_units_l{}".format(i), 4, 128, log=True)
+#             n_units = trial.suggest_int(f"n_units_l{i}", 4, 128, log=True)
 #             layers.append(nn.Linear(in_size, n_units))
 #             layers.append(nn.ReLU())
 #             in_size = n_units

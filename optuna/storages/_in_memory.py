@@ -84,7 +84,7 @@ class InMemoryStorage(BaseStorage):
             self._study_name_to_id[study_name] = study_id
             self._prev_waiting_trial_number[study_id] = 0
 
-            _logger.info("A new study created in memory with name: {}".format(study_name))
+            _logger.info(f"A new study created in memory with name: {study_name}")
 
             return study_id
 
@@ -114,7 +114,7 @@ class InMemoryStorage(BaseStorage):
     def get_study_id_from_name(self, study_name: str) -> int:
         with self._lock:
             if study_name not in self._study_name_to_id:
-                raise KeyError("No such study {}.".format(study_name))
+                raise KeyError(f"No such study {study_name}.")
 
             return self._study_name_to_id[study_name]
 
@@ -221,14 +221,12 @@ class InMemoryStorage(BaseStorage):
         with self._lock:
             study = self._studies.get(study_id)
             if study is None:
-                raise KeyError("No study with study_id {} exists.".format(study_id))
+                raise KeyError(f"No study with study_id {study_id} exists.")
 
             trials = study.trials
             if len(trials) <= trial_number:
                 raise KeyError(
-                    "No trial with trial number {} exists in study with study_id {}.".format(
-                        trial_number, study_id
-                    )
+                    f"No trial with trial number {trial_number} exists in study with study_id {study_id}."
                 )
 
             trial = trials[trial_number]
@@ -407,11 +405,11 @@ class InMemoryStorage(BaseStorage):
 
     def _check_study_id(self, study_id: int) -> None:
         if study_id not in self._studies:
-            raise KeyError("No study with study_id {} exists.".format(study_id))
+            raise KeyError(f"No study with study_id {study_id} exists.")
 
     def _check_trial_id(self, trial_id: int) -> None:
         if trial_id not in self._trial_id_to_study_id_and_number:
-            raise KeyError("No trial with trial_id {} exists.".format(trial_id))
+            raise KeyError(f"No trial with trial_id {trial_id} exists.")
 
 
 class _StudyInfo:

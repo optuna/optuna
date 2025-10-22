@@ -102,8 +102,8 @@ class BaseDistribution(abc.ABC):
         return hash((self.__class__,) + tuple(sorted(self.__dict__.items())))
 
     def __repr__(self) -> str:
-        kwargs = ", ".join("{}={}".format(k, v) for k, v in sorted(self._asdict().items()))
-        return "{}({})".format(self.__class__.__name__, kwargs)
+        kwargs = ", ".join(f"{k}={v}" for k, v in sorted(self._asdict().items()))
+        return f"{self.__class__.__name__}({kwargs})"
 
 
 class FloatDistribution(BaseDistribution):
@@ -144,19 +144,19 @@ class FloatDistribution(BaseDistribution):
 
         if low > high:
             raise ValueError(
-                "The `low` value must be smaller than or equal to the `high` value "
-                "(low={}, high={}).".format(low, high)
+                f"The `low` value must be smaller than or equal to the `high` value "
+                "(low={low}, high={high})."
             )
 
         if log and low <= 0.0:
             raise ValueError(
-                "The `low` value must be larger than 0 for a log distribution "
-                "(low={}, high={}).".format(low, high)
+                f"The `low` value must be larger than 0 for a log distribution "
+                "(low={low}, high={high})."
             )
 
         if step is not None and step <= 0:
             raise ValueError(
-                "The `step` value must be non-zero positive value, " "but step={}.".format(step)
+                f"The `step` value must be non-zero positive value, " "but step={step}."
             )
 
         self.step = None
@@ -354,19 +354,19 @@ class IntDistribution(BaseDistribution):
 
         if low > high:
             raise ValueError(
-                "The `low` value must be smaller than or equal to the `high` value "
-                "(low={}, high={}).".format(low, high)
+                f"The `low` value must be smaller than or equal to the `high` value "
+                "(low={low}, high={high})."
             )
 
         if log and low < 1:
             raise ValueError(
-                "The `low` value must be equal to or greater than 1 for a log distribution "
-                "(low={}, high={}).".format(low, high)
+                f"The `low` value must be equal to or greater than 1 for a log distribution "
+                "(low={low}, high={high})."
             )
 
         if step <= 0:
             raise ValueError(
-                "The `step` value must be non-zero positive value, but step={}.".format(step)
+                f"The `step` value must be non-zero positive value, but step={step}."
             )
 
         self.log = log
@@ -511,9 +511,7 @@ class CategoricalDistribution(BaseDistribution):
         for choice in choices:
             if choice is not None and not isinstance(choice, (bool, int, float, str)):
                 message = (
-                    "Choices for a categorical distribution should be a tuple of None, bool, "
-                    "int, float and str for persistent storage but contains {} which is of type "
-                    "{}.".format(choice, type(choice).__name__)
+                    f"Choices for a categorical distribution should be a tuple of None, bool, int, float and str for persistent storage but contains {choice} which is of type {type(choice).__name__}."
                 )
                 warnings.warn(message)
 
@@ -599,7 +597,7 @@ def json_to_distribution(json_str: str) -> BaseDistribution:
             if json_dict["name"] == cls.__name__:
                 return cls(**json_dict["attributes"])
 
-        raise ValueError("Unknown distribution class: {}".format(json_dict["name"]))
+        raise ValueError(f"Unknown distribution class: {json_dict["name"]}")
 
     else:
         # Deserialize a distribution from an abbreviated format.
@@ -619,7 +617,7 @@ def json_to_distribution(json_str: str) -> BaseDistribution:
                     step = 1
                 return IntDistribution(low=low, high=high, log=log, step=step)
 
-        raise ValueError("Unknown distribution type: {}".format(json_dict["type"]))
+        raise ValueError(f"Unknown distribution type: {json_dict["type"]}")
 
 
 def distribution_to_json(dist: BaseDistribution) -> str:
@@ -685,10 +683,7 @@ def _adjust_discrete_uniform_high(low: float, high: float, step: float) -> float
         old_high = high
         high = float((d_r // d_step) * d_step + d_low)
         warnings.warn(
-            "The distribution is specified by [{low}, {old_high}] and step={step}, but the range "
-            "is not divisible by `step`. It will be replaced by [{low}, {high}].".format(
-                low=low, old_high=old_high, high=high, step=step
-            )
+            f"The distribution is specified by [{low}, {old_high}] and step={step}, but the range is not divisible by `step`. It will be replaced by [{low}, {high}]."
         )
 
     return high
@@ -700,10 +695,7 @@ def _adjust_int_uniform_high(low: int, high: int, step: int) -> int:
         old_high = high
         high = r // step * step + low
         warnings.warn(
-            "The distribution is specified by [{low}, {old_high}] and step={step}, but the range "
-            "is not divisible by `step`. It will be replaced by [{low}, {high}].".format(
-                low=low, old_high=old_high, high=high, step=step
-            )
+            f"The distribution is specified by [{low}, {old_high}] and step={step}, but the range is not divisible by `step`. It will be replaced by [{low}, {high}]."
         )
     return high
 
