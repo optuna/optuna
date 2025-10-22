@@ -205,7 +205,8 @@ def _get_distribution(param_name: str, study: Study) -> BaseDistribution:
 
 
 def _make_hovertext(param_name: str, importance: float, study: Study) -> str:
-    return f"{param_name} ({_get_distribution(param_name, study).__class__.__name__}): {importance}<extra></extra>"
+    dist_name = _get_distribution(param_name, study).__class__.__name__
+    return f"{param_name} ({dist_name}): {importance}<extra></extra>"
 
 
 def _get_hover_template(importances_info: _ImportancesInfo, study: Study) -> list[str]:

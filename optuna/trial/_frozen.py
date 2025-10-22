@@ -193,12 +193,12 @@ class FrozenTrial(BaseTrial):
         return hash(tuple(getattr(self, field) for field in self.__dict__))
 
     def __repr__(self) -> str:
-        
+
         fields_str = ", ".join(
-                f"{field if not field.startswith("_") else field[1:]}={repr(getattr(self,field))}"
-                for field in self.__dict__
-            )
-        
+            f"{field if not field.startswith('_') else field[1:]}={repr(getattr(self,field))}"
+            for field in self.__dict__
+        )
+
         return f"{self.__class__.__name__}({fields_str}, value=None)"
 
     def suggest_float(
@@ -326,7 +326,8 @@ class FrozenTrial(BaseTrial):
 
         if set(self.params.keys()) != set(self.distributions.keys()):
             raise ValueError(
-                f"Inconsistent parameters {set(self.params.keys())} and distributions {set(self.distributions.keys())}."
+                f"Inconsistent parameters {set(self.params.keys())} "
+                f"and distributions {set(self.distributions.keys())}."
             )
 
         for param_name, param_value in self.params.items():
@@ -335,20 +336,23 @@ class FrozenTrial(BaseTrial):
             param_value_in_internal_repr = distribution.to_internal_repr(param_value)
             if not distribution._contains(param_value_in_internal_repr):
                 raise ValueError(
-                    f"The value {param_value} of parameter '{param_name}' isn't contained in the distribution {distribution}."
+                    f"The value {param_value} of parameter '{param_name}' "
+                    f"isn't contained in the distribution {distribution}."
                 )
 
     def _suggest(self, name: str, distribution: BaseDistribution) -> Any:
         if name not in self._params:
             raise ValueError(
-                f"The value of the parameter '{name}' is not found. Please set it at the construction of the FrozenTrial object."
+                f"The value of the parameter '{name}' is not found. "
+                "Please set it at the construction of the FrozenTrial object."
             )
 
         value = self._params[name]
         param_value_in_internal_repr = distribution.to_internal_repr(value)
         if not distribution._contains(param_value_in_internal_repr):
             warnings.warn(
-                f"The value {value} of the parameter '{name}' is out of the range of the distribution {distribution}."
+                f"The value {value} of the parameter '{name}' "
+                "is out of the range of the distribution {distribution}."
             )
 
         if name in self._distributions:

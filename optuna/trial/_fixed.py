@@ -144,7 +144,7 @@ class FixedTrial(BaseTrial):
             raise ValueError(
                 f"The value of the parameter '{name}' is not found. Please set it at "
                 "the construction of the FixedTrial object."
-                )
+            )
 
         value = self._params[name]
         param_value_in_internal_repr = distribution.to_internal_repr(value)
@@ -152,7 +152,7 @@ class FixedTrial(BaseTrial):
             warnings.warn(
                 f"The value {value} of the parameter '{name}' is out of "
                 f"the range of the distribution {distribution}."
-                )
+            )
 
         if name in self._distributions:
             distributions.check_distribution_compatibility(self._distributions[name], distribution)

@@ -161,7 +161,7 @@ class PercentilePruner(BasePruner):
         if n_min_trials < 1:
             raise ValueError(
                 f"Number of trials for pruning must be at least 1 but got {n_min_trials}."
-                )
+            )
 
         self._percentile = percentile
         self._n_startup_trials = n_startup_trials

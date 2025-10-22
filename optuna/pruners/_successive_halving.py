@@ -123,13 +123,13 @@ class SuccessiveHalvingPruner(BasePruner):
             raise ValueError(
                 f"The value of `min_resource` is {min_resource}, "
                 "but must be either `min_resource` >= 1 or 'auto'"
-                )
+            )
 
         if isinstance(min_resource, int) and min_resource < 1:
             raise ValueError(
                 f"The value of `min_resource` is {min_resource}, "
                 "but must be either `min_resource >= 1` or 'auto'"
-                )
+            )
 
         if reduction_factor < 2:
             raise ValueError(
@@ -147,12 +147,12 @@ class SuccessiveHalvingPruner(BasePruner):
             raise ValueError(
                 f"The value of `bootstrap_count` is {bootstrap_count}, "
                 "but must be `bootstrap_count >= 0`"
-                )
+            )
 
         if bootstrap_count > 0 and min_resource == "auto":
             raise ValueError(
-                f"bootstrap_count > 0 and min_resource == 'auto' "
-                "are mutually incompatible, bootstrap_count is {bootstrap_count}"
+                "bootstrap_count > 0 and min_resource == 'auto' "
+                f"are mutually incompatible, bootstrap_count is {bootstrap_count}"
             )
 
         self._min_resource: int | None = None

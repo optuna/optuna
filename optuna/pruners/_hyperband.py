@@ -159,14 +159,14 @@ class HyperbandPruner(BasePruner):
 
         if not isinstance(self._max_resource, int) and self._max_resource != "auto":
             raise ValueError(
-                f"The 'max_resource' should be integer or 'auto'. "
-                "But max_resource = {self._max_resource}"
-                )
+                "The 'max_resource' should be integer or 'auto'. "
+                f"But max_resource = {self._max_resource}"
+            )
 
         if self._bootstrap_count > 0 and self._max_resource == "auto":
             raise ValueError(
-                f"bootstrap_count > 0 and max_resource == 'auto' "
-                "are mutually incompatible, bootstrap_count is {self._bootstrap_count}"
+                "bootstrap_count > 0 and max_resource == 'auto' "
+                f"are mutually incompatible, bootstrap_count is {self._bootstrap_count}"
             )
 
     def prune(self, study: "optuna.study.Study", trial: "optuna.trial.FrozenTrial") -> bool:
@@ -315,9 +315,7 @@ class HyperbandPruner(BasePruner):
 
             def __getattribute__(self, attr_name):  # type: ignore
                 if attr_name not in _BracketStudy._VALID_ATTRS:
-                    raise AttributeError(
-                        f"_BracketStudy does not have attribute of '{attr_name}'"
-                    )
+                    raise AttributeError(f"_BracketStudy does not have attribute of '{attr_name}'")
                 else:
                     return object.__getattribute__(self, attr_name)
 

@@ -82,8 +82,9 @@ def _create_scoped_session(
         session.rollback()
         if ignore_integrity_error:
             _logger.debug(
-                f"Ignoring {repr(e)}. This happens due to a timing issue among threads/processes/nodes. "
-                "Another one might have committed a record with the same key(s)."
+                f"Ignoring {repr(e)}. This happens due to a timing issue "
+                "among threads/processes/nodes. Another one might have "
+                "committed a record with the same key(s)."
             )
         else:
             raise
@@ -783,7 +784,8 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
             )
             if trial_id is None:
                 raise KeyError(
-                    f"No trial with trial number {trial_number} exists in study with study_id {study_id}."
+                    f"No trial with trial number {trial_number} "
+                    f"exists in study with study_id {study_id}."
                 )
             return trial_id[0]
 
@@ -856,7 +858,8 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                 # SQLITE_MAX_VARIABLE_NUMBER.
 
                 _logger.warning(
-                    f"Caught an error from sqlalchemy: {str(e)}. Falling back to a slower alternative. "
+                    f"Caught an error from sqlalchemy: {str(e)}. "
+                    "Falling back to a slower alternative. "
                 )
 
                 trial_models = query.order_by(models.TrialModel.trial_id).all()
@@ -1106,7 +1109,9 @@ class _VersionManager:
                 return
 
             message = (
-                f"The runtime optuna version {version.__version__} is no longer compatible with the table schema (set up by optuna {version_info.library_version}). "
+                f"The runtime optuna version {version.__version__} is no "
+                "longer compatible with the table schema (set up by "
+                "optuna {version_info.library_version}). "
             )
             known_versions = self.get_all_versions()
 

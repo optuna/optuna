@@ -225,9 +225,9 @@ class GridSampler(BaseSampler):
             return
 
         message = (
-            f"{param_name} contains a value with the type of {type(param_value)}, which is not supported by "
-            "`GridSampler`. Please make sure a value is `str`, `int`, `float`, `bool`"
-            " or `None` for persistent storage."
+            f"{param_name} contains a value with the type of {type(param_value)}, "
+            "which is not supported by `GridSampler`. Please make sure a value is "
+            "`str`, `int`, `float`, `bool` or `None` for persistent storage."
         )
         warnings.warn(message)
 

@@ -249,8 +249,8 @@ def _get_pareto_front_info(
         for v in target_values:
             if not isinstance(v, Sequence):
                 raise ValueError(
-                    f"`targets` should return a sequence of target values."
-                    " your `targets` returns {type(v)}"
+                    "`targets` should return a sequence of target values."
+                    f" your `targets` returns {type(v)}"
                 )
         return [(trial, list(v)) for trial, v in zip(trials, target_values)]
 
@@ -282,7 +282,8 @@ def _get_pareto_front_info(
 
     if n_targets not in (2, 3):
         raise ValueError(
-            f"`plot_pareto_front` function only supports 2 or 3 targets. you used {n_targets} targets now."
+            "`plot_pareto_front` function only supports 2 or 3 targets. "
+            f"you used {n_targets} targets now."
         )
 
     if target_names is None:

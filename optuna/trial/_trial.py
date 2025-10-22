@@ -658,7 +658,7 @@ class Trial(BaseTrial):
             warnings.warn(
                 f"Fixed parameter '{name}' with value {param_value} is out of range "
                 f"for distribution {distribution}."
-                )
+            )
         return True
 
     def _is_relative_param(self, name: str, distribution: BaseDistribution) -> bool:

@@ -144,19 +144,19 @@ class FloatDistribution(BaseDistribution):
 
         if low > high:
             raise ValueError(
-                f"The `low` value must be smaller than or equal to the `high` value "
-                "(low={low}, high={high})."
+                "The `low` value must be smaller than or equal to the `high` value "
+                f"(low={low}, high={high})."
             )
 
         if log and low <= 0.0:
             raise ValueError(
-                f"The `low` value must be larger than 0 for a log distribution "
-                "(low={low}, high={high})."
+                "The `low` value must be larger than 0 for a log distribution "
+                f"(low={low}, high={high})."
             )
 
         if step is not None and step <= 0:
             raise ValueError(
-                f"The `step` value must be non-zero positive value, " "but step={step}."
+                "The `step` value must be non-zero positive value, " f"but step={step}."
             )
 
         self.step = None
@@ -354,20 +354,18 @@ class IntDistribution(BaseDistribution):
 
         if low > high:
             raise ValueError(
-                f"The `low` value must be smaller than or equal to the `high` value "
-                "(low={low}, high={high})."
+                "The `low` value must be smaller than or equal to the `high` value "
+                f"(low={low}, high={high})."
             )
 
         if log and low < 1:
             raise ValueError(
-                f"The `low` value must be equal to or greater than 1 for a log distribution "
-                "(low={low}, high={high})."
+                "The `low` value must be equal to or greater than 1 for a log distribution "
+                f"(low={low}, high={high})."
             )
 
         if step <= 0:
-            raise ValueError(
-                f"The `step` value must be non-zero positive value, but step={step}."
-            )
+            raise ValueError(f"The `step` value must be non-zero positive value, but step={step}.")
 
         self.log = log
         self.step = int(step)
@@ -510,9 +508,9 @@ class CategoricalDistribution(BaseDistribution):
             raise ValueError("The `choices` must contain one or more elements.")
         for choice in choices:
             if choice is not None and not isinstance(choice, (bool, int, float, str)):
-                message = (
-                    f"Choices for a categorical distribution should be a tuple of None, bool, int, float and str for persistent storage but contains {choice} which is of type {type(choice).__name__}."
-                )
+                message = "Choices for a categorical distribution should be a tuple "
+                "of None, bool, int, float and str for persistent storage but contains "
+                f"{choice} which is of type {type(choice).__name__}."
                 warnings.warn(message)
 
         self.choices = tuple(choices)
@@ -597,7 +595,7 @@ def json_to_distribution(json_str: str) -> BaseDistribution:
             if json_dict["name"] == cls.__name__:
                 return cls(**json_dict["attributes"])
 
-        raise ValueError(f"Unknown distribution class: {json_dict["name"]}")
+        raise ValueError(f"Unknown distribution class: {json_dict['name']}")
 
     else:
         # Deserialize a distribution from an abbreviated format.
@@ -617,7 +615,7 @@ def json_to_distribution(json_str: str) -> BaseDistribution:
                     step = 1
                 return IntDistribution(low=low, high=high, log=log, step=step)
 
-        raise ValueError(f"Unknown distribution type: {json_dict["type"]}")
+        raise ValueError(f"Unknown distribution type: {json_dict['type']}")
 
 
 def distribution_to_json(dist: BaseDistribution) -> str:
@@ -683,7 +681,9 @@ def _adjust_discrete_uniform_high(low: float, high: float, step: float) -> float
         old_high = high
         high = float((d_r // d_step) * d_step + d_low)
         warnings.warn(
-            f"The distribution is specified by [{low}, {old_high}] and step={step}, but the range is not divisible by `step`. It will be replaced by [{low}, {high}]."
+            f"The distribution is specified by [{low}, {old_high}] and step={step}"
+            ", but the range is not divisible by `step`. "
+            f"It will be replaced by [{low}, {high}]."
         )
 
     return high
@@ -695,7 +695,9 @@ def _adjust_int_uniform_high(low: int, high: int, step: int) -> int:
         old_high = high
         high = r // step * step + low
         warnings.warn(
-            f"The distribution is specified by [{low}, {old_high}] and step={step}, but the range is not divisible by `step`. It will be replaced by [{low}, {high}]."
+            f"The distribution is specified by [{low}, {old_high}] and step={step}"
+            ", but the range is not divisible by `step`. "
+            f"It will be replaced by [{low}, {high}]."
         )
     return high
 
