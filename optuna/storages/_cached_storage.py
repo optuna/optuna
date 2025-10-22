@@ -223,7 +223,7 @@ class _CachedStorage(BaseStorage, BaseHeartbeat):
         deepcopy: bool = True,
         states: Container[TrialState] | None = None,
     ) -> list[FrozenTrial]:
-        self._read_trials_from_remote_storage(study_id, states)
+        self._read_trials_from_remote_storage(study_id)
 
         with self._lock:
             study = self._studies[study_id]
@@ -239,16 +239,14 @@ class _CachedStorage(BaseStorage, BaseHeartbeat):
             trials = list(sorted(trials.values(), key=lambda t: t.number))
             return copy.deepcopy(trials) if deepcopy else trials
 
-    def _read_trials_from_remote_storage(
-        self, study_id: int, states: Container[TrialState] | None
-    ) -> None:
+    def _read_trials_from_remote_storage(self, study_id: int) -> None:
         with self._lock:
             if study_id not in self._studies:
                 self._studies[study_id] = _StudyInfo()
             study = self._studies[study_id]
             trials = self._backend._get_trials(
                 study_id,
-                states=states,
+                states=None,
                 included_trial_ids=study.unfinished_trial_ids,
                 trial_id_greater_than=study.last_finished_trial_id,
             )
