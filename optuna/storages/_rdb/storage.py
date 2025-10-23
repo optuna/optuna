@@ -42,6 +42,7 @@ if TYPE_CHECKING:
     import alembic.script as alembic_script
     import sqlalchemy
     import sqlalchemy.dialects.mysql as sqlalchemy_dialects_mysql
+    import sqlalchemy.dialects.postgresql as sqlalchemy_dialects_postgresql
     import sqlalchemy.dialects.sqlite as sqlalchemy_dialects_sqlite
     import sqlalchemy.exc as sqlalchemy_exc
     import sqlalchemy.orm as sqlalchemy_orm
@@ -56,6 +57,7 @@ else:
 
     sqlalchemy = _LazyImport("sqlalchemy")
     sqlalchemy_dialects_mysql = _LazyImport("sqlalchemy.dialects.mysql")
+    sqlalchemy_dialects_postgresql = _LazyImport("sqlalchemy.dialects.postgresql")
     sqlalchemy_dialects_sqlite = _LazyImport("sqlalchemy.dialects.sqlite")
     sqlalchemy_exc = _LazyImport("sqlalchemy.exc")
     sqlalchemy_orm = _LazyImport("sqlalchemy.orm")
@@ -540,11 +542,9 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         if template_trial is not None:
             if template_trial.values is not None and len(template_trial.values) > 1:
                 for objective, value in enumerate(template_trial.values):
-                    self._set_trial_value_without_commit(session, trial.trial_id, objective, value)
+                    self._set_trial_value_without_commit(session, trial, objective, value)
             elif template_trial.value is not None:
-                self._set_trial_value_without_commit(
-                    session, trial.trial_id, 0, template_trial.value
-                )
+                self._set_trial_value_without_commit(session, trial, 0, template_trial.value)
 
             for param_name, param_value in template_trial.params.items():
                 distribution = template_trial.distributions[param_name]
@@ -627,7 +627,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
 
                 if values is not None:
                     for objective, v in enumerate(values):
-                        self._set_trial_value_without_commit(session, trial_id, objective, v)
+                        self._set_trial_value_without_commit(session, trial, objective, v)
 
                 if state == TrialState.RUNNING and trial.state != TrialState.WAITING:
                     return False
@@ -644,16 +644,22 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         return True
 
     def _set_trial_value_without_commit(
-        self, session: "sqlalchemy_orm.Session", trial_id: int, objective: int, value: float
+        self,
+        session: "sqlalchemy_orm.Session",
+        trial: models.TrialModel,
+        objective: int,
+        value: float,
     ) -> None:
-        trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
-        self.check_trial_is_updatable(trial_id, trial.state)
+        self.check_trial_is_updatable(trial.trial_id, trial.state)
         stored_value, value_type = models.TrialValueModel.value_to_stored_repr(value)
 
         trial_value = models.TrialValueModel.find_by_trial_and_objective(trial, objective, session)
         if trial_value is None:
             trial_value = models.TrialValueModel(
-                trial_id=trial_id, objective=objective, value=stored_value, value_type=value_type
+                trial_id=trial.trial_id,
+                objective=objective,
+                value=stored_value,
+                value_type=value_type,
             )
             session.add(trial_value)
         else:
@@ -747,8 +753,17 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                 set_=dict(value_json=sqlite_insert_stmt.excluded.value_json),
             )
             session.execute(sqlite_upsert_stmt)
+        elif self.engine.name == "postgresql":
+            pg_insert_stmt = sqlalchemy_dialects_postgresql.insert(model_cls).values(
+                trial_id=trial_id, key=key, value_json=json.dumps(value)
+            )
+            pg_upsert_stmt = pg_insert_stmt.on_conflict_do_update(
+                index_elements=[model_cls.trial_id, model_cls.key],
+                set_=dict(value_json=pg_insert_stmt.excluded.value_json),
+            )
+            session.execute(pg_upsert_stmt)
         else:
-            # TODO(porink0424): Add support for other databases, e.g., PostgreSQL.
+            # TODO(porink0424): Add support for other databases.
             attribute = model_cls.find_by_trial_and_key(trial, key, session)
             if attribute is None:
                 attribute = model_cls(trial_id=trial_id, key=key, value_json=json.dumps(value))
@@ -902,20 +917,21 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         )
 
     def get_best_trial(self, study_id: int) -> FrozenTrial:
-        with _create_scoped_session(self.scoped_session) as session:
-            _directions = self.get_study_directions(study_id)
-            if len(_directions) > 1:
-                raise RuntimeError(
-                    "Best trial can be obtained only for single-objective optimization."
-                )
-            direction = _directions[0]
-
-            if direction == StudyDirection.MAXIMIZE:
-                trial_id = models.TrialModel.find_max_value_trial_id(study_id, 0, session)
-            else:
-                trial_id = models.TrialModel.find_min_value_trial_id(study_id, 0, session)
-
+        _directions = self.get_study_directions(study_id)
+        if len(_directions) > 1:
+            raise RuntimeError(
+                "Best trial can be obtained only for single-objective optimization."
+            )
+        direction = _directions[0]
+        trial_id = self._get_best_trial_id(study_id, direction)
         return self.get_trial(trial_id)
+
+    def _get_best_trial_id(self, study_id: int, direction: StudyDirection) -> int:
+        with _create_scoped_session(self.scoped_session) as session:
+            if direction == StudyDirection.MAXIMIZE:
+                return models.TrialModel.find_max_value_trial_id(study_id, 0, session)
+            else:
+                return models.TrialModel.find_min_value_trial_id(study_id, 0, session)
 
     @staticmethod
     def _set_default_engine_kwargs_for_mysql(url: str, engine_kwargs: dict[str, Any]) -> None:

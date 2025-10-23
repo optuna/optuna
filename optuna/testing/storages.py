@@ -86,6 +86,8 @@ class StorageSupplier(AbstractContextManager):
         self.server: grpc.Server | None = None
         self.thread: threading.Thread | None = None
         self.proxy: GrpcStorageProxy | None = None
+        self.storage: BaseStorage | None = None
+        self.backend_storage: BaseStorage | None = None
 
     def __enter__(
         self,
@@ -99,7 +101,7 @@ class StorageSupplier(AbstractContextManager):
         if self.storage_specifier == "inmemory":
             if len(self.extra_args) > 0:
                 raise ValueError("InMemoryStorage does not accept any arguments!")
-            return optuna.storages.InMemoryStorage()
+            self.storage = optuna.storages.InMemoryStorage()
         elif "sqlite" in self.storage_specifier:
             self.tempfile = NamedTemporaryFilePool().tempfile()
             url = "sqlite:///{}".format(self.tempfile.name)
@@ -108,7 +110,7 @@ class StorageSupplier(AbstractContextManager):
                 engine_kwargs={"connect_args": {"timeout": SQLITE3_TIMEOUT}},
                 **self.extra_args,
             )
-            return (
+            self.storage = (
                 optuna.storages._CachedStorage(rdb_storage)
                 if "cached" in self.storage_specifier
                 else rdb_storage
@@ -120,28 +122,33 @@ class StorageSupplier(AbstractContextManager):
             journal_redis_storage._redis = self.extra_args.get(
                 "redis", fakeredis.FakeStrictRedis()
             )
-            return optuna.storages.JournalStorage(journal_redis_storage)
+            self.storage = optuna.storages.JournalStorage(journal_redis_storage)
         elif self.storage_specifier == "grpc_journal_file":
             self.tempfile = self.extra_args.get("file", NamedTemporaryFilePool().tempfile())
             assert self.tempfile is not None
             storage = optuna.storages.JournalStorage(
                 optuna.storages.journal.JournalFileBackend(self.tempfile.name)
             )
-            return self._create_proxy(storage, thread_pool=self.extra_args.get("thread_pool"))
+            self.storage = self._create_proxy(
+                storage, thread_pool=self.extra_args.get("thread_pool")
+            )
         elif "journal" in self.storage_specifier:
             self.tempfile = self.extra_args.get("file", NamedTemporaryFilePool().tempfile())
             assert self.tempfile is not None
             file_storage = JournalFileBackend(self.tempfile.name)
-            return optuna.storages.JournalStorage(file_storage)
+            self.storage = optuna.storages.JournalStorage(file_storage)
         elif self.storage_specifier == "grpc_rdb":
             self.tempfile = NamedTemporaryFilePool().tempfile()
             url = "sqlite:///{}".format(self.tempfile.name)
-            return self._create_proxy(optuna.storages.RDBStorage(url))
+            self.backend_storage = optuna.storages.RDBStorage(url)
+            self.storage = self._create_proxy(self.backend_storage)
         elif self.storage_specifier == "grpc_proxy":
             assert "base_storage" in self.extra_args
-            return self._create_proxy(self.extra_args["base_storage"])
+            self.storage = self._create_proxy(self.extra_args["base_storage"])
         else:
             assert False
+
+        return self.storage
 
     def _create_proxy(
         self, storage: BaseStorage, thread_pool: ThreadPoolExecutor | None = None
@@ -163,6 +170,16 @@ class StorageSupplier(AbstractContextManager):
         exc_val: BaseException | None,
         exc_tb: TracebackType | None,
     ) -> None:
+        # Unit tests create many short-lived Engine objects, so the connections created by the
+        # engine should be explicitly closed.
+        if isinstance(self.storage, optuna.storages.RDBStorage):
+            self.storage.engine.dispose()
+        elif isinstance(self.storage, optuna.storages._CachedStorage):
+            self.storage._backend.engine.dispose()
+        elif self.storage_specifier == "grpc_rdb":
+            assert isinstance(self.backend_storage, optuna.storages.RDBStorage)
+            self.backend_storage.engine.dispose()
+
         if self.tempfile:
             self.tempfile.close()
 

@@ -177,7 +177,14 @@ class _CachedStorage(BaseStorage, BaseHeartbeat):
         return self._backend.get_trial_id_from_study_id_trial_number(study_id, trial_number)
 
     def get_best_trial(self, study_id: int) -> FrozenTrial:
-        return self._backend.get_best_trial(study_id)
+        _directions = self.get_study_directions(study_id)
+        if len(_directions) > 1:
+            raise RuntimeError(
+                "Best trial can be obtained only for single-objective optimization."
+            )
+        direction = _directions[0]
+        trial_id = self._backend._get_best_trial_id(study_id, direction)
+        return self.get_trial(trial_id)
 
     def set_trial_state_values(
         self, trial_id: int, state: TrialState, values: Sequence[float] | None = None
@@ -216,7 +223,7 @@ class _CachedStorage(BaseStorage, BaseHeartbeat):
         deepcopy: bool = True,
         states: Container[TrialState] | None = None,
     ) -> list[FrozenTrial]:
-        self._read_trials_from_remote_storage(study_id)
+        self._read_trials_from_remote_storage(study_id, states)
 
         with self._lock:
             study = self._studies[study_id]
@@ -232,14 +239,16 @@ class _CachedStorage(BaseStorage, BaseHeartbeat):
             trials = list(sorted(trials.values(), key=lambda t: t.number))
             return copy.deepcopy(trials) if deepcopy else trials
 
-    def _read_trials_from_remote_storage(self, study_id: int) -> None:
+    def _read_trials_from_remote_storage(
+        self, study_id: int, states: Container[TrialState] | None
+    ) -> None:
         with self._lock:
             if study_id not in self._studies:
                 self._studies[study_id] = _StudyInfo()
             study = self._studies[study_id]
             trials = self._backend._get_trials(
                 study_id,
-                states=None,
+                states=states,
                 included_trial_ids=study.unfinished_trial_ids,
                 trial_id_greater_than=study.last_finished_trial_id,
             )

@@ -89,6 +89,16 @@ class GPSampler(BaseSampler):
     - `Bayesian Optimization with Inequality Constraints
       <https://proceedings.mlr.press/v32/gardner14.pdf>`__
 
+    Please also check our articles:
+
+    - `[Optuna v4.5] Gaussian Process-Based Sampler (GPSampler) Can Now Perform Constrained
+      Multi-Objective Optimization <https://medium.com/optuna/optuna-v4-5-81e78d8e077a>`__
+    - `[Optuna v4.2] Gaussian Process-Based Sampler (GPSampler) Can Now Handle Inequality
+      Constraints
+      <https://medium.com/optuna/optuna-v4-2-gaussian-process-based-sampler-can-now-handle-inequality-constraints-a4f68e8ee810>`__
+    - `Introducing Optuna's Native GPSampler
+      <https://medium.com/optuna/introducing-optunas-native-gpsampler-0aa9aa3b4840>`__
+
     The optimization of the acquisition function is performed via:
 
     1. Collect the best param from the past trials,
@@ -145,8 +155,6 @@ class GPSampler(BaseSampler):
             The ``constraints_func`` will be evaluated after each successful trial.
             The function won't be called when trials fail or are pruned, but this behavior is
             subject to change in future releases.
-            Currently, the ``constraints_func`` option is not supported for multi-objective
-            optimization.
         warn_independent_sampling:
             If this is :obj:`True`, a warning message is emitted when
             the value of a parameter is sampled by using an independent sampler,

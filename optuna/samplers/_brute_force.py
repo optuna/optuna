@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from collections.abc import Iterable
-from collections.abc import Sequence
 from dataclasses import dataclass
 import decimal
 from typing import Any
@@ -22,6 +20,9 @@ from optuna.trial import TrialState
 
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable
+    from collections.abc import Sequence
+
     from optuna.study import Study
 
 
@@ -61,7 +62,7 @@ class _TreeNode:
 
     def add_path(
         self, params_and_search_spaces: Iterable[tuple[str, Iterable[float], float]]
-    ) -> "_TreeNode" | None:
+    ) -> _TreeNode | None:
         # Add a path (i.e. a list of suggested parameters in one trial) to the tree.
         current_node = self
         for param_name, search_space, value in params_and_search_spaces:

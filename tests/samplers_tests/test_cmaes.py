@@ -285,11 +285,12 @@ def test_sample_relative_n_startup_trials() -> None:
 
     # The independent sampler is used for Trial#0 (FAILED), Trial#1 (COMPLETE)
     # and Trial#2 (COMPLETE). The CMA-ES is used for Trial#3 (COMPLETE).
-    with patch.object(
-        independent_sampler, "sample_independent", wraps=independent_sampler.sample_independent
-    ) as mock_independent, patch.object(
-        sampler, "sample_relative", wraps=sampler.sample_relative
-    ) as mock_relative:
+    with (
+        patch.object(
+            independent_sampler, "sample_independent", wraps=independent_sampler.sample_independent
+        ) as mock_independent,
+        patch.object(sampler, "sample_relative", wraps=sampler.sample_relative) as mock_relative,
+    ):
         study.optimize(objective, n_trials=4, catch=(Exception,))
         assert mock_independent.call_count == 6  # The objective function has two parameters.
         assert mock_relative.call_count == 4
