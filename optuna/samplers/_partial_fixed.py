@@ -3,8 +3,8 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import Any
 from typing import TYPE_CHECKING
-import warnings
 
+from optuna import _warnings as warnings
 from optuna._experimental import experimental_class
 from optuna.distributions import BaseDistribution
 from optuna.samplers import BaseSampler

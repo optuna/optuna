@@ -10,8 +10,8 @@ from typing import Any
 from typing import cast
 from typing import TYPE_CHECKING
 from typing import Union
-import warnings
 
+from optuna import _warnings as warnings
 from optuna._deprecated import deprecated_class
 
 

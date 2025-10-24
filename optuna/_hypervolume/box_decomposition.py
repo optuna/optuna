@@ -21,10 +21,9 @@ We refer this paper as Lacour17 in this file.
 
 from __future__ import annotations
 
-import warnings
-
 import numpy as np
 
+from optuna import _warnings as warnings
 from optuna.study._multi_objective import _is_pareto_front
 
 
