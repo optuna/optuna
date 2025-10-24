@@ -70,7 +70,7 @@ class JournalLogStorageSupplier:
             journal_redis_storage._redis = FakeStrictRedis()
             return journal_redis_storage
         else:
-            raise RuntimeError("Unknown log storage type: {}".format(self.storage_type))
+            raise RuntimeError(f"Unknown log storage type: {self.storage_type}")
 
     def __exit__(
         self, exc_type: type[BaseException], exc_val: BaseException, exc_tb: TracebackType
