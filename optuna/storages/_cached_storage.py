@@ -27,6 +27,8 @@ class _StudyInfo:
         # attributes.
         self.unfinished_trial_ids: set[int] = set()
         self.last_finished_trial_id: int = -1
+        # Cache distributions to avoid storage access on distribution consistency check.
+        self.param_distribution: dict[str, distributions.BaseDistribution] = {}
         self.directions: list[StudyDirection] | None = None
         self.name: str | None = None
 
@@ -166,7 +168,14 @@ class _CachedStorage(BaseStorage, BaseHeartbeat):
         param_value_internal: float,
         distribution: distributions.BaseDistribution,
     ) -> None:
-        self._backend.set_trial_param(trial_id, param_name, param_value_internal, distribution)
+        with self._lock:
+            study_id, _ = self._trial_id_to_study_id_and_number[trial_id]
+            cached_dist = self._studies[study_id].param_distribution.get(param_name)
+            self._backend._set_trial_param(
+                trial_id, param_name, param_value_internal, distribution, cached_dist
+            )
+            if cached_dist is None:
+                self._studies[study_id].param_distribution[param_name] = distribution
 
     def get_trial_id_from_study_id_trial_number(self, study_id: int, trial_number: int) -> int:
         key = (study_id, trial_number)
