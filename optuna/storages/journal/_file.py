@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import abc
+from collections.abc import Generator
 from collections.abc import Iterator
 from contextlib import contextmanager
 import errno
@@ -59,8 +60,7 @@ class JournalFileBackend(BaseJournalBackend):
             open(self._file_path, "ab").close()  # Create a file if it does not exist.
         self._log_number_offset: dict[int, int] = {0: 0}
 
-    def read_logs(self, log_number_from: int) -> list[dict[str, Any]]:
-        logs = []
+    def read_logs(self, log_number_from: int) -> Generator[dict[str, Any], None, None]:
         with open(self._file_path, "rb") as f:
             # Maintain remaining_log_size to allow writing by another process
             # while reading the log.
@@ -92,11 +92,10 @@ class JournalFileBackend(BaseJournalBackend):
                     del self._log_number_offset[log_number + 1]
                     continue
                 try:
-                    logs.append(json.loads(line))
+                    yield json.loads(line)
                 except json.JSONDecodeError as err:
                     last_decode_error = err
                     del self._log_number_offset[log_number + 1]
-            return logs
 
     def append_logs(self, logs: list[dict[str, Any]]) -> None:
         with get_lock_file(self._lock):
