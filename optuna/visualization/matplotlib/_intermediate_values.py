@@ -56,7 +56,7 @@ def _get_intermediate_plot(info: _IntermediatePlotInfo) -> "Axes":
             color=cmap(i) if tinfo.feasible else "#CCCCCC",
             marker=".",
             alpha=0.7,
-            label="Trial{}".format(tinfo.trial_number),
+            label=f"Trial{tinfo.trial_number}",
         )
 
     if len(trial_infos) >= 2:
