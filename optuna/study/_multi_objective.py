@@ -92,7 +92,7 @@ def _fast_non_domination_rank(
     if len(penalty) != len(loss_values):
         raise ValueError(
             "The length of penalty and loss_values must be same, but got "
-            f"len(penalty)={len(penalty)} and len(loss_values)={len(loss_values)}."
+            f"{len(penalty)=} and {len(loss_values)=}."
         )
 
     ranks = np.full(len(loss_values), -1, dtype=int)
