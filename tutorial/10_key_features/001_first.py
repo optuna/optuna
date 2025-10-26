@@ -129,4 +129,4 @@ len(study.trials)
 # However, we can check the result again:
 best_params = study.best_params
 found_x = best_params["x"]
-print(f"Found x: '{found_x}', (x - 2)^2: '{((found_x - 2) ** 2)}'")
+print(f"Found x: {found_x}, (x - 2)^2: {(found_x - 2) ** 2}")
