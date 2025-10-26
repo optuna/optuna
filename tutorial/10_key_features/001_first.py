@@ -56,7 +56,7 @@ study.optimize(objective, n_trials=100)
 
 best_params = study.best_params
 found_x = best_params["x"]
-print(f"Found x: '{found_x}', (x - 2)^2: '{((found_x - 2) ** 2)}'")
+print(f"Found x: {found_x}, (x - 2)^2: {(found_x - 2) ** 2}")
 ###################################################################################################
 # We can see that the ``x`` value found by Optuna is close to the optimal value of ``2``.
 
