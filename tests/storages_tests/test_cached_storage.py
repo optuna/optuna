@@ -6,6 +6,7 @@ import optuna
 from optuna.storages._cached_storage import _CachedStorage
 from optuna.storages._rdb.storage import RDBStorage
 from optuna.study import StudyDirection
+from optuna.testing.tempfile_pool import NamedTemporaryFilePool
 from optuna.trial import TrialState
 
 
@@ -138,3 +139,31 @@ def test_delete_study() -> None:
     storage.delete_study(study_id1)
     assert storage._get_cached_trial(trial_id1) is None
     assert storage._get_cached_trial(trial_id2) is not None
+
+
+def test_unfinished_trial_ids() -> None:
+    # This test reproduces the bug fixed in https://github.com/optuna/optuna/pull/6310
+    with NamedTemporaryFilePool() as tempfile:
+        storage_url = f"sqlite:///{tempfile.name}"
+        study_name = "test-unfinished-trial-ids"
+
+        storage1 = _CachedStorage(RDBStorage(storage_url))
+        study1 = optuna.create_study(
+            study_name=study_name,
+            storage=storage1,
+            load_if_exists=True,
+        )
+        storage2 = _CachedStorage(RDBStorage(storage_url))
+        study2 = optuna.create_study(
+            study_name=study_name,
+            storage=storage2,
+            load_if_exists=True,
+        )
+
+        study1.add_trial(optuna.trial.create_trial(state=TrialState.RUNNING))
+        study2.add_trial(optuna.trial.create_trial(state=TrialState.COMPLETE, value=0.0))
+        assert len(study1.trials) == 2
+        assert len(study2.trials) == 2
+
+        storage1._backend.engine.dispose()
+        storage2._backend.engine.dispose()
