@@ -239,10 +239,9 @@ class EMMREvaluator(BaseImprovementEvaluator):
 
 
 def _compute_gp_posterior(x_params: np.ndarray, gpr: gp.GPRegressor) -> tuple[float, float]:
-    mean_tensor, var_tensor = gpr.posterior(
-        torch.from_numpy(x_params),  # best_params or normalized_params[..., -1, :]),
-    )
-    return mean_tensor.item(), var_tensor.item()
+    # best_params or normalized_params[..., -1, :])
+    mean, var = gpr.posterior(torch.from_numpy(x_params))
+    return mean.item(), var.item()
 
 
 def _compute_gp_posterior_cov_two_thetas(
