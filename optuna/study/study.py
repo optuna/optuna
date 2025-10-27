@@ -1089,7 +1089,7 @@ class Study:
             except exceptions.UpdateFinishedTrialError:
                 continue
 
-            _logger.debug("Trial {} popped from the trial queue.".format(trial.number))
+            _logger.debug(f"Trial {trial.number} popped from the trial queue.")
             return trial._trial_id
 
         return None
@@ -1140,9 +1140,7 @@ class Study:
             else:
                 trial_values = {name: value for name, value in zip(metric_names, values)}
             _logger.info(
-                "Trial {} finished with values: {} and parameters: {}.".format(
-                    number, trial_values, params
-                )
+                f"Trial {number} finished with values: {trial_values} and parameters: {params}."
             )
         elif len(values) == 1:
             trial_value: float | dict[str, float]
@@ -1302,8 +1300,8 @@ def create_study(
             assert study_name is not None
 
             _logger.info(
-                "Using an existing study with name '{}' instead of "
-                "creating a new one.".format(study_name)
+                f"Using an existing study with name '{study_name}' instead of "
+                "creating a new one."
             )
             study_id = storage.get_study_id_from_name(study_name)
         else:
