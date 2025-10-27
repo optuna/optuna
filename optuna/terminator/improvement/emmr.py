@@ -250,8 +250,7 @@ def _compute_gp_posterior_cov_two_thetas(
 ) -> float:  # cov
 
     if theta1_index == theta2_index:
-        _, var = gpr.posterior(torch.from_numpy(normalized_params[theta1_index]))
-        return var.item()
+        return _compute_gp_posterior(normalized_params[theta1_index], gpr)[1]
 
     _, covar = gpr.posterior(
         torch.from_numpy(normalized_params[[theta1_index, theta2_index]]), joint=True
