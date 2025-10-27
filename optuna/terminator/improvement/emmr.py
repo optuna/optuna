@@ -239,7 +239,7 @@ class EMMREvaluator(BaseImprovementEvaluator):
 
 
 def _compute_gp_posterior(x_params: np.ndarray, gpr: gp.GPRegressor) -> tuple[float, float]:
-    # best_params or normalized_params[..., -1, :])
+    # best_params or normalized_params[..., -1, :]
     mean, var = gpr.posterior(torch.from_numpy(x_params))
     return mean.item(), var.item()
 
