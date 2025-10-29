@@ -93,8 +93,7 @@ class _MixtureOfProductDistribution(NamedTuple):
             | _BatchedDiscreteTruncNormDistributions
             | _BatchedDiscreteTruncLogNormDistributions
         ] = []
-        lows_cont = []
-        highs_cont = []
+        lows_numeric, highs_numeric = [], []
         for i, d in enumerate(self.distributions):
             if isinstance(d, _BatchedCategoricalDistributions):
                 active_weights = d.weights[active_indices, :]
@@ -106,27 +105,27 @@ class _MixtureOfProductDistribution(NamedTuple):
             elif isinstance(d, _BatchedTruncNormDistributions):
                 numerical_dists.append(d)
                 numerical_inds.append(i)
-                lows_cont.append(d.low)
-                highs_cont.append(d.high)
+                lows_numeric.append(d.low)
+                highs_numeric.append(d.high)
             elif isinstance(d, _BatchedTruncLogNormDistributions):
                 numerical_dists.append(d)
                 numerical_inds.append(i)
                 log_inds.append(i)
-                lows_cont.append(np.log(d.low))
-                highs_cont.append(np.log(d.high))
+                lows_numeric.append(np.log(d.low))
+                highs_numeric.append(np.log(d.high))
             elif isinstance(d, _BatchedDiscreteTruncNormDistributions):
                 disc_inds.append(i)
                 numerical_dists.append(d)
                 numerical_inds.append(i)
-                lows_cont.append(d.low - d.step / 2)
-                highs_cont.append(d.high + d.step / 2)
+                lows_numeric.append(d.low - d.step / 2)
+                highs_numeric.append(d.high + d.step / 2)
             elif isinstance(d, _BatchedDiscreteTruncLogNormDistributions):
                 disc_inds.append(i)
                 numerical_dists.append(d)
                 numerical_inds.append(i)
                 log_inds.append(i)
-                lows_cont.append(np.log(d.low - d.step / 2))
-                highs_cont.append(np.log(d.high + d.step / 2))
+                lows_numeric.append(np.log(d.low - d.step / 2))
+                highs_numeric.append(np.log(d.high + d.step / 2))
             else:
                 assert False
 
@@ -137,8 +136,8 @@ class _MixtureOfProductDistribution(NamedTuple):
             highs = np.array([d.high for d in numerical_dists])
             steps = np.array([getattr(d, "step", 0.0) for d in numerical_dists])
             ret[:, numerical_inds] = _truncnorm.rvs(
-                a=(np.asarray(lows_cont)[:, np.newaxis] - active_mus) / active_sigmas,
-                b=(np.asarray(highs_cont)[:, np.newaxis] - active_mus) / active_sigmas,
+                a=(np.asarray(lows_numeric)[:, np.newaxis] - active_mus) / active_sigmas,
+                b=(np.asarray(highs_numeric)[:, np.newaxis] - active_mus) / active_sigmas,
                 loc=active_mus,
                 scale=active_sigmas,
                 random_state=rng,
