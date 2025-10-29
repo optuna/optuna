@@ -193,17 +193,11 @@ class FrozenTrial(BaseTrial):
         return hash(tuple(getattr(self, field) for field in self.__dict__))
 
     def __repr__(self) -> str:
-        return "{cls}({kwargs})".format(
-            cls=self.__class__.__name__,
-            kwargs=", ".join(
-                "{field}={value}".format(
-                    field=field if not field.startswith("_") else field[1:],
-                    value=repr(getattr(self, field)),
-                )
-                for field in self.__dict__
-            )
-            + ", value=None",
-        )
+        kwargs = ", ".join(
+            f"{field if not field.startswith('_') else field[1:]}={getattr(self, field)!r}"
+            for field in self.__dict__
+        ) + ", value=None"
+        return f"{self.__class__.__name__}({kwargs})"
 
     def suggest_float(
         self,
