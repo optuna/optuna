@@ -6,6 +6,7 @@ import optuna
 from optuna.storages._cached_storage import _CachedStorage
 from optuna.storages._rdb.storage import RDBStorage
 from optuna.study import StudyDirection
+from optuna.testing.tempfile_pool import NamedTemporaryFilePool
 from optuna.trial import TrialState
 
 
@@ -103,11 +104,11 @@ def test_read_trials_from_remote_storage() -> None:
         directions=[StudyDirection.MINIMIZE], study_name="test-study"
     )
 
-    storage._read_trials_from_remote_storage(study_id, None)
+    storage._read_trials_from_remote_storage(study_id)
 
     # Non-existent study.
     with pytest.raises(KeyError):
-        storage._read_trials_from_remote_storage(study_id + 1, None)
+        storage._read_trials_from_remote_storage(study_id + 1)
 
     # Create a trial via CachedStorage and update it via backend storage directly.
     trial_id = storage.create_new_trial(study_id)
@@ -115,7 +116,7 @@ def test_read_trials_from_remote_storage() -> None:
         trial_id, "paramA", 1.2, optuna.distributions.FloatDistribution(-0.2, 2.3)
     )
     base_storage.set_trial_state_values(trial_id, TrialState.COMPLETE, values=[0.0])
-    storage._read_trials_from_remote_storage(study_id, None)
+    storage._read_trials_from_remote_storage(study_id)
     assert storage.get_trial(trial_id).state == TrialState.COMPLETE
 
 
@@ -132,9 +133,37 @@ def test_delete_study() -> None:
     storage.set_trial_state_values(trial_id2, state=TrialState.COMPLETE)
 
     # Update _StudyInfo.finished_trial_ids
-    storage._read_trials_from_remote_storage(study_id1, None)
-    storage._read_trials_from_remote_storage(study_id2, None)
+    storage._read_trials_from_remote_storage(study_id1)
+    storage._read_trials_from_remote_storage(study_id2)
 
     storage.delete_study(study_id1)
     assert storage._get_cached_trial(trial_id1) is None
     assert storage._get_cached_trial(trial_id2) is not None
+
+
+def test_unfinished_trial_ids() -> None:
+    # This test reproduces the bug fixed in https://github.com/optuna/optuna/pull/6310
+    with NamedTemporaryFilePool() as tempfile:
+        storage_url = f"sqlite:///{tempfile.name}"
+        study_name = "test-unfinished-trial-ids"
+
+        storage1 = _CachedStorage(RDBStorage(storage_url))
+        study1 = optuna.create_study(
+            study_name=study_name,
+            storage=storage1,
+            load_if_exists=True,
+        )
+        storage2 = _CachedStorage(RDBStorage(storage_url))
+        study2 = optuna.create_study(
+            study_name=study_name,
+            storage=storage2,
+            load_if_exists=True,
+        )
+
+        study1.add_trial(optuna.trial.create_trial(state=TrialState.RUNNING))
+        study2.add_trial(optuna.trial.create_trial(state=TrialState.COMPLETE, value=0.0))
+        assert len(study1.trials) == 2
+        assert len(study2.trials) == 2
+
+        storage1._backend.engine.dispose()
+        storage2._backend.engine.dispose()
