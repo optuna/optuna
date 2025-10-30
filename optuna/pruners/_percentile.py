@@ -144,23 +144,23 @@ class PercentilePruner(BasePruner):
     ) -> None:
         if not 0.0 <= percentile <= 100:
             raise ValueError(
-                f"Percentile must be between 0 and 100 inclusive but got {percentile}."
+                f"Percentile must be between 0 and 100 inclusive, but got {percentile=}."
             )
         if n_startup_trials < 0:
             raise ValueError(
-                f"Number of startup trials cannot be negative but got {n_startup_trials}."
+                f"Number of startup trials cannot be negative, but got {n_startup_trials=}."
             )
         if n_warmup_steps < 0:
             raise ValueError(
-                f"Number of warmup steps cannot be negative but got {n_warmup_steps}."
+                f"Number of warmup steps cannot be negative, but got {n_warmup_steps=}."
             )
         if interval_steps < 1:
             raise ValueError(
-                f"Pruning interval steps must be at least 1 but got {interval_steps}."
+                f"Pruning interval steps must be at least 1, but got {interval_steps=}."
             )
         if n_min_trials < 1:
             raise ValueError(
-                f"Number of trials for pruning must be at least 1 but got {n_min_trials}."
+                f"Number of trials for pruning must be at least 1, but got {n_min_trials=}."
             )
 
         self._percentile = percentile
