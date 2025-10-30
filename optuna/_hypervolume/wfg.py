@@ -72,6 +72,9 @@ def _compute_exclusive_hv(
         # NOTE(nabenabe): Don't use _is_pareto_front for 3 or fewer points to avoid its overhead.
         return inclusive_hv - _compute_hv(limited_sols, reference_point)
 
+    # NOTE(nabenabe): The following holds only for an incremental version of `_is_pareto_front_nd`,
+    # meaning that if there are duplicated Pareto solutions, the second one must be judged as
+    # weakly dominated by the first one.
     # NOTE(nabenabe): As the following line is a hack for speedup, I will describe several
     # important points to note. Even if we do not run _is_pareto_front below or use
     # assume_unique_lexsorted=False instead, the result of this function does not change, but this
