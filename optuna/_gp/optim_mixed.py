@@ -101,6 +101,10 @@ def _exhaustive_search(
     param_idx: int,
     choices: np.ndarray,
 ) -> tuple[np.ndarray, float, bool]:
+    if len(choices) == 1:
+        # Do not optimize anything when there's only one choice.
+        return initial_params, initial_fval, False
+
     choices_except_current = choices[choices != initial_params[param_idx]]
 
     all_params = np.repeat(initial_params[None, :], len(choices_except_current), axis=0)
