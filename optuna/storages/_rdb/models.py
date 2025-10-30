@@ -19,7 +19,6 @@ from sqlalchemy import String
 from sqlalchemy import Text
 from sqlalchemy import UniqueConstraint
 
-from optuna import distributions
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import TrialState
 
@@ -368,26 +367,6 @@ class TrialParamModel(BaseModel):
     trial = orm.relationship(
         TrialModel, backref=orm.backref("params", cascade="all, delete-orphan")
     )
-
-    def check_and_add(self, session: orm.Session, study_id: int) -> None:
-        self._check_compatibility_with_previous_trial_param_distributions(session, study_id)
-        session.add(self)
-
-    def _check_compatibility_with_previous_trial_param_distributions(
-        self, session: orm.Session, study_id: int
-    ) -> None:
-        previous_record = (
-            session.query(TrialParamModel)
-            .join(TrialModel)
-            .filter(TrialModel.study_id == study_id)
-            .filter(TrialParamModel.param_name == self.param_name)
-            .first()
-        )
-        if previous_record is not None:
-            distributions.check_distribution_compatibility(
-                distributions.json_to_distribution(previous_record.distribution_json),
-                distributions.json_to_distribution(self.distribution_json),
-            )
 
     @classmethod
     def find_by_trial_and_param_name(
