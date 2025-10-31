@@ -6,7 +6,7 @@ import sys
 import warnings
 
 
-_OPTUNA_MODULE_ROOT: str = (str(Path(__file__).resolve().parent) + os.sep).casefold()
+_OPTUNA_MODULE_ROOT: str = str(Path(__file__).resolve().parent) + os.sep
 
 
 def optuna_warn(
