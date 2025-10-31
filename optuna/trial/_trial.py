@@ -58,9 +58,8 @@ class Trial(BaseTrial):
 
         self.study.sampler.before_trial(study, self._cached_frozen_trial)
 
-        self.relative_search_space = self.study.sampler.infer_relative_search_space(
-            study, self._cached_frozen_trial
-        )
+        # NOTE(not522): Evaluate it lazily to get as latest search as possible.
+        self.relative_search_space: dict[str, BaseDistribution] | None = None
         self._relative_params: dict[str, Any] | None = None
         self._fixed_params = self._cached_frozen_trial.system_attrs.get("fixed_params", {})
 
@@ -68,6 +67,9 @@ class Trial(BaseTrial):
     def relative_params(self) -> dict[str, Any]:
         if self._relative_params is None:
             study = pruners._filter_study(self.study, self._cached_frozen_trial)
+            self.relative_search_space = self.study.sampler.infer_relative_search_space(
+                study, self._cached_frozen_trial
+            )
             self._relative_params = self.study.sampler.sample_relative(
                 study, self._cached_frozen_trial, self.relative_search_space
             )
@@ -662,6 +664,8 @@ class Trial(BaseTrial):
     def _is_relative_param(self, name: str, distribution: BaseDistribution) -> bool:
         if name not in self.relative_params:
             return False
+
+        assert self.relative_search_space is not None
 
         if name not in self.relative_search_space:
             raise ValueError(

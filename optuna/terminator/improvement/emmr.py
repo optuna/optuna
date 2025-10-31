@@ -174,49 +174,17 @@ class EMMREvaluator(BaseImprovementEvaluator):
         theta_t1_star_index = int(np.argmax(standarized_score_vals[:-1]))
         theta_t_star = normalized_params[theta_t_star_index, :]
         theta_t1_star = normalized_params[theta_t1_star_index, :]
-
         cov_t_between_theta_t_star_and_theta_t1_star = _compute_gp_posterior_cov_two_thetas(
-            search_space,
-            normalized_params,
-            standarized_score_vals,
-            gpr_t,
-            theta_t_star_index,
-            theta_t1_star_index,
+            normalized_params, gpr_t, theta_t_star_index, theta_t1_star_index
         )
-
+        # Use gpr_t instead of gpr_t1 because KL Div. requires the same prior for both posterior.
+        # cf. Sec. 4.4 of https://proceedings.mlr.press/v206/ishibashi23a/ishibashi23a.pdf
         mu_t1_theta_t_with_nu_t, variance_t1_theta_t_with_nu_t = _compute_gp_posterior(
-            search_space,
-            normalized_params[:-1, :],
-            standarized_score_vals[:-1],
-            normalized_params[-1, :],
-            gpr_t,
-            # Use gpr_t instead of gpr_t1.
-            # Use "t" under the assumption that "t" and "t1" are approximately the same.
-            # This is because kernel should same when computing KLD.
-            # For detailed information, please see section 4.4 of the paper:
-            # https://proceedings.mlr.press/v206/ishibashi23a/ishibashi23a.pdf
+            normalized_params[-1, :], gpr_t
         )
-        _, variance_t_theta_t1_star = _compute_gp_posterior(
-            search_space,
-            normalized_params,
-            standarized_score_vals,
-            theta_t1_star,
-            gpr_t,
-        )
-        mu_t_theta_t_star, variance_t_theta_t_star = _compute_gp_posterior(
-            search_space,
-            normalized_params,
-            standarized_score_vals,
-            theta_t_star,
-            gpr_t,
-        )
-        mu_t1_theta_t1_star, _ = _compute_gp_posterior(
-            search_space,
-            normalized_params[:-1, :],
-            standarized_score_vals[:-1],
-            theta_t1_star,
-            gpr_t1,
-        )
+        _, variance_t_theta_t1_star = _compute_gp_posterior(theta_t1_star, gpr_t)
+        mu_t_theta_t_star, variance_t_theta_t_star = _compute_gp_posterior(theta_t_star, gpr_t)
+        mu_t1_theta_t1_star, _ = _compute_gp_posterior(theta_t1_star, gpr_t1)
 
         y_t = standarized_score_vals[-1]
         kappa_t1 = _compute_standardized_regret_bound(
@@ -270,85 +238,21 @@ class EMMREvaluator(BaseImprovementEvaluator):
         )
 
 
-def _compute_gp_posterior(
-    search_space: gp_search_space.SearchSpace,
-    X: np.ndarray,
-    Y: np.ndarray,
-    x_params: np.ndarray,
-    gpr: gp.GPRegressor,
-) -> tuple[float, float]:  # mean, var
-    mean_tensor, var_tensor = gpr.posterior(
-        torch.from_numpy(x_params),  # best_params or normalized_params[..., -1, :]),
-    )
-    mean = mean_tensor.detach().numpy().flatten()
-    var = var_tensor.detach().numpy().flatten()
-    assert len(mean) == 1 and len(var) == 1
-    return float(mean[0]), float(var[0])
-
-
-def _posterior_of_batched_theta(
-    gpr: gp.GPRegressor,
-    X: torch.Tensor,  # [len(trials), len(params)]
-    cov_Y_Y_inv: torch.Tensor,  # [len(trials), len(trials)]
-    cov_Y_Y_inv_Y: torch.Tensor,  # [len(trials)]
-    theta: torch.Tensor,  # [batch, len(params)]
-) -> tuple[torch.Tensor, torch.Tensor]:  # (mean: [(batch,)], var: [(batch,batch)])
-
-    assert len(X.shape) == 2
-    len_trials, len_params = X.shape
-    assert len(theta.shape) == 2
-    len_batch = theta.shape[0]
-    assert theta.shape == (len_batch, len_params)
-    assert cov_Y_Y_inv.shape == (len_trials, len_trials)
-    assert cov_Y_Y_inv_Y.shape == (len_trials,)
-
-    cov_ftheta_fX = gpr.kernel(theta[..., None, :], X)[..., 0, :]
-    assert cov_ftheta_fX.shape == (len_batch, len_trials)
-    cov_ftheta_ftheta = gpr.kernel(theta[..., None, :], theta)[..., 0, :]
-    assert cov_ftheta_ftheta.shape == (len_batch, len_batch)
-
-    assert torch.allclose(cov_ftheta_ftheta.diag(), gpr.kernel_scale)
-    assert torch.allclose(cov_ftheta_ftheta, cov_ftheta_ftheta.T)
-
-    mean = cov_ftheta_fX @ cov_Y_Y_inv_Y
-    assert mean.shape == (len_batch,)
-    var = cov_ftheta_ftheta - cov_ftheta_fX @ cov_Y_Y_inv @ cov_ftheta_fX.T
-    assert var.shape == (len_batch, len_batch)
-
-    # We need to clamp the variance to avoid negative values due to numerical errors.
-    return mean, torch.clamp(var, min=0.0)
+def _compute_gp_posterior(x_params: np.ndarray, gpr: gp.GPRegressor) -> tuple[float, float]:
+    # best_params or normalized_params[..., -1, :]
+    mean, var = gpr.posterior(torch.from_numpy(x_params))
+    return mean.item(), var.item()
 
 
 def _compute_gp_posterior_cov_two_thetas(
-    search_space: gp_search_space.SearchSpace,
-    normalized_params: np.ndarray,
-    standarized_score_vals: np.ndarray,
-    gpr: gp.GPRegressor,
-    theta1_index: int,
-    theta2_index: int,
+    normalized_params: np.ndarray, gpr: gp.GPRegressor, theta1_index: int, theta2_index: int
 ) -> float:  # cov
 
     if theta1_index == theta2_index:
-        return _compute_gp_posterior(
-            search_space,
-            normalized_params,
-            standarized_score_vals,
-            normalized_params[theta1_index],
-            gpr,
-        )[1]
+        return _compute_gp_posterior(normalized_params[theta1_index], gpr)[1]
 
-    assert normalized_params.shape[0] == standarized_score_vals.shape[0]
-
-    cov_Y_Y_inv = gpr._cov_Y_Y_inv
-    cov_Y_Y_inv_Y = gpr._cov_Y_Y_inv_Y
-    assert cov_Y_Y_inv is not None and cov_Y_Y_inv_Y is not None
-    _, var = _posterior_of_batched_theta(
-        gpr,
-        gpr._X_train,
-        cov_Y_Y_inv,
-        cov_Y_Y_inv_Y,
-        torch.from_numpy(normalized_params[[theta1_index, theta2_index]]),
+    _, covar = gpr.posterior(
+        torch.from_numpy(normalized_params[[theta1_index, theta2_index]]), joint=True
     )
-    assert var.shape == (2, 2)
-    var = var.detach().numpy()[0, 1]
-    return float(var)
+    assert covar.shape == (2, 2)
+    return covar[0, 1].item()

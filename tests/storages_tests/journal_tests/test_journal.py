@@ -70,7 +70,7 @@ class JournalLogStorageSupplier:
             journal_redis_storage._redis = FakeStrictRedis()
             return journal_redis_storage
         else:
-            raise RuntimeError("Unknown log storage type: {}".format(self.storage_type))
+            raise RuntimeError(f"Unknown log storage type: {self.storage_type}")
 
     def __exit__(
         self, exc_type: type[BaseException], exc_val: BaseException, exc_tb: TracebackType
@@ -94,7 +94,7 @@ def test_concurrent_append_logs_for_multi_processes(
         with ProcessPoolExecutor(num_executors) as pool:
             pool.map(storage.append_logs, [[record] for _ in range(num_records)], timeout=20)
 
-        assert len(storage.read_logs(0)) == num_records
+        assert len(list(storage.read_logs(0))) == num_records
         assert all(record == r for r in storage.read_logs(0))
 
 
@@ -110,7 +110,7 @@ def test_concurrent_append_logs_for_multi_threads(
         with ThreadPoolExecutor(num_executors) as pool:
             pool.map(storage.append_logs, [[record] for _ in range(num_records)], timeout=20)
 
-        assert len(storage.read_logs(0)) == num_records
+        assert len(list(storage.read_logs(0))) == num_records
         assert all(record == r for r in storage.read_logs(0))
 
 

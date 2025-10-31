@@ -241,9 +241,12 @@ def test_suggest_discrete_uniform(storage_mode: str) -> None:
 @pytest.mark.filterwarnings("ignore::FutureWarning")
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_suggest_low_equals_high(storage_mode: str) -> None:
-    with patch.object(
-        distributions, "_get_single_value", wraps=distributions._get_single_value
-    ) as mock_object, StorageSupplier(storage_mode) as storage:
+    with (
+        patch.object(
+            distributions, "_get_single_value", wraps=distributions._get_single_value
+        ) as mock_object,
+        StorageSupplier(storage_mode) as storage,
+    ):
         study = create_study(storage=storage, sampler=samplers.TPESampler(n_startup_trials=0))
 
         trial = study.ask()
@@ -314,9 +317,10 @@ def test_suggest_discrete_uniform_range(storage_mode: str, range_config: dict[st
     # Check upper endpoints.
     mock = Mock()
     mock.side_effect = lambda study, trial, param_name, distribution: distribution.high
-    with patch.object(sampler, "sample_independent", mock) as mock_object, StorageSupplier(
-        storage_mode
-    ) as storage:
+    with (
+        patch.object(sampler, "sample_independent", mock) as mock_object,
+        StorageSupplier(storage_mode) as storage,
+    ):
         study = create_study(storage=storage, sampler=sampler)
         trial = study.ask()
 
@@ -330,9 +334,10 @@ def test_suggest_discrete_uniform_range(storage_mode: str, range_config: dict[st
     # Check lower endpoints.
     mock = Mock()
     mock.side_effect = lambda study, trial, param_name, distribution: distribution.low
-    with patch.object(sampler, "sample_independent", mock) as mock_object, StorageSupplier(
-        storage_mode
-    ) as storage:
+    with (
+        patch.object(sampler, "sample_independent", mock) as mock_object,
+        StorageSupplier(storage_mode) as storage,
+    ):
         study = create_study(storage=storage, sampler=sampler)
         trial = study.ask()
 
@@ -384,9 +389,10 @@ def test_suggest_int_range(storage_mode: str, range_config: dict[str, int]) -> N
     # Check upper endpoints.
     mock = Mock()
     mock.side_effect = lambda study, trial, param_name, distribution: distribution.high
-    with patch.object(sampler, "sample_independent", mock) as mock_object, StorageSupplier(
-        storage_mode
-    ) as storage:
+    with (
+        patch.object(sampler, "sample_independent", mock) as mock_object,
+        StorageSupplier(storage_mode) as storage,
+    ):
         study = create_study(storage=storage, sampler=sampler)
         trial = study.ask()
 
@@ -400,9 +406,10 @@ def test_suggest_int_range(storage_mode: str, range_config: dict[str, int]) -> N
     # Check lower endpoints.
     mock = Mock()
     mock.side_effect = lambda study, trial, param_name, distribution: distribution.low
-    with patch.object(sampler, "sample_independent", mock) as mock_object, StorageSupplier(
-        storage_mode
-    ) as storage:
+    with (
+        patch.object(sampler, "sample_independent", mock) as mock_object,
+        StorageSupplier(storage_mode) as storage,
+    ):
         study = create_study(storage=storage, sampler=sampler)
         trial = study.ask()
 
