@@ -5,12 +5,12 @@ import textwrap
 from typing import Any
 from typing import TYPE_CHECKING
 from typing import TypeVar
+import warnings
 
 from packaging import version
 
 from optuna._experimental import _get_docstring_indent
 from optuna._experimental import _validate_version
-from optuna._warnings import optuna_warn
 
 
 if TYPE_CHECKING:
@@ -110,7 +110,7 @@ def deprecated_func(
             )
             if text is not None:
                 message += " " + text
-            optuna_warn(message, FutureWarning, stacklevel=2)
+            warnings.warn(message, FutureWarning, stacklevel=2)
 
             return func(*args, **kwargs)
 
@@ -171,7 +171,7 @@ def deprecated_class(
                 )
                 if text is not None:
                     message += " " + text
-                optuna_warn(
+                warnings.warn(
                     message,
                     FutureWarning,
                     stacklevel=2,

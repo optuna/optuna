@@ -6,10 +6,10 @@ from inspect import signature
 from typing import Any
 from typing import TYPE_CHECKING
 from typing import TypeVar
+import warnings
 
 from optuna._deprecated import _validate_two_version
 from optuna._experimental import _validate_version
-from optuna._warnings import optuna_warn
 
 
 if TYPE_CHECKING:
@@ -81,6 +81,7 @@ def convert_positional_args(
         _validate_two_version(deprecated_version, removed_version)
 
     def converter_decorator(func: "Callable[_P, _T]") -> "Callable[_P, _T]":
+
         assert set(previous_positional_arg_names).issubset(set(signature(func).parameters)), (
             f"{set(previous_positional_arg_names)} is not a subset of"
             f" {set(signature(func).parameters)}"
@@ -110,10 +111,8 @@ def convert_positional_args(
                     )
 
             if warning_messages:
-                optuna_warn(
-                    "\n".join(warning_messages),
-                    FutureWarning,
-                    stacklevel=warning_stacklevel,
+                warnings.warn(
+                    "\n".join(warning_messages), FutureWarning, stacklevel=warning_stacklevel
                 )
 
             if len(args) > len(previous_positional_arg_names):
