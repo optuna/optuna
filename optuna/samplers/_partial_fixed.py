@@ -3,9 +3,9 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import Any
 from typing import TYPE_CHECKING
-import warnings
 
 from optuna._experimental import experimental_class
+from optuna._warnings import optuna_warn
 from optuna.distributions import BaseDistribution
 from optuna.samplers import BaseSampler
 from optuna.trial import FrozenTrial
@@ -104,7 +104,7 @@ class PartialFixedSampler(BaseSampler):
             contained = param_distribution._contains(param_value_in_internal_repr)
 
             if not contained:
-                warnings.warn(
+                optuna_warn(
                     f"Fixed parameter '{param_name}' with value {param_value} is out of range "
                     f"for distribution {param_distribution}."
                 )

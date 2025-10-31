@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 from typing import TypeVar
 import warnings
 
+from optuna._warnings import optuna_warn
 from optuna.exceptions import ExperimentalWarning
 
 
@@ -29,7 +30,7 @@ _EXPERIMENTAL_NOTE_TEMPLATE = """
 
 
 def warn_experimental_argument(option_name: str) -> None:
-    warnings.warn(
+    optuna_warn(
         f"Argument ``{option_name}`` is an experimental feature."
         " The interface can change in the future.",
         ExperimentalWarning,

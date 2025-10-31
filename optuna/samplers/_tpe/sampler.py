@@ -8,7 +8,6 @@ import math
 from typing import Any
 from typing import cast
 from typing import TYPE_CHECKING
-import warnings
 
 import numpy as np
 
@@ -17,6 +16,7 @@ from optuna._convert_positional_args import convert_positional_args
 from optuna._experimental import warn_experimental_argument
 from optuna._hypervolume import compute_hypervolume
 from optuna._hypervolume.hssp import _solve_hssp
+from optuna._warnings import optuna_warn
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalChoiceType
 from optuna.logging import get_logger
@@ -327,7 +327,7 @@ class TPESampler(BaseSampler):
             msg = _deprecated._DEPRECATION_WARNING_TEMPLATE.format(
                 name="`consider_prior`", d_ver="4.3.0", r_ver="6.0.0"
             )
-            warnings.warn(
+            optuna_warn(
                 f"{msg} From v4.3.0 onward, `consider_prior` automatically falls back to `True`.",
                 FutureWarning,
             )
@@ -804,7 +804,7 @@ def _split_pruned_trials(
 def _get_infeasible_trial_score(trial: FrozenTrial) -> float:
     constraint = trial.system_attrs.get(_CONSTRAINTS_KEY)
     if constraint is None:
-        warnings.warn(
+        optuna_warn(
             f"Trial {trial.number} does not have constraint values."
             " It will be treated as a lower priority than other trials."
         )
