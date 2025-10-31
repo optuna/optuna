@@ -5,10 +5,10 @@ import datetime
 from typing import Any
 from typing import overload
 
-from optuna import _warnings as warnings
 from optuna import distributions
 from optuna._convert_positional_args import convert_positional_args
 from optuna._deprecated import deprecated_func
+from optuna._warnings import optuna_warn
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalChoiceType
 from optuna.distributions import CategoricalDistribution
@@ -149,7 +149,7 @@ class FixedTrial(BaseTrial):
         value = self._params[name]
         param_value_in_internal_repr = distribution.to_internal_repr(value)
         if not distribution._contains(param_value_in_internal_repr):
-            warnings.warn(
+            optuna_warn(
                 "The value {} of the parameter '{}' is out of "
                 "the range of the distribution {}.".format(value, name, distribution)
             )

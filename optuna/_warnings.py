@@ -4,39 +4,38 @@ import os
 from pathlib import Path
 import sys
 import warnings
-from warnings import catch_warnings
-from warnings import filterwarnings
-from warnings import simplefilter
 
 
 _OPTUNA_MODULE_ROOT: str = (str(Path(__file__).resolve().parent) + os.sep).casefold()
 
 
-def find_stacklevel() -> int:
-    level = 1
-    try:
-        while True:
-            if (
-                not getattr(sys._getframe(level).f_code, "co_filename", "")
-                .casefold()
-                .startswith(_OPTUNA_MODULE_ROOT)
-            ):
-                return level
-            level += 1
-    except ValueError:
-        return level
-
-
-def warn(
+def optuna_warn(
     message: str,
     category: type[Warning] = UserWarning,
-    stacklevel: int | None = None,
+    stacklevel: int = 1,
 ) -> None:
     """
-    Warning utility that automatically sets the stacklevel to point to the user code.
+    Wrapper for :func:`warnings.warn` that hides internal Optuna stack frames (for Python 3.12+).
+
+    Behavior:
+        - Python 3.12+:
+            Uses `skip_file_prefixes` so that warnings appear to originate
+            from the user's calling code rather than inside Optuna.
+        - Python <3.12:
+            This function behaves exactly the same as calling `warnings.warn`
+            directly, with no stack frame suppression.
     """
-    stacklevel = stacklevel or find_stacklevel()
-    warnings.warn(message, category, stacklevel=stacklevel)
+
+    if sys.version_info >= (3, 12):
+        warnings.warn(
+            message,
+            category=category,
+            stacklevel=stacklevel,
+            skip_file_prefixes=(_OPTUNA_MODULE_ROOT,),
+        )
+    else:
+        # Increase stacklevel by 1 to account for this wrapper function.
+        warnings.warn(message, category, stacklevel=stacklevel + 1)
 
 
-__all__ = ["warn", "catch_warnings", "filterwarnings", "simplefilter"]
+__all__ = ["optuna_warn"]

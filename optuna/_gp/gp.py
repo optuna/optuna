@@ -25,8 +25,8 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from optuna import _warnings as warnings
 from optuna._gp.scipy_blas_thread_patch import single_blas_thread_if_scipy_v1_15_or_newer
+from optuna._warnings import optuna_warn
 from optuna.logging import get_logger
 
 
@@ -49,7 +49,7 @@ def warn_and_convert_inf(values: np.ndarray) -> np.ndarray:
     if np.all(is_values_finite):
         return values
 
-    warnings.warn("Clip non-finite values to the min/max finite values for GP fittings.")
+    optuna_warn("Clip non-finite values to the min/max finite values for GP fittings.")
     is_any_finite = np.any(is_values_finite, axis=0)
     # NOTE(nabenabe): values cannot include nan to apply np.clip properly, but Optuna anyways won't
     # pass nan in values by design.

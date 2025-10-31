@@ -10,8 +10,8 @@ import time
 from typing import Any
 import uuid
 
-from optuna import _warnings as warnings
 from optuna._deprecated import deprecated_class
+from optuna._warnings import optuna_warn
 from optuna.storages.journal._base import BaseJournalBackend
 
 
@@ -140,7 +140,7 @@ class JournalFileSymlinkLock(BaseJournalFileLock):
             if grace_period <= 0:
                 raise ValueError("The value of `grace_period` should be a positive integer.")
             if grace_period < 3:
-                warnings.warn("The value of `grace_period` might be too small. ")
+                optuna_warn("The value of `grace_period` might be too small. ")
         self.grace_period = grace_period
 
     def acquire(self) -> bool:
@@ -168,7 +168,7 @@ class JournalFileSymlinkLock(BaseJournalFileLock):
                             last_update_monotonic_time = time.monotonic()
 
                         if time.monotonic() - last_update_monotonic_time > self.grace_period:
-                            warnings.warn(
+                            optuna_warn(
                                 "The existing lock file has not been released "
                                 "for an extended period. Forcibly releasing the lock file."
                             )
@@ -221,7 +221,7 @@ class JournalFileOpenLock(BaseJournalFileLock):
             if grace_period <= 0:
                 raise ValueError("The value of `grace_period` should be a positive integer.")
             if grace_period < 3:
-                warnings.warn("The value of `grace_period` might be too small. ")
+                optuna_warn("The value of `grace_period` might be too small. ")
         self.grace_period = grace_period
 
     def acquire(self) -> bool:
@@ -251,7 +251,7 @@ class JournalFileOpenLock(BaseJournalFileLock):
                             last_update_monotonic_time = time.monotonic()
 
                         if time.monotonic() - last_update_monotonic_time > self.grace_period:
-                            warnings.warn(
+                            optuna_warn(
                                 "The existing lock file has not been released "
                                 "for an extended period. Forcibly releasing the lock file."
                             )

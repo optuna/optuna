@@ -7,7 +7,7 @@ from typing import NamedTuple
 
 import numpy as np
 
-from optuna import _warnings as warnings
+from optuna._warnings import optuna_warn
 from optuna.logging import get_logger
 from optuna.samplers._base import _CONSTRAINTS_KEY
 from optuna.study import Study
@@ -190,7 +190,7 @@ def _get_contour_subplot(
     if len(x_indices) < 2 or len(y_indices) < 2:
         return go.Contour(), go.Scatter(), go.Scatter()
     if len(info.z_values) == 0:
-        warnings.warn(
+        optuna_warn(
             f"Contour plot will not be displayed because `{info.xaxis.name}` and "
             f"`{info.yaxis.name}` cannot co-exist in `trial.params`."
         )

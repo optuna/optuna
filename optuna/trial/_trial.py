@@ -8,12 +8,12 @@ from typing import Any
 from typing import overload
 
 import optuna
-from optuna import _warnings as warnings
 from optuna import distributions
 from optuna import logging
 from optuna import pruners
 from optuna._convert_positional_args import convert_positional_args
 from optuna._deprecated import deprecated_func
+from optuna._warnings import optuna_warn
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalChoiceType
 from optuna.distributions import CategoricalDistribution
@@ -498,7 +498,7 @@ class Trial(BaseTrial):
 
         if step in self._cached_frozen_trial.intermediate_values:
             # Do nothing if already reported.
-            warnings.warn(
+            optuna_warn(
                 f"The reported value is ignored because this `step` {step} is already reported."
             )
             return
@@ -653,7 +653,7 @@ class Trial(BaseTrial):
 
         contained = distribution._contains(param_value_in_internal_repr)
         if not contained:
-            warnings.warn(
+            optuna_warn(
                 "Fixed parameter '{}' with value {} is out of range "
                 "for distribution {}.".format(name, param_value, distribution)
             )
@@ -679,7 +679,7 @@ class Trial(BaseTrial):
     def _check_distribution(self, name: str, distribution: BaseDistribution) -> None:
         old_distribution = self._cached_frozen_trial.distributions.get(name, distribution)
         if old_distribution != distribution:
-            warnings.warn(
+            optuna_warn(
                 'Inconsistent parameter values for distribution with name "{}"! '
                 "This might be a configuration mistake. "
                 "Optuna allows to call the same distribution with the same "

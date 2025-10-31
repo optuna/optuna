@@ -6,8 +6,8 @@ from typing import TYPE_CHECKING
 
 from tqdm.auto import tqdm
 
-from optuna import _warnings as warnings
 from optuna import logging as optuna_logging
+from optuna._warnings import optuna_warn
 
 
 if TYPE_CHECKING:
@@ -48,7 +48,7 @@ class _ProgressBar:
         timeout: float | None = None,
     ) -> None:
         if is_valid and n_trials is None and timeout is None:
-            warnings.warn("Progress bar won't be displayed because n_trials and timeout are None.")
+            optuna_warn("Progress bar won't be displayed because n_trials and timeout are None.")
 
         self._is_valid = is_valid and (n_trials or timeout) is not None
         self._n_trials = n_trials

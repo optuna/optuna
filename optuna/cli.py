@@ -20,8 +20,8 @@ import sqlalchemy.exc
 import yaml
 
 import optuna
-from optuna import _warnings as warnings
 from optuna._imports import _LazyImport
+from optuna._warnings import optuna_warn
 from optuna.exceptions import CLIUsageError
 from optuna.exceptions import ExperimentalWarning
 from optuna.storages import BaseStorage
@@ -45,7 +45,7 @@ def _check_storage_url(storage_url: str | None) -> str:
 
     env_storage = os.environ.get("OPTUNA_STORAGE")
     if env_storage is not None:
-        warnings.warn(
+        optuna_warn(
             "Specifying the storage url via 'OPTUNA_STORAGE' environment variable"
             " is an experimental feature. The interface can change in the future.",
             ExperimentalWarning,
@@ -493,7 +493,7 @@ class _Trials(_BaseCommand):
         )
 
     def take_action(self, parsed_args: Namespace) -> int:
-        warnings.warn(
+        optuna_warn(
             "'trials' is an experimental CLI command. The interface can change in the future.",
             ExperimentalWarning,
         )
@@ -543,7 +543,7 @@ class _BestTrial(_BaseCommand):
         )
 
     def take_action(self, parsed_args: Namespace) -> int:
-        warnings.warn(
+        optuna_warn(
             "'best-trial' is an experimental CLI command. The interface can change in the future.",
             ExperimentalWarning,
         )
@@ -596,7 +596,7 @@ class _BestTrials(_BaseCommand):
         )
 
     def take_action(self, parsed_args: Namespace) -> int:
-        warnings.warn(
+        optuna_warn(
             "'best-trials' is an experimental CLI command. The interface can change in the "
             "future.",
             ExperimentalWarning,
@@ -644,7 +644,7 @@ class _StorageUpgrade(_BaseCommand):
             storage.upgrade()
             self.logger.info("Completed to upgrade the storage.")
         else:
-            warnings.warn(
+            optuna_warn(
                 "Your optuna version seems outdated against the storage version. "
                 "Please try updating optuna to the latest version by "
                 "`$ pip install -U optuna`."
@@ -687,7 +687,7 @@ class _Ask(_BaseCommand):
         )
 
     def take_action(self, parsed_args: Namespace) -> int:
-        warnings.warn(
+        optuna_warn(
             "'ask' is an experimental CLI command. The interface can change in the future.",
             ExperimentalWarning,
         )
@@ -779,7 +779,7 @@ class _Tell(_BaseCommand):
         )
 
     def take_action(self, parsed_args: Namespace) -> int:
-        warnings.warn(
+        optuna_warn(
             "'tell' is an experimental CLI command. The interface can change in the future.",
             ExperimentalWarning,
         )

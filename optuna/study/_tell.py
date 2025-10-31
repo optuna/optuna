@@ -5,9 +5,9 @@ import math
 from typing import TYPE_CHECKING
 
 import optuna
-from optuna import _warnings as warnings
 from optuna import logging
 from optuna import pruners
+from optuna._warnings import optuna_warn
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
@@ -156,7 +156,7 @@ def _tell_with_warning(
             state = TrialState.FAIL
             values = None
             if not suppress_warning:
-                warnings.warn(values_conversion_failure_message)
+                optuna_warn(values_conversion_failure_message)
                 values_conversion_failure_message = None
 
     assert state is not None

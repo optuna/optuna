@@ -10,7 +10,7 @@ from typing import Union
 
 import numpy as np
 
-from optuna import _warnings as warnings
+from optuna._warnings import optuna_warn
 from optuna.distributions import BaseDistribution
 from optuna.logging import get_logger
 from optuna.samplers import BaseSampler
@@ -196,7 +196,7 @@ class GridSampler(BaseSampler):
         param_value = self._all_grids[grid_id][self._param_names.index(param_name)]
         contains = param_distribution._contains(param_distribution.to_internal_repr(param_value))
         if not contains:
-            warnings.warn(
+            optuna_warn(
                 f"The value `{param_value}` is out of range of the parameter `{param_name}`. "
                 f"The value will be used but the actual distribution is: `{param_distribution}`."
             )
@@ -229,7 +229,7 @@ class GridSampler(BaseSampler):
             "`GridSampler`. Please make sure a value is `str`, `int`, `float`, `bool`"
             " or `None` for persistent storage.".format(param_name, type(param_value))
         )
-        warnings.warn(message)
+        optuna_warn(message)
 
     def _get_unvisited_grid_ids(self, study: Study) -> list[int]:
         # List up unvisited grids based on already finished ones.

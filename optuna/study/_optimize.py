@@ -10,12 +10,13 @@ import itertools
 import os
 import sys
 from typing import TYPE_CHECKING
+import warnings
 
 import optuna
-from optuna import _warnings as warnings
 from optuna import exceptions
 from optuna import logging
 from optuna import progress_bar as pbar_module
+from optuna._warnings import optuna_warn
 from optuna.exceptions import ExperimentalWarning
 from optuna.storages._heartbeat import get_heartbeat_thread
 from optuna.storages._heartbeat import is_heartbeat_enabled
@@ -55,7 +56,7 @@ def _optimize(
         raise RuntimeError("Nested invocation of `Study.optimize` method isn't allowed.")
 
     if show_progress_bar and n_trials is None and timeout is not None and n_jobs != 1:
-        warnings.warn("The timeout-based progress bar is not supported with n_jobs != 1.")
+        optuna_warn("The timeout-based progress bar is not supported with n_jobs != 1.")
         show_progress_bar = False
 
     progress_bar = pbar_module._ProgressBar(show_progress_bar, n_trials, timeout)
