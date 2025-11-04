@@ -3,10 +3,10 @@ from __future__ import annotations
 from collections.abc import Sequence
 import datetime
 from typing import Any
-import warnings
 
 from optuna import logging
 from optuna import trial
+from optuna._warnings import optuna_warn
 from optuna.study._study_direction import StudyDirection
 
 
@@ -112,7 +112,7 @@ class StudySummary:
 
     @property
     def system_attrs(self) -> dict[str, Any]:
-        warnings.warn(
+        optuna_warn(
             "`system_attrs` has been deprecated in v3.1.0. "
             "The removal of this feature is currently scheduled for v5.0.0, "
             "but this schedule is subject to change. "

@@ -8,7 +8,6 @@ from typing import Any
 from typing import cast
 from typing import TYPE_CHECKING
 from typing import Union
-import warnings
 
 import numpy as np
 
@@ -18,6 +17,7 @@ from optuna import logging
 from optuna._experimental import warn_experimental_argument
 from optuna._imports import _LazyImport
 from optuna._transform import _SearchSpaceTransform
+from optuna._warnings import optuna_warn
 from optuna.distributions import BaseDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
@@ -267,7 +267,7 @@ class CmaEsSampler(BaseSampler):
             msg = _deprecated._DEPRECATION_WARNING_TEMPLATE.format(
                 name="`restart_strategy`", d_ver="4.4.0", r_ver="6.0.0"
             )
-            warnings.warn(
+            optuna_warn(
                 f"{msg} From v4.4.0 onward, `restart_strategy` automatically falls back to "
                 "`None`. `restart_strategy` will be supported in OptunaHub.",
                 FutureWarning,
@@ -520,7 +520,7 @@ class CmaEsSampler(BaseSampler):
 
         if self._use_separable_cma:
             if len(trans.bounds) == 1:
-                warnings.warn(
+                optuna_warn(
                     "Separable CMA-ES does not operate meaningfully on single-dimensional "
                     "search spaces. The setting `use_separable_cma=True` will be ignored.",
                     UserWarning,

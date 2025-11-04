@@ -5,10 +5,10 @@ from collections.abc import Callable
 from collections.abc import Sequence
 from typing import Any
 from typing import TYPE_CHECKING
-import warnings
 
 import numpy as np
 
+from optuna._warnings import optuna_warn
 from optuna.distributions import BaseDistribution
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
@@ -253,7 +253,7 @@ def _process_constraints_after_trial(
         if np.any(np.isnan(con)):
             raise ValueError("Constraint values cannot be NaN.")
         if not isinstance(con, (tuple, list)):
-            warnings.warn(
+            optuna_warn(
                 f"Constraints should be a sequence of floats but got {type(con).__name__}."
             )
         constraints = tuple(con)

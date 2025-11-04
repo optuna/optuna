@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-import warnings
 
 import numpy as np
 
 import optuna
 from optuna._experimental import experimental_class
+from optuna._warnings import optuna_warn
 from optuna.pruners import BasePruner
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
@@ -155,7 +155,7 @@ class WilcoxonPruner(BasePruner):
         steps, step_values = np.array(list(trial.intermediate_values.items())).T
 
         if np.any(~np.isfinite(step_values)):
-            warnings.warn(
+            optuna_warn(
                 f"The intermediate values of the current trial (trial {trial.number}) "
                 f"contain infinity/NaNs. WilcoxonPruner will not prune this trial."
             )
@@ -167,7 +167,7 @@ class WilcoxonPruner(BasePruner):
             return False
 
         if len(best_trial.intermediate_values) == 0:
-            warnings.warn(
+            optuna_warn(
                 "The best trial has no intermediate values so WilcoxonPruner cannot prune trials. "
                 "If you have added the best trial with Study.add_trial, please consider setting "
                 "intermediate_values argument."
@@ -177,7 +177,7 @@ class WilcoxonPruner(BasePruner):
         best_steps, best_step_values = np.array(list(best_trial.intermediate_values.items())).T
 
         if np.any(~np.isfinite(best_step_values)):
-            warnings.warn(
+            optuna_warn(
                 f"The intermediate values of the best trial (trial {best_trial.number}) "
                 f"contain infinity/NaNs. WilcoxonPruner will not prune the current trial."
             )
@@ -188,7 +188,7 @@ class WilcoxonPruner(BasePruner):
         if len(idx1) < len(step_values):
             # This if-statement is never satisfied if following "average_is_best" safety works,
             # because the safety ensures that the best trial always has the all steps.
-            warnings.warn(
+            optuna_warn(
                 "WilcoxonPruner finds steps existing in the current trial "
                 "but does not exist in the best trial. "
                 "Those values are ignored."

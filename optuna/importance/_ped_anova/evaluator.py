@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-import warnings
 
 import numpy as np
 
 from optuna._experimental import experimental_class
+from optuna._warnings import optuna_warn
 from optuna.distributions import BaseDistribution
 from optuna.importance._base import _get_distributions
 from optuna.importance._base import _get_filtered_trials
@@ -145,7 +145,7 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
     ) -> list[FrozenTrial]:
         is_lower_better = study.directions[0] == StudyDirection.MINIMIZE
         if target is not None:
-            warnings.warn(
+            optuna_warn(
                 f"{self.__class__.__name__} computes the importances of params to achieve "
                 "low `target` values. If this is not what you want, "
                 "please modify target, e.g., by multiplying the output by -1."

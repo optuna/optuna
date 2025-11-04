@@ -21,10 +21,9 @@ We refer this paper as Lacour17 in this file.
 
 from __future__ import annotations
 
-import warnings
-
 import numpy as np
 
+from optuna._warnings import optuna_warn
 from optuna.study._multi_objective import _is_pareto_front
 
 
@@ -150,7 +149,7 @@ def get_non_dominated_box_bounds(
     # https://github.com/pytorch/botorch/blob/v0.13.0/botorch/acquisition/multi_objective/utils.py#L55-L63
     assert n_objectives > 1, "This function is used only for multi-objective problems."
     if n_objectives > 4:
-        warnings.warn(
+        optuna_warn(
             "Box decomposition (typically used by `GPSampler`) might be significantly slow for "
             "n_objectives > 4. Please consider using another sampler instead."
         )

@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-import warnings
 
 import numpy as np
 
+from optuna._warnings import optuna_warn
 from optuna.samplers._base import _CONSTRAINTS_KEY
 from optuna.study import StudyDirection
 from optuna.study._multi_objective import _dominates
@@ -29,13 +29,13 @@ def _constrained_dominates(
     constraints1 = trial1.system_attrs.get(_CONSTRAINTS_KEY)
 
     if constraints0 is None:
-        warnings.warn(
+        optuna_warn(
             f"Trial {trial0.number} does not have constraint values."
             " It will be dominated by the other trials."
         )
 
     if constraints1 is None:
-        warnings.warn(
+        optuna_warn(
             f"Trial {trial1.number} does not have constraint values."
             " It will be dominated by the other trials."
         )
@@ -116,7 +116,7 @@ def _validate_constraints(
     for _trial in population:
         _constraints = _trial.system_attrs.get(_CONSTRAINTS_KEY)
         if _constraints is None:
-            warnings.warn(
+            optuna_warn(
                 f"Trial {_trial.number} does not have constraint values."
                 " It will be dominated by the other trials."
             )

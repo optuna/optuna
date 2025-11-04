@@ -4,11 +4,11 @@ import math
 import sys
 from typing import cast
 from typing import TYPE_CHECKING
-import warnings
 
 import numpy as np
 
 from optuna._experimental import experimental_class
+from optuna._warnings import optuna_warn
 from optuna.samplers._lazy_random_state import LazyRandomState
 from optuna.search_space import intersection_search_space
 from optuna.study import StudyDirection
@@ -131,7 +131,7 @@ class EMMREvaluator(BaseImprovementEvaluator):
         search_space = gp_search_space.SearchSpace(optuna_search_space)
         normalized_params = search_space.get_normalized_params(complete_trials)
         if not search_space.dim:
-            warnings.warn(
+            optuna_warn(
                 f"{self.__class__.__name__} cannot consider any search space."
                 "Termination will never occur in this study."
             )

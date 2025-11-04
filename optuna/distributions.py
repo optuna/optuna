@@ -10,9 +10,9 @@ from typing import Any
 from typing import cast
 from typing import TYPE_CHECKING
 from typing import Union
-import warnings
 
 from optuna._deprecated import deprecated_class
+from optuna._warnings import optuna_warn
 
 
 if TYPE_CHECKING:
@@ -499,7 +499,7 @@ class CategoricalDistribution(BaseDistribution):
                     "float and str for persistent storage but contains "
                     f"{choice} which is of type {type(choice).__name__}."
                 )
-                warnings.warn(message)
+                optuna_warn(message)
 
         self.choices = tuple(choices)
 
@@ -668,7 +668,7 @@ def _adjust_discrete_uniform_high(low: float, high: float, step: float) -> float
     if d_r % d_step != decimal.Decimal("0"):
         old_high = high
         high = float((d_r // d_step) * d_step + d_low)
-        warnings.warn(
+        optuna_warn(
             f"The distribution is specified by [{low}, {old_high}] and {step=}, but the range is "
             f"not divisible by `step`. It will be replaced with [{low}, {high}]."
         )
@@ -681,7 +681,7 @@ def _adjust_int_uniform_high(low: int, high: int, step: int) -> int:
     if r % step != 0:
         old_high = high
         high = r // step * step + low
-        warnings.warn(
+        optuna_warn(
             f"The distribution is specified by [{low}, {old_high}] and {step=}, but the range is "
             f"not divisible by `step`. It will be replaced with [{low}, {high}]."
         )
@@ -760,7 +760,7 @@ def _convert_old_distribution_to_new_distribution(
             f"{distribution} is deprecated and internally converted to"
             f" {new_distribution}. See https://github.com/optuna/optuna/issues/2941."
         )
-        warnings.warn(message, FutureWarning)
+        optuna_warn(message, FutureWarning)
 
     return new_distribution
 

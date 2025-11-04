@@ -5,11 +5,11 @@ from collections.abc import Sequence
 import json
 from typing import Any
 from typing import cast
-import warnings
 
 import numpy as np
 
 import optuna
+from optuna._warnings import optuna_warn
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
@@ -64,7 +64,7 @@ def _check_plot_args(
         )
 
     if target is not None and target_name == "Objective Value":
-        warnings.warn(
+        optuna_warn(
             "`target` is specified, but `target_name` is the default value, 'Objective Value'."
         )
 
@@ -155,7 +155,7 @@ def _filter_nonfinite(
             ValueError,
             TypeError,
         ):
-            warnings.warn(
+            optuna_warn(
                 f"Trial{trial.number}'s target value {repr(value)} could not be cast to float."
             )
             raise
