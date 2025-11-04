@@ -8,12 +8,18 @@ import os
 import uuid
 
 from optuna._convert_positional_args import convert_positional_args
-from optuna.artifacts._protocol import ArtifactStore
-from optuna.storages import BaseStorage
+# from optuna.artifacts._protocol import ArtifactStore #remove
+# from optuna.storages import BaseStorage #remove
 from optuna.study import Study
 from optuna.trial import FrozenTrial
 from optuna.trial import Trial
 
+from typing import TYPE_CHECKING
+
+
+if TYPE_CHECKING:
+    from optuna.artifacts._protocol import ArtifactStore
+    from optuna.storages import BaseStorage
 
 ARTIFACTS_ATTR_PREFIX = "artifacts:"
 DEFAULT_MIME_TYPE = "application/octet-stream"
