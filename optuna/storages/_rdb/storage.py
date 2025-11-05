@@ -582,10 +582,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         param_value_internal: float,
         distribution: distributions.BaseDistribution,
     ) -> None:
-        with _create_scoped_session(self.scoped_session, True) as session:
-            self._set_trial_param_without_commit(
-                session, trial_id, param_name, param_value_internal, distribution
-            )
+        self._set_trial_param(trial_id, param_name, param_value_internal, distribution, None)
 
     def _set_trial_param(
         self,
