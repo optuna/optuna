@@ -5,16 +5,16 @@ from dataclasses import dataclass
 import json
 import mimetypes
 import os
+from typing import TYPE_CHECKING
 import uuid
 
 from optuna._convert_positional_args import convert_positional_args
+
 # from optuna.artifacts._protocol import ArtifactStore #remove
 # from optuna.storages import BaseStorage #remove
 from optuna.study import Study
 from optuna.trial import FrozenTrial
 from optuna.trial import Trial
-
-from typing import TYPE_CHECKING
 
 
 if TYPE_CHECKING:
