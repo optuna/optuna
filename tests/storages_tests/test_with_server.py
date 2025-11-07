@@ -173,21 +173,21 @@ def test_multithread_create_study() -> None:
 def test_multiprocess_run_optimize() -> None:
     n_workers = 8
     n_trials = 20
-    storage = get_storage()
-    try:
-        optuna.delete_study(study_name=_STUDY_NAME, storage=storage)
-    except KeyError:
-        pass
-    optuna.create_study(storage=storage, study_name=_STUDY_NAME)
-    with ProcessPoolExecutor(n_workers) as pool:
-        pool.map(run_optimize, *zip(*[[_STUDY_NAME, n_trials]] * n_workers))
+    with get_storage() as storage:
+        try:
+            optuna.delete_study(study_name=_STUDY_NAME, storage=storage)
+        except KeyError:
+            pass
+        optuna.create_study(storage=storage, study_name=_STUDY_NAME)
+        with ProcessPoolExecutor(n_workers) as pool:
+            pool.map(run_optimize, *zip(*[[_STUDY_NAME, n_trials]] * n_workers))
 
-    study = optuna.load_study(study_name=_STUDY_NAME, storage=storage)
+        study = optuna.load_study(study_name=_STUDY_NAME, storage=storage)
 
-    trials = study.trials
-    assert len(trials) == n_workers * n_trials
+        trials = study.trials
+        assert len(trials) == n_workers * n_trials
 
-    _check_trials(trials)
+        _check_trials(trials)
 
 
 def test_pickle_storage() -> None:
