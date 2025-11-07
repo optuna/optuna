@@ -159,15 +159,15 @@ def test_store_nan_intermediate_values() -> None:
 
 
 def test_multithread_create_study() -> None:
-    storage = get_storage()
-    with ThreadPoolExecutor(10) as pool:
-        for _ in range(10):
-            pool.submit(
-                optuna.create_study,
-                storage=storage,
-                study_name="test-multithread-create-study",
-                load_if_exists=True,
-            )
+    with get_storage() as storage:
+        with ThreadPoolExecutor(10) as pool:
+            for _ in range(10):
+                pool.submit(
+                    optuna.create_study,
+                    storage=storage,
+                    study_name="test-multithread-create-study",
+                    load_if_exists=True,
+                )
 
 
 def test_multiprocess_run_optimize() -> None:
