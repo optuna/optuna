@@ -137,13 +137,13 @@ def test_loaded_trials() -> None:
     ],
 )
 def test_store_infinite_values(input_value: float, expected: float) -> None:
-    storage = get_storage()
-    study_id = storage.create_new_study(directions=[StudyDirection.MINIMIZE])
-    trial_id = storage.create_new_trial(study_id)
-    storage.set_trial_intermediate_value(trial_id, 1, input_value)
-    storage.set_trial_state_values(trial_id, state=TrialState.COMPLETE, values=(input_value,))
-    assert storage.get_trial(trial_id).value == expected
-    assert storage.get_trial(trial_id).intermediate_values[1] == expected
+    with get_storage() as storage:
+        study_id = storage.create_new_study(directions=[StudyDirection.MINIMIZE])
+        trial_id = storage.create_new_trial(study_id)
+        storage.set_trial_intermediate_value(trial_id, 1, input_value)
+        storage.set_trial_state_values(trial_id, state=TrialState.COMPLETE, values=(input_value,))
+        assert storage.get_trial(trial_id).value == expected
+        assert storage.get_trial(trial_id).intermediate_values[1] == expected
 
 
 def test_store_nan_intermediate_values() -> None:
