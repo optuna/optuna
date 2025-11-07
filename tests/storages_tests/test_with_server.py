@@ -191,15 +191,15 @@ def test_multiprocess_run_optimize() -> None:
 
 
 def test_pickle_storage() -> None:
-    storage = get_storage()
-    study_id = storage.create_new_study(directions=[StudyDirection.MINIMIZE])
-    storage.set_study_system_attr(study_id, "key", "pickle")
+    with get_storage() as storage:
+        study_id = storage.create_new_study(directions=[StudyDirection.MINIMIZE])
+        storage.set_study_system_attr(study_id, "key", "pickle")
 
-    restored_storage = pickle.loads(pickle.dumps(storage))
+        restored_storage = pickle.loads(pickle.dumps(storage))
 
-    storage_system_attrs = storage.get_study_system_attrs(study_id)
-    restored_storage_system_attrs = restored_storage.get_study_system_attrs(study_id)
-    assert storage_system_attrs == restored_storage_system_attrs == {"key": "pickle"}
+        storage_system_attrs = storage.get_study_system_attrs(study_id)
+        restored_storage_system_attrs = restored_storage.get_study_system_attrs(study_id)
+        assert storage_system_attrs == restored_storage_system_attrs == {"key": "pickle"}
 
 
 @pytest.mark.parametrize("direction", [StudyDirection.MAXIMIZE, StudyDirection.MINIMIZE])
