@@ -108,25 +108,25 @@ def _check_trials(trials: Sequence[optuna.trial.FrozenTrial]) -> None:
 def test_loaded_trials() -> None:
     # Please create the tables by placing this function before the multi-process tests.
 
-    storage = get_storage()
-    try:
-        optuna.delete_study(study_name=_STUDY_NAME, storage=storage)
-    except KeyError:
-        pass
+    with get_storage() as storage:
+        try:
+            optuna.delete_study(study_name=_STUDY_NAME, storage=storage)
+        except KeyError:
+            pass
 
-    N_TRIALS = 20
-    study = optuna.create_study(study_name=_STUDY_NAME, storage=storage)
-    # Run optimization
-    study.optimize(objective, n_trials=N_TRIALS)
+        N_TRIALS = 20
+        study = optuna.create_study(study_name=_STUDY_NAME, storage=storage)
+        # Run optimization
+        study.optimize(objective, n_trials=N_TRIALS)
 
-    trials = study.trials
-    assert len(trials) == N_TRIALS
+        trials = study.trials
+        assert len(trials) == N_TRIALS
 
-    _check_trials(trials)
+        _check_trials(trials)
 
-    # Create a new study to confirm the study can load trial properly.
-    loaded_study = optuna.load_study(study_name=_STUDY_NAME, storage=storage)
-    _check_trials(loaded_study.trials)
+        # Create a new study to confirm the study can load trial properly.
+        loaded_study = optuna.load_study(study_name=_STUDY_NAME, storage=storage)
+        _check_trials(loaded_study.trials)
 
 
 @pytest.mark.parametrize(
