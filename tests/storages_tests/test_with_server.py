@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Sequence, Generator
 from concurrent.futures import ProcessPoolExecutor
 from concurrent.futures import ThreadPoolExecutor
 import os
 import pickle
+from contextlib import contextmanager
 
 import numpy as np
 import pytest
@@ -30,7 +31,6 @@ _STUDY_NAME = "_test_multiprocess"
 def f(x: float, y: float) -> float:
     return (x - 3) ** 2 + y
 
-
 def objective(trial: optuna.Trial) -> float:
     x = trial.suggest_float("x", -10, 10)
     y = trial.suggest_float("y", -10, 10)
@@ -39,8 +39,8 @@ def objective(trial: optuna.Trial) -> float:
     trial.set_user_attr("x", x)
     return f(x, y)
 
-
-def get_storage() -> BaseStorage:
+@contextmanager
+def get_storage() -> Generator[BaseStorage, None, None]:
     if "TEST_DB_URL" not in os.environ:
         pytest.skip("This test requires TEST_DB_URL.")
     storage_url = os.environ["TEST_DB_URL"]
@@ -55,7 +55,10 @@ def get_storage() -> BaseStorage:
     else:
         assert False, f"The mode {storage_mode} is not supported."
 
-    return storage
+    yield storage
+
+    if isinstance(storage, optuna.storages.RDBStorage):
+        storage.engine.dispose()
 
 
 def run_optimize(study_name: str, n_trials: int) -> None:
