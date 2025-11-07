@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-from collections.abc import Sequence, Generator
+from collections.abc import Generator
+from collections.abc import Sequence
 from concurrent.futures import ProcessPoolExecutor
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import contextmanager
 import os
 import pickle
-from contextlib import contextmanager
 
 import numpy as np
 import pytest
@@ -31,6 +32,7 @@ _STUDY_NAME = "_test_multiprocess"
 def f(x: float, y: float) -> float:
     return (x - 3) ** 2 + y
 
+
 def objective(trial: optuna.Trial) -> float:
     x = trial.suggest_float("x", -10, 10)
     y = trial.suggest_float("y", -10, 10)
@@ -38,6 +40,7 @@ def objective(trial: optuna.Trial) -> float:
     trial.report(y, 1)
     trial.set_user_attr("x", x)
     return f(x, y)
+
 
 @contextmanager
 def get_storage() -> Generator[BaseStorage, None, None]:
