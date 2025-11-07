@@ -25,6 +25,10 @@ command -v mypy &> /dev/null
 if [ $? -eq 1 ] ; then
   missing_dependencies+=(mypy)
 fi
+command -v ruff &> /dev/null
+if [ $? -eq 1 ] ; then
+  missing_dependencies+=(ruff)
+fi
 if [ ! ${#missing_dependencies[@]} -eq 0 ]; then
   echo "The following dependencies are missing:" "${missing_dependencies[@]}"
   read -p "Would you like to install the missing dependencies? (y/N): " yn
@@ -46,56 +50,71 @@ target="optuna tests benchmarks tutorial"
 mypy_target="optuna tests benchmarks"
 res_all=0
 
-res_black=$(black $target --check --diff 2>&1)
+res_ruff=$(ruff check $target 2>&1 & ruff format $target --check --diff 2>&1)
 if [ $? -eq 1 ] ; then
   if [ $update -eq 1 ] ; then
-    echo "black failed. The code will be formatted by black."
-    black $target
+    echo "ruff failed. The code will be formatted by ruff."
+    ruff check $target --fix
+    ruff format $target
   else
-    echo "$res_black"
-    echo "black failed."
+    echo "$res_ruff"
+    echo "ruff failed."
     res_all=1
   fi
 else
-  echo "black succeeded."
+  echo "ruff succeeded."
 fi
 
-res_blackdoc=$(blackdoc $target --check --diff 2>&1)
-if [ $? -eq 1 ] ; then
-  if [ $update -eq 1 ] ; then
-    echo "blackdoc failed. The docstrings will be formatted by blackdoc."
-    blackdoc $target
-  else
-    echo "$res_blackdoc"
-    echo "blackdoc failed."
-    res_all=1
-  fi
-else
-  echo "blackdoc succeeded."
-fi
+# res_black=$(black $target --check --diff 2>&1)
+# if [ $? -eq 1 ] ; then
+#   if [ $update -eq 1 ] ; then
+#     echo "black failed. The code will be formatted by black."
+#     black $target
+#   else
+#     echo "$res_black"
+#     echo "black failed."
+#     res_all=1
+#   fi
+# else
+#   echo "black succeeded."
+# fi
 
-res_flake8=$(flake8 $target)
-if [ $? -eq 1 ] ; then
-  echo "$res_flake8"
-  echo "flake8 failed."
-  res_all=1
-else
-  echo "flake8 succeeded."
-fi
+# res_blackdoc=$(blackdoc $target --check --diff 2>&1)
+# if [ $? -eq 1 ] ; then
+#   if [ $update -eq 1 ] ; then
+#     echo "blackdoc failed. The docstrings will be formatted by blackdoc."
+#     blackdoc $target
+#   else
+#     echo "$res_blackdoc"
+#     echo "blackdoc failed."
+#     res_all=1
+#   fi
+# else
+#   echo "blackdoc succeeded."
+# fi
 
-res_isort=$(isort $target --check 2>&1)
-if [ $? -eq 1 ] ; then
-  if [ $update -eq 1 ] ; then
-    echo "isort failed. The code will be formatted by isort."
-    isort $target
-  else
-    echo "$res_isort"
-    echo "isort failed."
-    res_all=1
-  fi
-else
-  echo "isort succeeded."
-fi
+# res_flake8=$(flake8 $target)
+# if [ $? -eq 1 ] ; then
+#   echo "$res_flake8"
+#   echo "flake8 failed."
+#   res_all=1
+# else
+#   echo "flake8 succeeded."
+# fi
+
+# res_isort=$(isort $target --check 2>&1)
+# if [ $? -eq 1 ] ; then
+#   if [ $update -eq 1 ] ; then
+#     echo "isort failed. The code will be formatted by isort."
+#     isort $target
+#   else
+#     echo "$res_isort"
+#     echo "isort failed."
+#     res_all=1
+#   fi
+# else
+#   echo "isort succeeded."
+# fi
 
 res_mypy=$(mypy $mypy_target)
 if [ $? -eq 1 ] ; then

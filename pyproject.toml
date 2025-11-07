@@ -48,12 +48,9 @@ benchmark = [
   "virtualenv"
 ]
 checking = [
-  "black<25.9.0",  # TODO(nabe): Remove the version constraint after the fix in black.
-  "blackdoc<0.4.2",  # TODO(not522): Remove the version constraint after the fix in blackdoc.
-  "flake8",
-  "isort",
   "mypy",
   "mypy_boto3_s3",
+  "ruff",
   "scipy-stubs; python_version>='3.10'",
   "types-PyYAML",
   "types-redis",
@@ -131,42 +128,38 @@ version = {attr = "optuna.version.__version__"}
   "py.typed",
 ]
 
-[tool.black]
+[tool.ruff]
 line-length = 99
-target-version = ['py39']
-force-exclude = '''
-/(
-  \.eggs
-  | \.git
-  | \.hg
-  | \.mypy_cache
-  | \.venv
-  | venv
-  | _build
-  | buck-out
-  | build
-  | dist
-  | docs
-  | optuna/storages/_grpc/auto_generated
-)/
-'''
-
-[tool.isort]
-profile = 'black'
-src_paths = ['optuna', 'tests', 'docs', 'benchmarks']
-skip_glob = [
-  'docs/source/conf.py',
-  '**/alembic/versions/*.py',
-  'tutorial/**/*.py',
-  'docs/visualization_examples/*.py',
-  'docs/visualization_matplotlib_examples/*.py',
-  'optuna/storages/_grpc/auto_generated/*.py'
+target-version = "py39"
+exclude = [
+  ".eggs",
+  ".git",
+  ".hg",
+  ".mypy_cache",
+  ".venv",
+  "venv",
+  "_build",
+  "buck-out",
+  "build",
+  "dist",
+  "docs",
+  "optuna/storages/_grpc/auto_generated",
 ]
-line_length = 99
-lines_after_imports = 2
-force_single_line = 'True'
-force_sort_within_sections = 'True'
-order_by_type = 'False'
+
+[tool.ruff.lint]
+select = [
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "F",      # pyflakes
+    "I",      # isort
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["optuna", "tests", "docs", "benchmarks"]
+lines-after-imports = 2
+force_single_line = true
+force_sort_within_sections = true
+order_by_type = false
 
 [tool.pytest.ini_options]
 addopts = "--color=yes"
