@@ -62,11 +62,11 @@ def get_storage() -> Generator[BaseStorage, None, None]:
 
 
 def run_optimize(study_name: str, n_trials: int) -> None:
-    storage = get_storage()
-    # Create a study
-    study = optuna.load_study(study_name=study_name, storage=storage)
-    # Run optimization
-    study.optimize(objective, n_trials=n_trials)
+    with get_storage() as storage:
+        # Create a study
+        study = optuna.load_study(study_name=study_name, storage=storage)
+        # Run optimization
+        study.optimize(objective, n_trials=n_trials)
 
 
 def _check_trials(trials: Sequence[optuna.trial.FrozenTrial]) -> None:
