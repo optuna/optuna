@@ -215,13 +215,13 @@ def test_pickle_storage() -> None:
     ],
 )
 def test_get_best_trial(direction: StudyDirection, values: Sequence[float]) -> None:
-    storage = get_storage()
-    study = optuna.create_study(direction=direction, storage=storage)
-    study.add_trials(
-        [optuna.create_trial(params={}, distributions={}, value=value) for value in values]
-    )
-    expected_value = max(values) if direction == StudyDirection.MAXIMIZE else min(values)
-    assert study.best_value == expected_value
+    with get_storage() as storage:
+        study = optuna.create_study(direction=direction, storage=storage)
+        study.add_trials(
+            [optuna.create_trial(params={}, distributions={}, value=value) for value in values]
+        )
+        expected_value = max(values) if direction == StudyDirection.MAXIMIZE else min(values)
+        assert study.best_value == expected_value
 
 
 def test_set_and_get_study_user_attrs_for_floats() -> None:
