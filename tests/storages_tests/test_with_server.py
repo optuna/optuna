@@ -147,15 +147,15 @@ def test_store_infinite_values(input_value: float, expected: float) -> None:
 
 
 def test_store_nan_intermediate_values() -> None:
-    storage = get_storage()
-    study_id = storage.create_new_study(directions=[StudyDirection.MINIMIZE])
-    trial_id = storage.create_new_trial(study_id)
+    with get_storage() as storage:
+        study_id = storage.create_new_study(directions=[StudyDirection.MINIMIZE])
+        trial_id = storage.create_new_trial(study_id)
 
-    value = float("nan")
-    storage.set_trial_intermediate_value(trial_id, 1, value)
+        value = float("nan")
+        storage.set_trial_intermediate_value(trial_id, 1, value)
 
-    got_value = storage.get_trial(trial_id).intermediate_values[1]
-    assert np.isnan(got_value)
+        got_value = storage.get_trial(trial_id).intermediate_values[1]
+        assert np.isnan(got_value)
 
 
 def test_multithread_create_study() -> None:
