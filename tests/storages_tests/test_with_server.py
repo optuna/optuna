@@ -225,28 +225,35 @@ def test_get_best_trial(direction: StudyDirection, values: Sequence[float]) -> N
 
 
 def test_set_and_get_study_user_attrs_for_floats() -> None:
-    _test_set_and_get_study_user_attrs_for_floats(get_storage())
+    with get_storage() as storage:
+        _test_set_and_get_study_user_attrs_for_floats(storage)
 
 
 def test_set_and_get_study_system_attrs_for_floats() -> None:
-    _test_set_and_get_study_system_attrs_for_floats(get_storage())
+    with get_storage() as storage:
+        _test_set_and_get_study_system_attrs_for_floats(storage)
 
 
 def test_set_trial_state_values_for_floats() -> None:
-    _test_set_trial_state_values_for_floats(get_storage())
+    with get_storage() as storage:
+        _test_set_trial_state_values_for_floats(storage)
 
 
 def test_set_and_get_trial_param_for_floats() -> None:
-    _test_set_and_get_trial_param_for_floats(get_storage())
+    with get_storage() as storage:
+        _test_set_and_get_trial_param_for_floats(storage)
 
 
 def test_set_trial_intermediate_value_for_floats() -> None:
-    _test_set_trial_intermediate_value_for_floats(get_storage())
+    with get_storage() as storage:
+        _test_set_trial_intermediate_value_for_floats(storage)
 
 
 def test_set_and_get_trial_user_attr_for_floats() -> None:
-    _test_set_and_get_trial_user_attr_for_floats(get_storage())
+    with get_storage() as storage:
+        _test_set_and_get_trial_user_attr_for_floats(storage)
 
 
 def test_set_and_get_trial_system_attr_for_floats() -> None:
-    _test_set_and_get_trial_system_attr_for_floats(get_storage())
+    with get_storage() as storage:
+        _test_set_and_get_trial_system_attr_for_floats(storage)
