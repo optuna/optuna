@@ -264,8 +264,9 @@ class CmaEsSampler(BaseSampler):
         source_trials: list[FrozenTrial] | None = None,
     ) -> None:
         if restart_strategy is not None or inc_popsize != -1:
-            msg = _deprecated._DEPRECATION_WARNING_TEMPLATE.format(
-                name="`restart_strategy`", d_ver="4.4.0", r_ver="6.0.0"
+            msg = (
+                "The `restart_strategy` argument is deprecated in version 4.4.0 "
+                "and will be removed in version 6.0.0."
             )
             optuna_warn(
                 f"{msg} From v4.4.0 onward, `restart_strategy` automatically falls back to "
@@ -382,10 +383,8 @@ class CmaEsSampler(BaseSampler):
         if optimizer.dim != len(trans.bounds):
             if self._warn_independent_sampling:
                 _logger.warning(
-                    "`CmaEsSampler` does not support dynamic search space. "
-                    "`{}` is used instead of `CmaEsSampler`.".format(
-                        self._independent_sampler.__class__.__name__
-                    )
+                    f"`CmaEsSampler` does not support dynamic search space. "
+                    f"`{self._independent_sampler.__class__.__name__}` is used instead of `CmaEsSampler`."
                 )
                 self._warn_independent_sampling = False
             return {}
@@ -443,7 +442,7 @@ class CmaEsSampler(BaseSampler):
 
     def _concat_optimizer_attrs(self, optimizer_attrs: dict[str, str]) -> str:
         return "".join(
-            optimizer_attrs["{}:{}".format(self._attr_key_optimizer, i)]
+            optimizer_attrs[f"{self._attr_key_optimizer}:{i}"]
             for i in range(len(optimizer_attrs))
         )
 
@@ -453,7 +452,7 @@ class CmaEsSampler(BaseSampler):
         for i in range(math.ceil(optimizer_len / _SYSTEM_ATTR_MAX_LENGTH)):
             start = i * _SYSTEM_ATTR_MAX_LENGTH
             end = min((i + 1) * _SYSTEM_ATTR_MAX_LENGTH, optimizer_len)
-            attrs["{}:{}".format(self._attr_key_optimizer, i)] = optimizer_str[start:end]
+            attrs[f"{self._attr_key_optimizer}:{i}"] = optimizer_str[start:end]
         return attrs
 
     def _restore_optimizer(
@@ -589,16 +588,9 @@ class CmaEsSampler(BaseSampler):
 
     def _log_independent_sampling(self, trial: FrozenTrial, param_name: str) -> None:
         _logger.warning(
-            _INDEPENDENT_SAMPLING_WARNING_TEMPLATE.format(
-                param_name=param_name,
-                trial_number=trial.number,
-                independent_sampler_name=self._independent_sampler.__class__.__name__,
-                sampler_name=self.__class__.__name__,
-                fallback_reason=(
-                    "dynamic search space and `CategoricalDistribution` are not supported "
-                    "by `CmaEsSampler`"
-                ),
-            )
+            f"`{param_name}` is sampled independently in trial#{trial.number} "
+            f"by `{self._independent_sampler.__class__.__name__}` instead of `{self.__class__.__name__}` "
+            f"because dynamic search space and `CategoricalDistribution` are not supported by `CmaEsSampler`."
         )
 
     def _get_trials(self, study: "optuna.Study") -> list[FrozenTrial]:
