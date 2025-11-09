@@ -3,13 +3,13 @@ from __future__ import annotations
 from collections.abc import KeysView
 import functools
 import math
-
+from typing import TYPE_CHECKING
 import numpy as np
-
-import optuna
 from optuna.pruners import BasePruner
 from optuna.study._study_direction import StudyDirection
 from optuna.trial._state import TrialState
+if TYPE_CHECKING:
+    import optuna
 
 
 def _get_best_intermediate_result_over_steps(
