@@ -95,7 +95,8 @@ def test_init_db_module_import_error() -> None:
 
     with patch.dict(sys.modules, {"psycopg2": None}):
         with pytest.raises(ImportError, match=expected_msg):
-            RDBStorage("postgresql://user:password@host/database")
+            with create_test_storage("postgresql://user:password@host/database"):
+                pass
 
 
 def test_engine_kwargs() -> None:
