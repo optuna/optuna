@@ -157,13 +157,13 @@ def create_test_storage(url: str = "sqlite:///:memory:", engine_kwargs: dict[str
 
 
 def test_create_scoped_session() -> None:
-    storage = create_test_storage()
+    with create_test_storage() as storage:
 
-    # This object violates the unique constraint of version_info_id.
-    v = VersionInfoModel(version_info_id=1, schema_version=1, library_version="0.0.1")
-    with pytest.raises(IntegrityError):
-        with _create_scoped_session(storage.scoped_session) as session:
-            session.add(v)
+        # This object violates the unique constraint of version_info_id.
+        v = VersionInfoModel(version_info_id=1, schema_version=1, library_version="0.0.1")
+        with pytest.raises(IntegrityError):
+            with _create_scoped_session(storage.scoped_session) as session:
+                session.add(v)
 
 
 def test_upgrade_identity() -> None:
