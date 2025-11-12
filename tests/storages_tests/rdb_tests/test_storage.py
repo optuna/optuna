@@ -297,30 +297,29 @@ def test_upgrade_distributions(optuna_version: str) -> None:
         shutil.copyfile(src_db_file, f"{workdir}/sqlite.db")
         storage_url = f"sqlite:///{workdir}/sqlite.db"
 
-        storage = RDBStorage(storage_url, skip_compatibility_check=True, skip_table_creation=True)
-        assert storage.get_current_version() == f"v{optuna_version}"
-        head_version = storage.get_head_version()
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=FutureWarning)
-            storage.upgrade()
-        assert head_version == storage.get_current_version()
+        with create_test_storage(storage_url, skip_compatibility_check=True, skip_table_creation=True) as storage:
+            assert storage.get_current_version() == f"v{optuna_version}"
+            head_version = storage.get_head_version()
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=FutureWarning)
+                storage.upgrade()
+            assert head_version == storage.get_current_version()
 
-        new_study = load_study(storage=storage, study_name="schema migration")
-        new_distribution_dict = new_study.trials[0]._distributions
+            new_study = load_study(storage=storage, study_name="schema migration")
+            new_distribution_dict = new_study.trials[0]._distributions
 
-        assert isinstance(new_distribution_dict["x1"], FloatDistribution)
-        assert isinstance(new_distribution_dict["x2"], FloatDistribution)
-        assert isinstance(new_distribution_dict["x3"], FloatDistribution)
-        assert isinstance(new_distribution_dict["y1"], IntDistribution)
-        assert isinstance(new_distribution_dict["y2"], IntDistribution)
-        assert isinstance(new_distribution_dict["z"], CategoricalDistribution)
+            assert isinstance(new_distribution_dict["x1"], FloatDistribution)
+            assert isinstance(new_distribution_dict["x2"], FloatDistribution)
+            assert isinstance(new_distribution_dict["x3"], FloatDistribution)
+            assert isinstance(new_distribution_dict["y1"], IntDistribution)
+            assert isinstance(new_distribution_dict["y2"], IntDistribution)
+            assert isinstance(new_distribution_dict["z"], CategoricalDistribution)
 
-        # Check if Study.optimize can run on new storage.
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=UserWarning)
-            new_study.optimize(objective_test_upgrade_distributions, n_trials=1)
+            # Check if Study.optimize can run on new storage.
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=UserWarning)
+                new_study.optimize(objective_test_upgrade_distributions, n_trials=1)
 
-        storage.engine.dispose()  # Be sure to disconnect db
 
 
 def test_create_new_trial_with_retries() -> None:
