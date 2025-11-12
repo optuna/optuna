@@ -82,8 +82,8 @@ def _create_scoped_session(
         session.rollback()
         if ignore_integrity_error:
             _logger.debug(
-                f"""Ignoring {e!r}. This happens due to a timing issue
-                among threads/processes/nodes."""
+                f"Ignoring {e!r}. This happens due to a timing issue "
+                "among threads/processes/nodes. "
                 "Another one might have committed a record with the same key(s)."
             )
         else:
