@@ -47,18 +47,18 @@ def test_create_trial() -> None:
 
 
 def test_set_trial_state_values() -> None:
-    base_storage = RDBStorage("sqlite:///:memory:")
-    storage = _CachedStorage(base_storage)
-    study_id = storage.create_new_study(
-        directions=[StudyDirection.MINIMIZE], study_name="test-study"
-    )
-    trial_id = storage.create_new_trial(study_id)
-    storage.set_trial_state_values(trial_id, state=TrialState.COMPLETE)
+    with create_rdb_storage() as base_storage:
+        storage = _CachedStorage(base_storage)
+        study_id = storage.create_new_study(
+            directions=[StudyDirection.MINIMIZE], study_name="test-study"
+        )
+        trial_id = storage.create_new_trial(study_id)
+        storage.set_trial_state_values(trial_id, state=TrialState.COMPLETE)
 
-    cached_trial = storage.get_trial(trial_id)
-    base_trial = base_storage.get_trial(trial_id)
+        cached_trial = storage.get_trial(trial_id)
+        base_trial = base_storage.get_trial(trial_id)
 
-    assert cached_trial == base_trial
+        assert cached_trial == base_trial
 
 
 def test_uncached_set() -> None:
