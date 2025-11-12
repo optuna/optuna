@@ -201,46 +201,41 @@ def test_upgrade_single_objective_optimization(optuna_version: str) -> None:
         shutil.copyfile(src_db_file, f"{workdir}/sqlite.db")
         storage_url = f"sqlite:///{workdir}/sqlite.db"
 
-        storage = RDBStorage(
-            storage_url,
-            skip_compatibility_check=True,
-            skip_table_creation=True,
-        )
-        assert storage.get_current_version() == f"v{optuna_version}"
-        head_version = storage.get_head_version()
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=FutureWarning)
-            storage.upgrade()
-        assert head_version == storage.get_current_version()
+        with create_test_storage(storage_url,skip_compatibility_check=True,
+            skip_table_creation=True) as storage:
+            assert storage.get_current_version() == f"v{optuna_version}"
+            head_version = storage.get_head_version()
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=FutureWarning)
+                storage.upgrade()
+            assert head_version == storage.get_current_version()
 
-        # Create a new study.
-        study = create_study(storage=storage)
-        assert len(study.trials) == 0
-        study.optimize(objective_test_upgrade, n_trials=1)
-        assert len(study.trials) == 1
+            # Create a new study.
+            study = create_study(storage=storage)
+            assert len(study.trials) == 0
+            study.optimize(objective_test_upgrade, n_trials=1)
+            assert len(study.trials) == 1
 
-        # Check empty study.
-        study = load_study(storage=storage, study_name="single_empty")
-        assert len(study.trials) == 0
-        study.optimize(objective_test_upgrade, n_trials=1)
-        assert len(study.trials) == 1
+            # Check empty study.
+            study = load_study(storage=storage, study_name="single_empty")
+            assert len(study.trials) == 0
+            study.optimize(objective_test_upgrade, n_trials=1)
+            assert len(study.trials) == 1
 
-        # Resume single objective optimization.
-        study = load_study(storage=storage, study_name="single")
-        assert len(study.trials) == 1
-        study.optimize(objective_test_upgrade, n_trials=1)
-        assert len(study.trials) == 2
-        for trial in study.trials:
-            assert trial.user_attrs["b"] == 1
-            assert trial.intermediate_values[0] == 0.5
-            assert -5 <= trial.params["x"] <= 5
-            assert 0 <= trial.params["y"] <= 10
-            assert trial.params["z"] in (-5, 0, 5)
-            assert trial.value is not None and 0 <= trial.value <= 150
+            # Resume single objective optimization.
+            study = load_study(storage=storage, study_name="single")
+            assert len(study.trials) == 1
+            study.optimize(objective_test_upgrade, n_trials=1)
+            assert len(study.trials) == 2
+            for trial in study.trials:
+                assert trial.user_attrs["b"] == 1
+                assert trial.intermediate_values[0] == 0.5
+                assert -5 <= trial.params["x"] <= 5
+                assert 0 <= trial.params["y"] <= 10
+                assert trial.params["z"] in (-5, 0, 5)
+                assert trial.value is not None and 0 <= trial.value <= 150
 
-        assert study.user_attrs["d"] == 3
-
-        storage.engine.dispose()  # Be sure to disconnect db
+            assert study.user_attrs["d"] == 3
 
 
 @pytest.mark.skipif(platform.system() == "Windows", reason="Skip on Windows")
