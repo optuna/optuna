@@ -32,6 +32,9 @@ from optuna.testing.tempfile_pool import NamedTemporaryFilePool
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
+from contextlib import contextmanager
+from collections.abc import Generator
+
 from .create_db import mo_objective_test_upgrade
 from .create_db import objective_test_upgrade
 from .create_db import objective_test_upgrade_distributions
@@ -142,10 +145,11 @@ def test_check_table_schema_compatibility() -> None:
         )
         storage._version_manager.check_table_schema_compatibility()
 
-
-def create_test_storage(engine_kwargs: dict[str, Any] | None = None) -> RDBStorage:
-    storage = RDBStorage("sqlite:///:memory:", engine_kwargs=engine_kwargs)
-    return storage
+@contextmanager
+def create_test_storage(url: str = "sqlite:///:memory:", engine_kwargs: dict[str, Any] | None = None, skip_compatibility_check: bool = False, skip_table_creation: bool = False) -> Generator[RDBStorage, None, None]:
+    storage = RDBStorage(url, engine_kwargs=engine_kwargs, skip_compatibility_check=skip_compatibility_check, skip_table_creation=skip_table_creation)
+    yield storage
+    storage.engine.dispose()
 
 
 def test_create_scoped_session() -> None:
