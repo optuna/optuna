@@ -41,27 +41,27 @@ from .create_db import objective_test_upgrade_distributions
 
 
 def test_init() -> None:
-    storage = create_test_storage()
-    session = storage.scoped_session()
+    with create_test_storage() as storage:
+        session = storage.scoped_session()
 
-    version_info = session.query(VersionInfoModel).first()
-    assert version_info is not None
-    assert version_info.schema_version == SCHEMA_VERSION
-    assert version_info.library_version == optuna.version.__version__
+        version_info = session.query(VersionInfoModel).first()
+        assert version_info is not None
+        assert version_info.schema_version == SCHEMA_VERSION
+        assert version_info.library_version == optuna.version.__version__
 
-    assert storage.get_current_version() == storage.get_head_version()
-    assert storage.get_all_versions() == [
-        "v3.2.0.a",
-        "v3.0.0.d",
-        "v3.0.0.c",
-        "v3.0.0.b",
-        "v3.0.0.a",
-        "v2.6.0.a",
-        "v2.4.0.a",
-        "v1.3.0.a",
-        "v1.2.0.a",
-        "v0.9.0.a",
-    ]
+        assert storage.get_current_version() == storage.get_head_version()
+        assert storage.get_all_versions() == [
+            "v3.2.0.a",
+            "v3.0.0.d",
+            "v3.0.0.c",
+            "v3.0.0.b",
+            "v3.0.0.a",
+            "v2.6.0.a",
+            "v2.4.0.a",
+            "v1.3.0.a",
+            "v1.2.0.a",
+            "v0.9.0.a",
+        ]
 
 
 def test_init_url_template() -> None:
