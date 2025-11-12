@@ -323,41 +323,41 @@ def test_upgrade_distributions(optuna_version: str) -> None:
 
 
 def test_create_new_trial_with_retries() -> None:
-    storage = RDBStorage("sqlite:///:memory:")
-    study_id = storage.create_new_study(directions=[StudyDirection.MINIMIZE])
+    with create_test_storage("sqlite:///:memory:") as storage:
+        study_id = storage.create_new_study(directions=[StudyDirection.MINIMIZE])
 
-    n_retries = 0
+        n_retries = 0
 
-    def mock_func(
-        study_id: int,
-        template_trial: FrozenTrial,
-        session: "sqlalchemy_orm.Session",
-    ) -> FrozenTrial:
-        nonlocal n_retries
-        n_retries += 1
-        trial = models.TrialModel(
-            study_id=study_id,
-            number=None,
-            state=TrialState.RUNNING,
-            datetime_start=datetime.now(),
-        )
-        session.add(trial)
-        session.flush()
-        trial.number = trial.count_past_trials(session)
-        session.add(trial)
+        def mock_func(
+            study_id: int,
+            template_trial: FrozenTrial,
+            session: "sqlalchemy_orm.Session",
+        ) -> FrozenTrial:
+            nonlocal n_retries
+            n_retries += 1
+            trial = models.TrialModel(
+                study_id=study_id,
+                number=None,
+                state=TrialState.RUNNING,
+                datetime_start=datetime.now(),
+            )
+            session.add(trial)
+            session.flush()
+            trial.number = trial.count_past_trials(session)
+            session.add(trial)
 
-        if n_retries == 3:
-            return trial
-        raise sqlalchemy_exc.OperationalError("xxx", "yyy", Exception())
+            if n_retries == 3:
+                return trial
+            raise sqlalchemy_exc.OperationalError("xxx", "yyy", Exception())
 
-    with patch(
-        "optuna.storages._rdb.storage.RDBStorage._get_prepared_new_trial",
-        new=Mock(side_effect=mock_func),
-    ):
-        _ = storage.create_new_trial(study_id)
+        with patch(
+            "optuna.storages._rdb.storage.RDBStorage._get_prepared_new_trial",
+            new=Mock(side_effect=mock_func),
+        ):
+            _ = storage.create_new_trial(study_id)
 
-    # Assert only one trial was created.
-    # The added trials in the session were rollbacked.
-    trials = storage.get_all_trials(study_id)
-    assert len(trials) == 1
-    assert trials[0].number == 0
+        # Assert only one trial was created.
+        # The added trials in the session were rollbacked.
+        trials = storage.get_all_trials(study_id)
+        assert len(trials) == 1
+        assert trials[0].number == 0
