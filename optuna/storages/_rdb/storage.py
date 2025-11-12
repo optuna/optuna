@@ -816,8 +816,8 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
             )
             if trial_id is None:
                 raise KeyError(
-                    f"""No trial with trial number {trial_number}
-                    exists in study with study_id {study_id}."""
+                    f"No trial with trial number {trial_number} "
+                    f"exists in study with study_id {study_id}."
                 )
             return trial_id[0]
 
