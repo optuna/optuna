@@ -167,14 +167,14 @@ def test_create_scoped_session() -> None:
 
 
 def test_upgrade_identity() -> None:
-    storage = create_test_storage()
+    with create_test_storage() as storage:
 
-    # `upgrade()` has no effect because the storage version is already up-to-date.
-    old_version = storage.get_current_version()
-    storage.upgrade()
-    new_version = storage.get_current_version()
+        # `upgrade()` has no effect because the storage version is already up-to-date.
+        old_version = storage.get_current_version()
+        storage.upgrade()
+        new_version = storage.get_current_version()
 
-    assert old_version == new_version
+        assert old_version == new_version
 
 
 @pytest.mark.skipif(platform.system() == "Windows", reason="Skip on Windows")
