@@ -8,6 +8,18 @@ from optuna.storages._rdb.storage import RDBStorage
 from optuna.study import StudyDirection
 from optuna.testing.tempfile_pool import NamedTemporaryFilePool
 from optuna.trial import TrialState
+from typing import TYPE_CHECKING
+from contextlib import contextmanager
+
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
+
+@contextmanager
+def create_rdb_storage(url: str = "sqlite:///:memory:") -> Generator[RDBStorage, None, None]:
+    storage = RDBStorage(url)
+    yield storage
+    storage.engine.dispose()
 
 
 def test_create_trial() -> None:
