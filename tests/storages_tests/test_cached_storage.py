@@ -159,23 +159,22 @@ def test_unfinished_trial_ids() -> None:
         storage_url = f"sqlite:///{tempfile.name}"
         study_name = "test-unfinished-trial-ids"
 
-        storage1 = _CachedStorage(RDBStorage(storage_url))
-        study1 = optuna.create_study(
-            study_name=study_name,
-            storage=storage1,
-            load_if_exists=True,
-        )
-        storage2 = _CachedStorage(RDBStorage(storage_url))
-        study2 = optuna.create_study(
-            study_name=study_name,
-            storage=storage2,
-            load_if_exists=True,
-        )
+        with create_rdb_storage(storage_url) as base_storage1, create_rdb_storage(storage_url) as base_storage2:
 
-        study1.add_trial(optuna.trial.create_trial(state=TrialState.RUNNING))
-        study2.add_trial(optuna.trial.create_trial(state=TrialState.COMPLETE, value=0.0))
-        assert len(study1.trials) == 2
-        assert len(study2.trials) == 2
+            storage1 = _CachedStorage(base_storage1)
+            study1 = optuna.create_study(
+                study_name=study_name,
+                storage=storage1,
+                load_if_exists=True,
+            )
+            storage2 = _CachedStorage(base_storage2)
+            study2 = optuna.create_study(
+                study_name=study_name,
+                storage=storage2,
+                load_if_exists=True,
+            )
 
-        storage1._backend.engine.dispose()
-        storage2._backend.engine.dispose()
+            study1.add_trial(optuna.trial.create_trial(state=TrialState.RUNNING))
+            study2.add_trial(optuna.trial.create_trial(state=TrialState.COMPLETE, value=0.0))
+            assert len(study1.trials) == 2
+            assert len(study2.trials) == 2
