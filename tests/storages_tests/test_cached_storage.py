@@ -1,3 +1,5 @@
+from contextlib import contextmanager
+from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import pytest
@@ -8,12 +10,11 @@ from optuna.storages._rdb.storage import RDBStorage
 from optuna.study import StudyDirection
 from optuna.testing.tempfile_pool import NamedTemporaryFilePool
 from optuna.trial import TrialState
-from typing import TYPE_CHECKING
-from contextlib import contextmanager
 
 
 if TYPE_CHECKING:
     from collections.abc import Generator
+
 
 @contextmanager
 def create_rdb_storage(url: str = "sqlite:///:memory:") -> Generator[RDBStorage, None, None]:
@@ -89,12 +90,16 @@ def test_uncached_set() -> None:
 
         for state in [TrialState.COMPLETE, TrialState.PRUNED, TrialState.FAIL, TrialState.WAITING]:
             trial_id = storage.create_new_trial(study_id)
-            with patch.object(base_storage, "set_trial_state_values", return_value=True) as set_mock:
+            with patch.object(
+                base_storage, "set_trial_state_values", return_value=True
+            ) as set_mock:
                 storage.set_trial_state_values(trial_id, state=state)
                 assert set_mock.call_count == 1
 
         trial_id = storage.create_new_trial(study_id)
-        with patch.object(base_storage, "set_trial_intermediate_value", return_value=None) as set_mock:
+        with patch.object(
+            base_storage, "set_trial_intermediate_value", return_value=None
+        ) as set_mock:
             storage.set_trial_intermediate_value(trial_id, 3, 0.3)
             assert set_mock.call_count == 1
 
@@ -159,7 +164,10 @@ def test_unfinished_trial_ids() -> None:
         storage_url = f"sqlite:///{tempfile.name}"
         study_name = "test-unfinished-trial-ids"
 
-        with create_rdb_storage(storage_url) as base_storage1, create_rdb_storage(storage_url) as base_storage2:
+        with (
+            create_rdb_storage(storage_url) as base_storage1,
+            create_rdb_storage(storage_url) as base_storage2,
+        ):
 
             storage1 = _CachedStorage(base_storage1)
             study1 = optuna.create_study(
