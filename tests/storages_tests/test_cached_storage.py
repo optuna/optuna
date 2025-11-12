@@ -68,45 +68,45 @@ def test_uncached_set() -> None:
 
     """
 
-    base_storage = RDBStorage("sqlite:///:memory:")
-    storage = _CachedStorage(base_storage)
-    study_id = storage.create_new_study(
-        directions=[StudyDirection.MINIMIZE], study_name="test-study"
-    )
-
-    trial_id = storage.create_new_trial(study_id)
-    trial = storage.get_trial(trial_id)
-    with patch.object(base_storage, "set_trial_state_values", return_value=True) as set_mock:
-        storage.set_trial_state_values(trial_id, state=trial.state, values=(0.3,))
-        assert set_mock.call_count == 1
-
-    trial_id = storage.create_new_trial(study_id)
-    with patch.object(base_storage, "_set_trial_param", return_value=True) as set_mock:
-        storage.set_trial_param(
-            trial_id, "paramA", 1.2, optuna.distributions.FloatDistribution(-0.2, 2.3)
+    with create_rdb_storage() as base_storage:
+        storage = _CachedStorage(base_storage)
+        study_id = storage.create_new_study(
+            directions=[StudyDirection.MINIMIZE], study_name="test-study"
         )
-        assert set_mock.call_count == 1
 
-    for state in [TrialState.COMPLETE, TrialState.PRUNED, TrialState.FAIL, TrialState.WAITING]:
         trial_id = storage.create_new_trial(study_id)
+        trial = storage.get_trial(trial_id)
         with patch.object(base_storage, "set_trial_state_values", return_value=True) as set_mock:
-            storage.set_trial_state_values(trial_id, state=state)
+            storage.set_trial_state_values(trial_id, state=trial.state, values=(0.3,))
             assert set_mock.call_count == 1
 
-    trial_id = storage.create_new_trial(study_id)
-    with patch.object(base_storage, "set_trial_intermediate_value", return_value=None) as set_mock:
-        storage.set_trial_intermediate_value(trial_id, 3, 0.3)
-        assert set_mock.call_count == 1
+        trial_id = storage.create_new_trial(study_id)
+        with patch.object(base_storage, "_set_trial_param", return_value=True) as set_mock:
+            storage.set_trial_param(
+                trial_id, "paramA", 1.2, optuna.distributions.FloatDistribution(-0.2, 2.3)
+            )
+            assert set_mock.call_count == 1
 
-    trial_id = storage.create_new_trial(study_id)
-    with patch.object(base_storage, "set_trial_system_attr", return_value=None) as set_mock:
-        storage.set_trial_system_attr(trial_id, "attrA", "foo")
-        assert set_mock.call_count == 1
+        for state in [TrialState.COMPLETE, TrialState.PRUNED, TrialState.FAIL, TrialState.WAITING]:
+            trial_id = storage.create_new_trial(study_id)
+            with patch.object(base_storage, "set_trial_state_values", return_value=True) as set_mock:
+                storage.set_trial_state_values(trial_id, state=state)
+                assert set_mock.call_count == 1
 
-    trial_id = storage.create_new_trial(study_id)
-    with patch.object(base_storage, "set_trial_user_attr", return_value=None) as set_mock:
-        storage.set_trial_user_attr(trial_id, "attrB", "bar")
-        assert set_mock.call_count == 1
+        trial_id = storage.create_new_trial(study_id)
+        with patch.object(base_storage, "set_trial_intermediate_value", return_value=None) as set_mock:
+            storage.set_trial_intermediate_value(trial_id, 3, 0.3)
+            assert set_mock.call_count == 1
+
+        trial_id = storage.create_new_trial(study_id)
+        with patch.object(base_storage, "set_trial_system_attr", return_value=None) as set_mock:
+            storage.set_trial_system_attr(trial_id, "attrA", "foo")
+            assert set_mock.call_count == 1
+
+        trial_id = storage.create_new_trial(study_id)
+        with patch.object(base_storage, "set_trial_user_attr", return_value=None) as set_mock:
+            storage.set_trial_user_attr(trial_id, "attrB", "bar")
+            assert set_mock.call_count == 1
 
 
 def test_read_trials_from_remote_storage() -> None:
