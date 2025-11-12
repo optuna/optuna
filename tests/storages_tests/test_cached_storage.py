@@ -110,26 +110,26 @@ def test_uncached_set() -> None:
 
 
 def test_read_trials_from_remote_storage() -> None:
-    base_storage = RDBStorage("sqlite:///:memory:")
-    storage = _CachedStorage(base_storage)
-    study_id = storage.create_new_study(
-        directions=[StudyDirection.MINIMIZE], study_name="test-study"
-    )
+    with create_rdb_storage() as base_storage:
+        storage = _CachedStorage(base_storage)
+        study_id = storage.create_new_study(
+            directions=[StudyDirection.MINIMIZE], study_name="test-study"
+        )
 
-    storage._read_trials_from_remote_storage(study_id)
+        storage._read_trials_from_remote_storage(study_id)
 
-    # Non-existent study.
-    with pytest.raises(KeyError):
-        storage._read_trials_from_remote_storage(study_id + 1)
+        # Non-existent study.
+        with pytest.raises(KeyError):
+            storage._read_trials_from_remote_storage(study_id + 1)
 
-    # Create a trial via CachedStorage and update it via backend storage directly.
-    trial_id = storage.create_new_trial(study_id)
-    base_storage.set_trial_param(
-        trial_id, "paramA", 1.2, optuna.distributions.FloatDistribution(-0.2, 2.3)
-    )
-    base_storage.set_trial_state_values(trial_id, TrialState.COMPLETE, values=[0.0])
-    storage._read_trials_from_remote_storage(study_id)
-    assert storage.get_trial(trial_id).state == TrialState.COMPLETE
+        # Create a trial via CachedStorage and update it via backend storage directly.
+        trial_id = storage.create_new_trial(study_id)
+        base_storage.set_trial_param(
+            trial_id, "paramA", 1.2, optuna.distributions.FloatDistribution(-0.2, 2.3)
+        )
+        base_storage.set_trial_state_values(trial_id, TrialState.COMPLETE, values=[0.0])
+        storage._read_trials_from_remote_storage(study_id)
+        assert storage.get_trial(trial_id).state == TrialState.COMPLETE
 
 
 def test_delete_study() -> None:
