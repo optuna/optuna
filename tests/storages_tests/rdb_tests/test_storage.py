@@ -66,9 +66,9 @@ def test_init() -> None:
 
 def test_init_url_template() -> None:
     with NamedTemporaryFilePool(suffix="{SCHEMA_VERSION}") as tf:
-        storage = RDBStorage("sqlite:///" + tf.name)
-        assert storage.engine.url.database is not None
-        assert storage.engine.url.database.endswith(str(SCHEMA_VERSION))
+        with create_test_storage("sqlite:///" + tf.name) as storage:
+            assert storage.engine.url.database is not None
+            assert storage.engine.url.database.endswith(str(SCHEMA_VERSION))
 
 
 def test_init_url_that_contains_percent_character() -> None:
