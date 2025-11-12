@@ -130,24 +130,24 @@ def test_set_default_engine_kwargs_for_mysql_with_other_rdb() -> None:
 
 
 def test_check_table_schema_compatibility() -> None:
-    storage = create_test_storage()
-    session = storage.scoped_session()
+    with create_test_storage() as storage:
+        session = storage.scoped_session()
 
-    # The schema version of a newly created storage is always up-to-date.
-    storage._version_manager.check_table_schema_compatibility()
-
-    # `SCHEMA_VERSION` has not been used for compatibility check since alembic was introduced.
-    version_info = session.query(VersionInfoModel).one()
-    version_info.schema_version = SCHEMA_VERSION - 1
-    session.commit()
-
-    storage._version_manager.check_table_schema_compatibility()
-
-    with pytest.raises(RuntimeError):
-        storage._version_manager._set_alembic_revision(
-            storage._version_manager._get_base_version()
-        )
+        # The schema version of a newly created storage is always up-to-date.
         storage._version_manager.check_table_schema_compatibility()
+
+        # `SCHEMA_VERSION` has not been used for compatibility check since alembic was introduced.
+        version_info = session.query(VersionInfoModel).one()
+        version_info.schema_version = SCHEMA_VERSION - 1
+        session.commit()
+
+        storage._version_manager.check_table_schema_compatibility()
+
+        with pytest.raises(RuntimeError):
+            storage._version_manager._set_alembic_revision(
+                storage._version_manager._get_base_version()
+            )
+            storage._version_manager.check_table_schema_compatibility()
 
 @contextmanager
 def create_test_storage(url: str = "sqlite:///:memory:", engine_kwargs: dict[str, Any] | None = None, skip_compatibility_check: bool = False, skip_table_creation: bool = False) -> Generator[RDBStorage, None, None]:
