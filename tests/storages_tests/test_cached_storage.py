@@ -23,27 +23,27 @@ def create_rdb_storage(url: str = "sqlite:///:memory:") -> Generator[RDBStorage,
 
 
 def test_create_trial() -> None:
-    base_storage = RDBStorage("sqlite:///:memory:")
-    storage = _CachedStorage(base_storage)
-    study_id = storage.create_new_study(
-        directions=[StudyDirection.MINIMIZE], study_name="test-study"
-    )
-    frozen_trial = optuna.trial.FrozenTrial(
-        number=1,
-        state=TrialState.RUNNING,
-        value=None,
-        datetime_start=None,
-        datetime_complete=None,
-        params={},
-        distributions={},
-        user_attrs={},
-        system_attrs={},
-        intermediate_values={},
-        trial_id=1,
-    )
-    with patch.object(base_storage, "_create_new_trial", return_value=frozen_trial):
+    with create_rdb_storage() as base_storage:
+        storage = _CachedStorage(base_storage)
+        study_id = storage.create_new_study(
+            directions=[StudyDirection.MINIMIZE], study_name="test-study"
+        )
+        frozen_trial = optuna.trial.FrozenTrial(
+            number=1,
+            state=TrialState.RUNNING,
+            value=None,
+            datetime_start=None,
+            datetime_complete=None,
+            params={},
+            distributions={},
+            user_attrs={},
+            system_attrs={},
+            intermediate_values={},
+            trial_id=1,
+        )
+        with patch.object(base_storage, "_create_new_trial", return_value=frozen_trial):
+            storage.create_new_trial(study_id)
         storage.create_new_trial(study_id)
-    storage.create_new_trial(study_id)
 
 
 def test_set_trial_state_values() -> None:
