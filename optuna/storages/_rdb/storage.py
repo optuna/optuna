@@ -890,8 +890,8 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                 # SQLITE_MAX_VARIABLE_NUMBER.
 
                 _logger.warning(
-                    f"""Caught an error from sqlalchemy: {e!s}.
-                    Falling back to a slower alternative. """
+                    f"Caught an error from sqlalchemy: {e!s}. "
+                    "Falling back to a slower alternative."
                 )
 
                 trial_models = query.order_by(models.TrialModel.trial_id).all()
