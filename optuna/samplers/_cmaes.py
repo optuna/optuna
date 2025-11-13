@@ -442,8 +442,7 @@ class CmaEsSampler(BaseSampler):
 
     def _concat_optimizer_attrs(self, optimizer_attrs: dict[str, str]) -> str:
         return "".join(
-            optimizer_attrs[f"{self._attr_key_optimizer}:{i}"]
-            for i in range(len(optimizer_attrs))
+            optimizer_attrs[f"{self._attr_key_optimizer}:{i}"] for i in range(len(optimizer_attrs))
         )
 
     def _split_optimizer_str(self, optimizer_str: str) -> dict[str, str]:
