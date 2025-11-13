@@ -152,7 +152,8 @@ def test_multi_objective_sample_independent_float_distributions(
     float_dist = optuna.distributions.FloatDistribution(1.0, 100.0, log=log, step=step)
 
     if float_dist.step:
-        value_fn: Callable[[int], float] | None = lambda number: int(random.random() * 1000) * 0.1
+        def value_fn(idx: int) -> float:
+            return int(random.random() * 1000) * 0.1
     else:
         value_fn = None
 
