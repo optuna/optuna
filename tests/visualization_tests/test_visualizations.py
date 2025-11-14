@@ -17,6 +17,8 @@ from optuna.visualization import plot_param_importances
 from optuna.visualization import plot_rank
 from optuna.visualization import plot_slice
 from optuna.visualization import plot_timeline
+from optuna.visualization.matplotlib import plot_contour as matplotlib_plot_contour
+from optuna.visualization.matplotlib import plot_edf as matplotlib_plot_edf
 from optuna.visualization.matplotlib import (
     plot_optimization_history as matplotlib_plot_optimization_history,
 )
@@ -26,8 +28,6 @@ from optuna.visualization.matplotlib import (
 from optuna.visualization.matplotlib import (
     plot_param_importances as matplotlib_plot_param_importances,
 )
-from optuna.visualization.matplotlib import plot_contour as matplotlib_plot_contour
-from optuna.visualization.matplotlib import plot_edf as matplotlib_plot_edf
 from optuna.visualization.matplotlib import plot_rank as matplotlib_plot_rank
 from optuna.visualization.matplotlib import plot_slice as matplotlib_plot_slice
 from optuna.visualization.matplotlib import plot_timeline as matplotlib_plot_timeline

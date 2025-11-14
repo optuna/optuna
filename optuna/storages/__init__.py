@@ -9,10 +9,10 @@ from optuna.storages._heartbeat import fail_stale_trials
 from optuna.storages._in_memory import InMemoryStorage
 from optuna.storages._rdb.storage import RDBStorage
 from optuna.storages.journal._base import BaseJournalLogStorage
+from optuna.storages.journal._file import DeprecatedJournalFileOpenLock as JournalFileOpenLock
 from optuna.storages.journal._file import (
     DeprecatedJournalFileSymlinkLock as JournalFileSymlinkLock,
 )
-from optuna.storages.journal._file import DeprecatedJournalFileOpenLock as JournalFileOpenLock
 from optuna.storages.journal._file import JournalFileStorage
 from optuna.storages.journal._redis import JournalRedisStorage
 from optuna.storages.journal._storage import JournalStorage
