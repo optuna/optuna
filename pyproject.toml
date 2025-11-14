@@ -175,7 +175,6 @@ exclude = [
   "tests/visualization_tests/test_utils.py",
   "tests/storages_tests/test_storages.py",
   "tests/samplers_tests/tpe_tests/test_multi_objective_sampler.py",
-  "tests/samplers_tests/tpe_tests/test_multi_objective_sampler.py",
   "tests/samplers_tests/test_qmc.py",
   "tests/gp_tests/test_acqf.py",
   "tests/artifacts_tests/test_upload_artifact.py",
