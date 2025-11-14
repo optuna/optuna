@@ -1,21 +1,26 @@
 from __future__ import annotations
 
-from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 import numpy as np
 
 from optuna._experimental import experimental_class
 from optuna._warnings import optuna_warn
-from optuna.distributions import BaseDistribution
-from optuna.importance._base import _get_distributions
-from optuna.importance._base import _get_filtered_trials
-from optuna.importance._base import _sort_dict_by_importance
-from optuna.importance._base import BaseImportanceEvaluator
+from optuna.importance._base import (
+    _get_distributions,
+    _get_filtered_trials,
+    _sort_dict_by_importance,
+    BaseImportanceEvaluator,
+)
 from optuna.importance._ped_anova.scott_parzen_estimator import _build_parzen_estimator
 from optuna.logging import get_logger
-from optuna.study import Study
 from optuna.study import StudyDirection
-from optuna.trial import FrozenTrial
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+    from optuna.distributions import BaseDistribution
+    from optuna.trial import FrozenTrial
+    from optuna.study import Study
 
 
 _logger = get_logger(__name__)
