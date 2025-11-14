@@ -135,6 +135,7 @@ exclude = [
   ".eggs",
   ".git",
   ".hg",
+  ".ruff_cache",
   ".mypy_cache",
   ".venv",
   "venv",
