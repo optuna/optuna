@@ -6,7 +6,6 @@ default_language_version:
   python: python3
 
 repos:
-  # Args are based on setup.cfg.
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.14.4
     hooks:
