@@ -102,7 +102,7 @@ def _get_distributions(study: Study, params: list[str] | None) -> dict[str, Base
         ):
             raise ValueError(
                 "Parameters importances cannot be assessed with dynamic search spaces if "
-                "parameters are specified. Specified parameters: {}.".format(params)
+                f"parameters are specified. Specified parameters: {params}."
             )
 
     assert distributions is not None  # Required to pass mypy.
@@ -121,12 +121,12 @@ def _check_evaluate_args(completed_trials: list[FrozenTrial], params: list[str] 
     if params is not None:
         if not isinstance(params, (list, tuple)):
             raise TypeError(
-                "Parameters must be specified as a list. Actual parameters: {}.".format(params)
+                f"Parameters must be specified as a list. Actual parameters: {params}."
             )
         if any(not isinstance(p, str) for p in params):
             raise TypeError(
-                "Parameters must be specified by their names with strings. Actual parameters: "
-                "{}.".format(params)
+                f"Parameters must be specified by their names with strings. "
+                f"Actual parameters: {params}."
             )
 
         if len(params) > 0:
@@ -138,7 +138,7 @@ def _check_evaluate_args(completed_trials: list[FrozenTrial], params: list[str] 
             if not at_least_one_trial:
                 raise ValueError(
                     "Study must contain completed trials with all specified parameters. "
-                    "Specified parameters: {}.".format(params)
+                    f"Specified parameters: {params}."
                 )
 
 
