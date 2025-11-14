@@ -151,11 +151,11 @@ def test_multi_objective_sample_independent_float_distributions(
     random.seed(128)
     float_dist = optuna.distributions.FloatDistribution(1.0, 100.0, log=log, step=step)
 
+    value_fn: Callable[[int], float] | None = None
+
     if float_dist.step:
-        def value_fn(idx: int) -> float:
+        def value_fn(number: int) -> float:
             return int(random.random() * 1000) * 0.1
-    else:
-        value_fn = None
 
     past_trials = [
         frozen_trial_factory(
