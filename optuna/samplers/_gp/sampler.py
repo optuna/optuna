@@ -109,11 +109,13 @@ class GPSampler(BaseSampler):
     5. Perform a local search for each chosen point as an initial point, and
     6. Return the point with the best acquisition function value as the next parameter.
 
-    To speed up the optimization (specifically step 5), we employ D-BE (Decoupled optimizer updates with Batched Evaluations) to perform the local searches in a batch.
+    To speed up the optimization (specifically step 5), we employ D-BE (Decoupled optimizer updates
+    with Batched Evaluations) to perform the local searches in a batch.
 
     For further information about D-BE, please refer to the following papers:
 
-    - `Batch Acquisition Function Evaluations and Decouple Optimizer Updates for Faster Bayesian Optimization <https://arxiv.org/abs/2511.13625>`__
+    - `Batch Acquisition Function Evaluations and Decouple Optimizer Updates for Faster Bayesian
+      Optimization <https://arxiv.org/abs/2511.13625>`__
 
     Note that the procedures for non single-objective optimization setups are slightly different
     from the single-objective version described above, but we omit the descriptions for the others
