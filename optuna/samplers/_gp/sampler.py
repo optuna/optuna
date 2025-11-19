@@ -109,7 +109,7 @@ class GPSampler(BaseSampler):
     5. Perform a local search for each chosen point as an initial point, and
     6. Return the point with the best acquisition function value as the next parameter.
 
-    Decoupled optimizer updates with Batched Evaluations is employed to perform a batch of local
+    Decoupled optimizer update with a batched evaluation is employed to perform a batch of local
     searches simultaneously, specifically speeding up Step 5 above.
 
     The following paper details the methodology:
