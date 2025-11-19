@@ -15,7 +15,8 @@ if TYPE_CHECKING:
     from optuna.study.study import Study
     from optuna.terminator import BaseErrorEvaluator
     from optuna.terminator import BaseImprovementEvaluator
-
+    from optuna.visualization._terminator_improvement import _ImprovementInfo
+    
 
 if _imports.is_successful():
     from optuna.visualization.matplotlib._matplotlib_imports import Axes
