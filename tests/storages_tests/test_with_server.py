@@ -58,10 +58,11 @@ def get_storage() -> Generator[BaseStorage, None, None]:
     else:
         assert False, f"The mode {storage_mode} is not supported."
 
-    yield storage
-
-    if isinstance(storage, optuna.storages.RDBStorage):
-        storage.engine.dispose()
+    try:
+        yield storage
+    finally:
+        if isinstance(storage, optuna.storages.RDBStorage):
+            storage.engine.dispose()
 
 
 def run_optimize(study_name: str, n_trials: int) -> None:
