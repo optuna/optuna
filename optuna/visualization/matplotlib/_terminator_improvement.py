@@ -7,7 +7,6 @@ from optuna.logging import get_logger
 from optuna.terminator.improvement.evaluator import DEFAULT_MIN_N_TRIALS
 from optuna.visualization._terminator_improvement import _get_improvement_info
 from optuna.visualization._terminator_improvement import _get_y_range
-from optuna.visualization._terminator_improvement import _ImprovementInfo
 from optuna.visualization.matplotlib._matplotlib_imports import _imports
 
 
@@ -16,7 +15,7 @@ if TYPE_CHECKING:
     from optuna.terminator import BaseErrorEvaluator
     from optuna.terminator import BaseImprovementEvaluator
     from optuna.visualization._terminator_improvement import _ImprovementInfo
-    
+
 
 if _imports.is_successful():
     from optuna.visualization.matplotlib._matplotlib_imports import Axes
