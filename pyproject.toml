@@ -168,6 +168,7 @@ order-by-type = false
 "**/alembic/versions/*.py" = ["I"]
 
 [tool.ruff.format]
+docstring-code-format = true
 exclude = [
   "tutorial/20_recipes/013_wilcoxon_pruner.py",
   "tutorial/20_recipes/007_optuna_callback.py",
