@@ -113,7 +113,8 @@ def experimental_class(
             @functools.wraps(_original_init)
             def wrapped_init(self: Any, *args: Any, **kwargs: Any) -> None:
                 warnings.warn(
-                    f"{name if name is not None else _original_name} is experimental (supported from v{version}). "
+                    f"{name if name is not None else _original_name} "
+                    f"is experimental (supported from v{version}). "
                     "The interface can change in the future.",
                     ExperimentalWarning,
                     stacklevel=2,
