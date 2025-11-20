@@ -111,7 +111,7 @@ class BruteForceSampler(BaseSampler):
     Example:
 
         .. testcode::
-            ``` python
+
             import optuna
 
 
@@ -127,7 +127,7 @@ class BruteForceSampler(BaseSampler):
 
             study = optuna.create_study(sampler=optuna.samplers.BruteForceSampler())
             study.optimize(objective)
-            ```
+
     Note:
         The defined search space must be finite. Therefore, when using
         :class:`~optuna.distributions.FloatDistribution` or
