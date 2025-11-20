@@ -82,8 +82,9 @@ def _create_scoped_session(
         session.rollback()
         if ignore_integrity_error:
             _logger.debug(
-                "Ignoring {}. This happens due to a timing issue among threads/processes/nodes. "
-                "Another one might have committed a record with the same key(s).".format(repr(e))
+                f"Ignoring {e!r}. This happens due to a timing issue "
+                "among threads/processes/nodes. "
+                "Another one might have committed a record with the same key(s)."
             )
         else:
             raise
@@ -285,13 +286,13 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
 
         except sqlalchemy_exc.IntegrityError:
             raise optuna.exceptions.DuplicatedStudyError(
-                "Another study with name '{}' already exists. "
+                f"Another study with name '{study_name}' already exists. "
                 "Please specify a different name, or reuse the existing one "
                 "by setting `load_if_exists` (for Python API) or "
-                "`--skip-if-exists` flag (for CLI).".format(study_name)
+                "`--skip-if-exists` flag (for CLI)."
             )
 
-        _logger.info("A new study created in RDB with name: {}".format(study_name))
+        _logger.info(f"A new study created in RDB with name: {study_name}")
 
         return self.get_study_id_from_name(study_name)
 
@@ -815,9 +816,8 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
             )
             if trial_id is None:
                 raise KeyError(
-                    "No trial with trial number {} exists in study with study_id {}.".format(
-                        trial_number, study_id
-                    )
+                    f"No trial with trial number {trial_number} "
+                    f"exists in study with study_id {study_id}."
                 )
             return trial_id[0]
 
@@ -890,8 +890,8 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                 # SQLITE_MAX_VARIABLE_NUMBER.
 
                 _logger.warning(
-                    "Caught an error from sqlalchemy: {}. Falling back to a slower alternative. "
-                    "".format(str(e))
+                    f"Caught an error from sqlalchemy: {e!s}. "
+                    "Falling back to a slower alternative."
                 )
 
                 trial_models = query.order_by(models.TrialModel.trial_id).all()
@@ -1141,8 +1141,9 @@ class _VersionManager:
                 return
 
             message = (
-                "The runtime optuna version {} is no longer compatible with the table schema "
-                "(set up by optuna {}). ".format(version.__version__, version_info.library_version)
+                f"The runtime optuna version {version.__version__} is no longer "
+                "compatible with the table schema "
+                f"(set up by optuna {version_info.library_version}). "
             )
             known_versions = self.get_all_versions()
 
