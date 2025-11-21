@@ -39,6 +39,23 @@ from .create_db import objective_test_upgrade
 from .create_db import objective_test_upgrade_distributions
 
 
+@contextmanager
+def create_test_storage(
+    url: str = "sqlite:///:memory:",
+    engine_kwargs: dict[str, Any] | None = None,
+    skip_compatibility_check: bool = False,
+    skip_table_creation: bool = False,
+) -> Generator[RDBStorage, None, None]:
+    storage = RDBStorage(
+        url,
+        engine_kwargs=engine_kwargs,
+        skip_compatibility_check=skip_compatibility_check,
+        skip_table_creation=skip_table_creation,
+    )
+    yield storage
+    storage.engine.dispose()
+
+
 def test_init() -> None:
     with create_test_storage() as storage:
         session = storage.scoped_session()
@@ -148,23 +165,6 @@ def test_check_table_schema_compatibility() -> None:
                 storage._version_manager._get_base_version()
             )
             storage._version_manager.check_table_schema_compatibility()
-
-
-@contextmanager
-def create_test_storage(
-    url: str = "sqlite:///:memory:",
-    engine_kwargs: dict[str, Any] | None = None,
-    skip_compatibility_check: bool = False,
-    skip_table_creation: bool = False,
-) -> Generator[RDBStorage, None, None]:
-    storage = RDBStorage(
-        url,
-        engine_kwargs=engine_kwargs,
-        skip_compatibility_check=skip_compatibility_check,
-        skip_table_creation=skip_table_creation,
-    )
-    yield storage
-    storage.engine.dispose()
 
 
 def test_create_scoped_session() -> None:
