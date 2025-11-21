@@ -381,11 +381,10 @@ class CmaEsSampler(BaseSampler):
 
         if optimizer.dim != len(trans.bounds):
             if self._warn_independent_sampling:
+                ind_sampler_name = self._independent_sampler.__class__.__name__
                 _logger.warning(
                     "`CmaEsSampler` does not support dynamic search space. "
-                    "`{}` is used instead of `CmaEsSampler`.".format(
-                        self._independent_sampler.__class__.__name__
-                    )
+                    f"`{ind_sampler_name}` is used instead of `CmaEsSampler`."
                 )
                 self._warn_independent_sampling = False
             return {}
@@ -443,8 +442,7 @@ class CmaEsSampler(BaseSampler):
 
     def _concat_optimizer_attrs(self, optimizer_attrs: dict[str, str]) -> str:
         return "".join(
-            optimizer_attrs["{}:{}".format(self._attr_key_optimizer, i)]
-            for i in range(len(optimizer_attrs))
+            optimizer_attrs[f"{self._attr_key_optimizer}:{i}"] for i in range(len(optimizer_attrs))
         )
 
     def _split_optimizer_str(self, optimizer_str: str) -> dict[str, str]:
@@ -453,7 +451,7 @@ class CmaEsSampler(BaseSampler):
         for i in range(math.ceil(optimizer_len / _SYSTEM_ATTR_MAX_LENGTH)):
             start = i * _SYSTEM_ATTR_MAX_LENGTH
             end = min((i + 1) * _SYSTEM_ATTR_MAX_LENGTH, optimizer_len)
-            attrs["{}:{}".format(self._attr_key_optimizer, i)] = optimizer_str[start:end]
+            attrs[f"{self._attr_key_optimizer}:{i}"] = optimizer_str[start:end]
         return attrs
 
     def _restore_optimizer(
