@@ -172,7 +172,6 @@ def test_unfinished_trial_ids() -> None:
             create_rdb_storage(storage_url) as base_storage1,
             create_rdb_storage(storage_url) as base_storage2,
         ):
-
             storage1 = _CachedStorage(base_storage1)
             study1 = optuna.create_study(
                 study_name=study_name,
