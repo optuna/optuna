@@ -52,8 +52,10 @@ def create_test_storage(
         skip_compatibility_check=skip_compatibility_check,
         skip_table_creation=skip_table_creation,
     )
-    yield storage
-    storage.engine.dispose()
+    try:
+        yield storage
+    finally:
+        storage.engine.dispose()
 
 
 def test_init() -> None:
