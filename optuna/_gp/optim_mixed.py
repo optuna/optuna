@@ -158,8 +158,9 @@ def _discrete_line_search(
             return np.inf
         right = int(np.clip(np.searchsorted(grids, x), 1, len(grids) - 1))
         left = right - 1
-        neg_acqf_left, neg_acqf_right = negative_acqf_with_cache(left), negative_acqf_with_cache(
-            right
+        neg_acqf_left, neg_acqf_right = (
+            negative_acqf_with_cache(left),
+            negative_acqf_with_cache(right),
         )
         w_left = (grids[right] - x) / (grids[right] - grids[left])
         w_right = 1.0 - w_left
@@ -193,7 +194,6 @@ def _local_search_discrete(
     choices: np.ndarray,
     xtol: float,
 ) -> tuple[np.ndarray, float, bool]:
-
     # If the number of possible parameter values is small, we just perform an exhaustive search.
     # This is faster and better than the line search.
     MAX_INT_EXHAUSTIVE_SEARCH_PARAMS = 16
@@ -291,9 +291,9 @@ def optimize_acqf_mixed(
     if warmstart_normalized_params_array is None:
         warmstart_normalized_params_array = np.empty((0, acqf.search_space.dim))
 
-    assert (
-        len(warmstart_normalized_params_array) <= n_local_search - 1
-    ), "We must choose at least 1 best sampled point + given_initial_xs as start points."
+    assert len(warmstart_normalized_params_array) <= n_local_search - 1, (
+        "We must choose at least 1 best sampled point + given_initial_xs as start points."
+    )
 
     sampled_xs = acqf.search_space.sample_normalized_params(n_preliminary_samples, rng=rng)
 
