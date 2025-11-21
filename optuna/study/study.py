@@ -1150,7 +1150,7 @@ class Study:
                 trial_value = {metric_names[0]: values[0]}
 
             message = (
-                f"Trial {number} finished with value: {trial_value} and parameters: " f"{params}."
+                f"Trial {number} finished with value: {trial_value} and parameters: {params}."
             )
             try:
                 best_trial = self._get_best_trial(deepcopy=False)
@@ -1300,8 +1300,7 @@ def create_study(
             assert study_name is not None
 
             _logger.info(
-                f"Using an existing study with name '{study_name}' instead of "
-                "creating a new one."
+                f"Using an existing study with name '{study_name}' instead of creating a new one."
             )
             study_id = storage.get_study_id_from_name(study_name)
         else:
