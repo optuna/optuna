@@ -49,7 +49,7 @@ def _optimize(
 ) -> None:
     if not isinstance(catch, tuple):
         raise TypeError(
-            "The catch argument is of type '{}' but must be a tuple.".format(type(catch).__name__)
+            f"The catch argument is of type '{type(catch).__name__}' but must be a tuple."
         )
 
     if study._thread_local.in_optimize_loop:
@@ -233,7 +233,7 @@ def _run_trial(
             assert values is not None
             study._log_completed_trial(values, trial.number, trial.params)
         elif updated_state == TrialState.PRUNED:
-            _logger.info("Trial {} pruned. {}".format(trial.number, str(func_err)))
+            _logger.info(f"Trial {trial.number} pruned. {str(func_err)}")
         elif updated_state == TrialState.FAIL:
             if func_err is not None:
                 _log_failed_trial(
@@ -272,10 +272,8 @@ def _log_failed_trial(
     value_or_values: Any = None,
 ) -> None:
     _logger.warning(
-        "Trial {} failed with parameters: {} because of the following error: {}.".format(
-            trial_number, trial_params, message
-        ),
+        f"Trial {trial_number} failed with parameters: {trial_params} because of the following error: {message}.",
         exc_info=exc_info,
     )
 
-    _logger.warning("Trial {} failed with value {}.".format(trial_number, repr(value_or_values)))
+    _logger.warning(f"Trial {trial_number} failed with value {repr(value_or_values)}.")
