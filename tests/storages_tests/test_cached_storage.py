@@ -21,8 +21,10 @@ if TYPE_CHECKING:
 @contextmanager
 def create_rdb_storage(url: str = "sqlite:///:memory:") -> Generator[RDBStorage, None, None]:
     storage = RDBStorage(url)
-    yield storage
-    storage.engine.dispose()
+    try:
+        yield storage
+    finally:
+        storage.engine.dispose()
 
 
 def test_create_trial() -> None:
