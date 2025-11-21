@@ -169,7 +169,6 @@ def create_test_storage(
 
 def test_create_scoped_session() -> None:
     with create_test_storage() as storage:
-
         # This object violates the unique constraint of version_info_id.
         v = VersionInfoModel(version_info_id=1, schema_version=1, library_version="0.0.1")
         with pytest.raises(IntegrityError):
@@ -179,7 +178,6 @@ def test_create_scoped_session() -> None:
 
 def test_upgrade_identity() -> None:
     with create_test_storage() as storage:
-
         # `upgrade()` has no effect because the storage version is already up-to-date.
         old_version = storage.get_current_version()
         storage.upgrade()
