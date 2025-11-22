@@ -31,8 +31,7 @@ def _get_frozen_trial(study: Study, trial: Trial | int) -> FrozenTrial:
             )
         except KeyError as e:
             raise ValueError(
-                f"Cannot tell for trial with number {trial_number} since it has not been "
-                "created."
+                f"Cannot tell for trial with number {trial_number} since it has not been created."
             ) from e
     else:
         raise TypeError("Trial must be a trial object or trial number.")

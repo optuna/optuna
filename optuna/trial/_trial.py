@@ -656,8 +656,9 @@ class Trial(BaseTrial):
         contained = distribution._contains(param_value_in_internal_repr)
         if not contained:
             optuna_warn(
-                "Fixed parameter '{}' with value {} is out of range "
-                "for distribution {}.".format(name, param_value, distribution)
+                "Fixed parameter '{}' with value {} is out of range for distribution {}.".format(
+                    name, param_value, distribution
+                )
             )
         return True
 

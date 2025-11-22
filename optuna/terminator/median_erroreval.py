@@ -62,7 +62,6 @@ class MedianErrorEvaluator(BaseErrorEvaluator):
         trials: list[FrozenTrial],
         study_direction: StudyDirection,
     ) -> float:
-
         if self._threshold is not None:
             return self._threshold
 

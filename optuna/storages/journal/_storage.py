@@ -337,9 +337,9 @@ class JournalStorage(BaseStorage):
                 # positives, we verify whether another process is already evaluating the trial with
                 # trial_id. If True, it means this query does not update the trial state.
                 existing_trial = self._replay_result._trials.get(trial_id)
-                assert (
-                    existing_trial is not None
-                ), "Please report your bug on GitHub if this line fails your script."
+                assert existing_trial is not None, (
+                    "Please report your bug on GitHub if this line fails your script."
+                )
                 if existing_trial.state.is_finished():
                     raise UpdateFinishedTrialError(
                         UNUPDATABLE_MSG.format(trial_number=existing_trial.number)

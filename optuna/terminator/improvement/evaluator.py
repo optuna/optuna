@@ -15,7 +15,6 @@ from optuna.trial import TrialState
 
 
 if TYPE_CHECKING:
-
     from optuna._gp import acqf as acqf_module
     from optuna._gp import gp
     from optuna._gp import optim_sample
