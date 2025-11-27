@@ -191,10 +191,8 @@ def test_make_hovertext() -> None:
         system_attrs={},
         intermediate_values={},
     )
-    assert (
-        _make_hovertext(trial_no_user_attrs)
-        == dedent(
-            """
+    assert _make_hovertext(trial_no_user_attrs) == dedent(
+        """
         {
           "number": 0,
           "values": [
@@ -205,10 +203,7 @@ def test_make_hovertext() -> None:
           }
         }
         """
-        )
-        .strip()
-        .replace("\n", "<br>")
-    )
+    ).strip().replace("\n", "<br>")
 
     trial_user_attrs_valid_json = FrozenTrial(
         number=0,
@@ -223,10 +218,8 @@ def test_make_hovertext() -> None:
         system_attrs={},
         intermediate_values={},
     )
-    assert (
-        _make_hovertext(trial_user_attrs_valid_json)
-        == dedent(
-            """
+    assert _make_hovertext(trial_user_attrs_valid_json) == dedent(
+        """
         {
           "number": 0,
           "values": [
@@ -241,10 +234,7 @@ def test_make_hovertext() -> None:
           }
         }
         """
-        )
-        .strip()
-        .replace("\n", "<br>")
-    )
+    ).strip().replace("\n", "<br>")
 
     trial_user_attrs_invalid_json = FrozenTrial(
         number=0,
@@ -259,10 +249,8 @@ def test_make_hovertext() -> None:
         system_attrs={},
         intermediate_values={},
     )
-    assert (
-        _make_hovertext(trial_user_attrs_invalid_json)
-        == dedent(
-            """
+    assert _make_hovertext(trial_user_attrs_invalid_json) == dedent(
+        """
         {
           "number": 0,
           "values": [
@@ -279,7 +267,4 @@ def test_make_hovertext() -> None:
           }
         }
         """
-        )
-        .strip()
-        .replace("\n", "<br>")
-    )
+    ).strip().replace("\n", "<br>")

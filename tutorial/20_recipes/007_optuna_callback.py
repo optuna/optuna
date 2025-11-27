@@ -20,7 +20,6 @@ it takes :class:`~optuna.study.Study` and :class:`~optuna.trial.FrozenTrial` as 
 # if a certain number of trials are pruned in a row.
 # The number of trials pruned in a row is specified by ``threshold``.
 
-
 import optuna
 
 

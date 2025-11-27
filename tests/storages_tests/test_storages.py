@@ -192,9 +192,9 @@ def test_set_and_get_study_directions(storage_mode: str) -> None:
             def check_get() -> None:
                 got_directions = storage.get_study_directions(study_id)
 
-                assert got_directions == list(
-                    target
-                ), "Direction of a study should be a tuple of `StudyDirection` objects."
+                assert got_directions == list(target), (
+                    "Direction of a study should be a tuple of `StudyDirection` objects."
+                )
 
             # Test setting value.
             check_get()
