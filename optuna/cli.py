@@ -922,7 +922,7 @@ def _get_parser(description: str = "") -> tuple[ArgumentParser, dict[str, Argume
 
     main_parser = ArgumentParser(description=description, parents=[parent_parser])
     main_parser.add_argument(
-        "--version", action="version", version="{0} {1}".format("optuna", optuna.__version__)
+        "--version", action="version", version=f"optuna {optuna.__version__}"
     )
     command_name_to_subparser = _add_commands(main_parser, parent_parser)
     return main_parser, command_name_to_subparser
