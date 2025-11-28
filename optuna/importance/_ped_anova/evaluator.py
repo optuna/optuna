@@ -4,6 +4,7 @@ from collections.abc import Callable
 
 import numpy as np
 
+from optuna._deprecated import _DEPRECATION_WARNING_TEMPLATE
 from optuna._experimental import experimental_class
 from optuna._warnings import optuna_warn
 from optuna.distributions import BaseDistribution
@@ -16,8 +17,6 @@ from optuna.logging import get_logger
 from optuna.study import Study
 from optuna.study import StudyDirection
 from optuna.trial import FrozenTrial
-from optuna._warnings import optuna_warn
-from optuna._deprecated import _DEPRECATION_WARNING_TEMPLATE
 
 
 _logger = get_logger(__name__)
@@ -135,13 +134,10 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
                 name="baseline_quantile", d_ver="4.7.0", r_ver="6.0.0"
             )
             optuna_warn(
-                f"{msg} It is currently ignored. "
-                "Use `target_quantile` instead.",
+                f"{msg} It is currently ignored. Use `target_quantile` instead.",
             )
         if region_quantile != 1.0 and not evaluate_on_local:
-            optuna_warn(
-                "If `evaluate_on_local` is False, `region_quantile` has no effect."
-            )
+            optuna_warn("If `evaluate_on_local` is False, `region_quantile` has no effect.")
 
         self._target_quantile = target_quantile
         self._region_quantile = region_quantile
@@ -189,7 +185,9 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
     ) -> float:
         # When pdf_all == pdf_top, i.e. all_trials == top_trials, this method will give 0.0.
         prior_weight = self._prior_weight
-        pe_top = _build_parzen_estimator(param_name, dist, target_trials, self._n_steps, prior_weight)
+        pe_top = _build_parzen_estimator(
+            param_name, dist, target_trials, self._n_steps, prior_weight
+        )
         # NOTE: pe_top.n_steps could be different from self._n_steps.
         grids = np.arange(pe_top.n_steps)
         pdf_top = pe_top.pdf(grids) + 1e-12
@@ -233,8 +231,10 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
             return {k: 0.0 for k in param_importances}
 
         target_trials = self._get_top_trials(study, trials, self._target_quantile, target)
-        region_trials = trials if self._region_quantile == 1.0 else self._get_top_trials(
-            study, trials, self._region_quantile, target
+        region_trials = (
+            trials
+            if self._region_quantile == 1.0
+            else self._get_top_trials(study, trials, self._region_quantile, target)
         )
         quantile = len(target_trials) / len(region_trials)
         importance_sum = 0.0
