@@ -129,8 +129,7 @@ class JournalFileSymlinkLock(BaseJournalFileLock):
         filepath:
             The path of the file whose race condition must be protected.
         grace_period:
-            Grace period before an existing lock is forcibly released,
-            and the threshold for issuing warnings when lock acquisition takes too long.
+            Grace period before an existing lock is forcibly released.
     """
 
     def __init__(self, filepath: str, grace_period: int | None = 30) -> None:
@@ -150,6 +149,7 @@ class JournalFileSymlinkLock(BaseJournalFileLock):
             :obj:`True` if it succeeded in creating a symbolic link of ``self._lock_target_file``.
         """
         sleep_secs = 0.001
+        warning_interval = 10.0
         last_update_monotonic_time = time.monotonic()
         last_warning_time = time.monotonic()
         mtime = None
@@ -180,9 +180,9 @@ class JournalFileSymlinkLock(BaseJournalFileLock):
                             except RuntimeError:
                                 continue
 
-                        if time.monotonic() - last_warning_time > self.grace_period:
+                        if time.monotonic() - last_warning_time > warning_interval:
                             optuna_warn(
-                                f"It is taking longer than {self.grace_period} seconds to acquire "
+                                f"It is taking longer than {warning_interval} seconds to acquire "
                                 f"the lock file: {self._lock_file} Retrying..."
                             )
                             last_warning_time = time.monotonic()
@@ -221,8 +221,7 @@ class JournalFileOpenLock(BaseJournalFileLock):
         filepath:
             The path of the file whose race condition must be protected.
         grace_period:
-            Grace period before an existing lock is forcibly released,
-            and the threshold for issuing warnings when lock acquisition takes too long.
+            Grace period before an existing lock is forcibly released.
     """
 
     def __init__(self, filepath: str, grace_period: int | None = 30) -> None:
@@ -242,6 +241,7 @@ class JournalFileOpenLock(BaseJournalFileLock):
 
         """
         sleep_secs = 0.001
+        warning_interval = 10.0
         last_update_monotonic_time = time.monotonic()
         last_warning_time = time.monotonic()
         mtime = None
@@ -273,9 +273,9 @@ class JournalFileOpenLock(BaseJournalFileLock):
                             except RuntimeError:
                                 continue
 
-                        if time.monotonic() - last_warning_time > self.grace_period:
+                        if time.monotonic() - last_warning_time > warning_interval:
                             optuna_warn(
-                                f"It is taking longer than {self.grace_period} seconds to acquire "
+                                f"It is taking longer than {warning_interval} seconds to acquire "
                                 f"the lock file: {self._lock_file} Retrying..."
                             )
                             last_warning_time = time.monotonic()
