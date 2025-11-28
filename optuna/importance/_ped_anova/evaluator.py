@@ -4,7 +4,7 @@ from collections.abc import Callable
 
 import numpy as np
 
-from optuna._deprecated import _DEPRECATION_WARNING_TEMPLATE, _DEPRECATION_NOTE_TEMPLATE
+from optuna._deprecated import _DEPRECATION_WARNING_TEMPLATE
 from optuna._experimental import experimental_class
 from optuna._warnings import optuna_warn
 from optuna.distributions import BaseDistribution
@@ -80,8 +80,9 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
 
     .. note::
 
-        The performance of PED-ANOVA depends on how many trials to consider above `target_quantile`.
-        To stabilize the analysis, it is preferable to include at least 5 trials above `target_quantile`.
+        The performance of PED-ANOVA depends on how many trials to consider above
+        `target_quantile`. To stabilize the analysis, it is preferable to include at least
+        5 trials above `target_quantile`.
 
     .. note::
 
@@ -97,8 +98,8 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
         region_quantile:
             Define the region where we compute the importance. For example,
             ``region_quantile=0.5`` means that we compute the importance in the region where
-            trials achieve top-50% performance. If ``region_quantile=1.0``, the importance is computed
-            in the whole search space.
+            trials achieve top-50% performance. If ``region_quantile=1.0``, the importance is
+            computed in the whole search space.
 
         baseline_quantile:
             Compute the importance of achieving top-``baseline_quantile`` quantile objective value.
@@ -107,8 +108,8 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
             optimization.
 
             .. warning::
-                Deprecated in v4.7.0. This feature will be removed in the future. The removal of this
-                feature is currently scheduled for v0.6.0, but this schedule is subject to change.
+                Deprecated in v4.7.0. This feature will be removed in the future. The removal of
+                this feature is currently scheduled for v0.6.0, but this schedule is subject to change.
                 `baseline_quantile` is currently ignored. Use `target_quantile` instead.
                 See https://github.com/optuna/optuna/releases/tag/v4.7.0.
 
