@@ -72,7 +72,7 @@ def test_n_trials_equal_to_min_n_top_trials() -> None:
 def test_baseline_quantile_is_1() -> None:
     study = get_study(seed=0, n_trials=100, is_multi_obj=False)
     # baseline_quantile=1.0 enforces top_trials == all_trials identical.
-    evaluator = PedAnovaImportanceEvaluator(baseline_quantile=1.0)
+    evaluator = PedAnovaImportanceEvaluator(target_quantile=1.0)
     param_importance = list(evaluator.evaluate(study).values())
     n_params = len(param_importance)
     # When top_trials == all_trials, all the importances become identical.
@@ -90,8 +90,8 @@ def test_direction() -> None:
 
 def test_baseline_quantile() -> None:
     study = get_study(seed=0, n_trials=20, is_multi_obj=False)
-    default_evaluator = PedAnovaImportanceEvaluator(baseline_quantile=0.1)
-    evaluator = PedAnovaImportanceEvaluator(baseline_quantile=0.3)
+    default_evaluator = PedAnovaImportanceEvaluator(target_quantile=0.1)
+    evaluator = PedAnovaImportanceEvaluator(target_quantile=0.3)
     assert evaluator.evaluate(study) != default_evaluator.evaluate(study)
 
 
