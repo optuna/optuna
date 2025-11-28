@@ -121,7 +121,6 @@ class EMMREvaluator(BaseImprovementEvaluator):
         self._rng = LazyRandomState(seed)
 
     def evaluate(self, trials: list[FrozenTrial], study_direction: StudyDirection) -> float:
-
         optuna_search_space = intersection_search_space(trials)
         complete_trials = [t for t in trials if t.state == TrialState.COMPLETE]
 
@@ -247,7 +246,6 @@ def _compute_gp_posterior(x_params: np.ndarray, gpr: gp.GPRegressor) -> tuple[fl
 def _compute_gp_posterior_cov_two_thetas(
     normalized_params: np.ndarray, gpr: gp.GPRegressor, theta1_index: int, theta2_index: int
 ) -> float:  # cov
-
     if theta1_index == theta2_index:
         return _compute_gp_posterior(normalized_params[theta1_index], gpr)[1]
 
