@@ -35,7 +35,7 @@ def create_default_formatter() -> logging.Formatter:
     """
     header = "[%(levelname)1.1s %(asctime)s]"
     message = "%(message)s"
-    return colorlog.ColoredFormatter(
+    return colorlog.TTYColoredFormatter(
         f"%(log_color)s{header}%(reset)s {message}",
         stream=sys.stderr,
     )
