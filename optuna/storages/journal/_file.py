@@ -129,7 +129,8 @@ class JournalFileSymlinkLock(BaseJournalFileLock):
         filepath:
             The path of the file whose race condition must be protected.
         grace_period:
-            Grace period before an existing lock is forcibly released.
+            Grace period before an existing lock is forcibly released,
+            and the threshold for issuing warnings when lock acquisition takes too long.
     """
 
     def __init__(self, filepath: str, grace_period: int | None = 30) -> None:
@@ -150,6 +151,7 @@ class JournalFileSymlinkLock(BaseJournalFileLock):
         """
         sleep_secs = 0.001
         last_update_monotonic_time = time.monotonic()
+        last_warning_time = time.monotonic()
         mtime = None
         while True:
             try:
@@ -171,11 +173,19 @@ class JournalFileSymlinkLock(BaseJournalFileLock):
                                 "The existing lock file has not been released "
                                 "for an extended period. Forcibly releasing the lock file."
                             )
+                            last_warning_time = time.monotonic()
                             try:
                                 self.release()
                                 sleep_secs = 0.001
                             except RuntimeError:
                                 continue
+
+                        if time.monotonic() - last_warning_time > self.grace_period:
+                            optuna_warn(
+                                f"It is taking longer than {self.grace_period} seconds to acquire "
+                                f"the lock file: {self._lock_file} Retrying..."
+                            )
+                            last_warning_time = time.monotonic()
 
                     time.sleep(sleep_secs)
                     sleep_secs = min(sleep_secs * 2, 1)
@@ -211,7 +221,8 @@ class JournalFileOpenLock(BaseJournalFileLock):
         filepath:
             The path of the file whose race condition must be protected.
         grace_period:
-            Grace period before an existing lock is forcibly released.
+            Grace period before an existing lock is forcibly released,
+            and the threshold for issuing warnings when lock acquisition takes too long.
     """
 
     def __init__(self, filepath: str, grace_period: int | None = 30) -> None:
@@ -232,6 +243,7 @@ class JournalFileOpenLock(BaseJournalFileLock):
         """
         sleep_secs = 0.001
         last_update_monotonic_time = time.monotonic()
+        last_warning_time = time.monotonic()
         mtime = None
         while True:
             try:
@@ -254,11 +266,19 @@ class JournalFileOpenLock(BaseJournalFileLock):
                                 "The existing lock file has not been released "
                                 "for an extended period. Forcibly releasing the lock file."
                             )
+                            last_warning_time = time.monotonic()
                             try:
                                 self.release()
                                 sleep_secs = 0.001
                             except RuntimeError:
                                 continue
+
+                        if time.monotonic() - last_warning_time > self.grace_period:
+                            optuna_warn(
+                                f"It is taking longer than {self.grace_period} seconds to acquire "
+                                f"the lock file: {self._lock_file} Retrying..."
+                            )
+                            last_warning_time = time.monotonic()
 
                     time.sleep(sleep_secs)
                     sleep_secs = min(sleep_secs * 2, 1)
