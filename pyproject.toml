@@ -169,24 +169,6 @@ order-by-type = false
 
 [tool.ruff.format]
 docstring-code-format = true
-exclude = [
-  "optuna/visualization/_intermediate_values.py",
-  "optuna/trial/_trial.py",
-  "optuna/terminator/median_erroreval.py",
-  "optuna/terminator/improvement/evaluator.py",
-  "optuna/terminator/improvement/emmr.py",
-  "optuna/study/study.py",
-  "optuna/study/_tell.py",
-  "optuna/storages/journal/_storage.py",
-  "optuna/storages/_rdb/models.py",
-  "optuna/samplers/_cmaes.py",
-  "optuna/pruners/_successive_halving.py",
-  "optuna/pruners/_hyperband.py",
-  "optuna/_gp/optim_mixed.py",
-  "optuna/_gp/gp.py",
-  "optuna/_gp/batched_lbfgsb.py",
-  "optuna/_convert_positional_args.py",
-]
 
 [tool.pytest.ini_options]
 addopts = "--color=yes"
