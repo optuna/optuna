@@ -121,11 +121,16 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
     def __init__(
         self,
         *,
-        baseline_quantile: float = 0.1,
+        target_quantile: float = 0.1,
+        region_quantile: float = 1.0,
+        baseline_quantile: float | None = None,
         evaluate_on_local: bool = True,
-    ):
-        assert 0.0 <= baseline_quantile <= 1.0, "baseline_quantile must be in [0, 1]."
-        self._baseline_quantile = baseline_quantile
+    ) -> None:
+        assert 0.0 <= target_quantile <= 1.0, "`target_quantile` must be in [0, 1]."
+        assert 0.0 < region_quantile <= 1.0, "`region_quantile` must be in (0, 1]."
+
+        self._target_quantile = target_quantile
+        self._region_quantile = region_quantile
         self._evaluate_on_local = evaluate_on_local
 
         # Advanced Setups.
