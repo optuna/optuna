@@ -9,6 +9,7 @@ from logging import INFO
 from logging import WARN
 from logging import WARNING
 import threading
+import sys
 
 import colorlog
 
@@ -36,6 +37,7 @@ def create_default_formatter() -> logging.Formatter:
     message = "%(message)s"
     return colorlog.ColoredFormatter(
         f"%(log_color)s{header}%(reset)s {message}",
+        stream=sys.stderr,
     )
 
 
