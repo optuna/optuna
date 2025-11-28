@@ -170,19 +170,19 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
         self,
         param_name: str,
         dist: BaseDistribution,
-        top_trials: list[FrozenTrial],
-        all_trials: list[FrozenTrial],
+        target_trials: list[FrozenTrial],
+        region_trials: list[FrozenTrial],
     ) -> float:
         # When pdf_all == pdf_top, i.e. all_trials == top_trials, this method will give 0.0.
         prior_weight = self._prior_weight
-        pe_top = _build_parzen_estimator(param_name, dist, top_trials, self._n_steps, prior_weight)
+        pe_top = _build_parzen_estimator(param_name, dist, target_trials, self._n_steps, prior_weight)
         # NOTE: pe_top.n_steps could be different from self._n_steps.
         grids = np.arange(pe_top.n_steps)
         pdf_top = pe_top.pdf(grids) + 1e-12
 
         if self._evaluate_on_local:  # The importance of param during the study.
             pe_local = _build_parzen_estimator(
-                param_name, dist, all_trials, self._n_steps, prior_weight
+                param_name, dist, region_trials, self._n_steps, prior_weight
             )
             pdf_local = pe_local.pdf(grids) + 1e-12
         else:  # The importance of param in the search space.
