@@ -81,7 +81,6 @@ def convert_positional_args(
         _validate_two_version(deprecated_version, removed_version)
 
     def converter_decorator(func: "Callable[_P, _T]") -> "Callable[_P, _T]":
-
         assert set(previous_positional_arg_names).issubset(set(signature(func).parameters)), (
             f"{set(previous_positional_arg_names)} is not a subset of"
             f" {set(signature(func).parameters)}"

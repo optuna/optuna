@@ -145,8 +145,9 @@ class SuccessiveHalvingPruner(BasePruner):
 
         if bootstrap_count < 0:
             raise ValueError(
-                "The value of `bootstrap_count` is {}, "
-                "but must be `bootstrap_count >= 0`".format(bootstrap_count)
+                "The value of `bootstrap_count` is {}, but must be `bootstrap_count >= 0`".format(
+                    bootstrap_count
+                )
             )
 
         if bootstrap_count > 0 and min_resource == "auto":

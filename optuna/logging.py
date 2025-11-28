@@ -8,8 +8,8 @@ from logging import FATAL
 from logging import INFO
 from logging import WARN
 from logging import WARNING
-import threading
 import sys
+import threading
 
 import colorlog
 
