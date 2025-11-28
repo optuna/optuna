@@ -145,7 +145,7 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
         self,
         study: Study,
         trials: list[FrozenTrial],
-        params: list[str],
+        quantile: float,
         target: Callable[[FrozenTrial], float] | None,
     ) -> list[FrozenTrial]:
         is_lower_better = study.directions[0] == StudyDirection.MINIMIZE
@@ -158,7 +158,7 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
             is_lower_better = True
 
         top_trials = _QuantileFilter(
-            self._baseline_quantile, is_lower_better, self._min_n_top_trials, target
+            quantile, is_lower_better, self._min_n_top_trials, target
         ).filter(trials)
 
         if len(trials) == len(top_trials):
