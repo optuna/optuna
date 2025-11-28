@@ -145,8 +145,8 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
     def __init__(
         self,
         *,
-        target_quantile: float = 0.1, # gamma' in the original paper
-        region_quantile: float = 1.0, # gamma in the original paper
+        target_quantile: float = 0.1,  # gamma' in the original paper
+        region_quantile: float = 1.0,  # gamma in the original paper
         baseline_quantile: float | None = None,
         evaluate_on_local: bool = True,
     ) -> None:
