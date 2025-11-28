@@ -4,7 +4,7 @@ from collections.abc import Callable
 
 import numpy as np
 
-from optuna._deprecated import _DEPRECATION_WARNING_TEMPLATE
+from optuna._deprecated import _DEPRECATION_WARNING_TEMPLATE, _DEPRECATION_NOTE_TEMPLATE
 from optuna._experimental import experimental_class
 from optuna._warnings import optuna_warn
 from optuna.distributions import BaseDistribution
@@ -66,30 +66,52 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
     Implements the PED-ANOVA hyperparameter importance evaluation algorithm.
 
     PED-ANOVA fits Parzen estimators of :class:`~optuna.trial.TrialState.COMPLETE` trials better
-    than a user-specified baseline. Users can specify the baseline by a quantile.
+    than a user-specified `target_quantile`.
     The importance can be interpreted as how important each hyperparameter is to get
-    the performance better than baseline.
+    the performance better than `target_quantile`.
 
     For further information about PED-ANOVA algorithm, please refer to the following paper:
 
     - `PED-ANOVA: Efficiently Quantifying Hyperparameter Importance in Arbitrary Subspaces
       <https://arxiv.org/abs/2304.10255>`__
 
+    `target_quantile` and `region_quantile` correspond to the parameters ``gamma'`` and ``gamma``
+    in the original paper, respectively.
+
     .. note::
 
-        The performance of PED-ANOVA depends on how many trials to consider above baseline.
-        To stabilize the analysis, it is preferable to include at least 5 trials above baseline.
+        The performance of PED-ANOVA depends on how many trials to consider above `target_quantile`.
+        To stabilize the analysis, it is preferable to include at least 5 trials above `target_quantile`.
 
     .. note::
 
         Please refer to `the original work <https://github.com/nabenabe0928/local-anova>`__.
 
     Args:
+        target_quantile:
+            Compute the importance of achieving top-``target_quantile`` quantile objective value.
+            For example, ``target_quantile=0.1`` means that the importances give the information
+            of which parameters were important to achieve the top-10% performance during
+            optimization.
+
+        region_quantile:
+            Define the region where we compute the importance. For example,
+            ``region_quantile=0.5`` means that we compute the importance in the region where
+            trials achieve top-50% performance. If ``region_quantile=1.0``, the importance is computed
+            in the whole search space.
+
         baseline_quantile:
             Compute the importance of achieving top-``baseline_quantile`` quantile objective value.
             For example, ``baseline_quantile=0.1`` means that the importances give the information
             of which parameters were important to achieve the top-10% performance during
             optimization.
+
+            .. warning::
+                Deprecated in v4.7.0. This feature will be removed in the future. The removal of this
+                feature is currently scheduled for v0.6.0, but this schedule is subject to change.
+                `baseline_quantile` is currently ignored. Use `target_quantile` instead.
+                See https://github.com/optuna/optuna/releases/tag/v4.7.0.
+
         evaluate_on_local:
             Whether we measure the importance in the local or global space.
             If :obj:`True`, the importances imply how importance each parameter is during
@@ -131,10 +153,10 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
         assert 0.0 < region_quantile <= 1.0, "`region_quantile` must be in (0, 1]."
         if baseline_quantile is not None:
             msg = _DEPRECATION_WARNING_TEMPLATE.format(
-                name="baseline_quantile", d_ver="4.7.0", r_ver="6.0.0"
+                name="`baseline_quantile`", d_ver="4.7.0", r_ver="6.0.0"
             )
             optuna_warn(
-                f"{msg} It is currently ignored. Use `target_quantile` instead.",
+                f"{msg} `baseline_quantile` is currently ignored. Use `target_quantile` instead.",
             )
         if region_quantile != 1.0 and not evaluate_on_local:
             optuna_warn("If `evaluate_on_local` is False, `region_quantile` has no effect.")
