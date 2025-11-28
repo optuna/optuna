@@ -16,6 +16,8 @@ from optuna.logging import get_logger
 from optuna.study import Study
 from optuna.study import StudyDirection
 from optuna.trial import FrozenTrial
+from optuna._warnings import optuna_warn
+from optuna._deprecated import _DEPRECATION_WARNING_TEMPLATE
 
 
 _logger = get_logger(__name__)
@@ -128,6 +130,18 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
     ) -> None:
         assert 0.0 <= target_quantile <= 1.0, "`target_quantile` must be in [0, 1]."
         assert 0.0 < region_quantile <= 1.0, "`region_quantile` must be in (0, 1]."
+        if baseline_quantile is not None:
+            msg = _DEPRECATION_WARNING_TEMPLATE.format(
+                name="baseline_quantile", d_ver="4.7.0", r_ver="6.0.0"
+            )
+            optuna_warn(
+                f"{msg} It is currently ignored. "
+                "Use `target_quantile` instead.",
+            )
+        if region_quantile != 1.0 and not evaluate_on_local:
+            optuna_warn(
+                "If `evaluate_on_local` is False, `region_quantile` has no effect."
+            )
 
         self._target_quantile = target_quantile
         self._region_quantile = region_quantile
