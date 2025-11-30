@@ -801,9 +801,7 @@ def test_get_parallel_coordinate_info_user_attrs() -> None:
         )
     )
 
-    info = _get_parallel_coordinate_info(
-        study, params=["param_a", "user_attr_a", "user_attr_b"]
-    )
+    info = _get_parallel_coordinate_info(study, params=["param_a", "user_attr_a", "user_attr_b"])
 
     assert info == _ParallelCoordinateInfo(
         dim_objective=_DimensionInfo(
@@ -847,6 +845,8 @@ def test_get_parallel_coordinate_info_user_attrs() -> None:
         reverse_scale=True,
         target_name="Objective Value",
     )
+
+
 def test_get_parallel_coordinate_info_user_attrs_boolean() -> None:
     study = create_study()
     study.add_trial(
