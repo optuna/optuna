@@ -63,6 +63,7 @@ def plot_parallel_coordinate(
             A :class:`~optuna.study.Study` object whose trials are plotted for their target values.
         params:
             Parameter list to visualize. The default is all parameters.
+            This list can also include keys from ``user_attrs`` to visualize user attributes.
         target:
             A function to specify the value to display. If it is :obj:`None` and ``study`` is being
             used for single-objective optimization, the objective values are plotted.
@@ -131,8 +132,9 @@ def _get_parallel_coordinate_info(
 
     all_params = {p_name for t in trials for p_name in t.params.keys()}
     if params is not None:
+        all_user_attrs = {a_name for t in trials for a_name in t.user_attrs.keys()}
         for input_p_name in params:
-            if input_p_name not in all_params:
+            if input_p_name not in all_params and input_p_name not in all_user_attrs:
                 raise ValueError(f"Parameter {input_p_name} does not exist in your study.")
         all_params = set(params)
     sorted_params = sorted(all_params)
@@ -188,6 +190,10 @@ def _get_parallel_coordinate_info(
             if p_name in t.params:
                 values.append(t.params[p_name])
                 is_categorical |= isinstance(t.distributions[p_name], CategoricalDistribution)
+            elif p_name in t.user_attrs:
+                value = t.user_attrs[p_name]
+                values.append(value)
+                is_categorical |= isinstance(value, str) or isinstance(value, bool)
         if _is_log_scale(trials, p_name):
             values = [math.log10(v) for v in values]
             min_value = min(values)
