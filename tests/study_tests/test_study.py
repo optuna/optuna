@@ -1121,6 +1121,37 @@ def test_get_trials_state_option(storage_mode: str) -> None:
             assert len(trials) == 0
 
 
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_get_trial_by_number(storage_mode: str) -> None:
+    if storage_mode in ("grpc_rdb", "grpc_journal_file"):
+        pytest.skip("gRPC storage doesn't use `copy.deepcopy`.")
+
+    with StorageSupplier(storage_mode) as storage:
+        study = create_study(storage=storage)
+        study.optimize(lambda t: t.suggest_int("x", 1, 5), n_trials=5)
+
+        # Test retrieving existing trials.
+        for i in range(5):
+            trial = study.get_trial_by_number(i)
+            assert trial.number == i
+            assert "x" in trial.params
+
+        # Test deepcopy parameter.
+        with patch("copy.deepcopy", wraps=copy.deepcopy) as mock_object:
+            trial0 = study.get_trial_by_number(0, deepcopy=False)
+            assert mock_object.call_count == 0
+            assert trial0.number == 0
+
+            trial1 = study.get_trial_by_number(0, deepcopy=True)
+            assert mock_object.call_count > 0
+            assert trial1.number == 0
+            assert trial0.params == trial1.params
+
+        # Test KeyError for non-existent trial number.
+        with pytest.raises(KeyError):
+            study.get_trial_by_number(10)
+
+
 def test_log_completed_trial(capsys: _pytest.capture.CaptureFixture) -> None:
     # We need to reconstruct our default handler to properly capture stderr.
     logging._reset_library_root_logger()

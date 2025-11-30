@@ -266,6 +266,52 @@ class Study:
         """
         return self._get_trials(deepcopy, states, use_cache=False)
 
+    def get_trial_by_number(self, trial_number: int, deepcopy: bool = True) -> FrozenTrial:
+        """Return a trial by its number.
+
+        This method efficiently retrieves a specific trial by its number without
+        fetching all trials in the study.
+
+        Example:
+            .. testcode::
+
+                import optuna
+
+
+                def objective(trial):
+                    x = trial.suggest_float("x", -1, 1)
+                    return x**2
+
+
+                study = optuna.create_study()
+                study.optimize(objective, n_trials=3)
+
+                # Get trial number 1
+                trial = study.get_trial_by_number(1)
+                assert trial.number == 1
+
+        Args:
+            trial_number:
+                The number of the trial to retrieve.
+            deepcopy:
+                Flag to control whether to apply ``copy.deepcopy()`` to the trial.
+                Note that if you set the flag to :obj:`False`, you shouldn't mutate
+                any fields of the returned trial. Otherwise the internal state of
+                the study may corrupt and unexpected behavior may happen.
+
+        Returns:
+            A :class:`~optuna.trial.FrozenTrial` object.
+
+        Raises:
+            :exc:`KeyError`:
+                If no trial with the specified ``trial_number`` exists.
+        """
+        trial_id = self._storage.get_trial_id_from_study_id_trial_number(
+            self._study_id, trial_number
+        )
+        trial = self._storage.get_trial(trial_id)
+        return copy.deepcopy(trial) if deepcopy else trial
+
     def _get_trials(
         self,
         deepcopy: bool = True,
