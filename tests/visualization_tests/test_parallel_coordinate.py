@@ -780,3 +780,189 @@ def test_nonfinite_multiobjective(objective: int, value: float) -> None:
         study, target=lambda t: t.values[objective], target_name="Target Name"
     )
     assert all(np.isfinite(info.dim_objective.values))
+
+
+def test_get_parallel_coordinate_info_user_attrs() -> None:
+    study = create_study()
+    study.add_trial(
+        create_trial(
+            value=0.0,
+            params={"param_a": 1.0},
+            distributions={"param_a": FloatDistribution(0.0, 3.0)},
+            user_attrs={"user_attr_a": 10, "user_attr_b": "a"},
+        )
+    )
+    study.add_trial(
+        create_trial(
+            value=1.0,
+            params={"param_a": 2.0},
+            distributions={"param_a": FloatDistribution(0.0, 3.0)},
+            user_attrs={"user_attr_a": 20, "user_attr_b": "b"},
+        )
+    )
+
+    info = _get_parallel_coordinate_info(
+        study, params=["param_a", "user_attr_a", "user_attr_b"]
+    )
+
+    assert info == _ParallelCoordinateInfo(
+        dim_objective=_DimensionInfo(
+            label="Objective Value",
+            values=(0.0, 1.0),
+            range=(0.0, 1.0),
+            is_log=False,
+            is_cat=False,
+            tickvals=[],
+            ticktext=[],
+        ),
+        dims_params=[
+            _DimensionInfo(
+                label="param_a",
+                values=(1.0, 2.0),
+                range=(1.0, 2.0),
+                is_log=False,
+                is_cat=False,
+                tickvals=[],
+                ticktext=[],
+            ),
+            _DimensionInfo(
+                label="user_attr_a",
+                values=(10, 20),
+                range=(10, 20),
+                is_log=False,
+                is_cat=False,
+                tickvals=[],
+                ticktext=[],
+            ),
+            _DimensionInfo(
+                label="user_attr_b",
+                values=(0, 1),
+                range=(0, 1),
+                is_log=False,
+                is_cat=True,
+                tickvals=[0, 1],
+                ticktext=["a", "b"],
+            ),
+        ],
+        reverse_scale=True,
+        target_name="Objective Value",
+    )
+def test_get_parallel_coordinate_info_user_attrs_boolean() -> None:
+    study = create_study()
+    study.add_trial(
+        create_trial(
+            value=0.0,
+            params={"x": 1.0},
+            distributions={"x": FloatDistribution(0.0, 10.0)},
+            user_attrs={"is_valid": True},
+        )
+    )
+    study.add_trial(
+        create_trial(
+            value=1.0,
+            params={"x": 2.0},
+            distributions={"x": FloatDistribution(0.0, 10.0)},
+            user_attrs={"is_valid": False},
+        )
+    )
+
+    info = _get_parallel_coordinate_info(study, params=["x", "is_valid"])
+
+    # Trials are reordered because 'is_valid' is categorical.
+    # Trial 1 (False/0) comes first, then Trial 0 (True/1).
+    # Objective: Trial 1 (1.0), Trial 0 (0.0)
+    # x: Trial 1 (2.0), Trial 0 (1.0)
+    # is_valid: Trial 1 (0), Trial 0 (1)
+
+    assert info == _ParallelCoordinateInfo(
+        dim_objective=_DimensionInfo(
+            label="Objective Value",
+            values=(1.0, 0.0),
+            range=(0.0, 1.0),
+            is_log=False,
+            is_cat=False,
+            tickvals=[],
+            ticktext=[],
+        ),
+        dims_params=[
+            _DimensionInfo(
+                label="is_valid",
+                values=(0, 1),
+                range=(0, 1),
+                is_log=False,
+                is_cat=True,
+                tickvals=[0, 1],
+                ticktext=["False", "True"],
+            ),
+            _DimensionInfo(
+                label="x",
+                values=(2.0, 1.0),
+                range=(1.0, 2.0),
+                is_log=False,
+                is_cat=False,
+                tickvals=[],
+                ticktext=[],
+            ),
+        ],
+        reverse_scale=True,
+        target_name="Objective Value",
+    )
+
+
+def test_get_parallel_coordinate_info_user_attrs_missing() -> None:
+    study = create_study()
+    # Trial with user_attr
+    study.add_trial(
+        create_trial(
+            value=0.0,
+            params={"x": 1.0},
+            distributions={"x": FloatDistribution(0.0, 10.0)},
+            user_attrs={"my_attr": 10},
+        )
+    )
+    # Trial WITHOUT user_attr (should be skipped)
+    study.add_trial(
+        create_trial(
+            value=1.0,
+            params={"x": 2.0},
+            distributions={"x": FloatDistribution(0.0, 10.0)},
+            user_attrs={},
+        )
+    )
+
+    info = _get_parallel_coordinate_info(study, params=["x", "my_attr"])
+
+    # Params sorted alphabetically: my_attr, x
+    assert info == _ParallelCoordinateInfo(
+        dim_objective=_DimensionInfo(
+            label="Objective Value",
+            values=(0.0,),
+            range=(0.0, 0.0),
+            is_log=False,
+            is_cat=False,
+            tickvals=[],
+            ticktext=[],
+        ),
+        dims_params=[
+            _DimensionInfo(
+                label="my_attr",
+                values=(10,),
+                range=(10, 10),
+                is_log=False,
+                is_cat=False,
+                tickvals=[],
+                ticktext=[],
+            ),
+            _DimensionInfo(
+                label="x",
+                values=(1.0,),
+                range=(1.0, 1.0),
+                is_log=False,
+                is_cat=False,
+                tickvals=[],
+                ticktext=[],
+            ),
+        ],
+        reverse_scale=True,
+        target_name="Objective Value",
+    )
