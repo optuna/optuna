@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import cast
 
 import numpy as np
 
@@ -141,19 +140,19 @@ def _is_pareto_front_nd(unique_lexsorted_loss_values: np.ndarray) -> np.ndarray:
             t_vals = unique_lexsorted_loss_values[targets, dim]
 
             c_order = np.argsort(c_vals)
-            # Note: targets don't strictly need sorting for searchsorted, but we need to process them.
-            # We use the original targets order for the query.
+            # Note: targets don't strictly need sorting for searchsorted,
+            # but we need to process them. We use the original targets order for the query.
 
             sorted_c = candidates[c_order]
             vals_c_curr = c_vals[c_order]
             vals_c_next = unique_lexsorted_loss_values[sorted_c, dim + 1]
 
             cummin_c_next = np.minimum.accumulate(vals_c_next)
-            
+
             # Find the rightmost candidate such that candidate.dim <= target.dim
             indices = np.searchsorted(vals_c_curr, t_vals, side="right") - 1
             valid_mask = indices >= 0
-            
+
             if not np.any(valid_mask):
                 return
 

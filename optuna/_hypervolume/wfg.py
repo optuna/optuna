@@ -1,4 +1,5 @@
 import bisect
+
 import numpy as np
 
 from optuna.study._multi_objective import _is_pareto_front
