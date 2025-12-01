@@ -1,5 +1,4 @@
-from __future__ import annotations
-
+import bisect
 import numpy as np
 
 from optuna.study._multi_objective import _is_pareto_front
@@ -15,27 +14,73 @@ def _compute_2d(sorted_pareto_sols: np.ndarray, reference_point: np.ndarray) -> 
 
 def _compute_3d(sorted_pareto_sols: np.ndarray, reference_point: np.ndarray) -> float:
     """
-    Compute hypervolume in 3D. Time complexity is O(N^2) where N is sorted_pareto_sols.shape[0].
-    If X, Y, Z coordinates are permutations of 0, 1, ..., N-1 and reference_point is (N, N, N), the
-    hypervolume is calculated as the number of voxels (x, y, z) dominated by at least one point.
-    If we fix x and y, this number is equal to the minimum of z' over all points (x', y', z')
-    satisfying x' <= x and y' <= y. This can be efficiently computed using cumulative minimum
-    (`np.minimum.accumulate`). Non-permutation coordinates can be transformed into permutation
-    coordinates by using coordinate compression.
+    Compute hypervolume in 3D using a sweep-line algorithm.
+    Time complexity is O(N^2) in worst case due to list insertions, but O(N) memory.
+    This is much more memory efficient than the vectorized O(N^2) approach and faster for large N.
     """
     assert sorted_pareto_sols.shape[1] == reference_point.shape[0] == 3
     n = sorted_pareto_sols.shape[0]
-    y_order = np.argsort(sorted_pareto_sols[:, 1])
-    z_delta = np.zeros((n, n), dtype=float)
-    z_delta[y_order, np.arange(n)] = reference_point[2] - sorted_pareto_sols[y_order, 2]
-    z_delta = np.maximum.accumulate(np.maximum.accumulate(z_delta, axis=0), axis=1)
-    # The x axis is already sorted, so no need to compress this coordinate.
-    x_vals = sorted_pareto_sols[:, 0]
-    y_vals = sorted_pareto_sols[y_order, 1]
-    x_delta = np.concatenate([x_vals[1:], reference_point[:1]]) - x_vals
-    y_delta = np.concatenate([y_vals[1:], reference_point[1:2]]) - y_vals
-    # NOTE(nabenabe): Below is the faster alternative of `np.sum(dx[:, None] * dy * dz)`.
-    return np.dot(np.dot(z_delta, y_delta), x_delta)
+
+    # Sort by z (dim 2) ascending
+    z_order = np.argsort(sorted_pareto_sols[:, 2])
+    sorted_by_z = sorted_pareto_sols[z_order]
+
+    staircase = []  # List of [x, y]
+    area = 0.0
+    total_volume = 0.0
+    prev_z = sorted_by_z[0][2]
+
+    Rx = reference_point[0]
+    Ry = reference_point[1]
+    Rz = reference_point[2]
+
+    for i in range(n):
+        p = sorted_by_z[i]
+        z = p[2]
+
+        total_volume += area * (z - prev_z)
+        prev_z = z
+
+        x, y = p[0], p[1]
+
+        # Find insertion point for x
+        # staircase is sorted by x. We use [x, inf] to find the first element with e.x > x.
+        idx = bisect.bisect_right(staircase, [x, float("inf")])
+
+        # Check dominance by existing (to the left)
+        if idx > 0:
+            if staircase[idx - 1][1] <= y:
+                continue
+
+        # Find range of dominated points (to the right)
+        end_idx = idx
+        while end_idx < len(staircase) and staircase[end_idx][1] >= y:
+            end_idx += 1
+
+        # Remove contributions of dominated points
+        for k in range(idx, end_idx):
+            e = staircase[k]
+            nxt = staircase[k + 1] if k + 1 < len(staircase) else None
+            nx = nxt[0] if nxt else Rx
+            area -= (nx - e[0]) * (Ry - e[1])
+
+        # Update contribution of the point to the left
+        if idx > 0:
+            prev = staircase[idx - 1]
+            old_next_x = staircase[idx][0] if idx < len(staircase) else Rx
+            area -= (old_next_x - prev[0]) * (Ry - prev[1])
+            area += (x - prev[0]) * (Ry - prev[1])
+
+        # Add contribution of new point
+        new_next_x = staircase[end_idx][0] if end_idx < len(staircase) else Rx
+        area += (new_next_x - x) * (Ry - y)
+
+        # Update staircase
+        staircase[idx:end_idx] = [[x, y]]
+
+    total_volume += area * (Rz - prev_z)
+
+    return total_volume
 
 
 def _compute_hv(sorted_loss_vals: np.ndarray, reference_point: np.ndarray) -> float:
