@@ -121,27 +121,101 @@ def _fast_non_domination_rank(
 
 
 def _is_pareto_front_nd(unique_lexsorted_loss_values: np.ndarray) -> np.ndarray:
-    # NOTE(nabenabe0928): I tried the Kung's algorithm below, but it was not really quick.
-    # https://github.com/optuna/optuna/pull/5302#issuecomment-1988665532
-    # As unique_lexsorted_loss_values[:, 0] is sorted, we do not need it to judge dominance.
-    loss_values = unique_lexsorted_loss_values[:, 1:]
-    n_trials = loss_values.shape[0]
-    on_front = np.zeros(n_trials, dtype=bool)
-    remaining_indices: np.ndarray[tuple[int], np.dtype[np.signedinteger]] = np.arange(n_trials)
-    # NOTE(nabenabe): Please check `_compute_exclusive_hv` in wfg.py when you modify this function.
-    while len(remaining_indices):
-        # NOTE: trials[j] cannot dominate trials[i] for i < j because of lexsort.
-        # Therefore, remaining_indices[0] is always non-dominated.
-        on_front[(new_nondominated_index := remaining_indices[0])] = True
-        nondominated_and_not_top = np.any(
-            loss_values[remaining_indices] < loss_values[new_nondominated_index], axis=1
-        )
-        remaining_indices = cast(
-            np.ndarray[tuple[int], np.dtype[np.signedinteger]],
-            remaining_indices[nondominated_and_not_top],
-        )
+    n_trials, n_objectives = unique_lexsorted_loss_values.shape
+    is_dominated = np.zeros(n_trials, dtype=bool)
 
-    return on_front
+    def _dominance_check(candidates: np.ndarray, targets: np.ndarray, dim: int) -> None:
+        if len(candidates) == 0 or len(targets) == 0:
+            return
+
+        if dim == n_objectives - 1:
+            # 1D case: check if min(candidates) <= target
+            min_val = np.min(unique_lexsorted_loss_values[candidates, dim])
+            is_dominated[targets[unique_lexsorted_loss_values[targets, dim] >= min_val]] = True
+            return
+
+        if dim == n_objectives - 2:
+            # 2D case: Sweep line algorithm
+            # Sort candidates and targets by current dimension
+            c_vals = unique_lexsorted_loss_values[candidates, dim]
+            t_vals = unique_lexsorted_loss_values[targets, dim]
+
+            c_order = np.argsort(c_vals)
+            # Note: targets don't strictly need sorting for searchsorted, but we need to process them.
+            # We use the original targets order for the query.
+
+            sorted_c = candidates[c_order]
+            vals_c_curr = c_vals[c_order]
+            vals_c_next = unique_lexsorted_loss_values[sorted_c, dim + 1]
+
+            cummin_c_next = np.minimum.accumulate(vals_c_next)
+            
+            # Find the rightmost candidate such that candidate.dim <= target.dim
+            indices = np.searchsorted(vals_c_curr, t_vals, side="right") - 1
+            valid_mask = indices >= 0
+            
+            if not np.any(valid_mask):
+                return
+
+            target_indices_to_update = targets[valid_mask]
+            relevant_min_vals = cummin_c_next[indices[valid_mask]]
+            relevant_t_next = unique_lexsorted_loss_values[target_indices_to_update, dim + 1]
+
+            is_dominated[target_indices_to_update[relevant_t_next >= relevant_min_vals]] = True
+            return
+
+        # General case recursion
+        all_indices = np.concatenate([candidates, targets])
+        is_candidate = np.zeros(len(all_indices), dtype=bool)
+        is_candidate[: len(candidates)] = True
+
+        vals = unique_lexsorted_loss_values[all_indices, dim]
+        order = np.argsort(vals)
+        sorted_indices = all_indices[order]
+        sorted_is_candidate = is_candidate[order]
+
+        mid = len(all_indices) // 2
+
+        L_indices = sorted_indices[:mid]
+        L_is_cand = sorted_is_candidate[:mid]
+
+        R_indices = sorted_indices[mid:]
+        R_is_cand = sorted_is_candidate[mid:]
+
+        L_c = L_indices[L_is_cand]
+        L_t = L_indices[~L_is_cand]
+
+        R_c = R_indices[R_is_cand]
+        R_t = R_indices[~R_is_cand]
+
+        if len(L_c) > 0 and len(L_t) > 0:
+            _dominance_check(L_c, L_t, dim)
+
+        if len(R_c) > 0 and len(R_t) > 0:
+            _dominance_check(R_c, R_t, dim)
+
+        if len(L_c) > 0 and len(R_t) > 0:
+            _dominance_check(L_c, R_t, dim + 1)
+
+    def solve(indices: np.ndarray, dim: int) -> None:
+        if len(indices) <= 1:
+            return
+
+        mid = len(indices) // 2
+        left = indices[:mid]
+        right = indices[mid:]
+
+        solve(left, dim)
+        solve(right, dim)
+
+        candidates = left[~is_dominated[left]]
+        targets = right[~is_dominated[right]]
+
+        if len(candidates) > 0 and len(targets) > 0:
+            _dominance_check(candidates, targets, dim + 1)
+
+    solve(np.arange(n_trials), 0)
+    return ~is_dominated
 
 
 def _is_pareto_front_2d(unique_lexsorted_loss_values: np.ndarray) -> np.ndarray:
