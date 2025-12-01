@@ -26,7 +26,7 @@ def _compute_3d(sorted_pareto_sols: np.ndarray, reference_point: np.ndarray) -> 
     z_order = np.argsort(sorted_pareto_sols[:, 2])
     sorted_by_z = sorted_pareto_sols[z_order]
 
-    staircase = []  # List of [x, y]
+    staircase: list[list[float]] = []  # List of [x, y]
     area = 0.0
     total_volume = 0.0
     prev_z = sorted_by_z[0][2]

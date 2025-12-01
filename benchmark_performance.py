@@ -6,7 +6,7 @@ from optuna._hypervolume import compute_hypervolume
 from optuna.study._multi_objective import _is_pareto_front
 
 
-def benchmark_pareto_front_4d_random():
+def benchmark_pareto_front_4d_random() -> None:
     print("Benchmarking _is_pareto_front in 4D (Random)...")
     n_trials_list = [1000, 5000, 10000]
     for n in n_trials_list:
@@ -17,7 +17,7 @@ def benchmark_pareto_front_4d_random():
         print(f"n={n}: {end - start:.4f} seconds")
 
 
-def benchmark_pareto_front_4d_worst_case():
+def benchmark_pareto_front_4d_worst_case() -> None:
     print("\nBenchmarking _is_pareto_front in 4D (Worst Case - Sphere)...")
     n_trials_list = [1000, 5000, 10000]
     for n in n_trials_list:
@@ -31,7 +31,7 @@ def benchmark_pareto_front_4d_worst_case():
         print(f"n={n}: {end - start:.4f} seconds (Pareto count: {np.sum(mask)})")
 
 
-def benchmark_hypervolume_3d_stress():
+def benchmark_hypervolume_3d_stress() -> None:
     print("\nBenchmarking compute_hypervolume in 3D (Stress Test)...")
     n_trials_list = [2000, 5000, 10000]
     reference_point = np.array([2.0, 2.0, 2.0])

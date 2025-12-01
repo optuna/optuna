@@ -5,7 +5,7 @@ from optuna._hypervolume.wfg import _compute_hv
 from optuna.study._multi_objective import _is_pareto_front
 
 
-def naive_is_pareto_front(loss_values):
+def naive_is_pareto_front(loss_values: np.ndarray) -> np.ndarray:
     n = len(loss_values)
     is_pareto = np.ones(n, dtype=bool)
     for i in range(n):
@@ -20,7 +20,7 @@ def naive_is_pareto_front(loss_values):
     return is_pareto
 
 
-def verify_pareto_front():
+def verify_pareto_front() -> bool:
     print("Verifying _is_pareto_front...")
     for n in [10, 100, 500]:
         for d in [2, 3, 4, 5]:
@@ -43,7 +43,7 @@ def verify_pareto_front():
     return True
 
 
-def verify_hypervolume_3d():
+def verify_hypervolume_3d() -> bool:
     print("\nVerifying compute_hypervolume (3D)...")
     for n in [10, 50, 100]:
         reference_point = np.array([2.0, 2.0, 2.0])
