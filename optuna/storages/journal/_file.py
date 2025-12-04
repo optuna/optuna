@@ -180,12 +180,12 @@ class JournalFileSymlinkLock(BaseJournalFileLock):
                             except RuntimeError:
                                 continue
 
-                        if time.monotonic() - last_warning_time > warning_interval:
-                            optuna_warn(
-                                f"It is taking longer than {warning_interval} seconds to acquire "
-                                f"the lock file: {self._lock_file} Retrying..."
-                            )
-                            last_warning_time = time.monotonic()
+                    if time.monotonic() - last_warning_time > warning_interval:
+                        optuna_warn(
+                            f"It is taking longer than {warning_interval} seconds to acquire "
+                            f"the lock file: {self._lock_file} Retrying..."
+                        )
+                        last_warning_time = time.monotonic()
 
                     time.sleep(sleep_secs)
                     sleep_secs = min(sleep_secs * 2, 1)
@@ -273,12 +273,12 @@ class JournalFileOpenLock(BaseJournalFileLock):
                             except RuntimeError:
                                 continue
 
-                        if time.monotonic() - last_warning_time > warning_interval:
-                            optuna_warn(
-                                f"It is taking longer than {warning_interval} seconds to acquire "
-                                f"the lock file: {self._lock_file} Retrying..."
-                            )
-                            last_warning_time = time.monotonic()
+                    if time.monotonic() - last_warning_time > warning_interval:
+                        optuna_warn(
+                            f"It is taking longer than {warning_interval} seconds to acquire "
+                            f"the lock file: {self._lock_file} Retrying..."
+                        )
+                        last_warning_time = time.monotonic()
 
                     time.sleep(sleep_secs)
                     sleep_secs = min(sleep_secs * 2, 1)
