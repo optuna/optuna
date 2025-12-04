@@ -1,6 +1,6 @@
 from __future__ import annotations
+from typing import TYPE_CHECKING
 
-from collections.abc import Callable
 
 import numpy as np
 
@@ -13,8 +13,11 @@ from optuna.importance._base import _get_trans_params
 from optuna.importance._base import _param_importances_to_dict
 from optuna.importance._base import _sort_dict_by_importance
 from optuna.importance._base import BaseImportanceEvaluator
-from optuna.study import Study
-from optuna.trial import FrozenTrial
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+    from optuna.study import Study
+    from optuna.trial import FrozenTrial
 
 
 with try_import() as _imports:
