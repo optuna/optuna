@@ -175,7 +175,7 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
         # How many `trials` must be included in `top_trials`.
         self._min_n_top_trials = 2
 
-    def _get_top_trials(
+    def _get_top_quantile_trials(
         self,
         study: Study,
         trials: list[FrozenTrial],
@@ -251,11 +251,11 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
             param_importances.update({k: 0.0 for k in single_dists})
             return {k: 0.0 for k in param_importances}
 
-        target_trials = self._get_top_trials(study, trials, self._target_quantile, target)
+        target_trials = self._get_top_quantile_trials(study, trials, self._target_quantile, target)
         region_trials = (
             trials
             if self._region_quantile == 1.0
-            else self._get_top_trials(study, trials, self._region_quantile, target)
+            else self._get_top_quantile_trials(study, trials, self._region_quantile, target)
         )
         quantile = len(target_trials) / len(region_trials)
         importance_sum = 0.0
