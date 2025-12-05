@@ -42,7 +42,8 @@ def search_space() -> SearchSpace:
 
 
 parametrized_x = pytest.mark.parametrize(
-    "x", [np.array([0.15, 0.12]), np.array([[0.15, 0.12], [0.0, 1.0]])]  # unbatched  # batched
+    "x",
+    [np.array([0.15, 0.12]), np.array([[0.15, 0.12], [0.0, 1.0]])],  # unbatched  # batched
 )
 
 parametrized_additional_values = pytest.mark.parametrize(

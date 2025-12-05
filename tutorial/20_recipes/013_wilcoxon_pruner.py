@@ -100,7 +100,6 @@ def tsp_greedy(vertices: np.ndarray) -> np.ndarray:
 
 
 def tsp_simulated_annealing(vertices: np.ndarray, options: SAOptions) -> np.ndarray:
-
     def temperature(t: float):
         assert 0.0 <= t and t <= 1.0
         return options.T0 * (1 - t) ** options.alpha
@@ -114,7 +113,6 @@ def tsp_simulated_annealing(vertices: np.ndarray, options: SAOptions) -> np.ndar
     remaining_patience = options.patience
 
     for iter in range(options.max_iter):
-
         i = np.random.randint(0, N)
         j = (i + 2 + np.random.randint(0, N - 3)) % N
         i, j = min(i, j), max(i, j)

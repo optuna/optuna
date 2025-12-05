@@ -37,10 +37,10 @@ EXAMPLE_JSONS = {
     "i2": '{"name": "IntDistribution", "attributes": {"low": 1, "high": 9, "log": false}}',
     "i3": '{"name": "IntDistribution", '
     '"attributes": {"low": 1, "high": 9, "log": false, "step": 1}}',
-    "il": '{"name": "IntDistribution", ' '"attributes": {"low": 2, "high": 12, "log": true}}',
+    "il": '{"name": "IntDistribution", "attributes": {"low": 2, "high": 12, "log": true}}',
     "il2": '{"name": "IntDistribution", '
     '"attributes": {"low": 2, "high": 12, "log": true, "step": 1}}',
-    "id": '{"name": "IntDistribution", ' '"attributes": {"low": 1, "high": 9, "step": 2}}',
+    "id": '{"name": "IntDistribution", "attributes": {"low": 1, "high": 9, "step": 2}}',
     "id2": '{"name": "IntDistribution", '
     '"attributes": {"low": 1, "high": 9, "log": false, "step": 2}}',
     "f": '{"name": "FloatDistribution", '

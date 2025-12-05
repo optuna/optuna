@@ -154,6 +154,7 @@ def test_multi_objective_sample_independent_float_distributions(
     value_fn: Callable[[int], float] | None = None
 
     if float_dist.step:
+
         def value_fn(number: int) -> float:
             return int(random.random() * 1000) * 0.1
 

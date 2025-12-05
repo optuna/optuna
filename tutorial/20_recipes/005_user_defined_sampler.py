@@ -80,8 +80,7 @@ class SimulatedAnnealingSampler(optuna.samplers.BaseSampler):
                 or param_distribution.log
             ):
                 msg = (
-                    "Only suggest_float() with `step` `None` or 1.0 and"
-                    " `log` `False` is supported"
+                    "Only suggest_float() with `step` `None` or 1.0 and `log` `False` is supported"
                 )
                 raise NotImplementedError(msg)
 

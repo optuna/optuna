@@ -287,9 +287,9 @@ def test_sample_relative_seeding(scramble: bool, qmc_type: str, seed: int) -> No
     past_trials_parallel = [t for t in past_trials_parallel if t.number > 0]
     values_parallel = [t.params["x"] for t in past_trials_parallel]
     for v in values:
-        assert np.any(
-            np.isclose(v, values_parallel, rtol=1e-6)
-        ), f"v: {v} of values: {values} is not included in values_parallel: {values_parallel}."
+        assert np.any(np.isclose(v, values_parallel, rtol=1e-6)), (
+            f"v: {v} of values: {values} is not included in values_parallel: {values_parallel}."
+        )
 
 
 def test_call_after_trial() -> None:
