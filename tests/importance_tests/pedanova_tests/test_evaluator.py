@@ -69,7 +69,7 @@ def test_n_trials_equal_to_min_n_top_trials() -> None:
     assert np.allclose(param_importance, np.zeros(n_params))
 
 
-def test_baseline_quantile_is_1() -> None:
+def test_target_quantile_is_1() -> None:
     study = get_study(seed=0, n_trials=100, is_multi_obj=False)
     # baseline_quantile=1.0 enforces top_trials == all_trials identical.
     evaluator = PedAnovaImportanceEvaluator(target_quantile=1.0)
