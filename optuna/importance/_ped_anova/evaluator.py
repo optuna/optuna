@@ -29,7 +29,7 @@ class _QuantileFilter:
         is_lower_better: bool,
         min_n_top_trials: int,
         target: Callable[[FrozenTrial], float] | None,
-    ):
+    ) -> None:
         assert 0 < quantile <= 1, "quantile must be in [0, 1]."
         assert min_n_top_trials > 0, "min_n_top_trials must be positive."
 
