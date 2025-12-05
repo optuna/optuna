@@ -15,15 +15,14 @@ import optuna
 from optuna.storages import BaseStorage
 from optuna.storages.journal import JournalRedisBackend
 from optuna.study import StudyDirection
+from optuna.testing.pytest_storages import _test_set_and_get_study_system_attrs_for_floats
+from optuna.testing.pytest_storages import _test_set_and_get_study_user_attrs_for_floats
+from optuna.testing.pytest_storages import _test_set_and_get_trial_param_for_floats
+from optuna.testing.pytest_storages import _test_set_and_get_trial_system_attr_for_floats
+from optuna.testing.pytest_storages import _test_set_and_get_trial_user_attr_for_floats
+from optuna.testing.pytest_storages import _test_set_trial_intermediate_value_for_floats
+from optuna.testing.pytest_storages import _test_set_trial_state_values_for_floats
 from optuna.trial import TrialState
-
-from .test_storages import _test_set_and_get_study_system_attrs_for_floats
-from .test_storages import _test_set_and_get_study_user_attrs_for_floats
-from .test_storages import _test_set_and_get_trial_param_for_floats
-from .test_storages import _test_set_and_get_trial_system_attr_for_floats
-from .test_storages import _test_set_and_get_trial_user_attr_for_floats
-from .test_storages import _test_set_trial_intermediate_value_for_floats
-from .test_storages import _test_set_trial_state_values_for_floats
 
 
 _STUDY_NAME = "_test_multiprocess"
