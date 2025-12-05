@@ -70,7 +70,7 @@ jobs:
       run: |
         # Install dependencies with minimum versions.
         pip uninstall -y alembic cmaes packaging sqlalchemy plotly scikit-learn pillow
-        pip install alembic==1.5.0 cmaes==0.12.0 packaging==20.0 sqlalchemy==1.4.2 tqdm==4.27.0 colorlog==2.9.0 PyYAML==5.1 'pillow<10.4.0'
+        pip install alembic==1.5.0 cmaes==0.12.0 packaging==20.0 sqlalchemy==1.4.2 tqdm==4.27.0 colorlog==3.0.0 PyYAML==5.1 'pillow<10.4.0'
         pip uninstall -y matplotlib pandas scipy
         if [ "${{ matrix.python-version }}" = "3.9" ]; then
           pip install matplotlib==3.8.4 pandas==2.2.2 scipy==1.13.0 numpy==1.26.4
