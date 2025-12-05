@@ -94,6 +94,12 @@ def test_target_quantile() -> None:
     evaluator = PedAnovaImportanceEvaluator(target_quantile=0.3)
     assert evaluator.evaluate(study) != default_evaluator.evaluate(study)
 
+def test_region_quantile_less_than_one() -> None:
+    study = get_study(seed=0, n_trials=20, is_multi_obj=False)
+    default_evaluator = PedAnovaImportanceEvaluator(region_quantile=1.0)
+    evaluator = PedAnovaImportanceEvaluator(region_quantile=0.5)
+    assert evaluator.evaluate(study) != default_evaluator.evaluate(study)
+
 
 def test_evaluate_on_local() -> None:
     study = get_study(seed=0, n_trials=20, is_multi_obj=False)
