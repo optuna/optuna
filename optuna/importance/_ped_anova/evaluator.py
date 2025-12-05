@@ -150,7 +150,9 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
         baseline_quantile: float | None = None,
         evaluate_on_local: bool = True,
     ) -> None:
-        assert 0.0 < target_quantile < region_quantile <= 1.0, "condition 0.0 < `target_quantile` < `region_quantile` <= 1.0 must be satisfied"
+        assert 0.0 < target_quantile < region_quantile <= 1.0, (
+            "condition 0.0 < `target_quantile` < `region_quantile` <= 1.0 must be satisfied"
+        )
         if baseline_quantile is not None:
             msg = _DEPRECATION_WARNING_TEMPLATE.format(
                 name="`baseline_quantile`", d_ver="4.7.0", r_ver="6.0.0"
