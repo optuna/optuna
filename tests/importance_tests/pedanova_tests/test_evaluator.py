@@ -88,7 +88,7 @@ def test_direction() -> None:
     assert evaluator.evaluate(study_minimize) != evaluator.evaluate(study_maximize)
 
 
-def test_baseline_quantile() -> None:
+def test_target_quantile() -> None:
     study = get_study(seed=0, n_trials=20, is_multi_obj=False)
     default_evaluator = PedAnovaImportanceEvaluator(target_quantile=0.1)
     evaluator = PedAnovaImportanceEvaluator(target_quantile=0.3)
