@@ -261,8 +261,8 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
         importance_sum = 0.0
         param_importances = {}
         for param_name, dist in non_single_dists.items():
-            param_importances[param_name] = quantile * self._compute_pearson_divergence(
-                param_name, dist, target_trials=target_trials, region_trials=region_trials
+            param_importances[param_name] = quantile**2 * self._compute_pearson_divergence(
+                param_name, dist, top_trials=top_trials, all_trials=trials
             )
             importance_sum += param_importances[param_name]
 
