@@ -195,9 +195,6 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
             quantile, is_lower_better, self._min_n_top_trials, target
         ).filter(trials)
 
-        if len(trials) == len(top_trials):
-            _logger.warning("All trials are in top trials, which gives equal importances.")
-
         return top_trials
 
     def _compute_pearson_divergence(
