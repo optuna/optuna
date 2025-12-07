@@ -12,11 +12,10 @@ import pytest
 
 if TYPE_CHECKING:
     import optuna
-    from optuna import distributions
-    from optuna import samplers
-    from optuna import storages
     from optuna.trial import Trial
-
+from optuna import distributions
+from optuna import samplers
+from optuna import storages
 from optuna import create_study
 from optuna import load_study
 from optuna.distributions import CategoricalDistribution
