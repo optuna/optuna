@@ -1287,6 +1287,7 @@ def test_wrong_n_objectives() -> None:
 
     def objective(trial: Trial) -> list[float]:
         return [trial.suggest_float(f"v{i}", 0, 5) for i in range(n_objectives + 1)]
+        
     study.optimize(objective, n_trials=NUM_MINIMAL_TRIALS)
 
     for trial in study.trials:
