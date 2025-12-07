@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import datetime
 import math
-from typing import Any
+from typing import Any, TYPE_CHECKING
 from unittest.mock import Mock
 from unittest.mock import patch
 import warnings
@@ -10,12 +10,14 @@ import warnings
 import numpy as np
 import pytest
 
+if TYPE_CHECKING:
+    from optuna import distributions
+    from optuna import samplers
+    from optuna import storages
+    from optuna.trial import Trial
 import optuna
 from optuna import create_study
-from optuna import distributions
 from optuna import load_study
-from optuna import samplers
-from optuna import storages
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
@@ -24,7 +26,6 @@ from optuna.testing.samplers import DeterministicSampler
 from optuna.testing.storages import STORAGE_MODES
 from optuna.testing.storages import StorageSupplier
 from optuna.testing.tempfile_pool import NamedTemporaryFilePool
-from optuna.trial import Trial
 from optuna.trial._trial import _LazyTrialSystemAttrs
 
 
@@ -467,7 +468,7 @@ def test_suggest_int_log_invalid_range(storage_mode: str) -> None:
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_distributions(storage_mode: str) -> None:
-    def objective(trial: Trial) -> float:
+    def objective(trial: "Trial") -> float:
         trial.suggest_float("a", 0, 10)
         trial.suggest_float("b", 0.1, 10, log=True)
         trial.suggest_float("c", 0, 10, step=1)
@@ -531,7 +532,7 @@ def test_relative_parameters(storage_mode: str) -> None:
     with StorageSupplier(storage_mode) as storage:
         study = create_study(storage=storage, sampler=sampler)
 
-        def create_trial() -> Trial:
+        def create_trial() -> "Trial":
             return study.ask()
 
         # Suggested by `sample_relative`.
@@ -572,7 +573,7 @@ def test_relative_parameters(storage_mode: str) -> None:
 def test_datetime_start(storage_mode: str) -> None:
     trial_datetime_start: list[datetime.datetime | None] = [None]
 
-    def objective(trial: Trial) -> float:
+    def objective(trial: "Trial") -> float:
         trial_datetime_start[0] = trial.datetime_start
         return 1.0
 
@@ -648,7 +649,7 @@ def test_report_warning() -> None:
 def test_suggest_with_multi_objectives() -> None:
     study = create_study(directions=["maximize", "maximize"])
 
-    def objective(trial: Trial) -> tuple[float, float]:
+    def objective(trial: "Trial") -> tuple[float, float]:
         p0 = trial.suggest_float("p0", -10, 10)
         p1 = trial.suggest_float("p1", 3, 5)
         p2 = trial.suggest_float("p2", 0.00001, 0.1, log=True)
@@ -665,7 +666,7 @@ def test_suggest_with_multi_objectives() -> None:
 def test_raise_error_for_report_with_multi_objectives() -> None:
     study = create_study(directions=["maximize", "maximize"])
 
-    def objective(trial: Trial) -> tuple[float, float]:
+    def objective(trial: "Trial") -> tuple[float, float]:
         with pytest.raises(NotImplementedError):
             trial.report(1.0, 0)
         return 1.0, 1.0
@@ -676,7 +677,7 @@ def test_raise_error_for_report_with_multi_objectives() -> None:
 def test_raise_error_for_should_prune_multi_objectives() -> None:
     study = create_study(directions=["maximize", "maximize"])
 
-    def objective(trial: Trial) -> tuple[float, float]:
+    def objective(trial: "Trial") -> tuple[float, float]:
         with pytest.raises(NotImplementedError):
             trial.should_prune()
         return 1.0, 1.0
