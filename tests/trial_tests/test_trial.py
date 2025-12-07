@@ -707,7 +707,7 @@ def test_persisted_param() -> None:
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_lazy_trial_system_attrs(storage_mode: str) -> None:
     with StorageSupplier(storage_mode) as storage:
-        study = optuna.create_study(storage=storage)
+        study = create_study(storage=storage)
         trial = study.ask()
         storage.set_trial_system_attr(trial._trial_id, "int", 0)
         storage.set_trial_system_attr(trial._trial_id, "str", "A")
@@ -740,7 +740,7 @@ def test_lazy_trial_system_attrs(storage_mode: str) -> None:
 @pytest.mark.parametrize("positional_args_names", [[], ["step"], ["step", "log"]])
 def test_suggest_int_positional_args(positional_args_names: list[str]) -> None:
     # If log is specified as positional, step must also be provided as positional.
-    study = optuna.create_study()
+    study = create_study()
     trial = study.ask()
     kwargs = dict(step=1, log=False)
     args = [kwargs[name] for name in positional_args_names]
