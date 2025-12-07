@@ -10,10 +10,6 @@ import warnings
 import numpy as np
 import pytest
 
-if TYPE_CHECKING:
-    import optuna
-    from optuna.trial import Trial
-
 from optuna import create_study
 from optuna import distributions
 from optuna import load_study
@@ -28,6 +24,10 @@ from optuna.testing.storages import STORAGE_MODES
 from optuna.testing.storages import StorageSupplier
 from optuna.testing.tempfile_pool import NamedTemporaryFilePool
 from optuna.trial._trial import _LazyTrialSystemAttrs
+
+if TYPE_CHECKING:
+    import optuna
+    from optuna.trial import Trial
 
 
 @pytest.mark.filterwarnings("ignore::FutureWarning")
