@@ -165,7 +165,7 @@ class HyperbandPruner(BasePruner):
 
         if self._bootstrap_count > 0 and self._max_resource == "auto":
             raise ValueError(
-                "bootstrap_count > 0 and max_resource == 'auto'"
+                "bootstrap_count > 0 and max_resource == 'auto' "
                 f"are mutually incompatible, bootstrap_count is {self._bootstrap_count}"
             )
 
