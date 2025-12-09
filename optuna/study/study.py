@@ -1,9 +1,9 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from collections.abc import Container
 from collections.abc import Iterable
 from collections.abc import Mapping
-from collections.abc import Callable
 from collections.abc import Sequence
 import copy
 from numbers import Real
