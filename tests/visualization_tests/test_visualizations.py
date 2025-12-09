@@ -38,30 +38,26 @@ if TYPE_CHECKING:
     from optuna.study.study import ObjectiveFuncType
 
 
-
-
-parametrize_visualization_functions_for_single_objective = (
-    pytest.mark.parametrize(
-        "plot_func",
-        [
-            plot_optimization_history,
-            plot_edf,
-            plot_contour,
-            plot_parallel_coordinate,
-            plot_rank,
-            plot_slice,
-            plot_timeline,
-            plot_param_importances,
-            matplotlib_plot_optimization_history,
-            matplotlib_plot_edf,
-            matplotlib_plot_contour,
-            matplotlib_plot_parallel_coordinate,
-            matplotlib_plot_rank,
-            matplotlib_plot_slice,
-            matplotlib_plot_timeline,
-            matplotlib_plot_param_importances,
-        ],
-    )
+parametrize_visualization_functions_for_single_objective = pytest.mark.parametrize(
+    "plot_func",
+    [
+        plot_optimization_history,
+        plot_edf,
+        plot_contour,
+        plot_parallel_coordinate,
+        plot_rank,
+        plot_slice,
+        plot_timeline,
+        plot_param_importances,
+        matplotlib_plot_optimization_history,
+        matplotlib_plot_edf,
+        matplotlib_plot_contour,
+        matplotlib_plot_parallel_coordinate,
+        matplotlib_plot_rank,
+        matplotlib_plot_slice,
+        matplotlib_plot_timeline,
+        matplotlib_plot_param_importances,
+    ],
 )
 
 
@@ -91,8 +87,7 @@ parametrize_single_objective_functions = pytest.mark.parametrize(
 @parametrize_visualization_functions_for_single_objective
 @parametrize_single_objective_functions
 def test_visualizations_with_single_objectives(
-    plot_func: Callable[[optuna.study.Study], go.Figure | Axes],
-    objective_func: ObjectiveFuncType
+    plot_func: Callable[[optuna.study.Study], go.Figure | Axes], objective_func: ObjectiveFuncType
 ) -> None:
     study = optuna.create_study(sampler=optuna.samplers.RandomSampler())
     study.optimize(objective_func, n_trials=20)
@@ -100,4 +95,3 @@ def test_visualizations_with_single_objectives(
     fig = plot_func(study)  # Must not raise an exception here.
     if isinstance(fig, Axes):
         plt.close()
-
