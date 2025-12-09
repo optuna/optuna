@@ -259,7 +259,11 @@ def ppf(q: np.ndarray, a: np.ndarray | float, b: np.ndarray | float) -> np.ndarr
     if (q_right := q[case_right]).size:
         out[case_right] = ppf_right(q_right, a[case_right], b[case_right], log_mass[case_right])
 
-    return np.select([a == b, q == 1, q == 0], [math.nan, b, a], default=out)
+    out[q == 0] = a[q == 0]
+    out[q == 1] = b[q == 1]
+    out[a == b] = math.nan
+
+    return out
 
 
 def rvs(
