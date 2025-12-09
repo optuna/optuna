@@ -1,8 +1,7 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
-
 
 from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 from matplotlib.axes._axes import Axes
 import matplotlib.pyplot as plt
@@ -10,11 +9,6 @@ import plotly.graph_objects as go
 import pytest
 
 import optuna
-
-if TYPE_CHECKING:
-    from optuna.study.study import ObjectiveFuncType
-    from optuna import Trial
-
 from optuna.visualization import plot_contour
 from optuna.visualization import plot_edf
 from optuna.visualization import plot_optimization_history
@@ -23,12 +17,8 @@ from optuna.visualization import plot_param_importances
 from optuna.visualization import plot_rank
 from optuna.visualization import plot_slice
 from optuna.visualization import plot_timeline
-from optuna.visualization.matplotlib import (
-    plot_contour as matplotlib_plot_contour
-)
-from optuna.visualization.matplotlib import (
-    plot_edf as matplotlib_plot_edf
-)
+from optuna.visualization.matplotlib import plot_contour as matplotlib_plot_contour
+from optuna.visualization.matplotlib import plot_edf as matplotlib_plot_edf
 from optuna.visualization.matplotlib import (
     plot_optimization_history as matplotlib_plot_optimization_history,
 )
@@ -38,15 +28,16 @@ from optuna.visualization.matplotlib import (
 from optuna.visualization.matplotlib import (
     plot_param_importances as matplotlib_plot_param_importances,
 )
-from optuna.visualization.matplotlib import (
-    plot_rank as matplotlib_plot_rank
-)
-from optuna.visualization.matplotlib import (
-    plot_slice as matplotlib_plot_slice
-)
-from optuna.visualization.matplotlib import (
-    plot_timeline as matplotlib_plot_timeline
-)
+from optuna.visualization.matplotlib import plot_rank as matplotlib_plot_rank
+from optuna.visualization.matplotlib import plot_slice as matplotlib_plot_slice
+from optuna.visualization.matplotlib import plot_timeline as matplotlib_plot_timeline
+
+
+if TYPE_CHECKING:
+    from optuna import Trial
+    from optuna.study.study import ObjectiveFuncType
+
+
 
 
 parametrize_visualization_functions_for_single_objective = (
@@ -109,3 +100,4 @@ def test_visualizations_with_single_objectives(
     fig = plot_func(study)  # Must not raise an exception here.
     if isinstance(fig, Axes):
         plt.close()
+
