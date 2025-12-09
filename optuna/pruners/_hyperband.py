@@ -159,7 +159,7 @@ class HyperbandPruner(BasePruner):
 
         if not isinstance(self._max_resource, int) and self._max_resource != "auto":
             raise ValueError(
-                "The 'max_resource' should be integer or 'auto'."
+                "The 'max_resource' should be integer or 'auto'. "
                 f"But max_resource = {self._max_resource}"
             )
 
