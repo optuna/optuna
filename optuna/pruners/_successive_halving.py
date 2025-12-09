@@ -121,39 +121,37 @@ class SuccessiveHalvingPruner(BasePruner):
     ) -> None:
         if isinstance(min_resource, str) and min_resource != "auto":
             raise ValueError(
-                "The value of `min_resource` is {}, "
-                "but must be either `min_resource` >= 1 or 'auto'".format(min_resource)
+                f"The value of `min_resource` is {min_resource}, "
+                "but must be either `min_resource` >= 1 or 'auto'"
             )
 
         if isinstance(min_resource, int) and min_resource < 1:
             raise ValueError(
-                "The value of `min_resource` is {}, "
-                "but must be either `min_resource >= 1` or 'auto'".format(min_resource)
+                f"The value of `min_resource` is {min_resource}, "
+                "but must be either `min_resource >= 1` or 'auto'"
             )
 
         if reduction_factor < 2:
             raise ValueError(
-                "The value of `reduction_factor` is {}, "
-                "but must be `reduction_factor >= 2`".format(reduction_factor)
+                f"The value of `reduction_factor` is {reduction_factor}, "
+                "but must be `reduction_factor >= 2`"
             )
 
         if min_early_stopping_rate < 0:
             raise ValueError(
-                "The value of `min_early_stopping_rate` is {}, "
-                "but must be `min_early_stopping_rate >= 0`".format(min_early_stopping_rate)
+                f"The value of `min_early_stopping_rate` is {min_early_stopping_rate}, "
+                "but must be `min_early_stopping_rate >= 0`"
             )
 
         if bootstrap_count < 0:
             raise ValueError(
-                "The value of `bootstrap_count` is {}, but must be `bootstrap_count >= 0`".format(
-                    bootstrap_count
-                )
+                f"The value of `bootstrap_count` is {bootstrap_count}, but must be `bootstrap_count >= 0`"
             )
 
         if bootstrap_count > 0 and min_resource == "auto":
             raise ValueError(
                 "bootstrap_count > 0 and min_resource == 'auto' "
-                "are mutually incompatible, bootstrap_count is {}".format(bootstrap_count)
+                f"are mutually incompatible, bootstrap_count is {bootstrap_count}"
             )
 
         self._min_resource: int | None = None
@@ -237,7 +235,7 @@ def _get_current_rung(trial: "optuna.trial.FrozenTrial") -> int:
 
 
 def _completed_rung_key(rung: int) -> str:
-    return "completed_rung_{}".format(rung)
+    return f"completed_rung_{rung}"
 
 
 def _get_competing_values(
