@@ -6,7 +6,6 @@ import itertools
 from numbers import Real
 from typing import Any
 from typing import TYPE_CHECKING
-from typing import Union
 
 import numpy as np
 
@@ -23,7 +22,7 @@ if TYPE_CHECKING:
     from optuna.study import Study
 
 
-GridValueType = Union[str, float, int, bool, None]
+GridValueType = str | float | int | bool | None
 
 
 _logger = get_logger(__name__)
