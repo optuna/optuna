@@ -6,7 +6,6 @@ import datetime
 import math
 from typing import Any
 from typing import cast
-from typing import Dict
 from typing import overload
 
 from optuna import distributions
@@ -450,7 +449,7 @@ class FrozenTrial(BaseTrial):
 
     @system_attrs.setter
     def system_attrs(self, value: Mapping[str, JSONSerializable]) -> None:
-        self._system_attrs = cast(Dict[str, Any], value)
+        self._system_attrs = cast(dict[str, Any], value)
 
     @property
     def last_step(self) -> int | None:
