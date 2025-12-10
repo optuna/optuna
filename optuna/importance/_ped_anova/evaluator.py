@@ -258,13 +258,11 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
             else self._get_top_quantile_trials(study, trials, self._region_quantile, target)
         )
         quantile = len(target_trials) / len(region_trials)
-        importance_sum = 0.0
         param_importances = {}
         for param_name, dist in non_single_dists.items():
             param_importances[param_name] = quantile**2 * self._compute_pearson_divergence(
                 param_name, dist, top_trials=top_trials, all_trials=region_trials
             )
-            importance_sum += param_importances[param_name]
 
         param_importances.update({k: 0.0 for k in single_dists})
         return _sort_dict_by_importance(param_importances)
