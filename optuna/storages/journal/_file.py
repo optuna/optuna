@@ -159,6 +159,13 @@ class JournalFileSymlinkLock(BaseJournalFileLock):
                 return True
             except OSError as err:
                 if err.errno == errno.EEXIST:
+                    if time.monotonic() - last_warning_time > warning_interval:
+                        optuna_warn(
+                            f"It is taking longer than {warning_interval} seconds to acquire "
+                            f"the lock file: {self._lock_file} Retrying..."
+                        )
+                        last_warning_time = time.monotonic()
+
                     if self.grace_period is not None:
                         try:
                             current_mtime = os.stat(self._lock_file).st_mtime
@@ -179,13 +186,6 @@ class JournalFileSymlinkLock(BaseJournalFileLock):
                                 sleep_secs = 0.001
                             except RuntimeError:
                                 continue
-
-                    if time.monotonic() - last_warning_time > warning_interval:
-                        optuna_warn(
-                            f"It is taking longer than {warning_interval} seconds to acquire "
-                            f"the lock file: {self._lock_file} Retrying..."
-                        )
-                        last_warning_time = time.monotonic()
 
                     time.sleep(sleep_secs)
                     sleep_secs = min(sleep_secs * 2, 1)
@@ -252,6 +252,13 @@ class JournalFileOpenLock(BaseJournalFileLock):
                 return True
             except OSError as err:
                 if err.errno == errno.EEXIST:
+                    if time.monotonic() - last_warning_time > warning_interval:
+                        optuna_warn(
+                            f"It is taking longer than {warning_interval} seconds to acquire "
+                            f"the lock file: {self._lock_file} Retrying..."
+                        )
+                        last_warning_time = time.monotonic()
+
                     if self.grace_period is not None:
                         try:
                             current_mtime = os.stat(self._lock_file).st_mtime
@@ -272,13 +279,6 @@ class JournalFileOpenLock(BaseJournalFileLock):
                                 sleep_secs = 0.001
                             except RuntimeError:
                                 continue
-
-                    if time.monotonic() - last_warning_time > warning_interval:
-                        optuna_warn(
-                            f"It is taking longer than {warning_interval} seconds to acquire "
-                            f"the lock file: {self._lock_file} Retrying..."
-                        )
-                        last_warning_time = time.monotonic()
 
                     time.sleep(sleep_secs)
                     sleep_secs = min(sleep_secs * 2, 1)
