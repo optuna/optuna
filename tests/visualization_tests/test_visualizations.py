@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 from matplotlib.axes._axes import Axes
 import matplotlib.pyplot as plt
@@ -8,7 +9,6 @@ import plotly.graph_objects as go
 import pytest
 
 import optuna
-from optuna.study.study import ObjectiveFuncType
 from optuna.visualization import plot_contour
 from optuna.visualization import plot_edf
 from optuna.visualization import plot_optimization_history
@@ -31,6 +31,11 @@ from optuna.visualization.matplotlib import (
 from optuna.visualization.matplotlib import plot_rank as matplotlib_plot_rank
 from optuna.visualization.matplotlib import plot_slice as matplotlib_plot_slice
 from optuna.visualization.matplotlib import plot_timeline as matplotlib_plot_timeline
+
+
+if TYPE_CHECKING:
+    from optuna import Trial
+    from optuna.study.study import ObjectiveFuncType
 
 
 parametrize_visualization_functions_for_single_objective = pytest.mark.parametrize(
@@ -56,7 +61,7 @@ parametrize_visualization_functions_for_single_objective = pytest.mark.parametri
 )
 
 
-def objective_single_dynamic_with_categorical(trial: optuna.Trial) -> float:
+def objective_single_dynamic_with_categorical(trial: Trial) -> float:
     category = trial.suggest_categorical("category", ["foo", "bar"])
     if category == "foo":
         return (trial.suggest_float("x1", 0, 10) - 2) ** 2
@@ -64,7 +69,7 @@ def objective_single_dynamic_with_categorical(trial: optuna.Trial) -> float:
         return -((trial.suggest_float("x2", -10, 0) + 5) ** 2)
 
 
-def objective_single_none_categorical(trial: optuna.Trial) -> float:
+def objective_single_none_categorical(trial: Trial) -> float:
     x = trial.suggest_float("x", -100, 100)
     trial.suggest_categorical("y", ["foo", None])
     return x**2
