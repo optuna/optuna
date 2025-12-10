@@ -386,11 +386,9 @@ Here's an example:
         if previous_best_value != study.best_value:
             study.set_user_attr("previous_best_value", study.best_value)
             print(
-                "Trial {} finished with best value: {} and parameters: {}. ".format(
-                frozen_trial.number,
-                frozen_trial.value,
-                frozen_trial.params,
-                )
+                f"Trial {frozen_trial.number} finished with best value: "
+                f"{frozen_trial.value} and parameters: {frozen_trial.params}. "
+                
             )
 
 
