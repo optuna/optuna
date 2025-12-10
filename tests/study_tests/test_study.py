@@ -10,7 +10,6 @@ import pickle
 import threading
 import time
 from typing import Any
-from typing import Callable as TypingCallable
 from unittest.mock import MagicMock
 from unittest.mock import Mock
 from unittest.mock import patch
@@ -45,7 +44,7 @@ from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
 
-CallbackFuncType = TypingCallable[[Study, FrozenTrial], None]
+CallbackFuncType = Callable[[Study, FrozenTrial], None]
 
 NUM_MINIMAL_TRIALS = 2
 MINIMUM_TIMEOUT_SEC = 0.01
@@ -1202,7 +1201,7 @@ def test_optimize_with_multi_objectives(n_objectives: int) -> None:
     study = create_study(directions=directions)
 
     def objective(trial: Trial) -> list[float]:
-        return [trial.suggest_float("v{}".format(i), 0, 5) for i in range(n_objectives)]
+        return [trial.suggest_float(f"v{i}", 0, 5) for i in range(n_objectives)]
 
     study.optimize(objective, n_trials=NUM_MINIMAL_TRIALS)
 
@@ -1286,7 +1285,7 @@ def test_wrong_n_objectives() -> None:
     study = create_study(directions=directions)
 
     def objective(trial: Trial) -> list[float]:
-        return [trial.suggest_float("v{}".format(i), 0, 5) for i in range(n_objectives + 1)]
+        return [trial.suggest_float(f"v{i}", 0, 5) for i in range(n_objectives + 1)]
 
     study.optimize(objective, n_trials=NUM_MINIMAL_TRIALS)
 

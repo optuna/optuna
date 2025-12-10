@@ -6,25 +6,12 @@ default_language_version:
   python: python3
 
 repos:
-  # Args are based on setup.cfg.
-  - repo: https://github.com/psf/black
-    rev: 25.1.0
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.14.4
     hooks:
-      - id: black
-  - repo: https://github.com/pycqa/flake8
-    rev: 7.2.0
-    hooks:
-      - id: flake8
-        exclude: tutorial|docs/visualization_examples|docs/visualization_matplotlib_examples|optuna/storages/_grpc/auto_generated
-        args: [
-            "--max-line-length=99",
-            "--ignore=E203,E704,W503",
-            "--statistics",
-        ]
-  - repo: https://github.com/pycqa/isort
-    rev: 6.0.1
-    hooks:
-      - id: isort
+      - id: ruff-check
+        args: [ --fix ]
+      - id: ruff-format
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.16.0
     hooks:

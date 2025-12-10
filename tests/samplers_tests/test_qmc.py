@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections.abc import Callable
 from typing import Any
 from unittest.mock import Mock
 from unittest.mock import patch
@@ -97,7 +96,9 @@ def test_infer_initial_search_space() -> None:
 
 
 def test_sample_independent() -> None:
-    objective: Callable[[Trial], float] = lambda t: t.suggest_categorical("x", [1.0, 2.0])
+    def objective(t: Trial) -> float:
+        return t.suggest_categorical("x", [1.0, 2.0])
+
     independent_sampler = optuna.samplers.RandomSampler()
 
     with patch.object(
@@ -114,7 +115,9 @@ def test_sample_independent() -> None:
         assert mock_sample_indep.call_count == 2
 
         # Unseen parameter is sampled by independent sampler.
-        new_objective: Callable[[Trial], int] = lambda t: t.suggest_int("y", 0, 10)
+        def new_objective(t: Trial) -> int:
+            return t.suggest_int("y", 0, 10)
+
         study.optimize(new_objective, n_trials=1)
         assert mock_sample_indep.call_count == 3
 
@@ -123,7 +126,8 @@ def test_warn_asynchronous_seeding() -> None:
     # Relative sampling of `QMCSampler` does not support categorical distribution.
     # Thus, `independent_sampler.sample_independent` is called twice.
     # '_log_independent_sampling is not called in the first trial so called once in total.
-    objective: Callable[[Trial], float] = lambda t: t.suggest_categorical("x", [1.0, 2.0])
+    def objective(t: Trial) -> float:
+        return t.suggest_categorical("x", [1.0, 2.0])
 
     with patch.object(optuna.samplers.QMCSampler, "_log_asynchronous_seeding") as mock_log_async:
         sampler = _init_QMCSampler_without_exp_warning(
@@ -145,7 +149,8 @@ def test_warn_independent_sampling() -> None:
     # Relative sampling of `QMCSampler` does not support categorical distribution.
     # Thus, `independent_sampler.sample_independent` is called twice.
     # '_log_independent_sampling is not called in the first trial so called once in total.
-    objective: Callable[[Trial], float] = lambda t: t.suggest_categorical("x", [1.0, 2.0])
+    def objective(t: Trial) -> float:
+        return t.suggest_categorical("x", [1.0, 2.0])
 
     with patch.object(optuna.samplers.QMCSampler, "_log_independent_sampling") as mock_log_indep:
         sampler = _init_QMCSampler_without_exp_warning(warn_independent_sampling=False)
@@ -249,7 +254,8 @@ def test_sample_relative_sobol() -> None:
 @pytest.mark.parametrize("qmc_type", ["sobol", "halton"])
 @pytest.mark.parametrize("seed", [0, 12345])
 def test_sample_relative_seeding(scramble: bool, qmc_type: str, seed: int) -> None:
-    objective: Callable[[Trial], float] = lambda t: t.suggest_float("x", 0, 1)
+    def objective(t: Trial) -> float:
+        return t.suggest_float("x", 0, 1)
 
     # Base case.
     sampler = _init_QMCSampler_without_exp_warning(scramble=scramble, qmc_type=qmc_type, seed=seed)

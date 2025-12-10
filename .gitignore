@@ -107,6 +107,9 @@ ENV/
 .vscode
 .devcontainer
 
+# ruff
+.ruff_cache
+
 # MyPy
 .mypy_cache
 

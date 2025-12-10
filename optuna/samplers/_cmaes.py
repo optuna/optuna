@@ -311,8 +311,7 @@ class CmaEsSampler(BaseSampler):
 
         if source_trials is not None and (x0 is not None or sigma0 is not None):
             raise ValueError(
-                "It is prohibited to pass `source_trials` argument when "
-                "x0 or sigma0 is specified."
+                "It is prohibited to pass `source_trials` argument when x0 or sigma0 is specified."
             )
 
         # TODO(c-bata): Support WS-sep-CMA-ES.

@@ -15,6 +15,8 @@ from optuna.samplers._base import _CONSTRAINTS_KEY
 from optuna.samplers._nsgaiii._elite_population_selection_strategy import (
     _associate_individuals_with_reference_points,
 )
+from optuna.samplers._nsgaiii._elite_population_selection_strategy import _COEF
+from optuna.samplers._nsgaiii._elite_population_selection_strategy import _filter_inf
 from optuna.samplers._nsgaiii._elite_population_selection_strategy import (
     _generate_default_reference_point,
 )
@@ -24,8 +26,6 @@ from optuna.samplers._nsgaiii._elite_population_selection_strategy import (
 from optuna.samplers._nsgaiii._elite_population_selection_strategy import (
     _preserve_niche_individuals,
 )
-from optuna.samplers._nsgaiii._elite_population_selection_strategy import _COEF
-from optuna.samplers._nsgaiii._elite_population_selection_strategy import _filter_inf
 from optuna.samplers._nsgaiii._sampler import NSGAIIISampler
 from optuna.samplers.nsgaii import BaseCrossover
 from optuna.samplers.nsgaii import BLXAlphaCrossover

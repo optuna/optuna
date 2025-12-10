@@ -386,9 +386,7 @@ Here's an example:
         if previous_best_value != study.best_value:
             study.set_user_attr("previous_best_value", study.best_value)
             print(
-                f"Trial {frozen_trial.number} finished with best value: "
-                f"{frozen_trial.value} and parameters: {frozen_trial.params}. "
-                
+                f"Trial {frozen_trial.number} finished with best value: {frozen_trial.value} and parameters: {frozen_trial.params}. "
             )
 
 
@@ -501,13 +499,11 @@ The following example is a benchmark of Binh and Korn function, a multi-objectiv
     trials = sorted(study.best_trials, key=lambda t: t.values)
 
     for trial in trials:
-        print("  Trial#{}".format(trial.number))
+        print(f"  Trial#{trial.number}")
         print(
-            "    Values: Values={}, Constraint={}".format(
-                trial.values, trial.user_attrs["constraint"][0]
-            )
+            f"    Values: Values={trial.values}, Constraint={trial.user_attrs['constraint'][0]}"
         )
-        print("    Params: {}".format(trial.params))
+        print(f"    Params: {trial.params}")
 
 If you are interested in an example for `BoTorchSampler <https://optuna-integration.readthedocs.io/en/stable/reference/generated/optuna_integration.BoTorchSampler.html>`__, please refer to `this sample code <https://github.com/optuna/optuna-examples/blob/main/multi_objective/botorch_simple.py>`__.
 

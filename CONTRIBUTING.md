@@ -63,22 +63,18 @@ pip install -e .
 
 ### Checking the Format, Coding Style, and Type Hints
 
-Code is formatted with [black](https://github.com/psf/black),
-and docstrings are formatted with [blackdoc](https://github.com/keewis/blackdoc).
-Coding style is checked with [flake8](http://flake8.pycqa.org) and [isort](https://pycqa.github.io/isort/),
-and additional conventions are described in the [Wiki](https://github.com/optuna/optuna/wiki/Coding-Style-Conventions).
+Code is formatted with [ruff](https://docs.astral.sh/ruff/) and additional conventions are described in the [Wiki](https://github.com/optuna/optuna/wiki/Coding-Style-Conventions).
 Type hints, [PEP484](https://www.python.org/dev/peps/pep-0484/), are checked with [mypy](http://mypy-lang.org/).
 
-You can check the format, coding style, and type hints at the same time just by executing a script `formats.sh`.
-If your environment is missing some dependencies such as black, blackdoc, flake8, isort or mypy,
-you will be asked to install them.
-The following commands automatically fix format errors by auto-formatters.
+You can check the format, coding style, and type hints by running the following commands:
 
 ```bash
 # Install auto-formatters.
-$ pip install ".[checking]"
+pip install ".[checking]"
 
-$ ./formats.sh
+ruff check . --fix
+ruff format .
+mypy .
 ```
 
 You can use `pre-commit` to automatically check the format, coding style, and type hints before committing.
@@ -86,10 +82,10 @@ The following commands automatically fix format errors by auto-formatters.
 
 ```bash
 # Install `pre-commit`.
-$ pip install pre-commit
+pip install pre-commit
 
-$ pre-commit install
-$ pre-commit run --all-files
+pre-commit install
+pre-commit run --all-files
 ```
 
 ### Documentation
