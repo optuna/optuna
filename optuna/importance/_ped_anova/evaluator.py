@@ -243,13 +243,10 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
             return {}
 
         trials = _get_filtered_trials(study, params=params, target=target)
-        n_params = len(non_single_dists)
         # The following should be tested at _get_filtered_trials.
         assert target is not None or max([len(t.values) for t in trials], default=1) == 1
         if len(trials) <= self._min_n_top_trials:
-            param_importances = {k: 1.0 / n_params for k in non_single_dists}
-            param_importances.update({k: 0.0 for k in single_dists})
-            return {k: 0.0 for k in param_importances}
+            return {k: 0.0 for k in dists}
 
         target_trials = self._get_top_quantile_trials(study, trials, self._target_quantile, target)
         region_trials = (
