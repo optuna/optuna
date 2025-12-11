@@ -19,6 +19,8 @@ def _check_value(value: Any) -> float:
         )
         raise TypeError(message) from None
 
+    return value
+
 
 class ThresholdPruner(BasePruner):
     """Pruner to detect outlying metrics of the trials.
