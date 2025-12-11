@@ -8,11 +8,11 @@ import numpy as np
 
 import optuna
 from optuna.study._constrained_optimization import _get_feasible_trials
+from optuna.study._study_direction import StudyDirection
 from optuna.trial import TrialState
 
 
 if TYPE_CHECKING:
-    from optuna.study._study_direction import StudyDirection
     from optuna.trial import FrozenTrial
 
 
