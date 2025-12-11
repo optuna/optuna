@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from typing import TYPE_CHECKING
 
-from optuna.trial import FrozenTrial
+
+if TYPE_CHECKING:
+    from optuna.trial import FrozenTrial
 
 
 _CONSTRAINTS_KEY = "constraints"
