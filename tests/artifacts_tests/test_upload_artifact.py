@@ -104,7 +104,6 @@ def test_upload_artifact_with_mimetype(
 def test_upload_artifact_with_positional_args(
     tmp_path: pathlib.PurePath, artifact_store: ArtifactStore
 ) -> None:
-
     storage = optuna.storages.InMemoryStorage()
     study = optuna.create_study(storage=storage)
     trial = study.ask()
@@ -125,11 +124,15 @@ def test_upload_artifact_with_positional_args(
     _validate(artifact_id=artifact_id)
     with pytest.warns(FutureWarning):
         artifact_id = upload_artifact(
-            trial, file_path, artifact_store=artifact_store  # type: ignore
+            trial,  # type: ignore
+            file_path,
+            artifact_store=artifact_store,
         )
     _validate(artifact_id=artifact_id)
     with pytest.warns(FutureWarning):
         artifact_id = upload_artifact(
-            trial, file_path=file_path, artifact_store=artifact_store  # type: ignore
+            trial,  # type: ignore
+            file_path=file_path,
+            artifact_store=artifact_store,
         )
     _validate(artifact_id=artifact_id)
