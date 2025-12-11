@@ -8,7 +8,6 @@ from logging import FATAL
 from logging import INFO
 from logging import WARN
 from logging import WARNING
-import os
 import sys
 import threading
 
@@ -36,23 +35,10 @@ def create_default_formatter() -> logging.Formatter:
     """
     header = "[%(levelname)1.1s %(asctime)s]"
     message = "%(message)s"
-    if _color_supported():
-        return colorlog.ColoredFormatter(
-            f"%(log_color)s{header}%(reset)s {message}",
-        )
-    return logging.Formatter(f"{header} {message}")
-
-
-def _color_supported() -> bool:
-    """Detection of color support."""
-    # NO_COLOR environment variable:
-    if os.environ.get("NO_COLOR", None):
-        return False
-
-    if not hasattr(sys.stderr, "isatty") or not sys.stderr.isatty():
-        return False
-    else:
-        return True
+    return colorlog.TTYColoredFormatter(
+        f"%(log_color)s{header}%(reset)s {message}",
+        stream=sys.stderr,
+    )
 
 
 def _get_library_name() -> str:
