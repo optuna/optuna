@@ -13,10 +13,11 @@ def _check_value(value: Any) -> float:
         # For convenience, we allow users to report a value that can be cast to `float`.
         value = float(value)
     except (TypeError, ValueError):
-        message = f"The `value` argument is of type '{type(value).__name__}' but supposed to be a float."
+        message = (
+            f"The `value` argument is of type '{type(value).__name__}' "
+            "but supposed to be a float."
+        )
         raise TypeError(message) from None
-
-    return value
 
 
 class ThresholdPruner(BasePruner):
