@@ -14,8 +14,7 @@ def _check_value(value: Any) -> float:
         value = float(value)
     except (TypeError, ValueError):
         message = (
-            f"The `value` argument is of type '{type(value).__name__}' "
-            "but supposed to be a float."
+            f"The `value` argument is of type '{type(value).__name__}' but supposed to be a float."
         )
         raise TypeError(message) from None
 
