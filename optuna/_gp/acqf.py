@@ -311,5 +311,5 @@ class ConstrainedLogEHVI(BaseAcquisitionFunc):
     def eval_acqf(self, x: torch.Tensor) -> torch.Tensor:
         constraints_acqf_values = sum(acqf.eval_acqf(x) for acqf in self._constraints_acqf_list)
         if self._acqf is None:
-            return cast(torch.Tensor, constraints_acqf_values)
+            return cast("torch.Tensor", constraints_acqf_values)
         return constraints_acqf_values + self._acqf.eval_acqf(x)

@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import numpy as np
+from typing import TYPE_CHECKING
 
-from optuna._gp import acqf as acqf_module
+if TYPE_CHECKING:
+    from optuna._gp.acqf import BaseAcquisitionFunc
 
 
 def optimize_acqf_sample(
-    acqf: acqf_module.BaseAcquisitionFunc,
+    acqf: "BaseAcquisitionFunc",
     *,
     n_samples: int = 2048,
     rng: np.random.RandomState | None = None,
