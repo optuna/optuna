@@ -149,7 +149,9 @@ class JournalFileSymlinkLock(BaseJournalFileLock):
             :obj:`True` if it succeeded in creating a symbolic link of ``self._lock_target_file``.
         """
         sleep_secs = 0.001
+        warning_interval = 10.0
         last_update_monotonic_time = time.monotonic()
+        last_warning_time = time.monotonic()
         mtime = None
         while True:
             try:
@@ -157,6 +159,13 @@ class JournalFileSymlinkLock(BaseJournalFileLock):
                 return True
             except OSError as err:
                 if err.errno == errno.EEXIST:
+                    if time.monotonic() - last_warning_time > warning_interval:
+                        optuna_warn(
+                            f"It is taking longer than {warning_interval} seconds to acquire "
+                            f"the lock file: {self._lock_file} Retrying..."
+                        )
+                        last_warning_time = time.monotonic()
+
                     if self.grace_period is not None:
                         try:
                             current_mtime = os.stat(self._lock_file).st_mtime
@@ -171,6 +180,7 @@ class JournalFileSymlinkLock(BaseJournalFileLock):
                                 "The existing lock file has not been released "
                                 "for an extended period. Forcibly releasing the lock file."
                             )
+                            last_warning_time = time.monotonic()
                             try:
                                 self.release()
                                 sleep_secs = 0.001
@@ -231,7 +241,9 @@ class JournalFileOpenLock(BaseJournalFileLock):
 
         """
         sleep_secs = 0.001
+        warning_interval = 10.0
         last_update_monotonic_time = time.monotonic()
+        last_warning_time = time.monotonic()
         mtime = None
         while True:
             try:
@@ -240,6 +252,13 @@ class JournalFileOpenLock(BaseJournalFileLock):
                 return True
             except OSError as err:
                 if err.errno == errno.EEXIST:
+                    if time.monotonic() - last_warning_time > warning_interval:
+                        optuna_warn(
+                            f"It is taking longer than {warning_interval} seconds to acquire "
+                            f"the lock file: {self._lock_file} Retrying..."
+                        )
+                        last_warning_time = time.monotonic()
+
                     if self.grace_period is not None:
                         try:
                             current_mtime = os.stat(self._lock_file).st_mtime
@@ -254,6 +273,7 @@ class JournalFileOpenLock(BaseJournalFileLock):
                                 "The existing lock file has not been released "
                                 "for an extended period. Forcibly releasing the lock file."
                             )
+                            last_warning_time = time.monotonic()
                             try:
                                 self.release()
                                 sleep_secs = 0.001
