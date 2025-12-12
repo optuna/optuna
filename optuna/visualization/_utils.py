@@ -123,7 +123,7 @@ def _get_skipped_trial_numbers(
     skipped_trial_numbers = set()
     for trial in trials:
         for used_param in used_param_names:
-            if used_param not in trial.params.keys():
+            if used_param not in trial.params and used_param not in trial.user_attrs:
                 skipped_trial_numbers.add(trial.number)
                 break
     return skipped_trial_numbers
