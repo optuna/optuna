@@ -15,6 +15,7 @@ if TYPE_CHECKING:
 
 _logger = get_logger(__name__)
 
+
 @experimental_class("3.2.0")
 class TerminatorCallback:
     """A callback that terminates the optimization using Terminator.
