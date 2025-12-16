@@ -1,15 +1,19 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from optuna._experimental import experimental_class
 from optuna.logging import get_logger
-from optuna.study.study import Study
-from optuna.terminator.terminator import BaseTerminator
 from optuna.terminator.terminator import Terminator
-from optuna.trial import FrozenTrial
+
+
+if TYPE_CHECKING:
+    from optuna.study.study import Study
+    from optuna.terminator.terminator import BaseTerminator
+    from optuna.trial import FrozenTrial
 
 
 _logger = get_logger(__name__)
-
 
 @experimental_class("3.2.0")
 class TerminatorCallback:
