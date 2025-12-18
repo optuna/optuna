@@ -13,13 +13,10 @@ from optuna.importance._base import _get_filtered_trials
 from optuna.importance._base import _sort_dict_by_importance
 from optuna.importance._base import BaseImportanceEvaluator
 from optuna.importance._ped_anova.scott_parzen_estimator import _build_parzen_estimator
-from optuna.logging import get_logger
 from optuna.study import Study
 from optuna.study import StudyDirection
 from optuna.trial import FrozenTrial
 
-
-_logger = get_logger(__name__)
 
 
 class _QuantileFilter:
@@ -255,7 +252,7 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
             else self._get_top_quantile_trials(study, trials, self._region_quantile, target)
         )
         if len(target_trials) == len(region_trials):
-            _logger.warning(
+            optuna_warn(
                 "Target and region quantiles select the same set of trials. "
                 "Parameter importances will be equal."
             )
