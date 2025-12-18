@@ -64,7 +64,7 @@ def test_check_plot_args() -> None:
         _check_plot_args(study, None, "Objective Value")
 
     with pytest.warns(UserWarning):
-        _check_plot_args(study, lambda t: cast(float, t.value), "Objective Value")
+        _check_plot_args(study, lambda t: cast("float", t.value), "Objective Value")
 
 
 @pytest.mark.parametrize("value, expected", [(float("inf"), 1), (-float("inf"), 1), (0.0, 2)])
