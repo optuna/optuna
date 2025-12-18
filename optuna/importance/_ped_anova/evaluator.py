@@ -106,7 +106,7 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
 
             .. warning::
                 Deprecated in v4.7.0. This feature will be removed in the future. The removal of
-                this feature is currently scheduled for v0.6.0, but this schedule is subject to
+                this feature is currently scheduled for v5.0.0, but this schedule is subject to
                 change. `baseline_quantile` is currently ignored. Use `target_quantile` instead.
                 See https://github.com/optuna/optuna/releases/tag/v4.7.0.
 
@@ -152,7 +152,7 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
         )
         if baseline_quantile is not None:
             msg = _DEPRECATION_WARNING_TEMPLATE.format(
-                name="`baseline_quantile`", d_ver="4.7.0", r_ver="6.0.0"
+                name="`baseline_quantile`", d_ver="4.7.0", r_ver="5.0.0"
             )
             optuna_warn(
                 f"{msg} `baseline_quantile` is currently ignored. Use `target_quantile` instead.",
