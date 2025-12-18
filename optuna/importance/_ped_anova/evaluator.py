@@ -254,6 +254,11 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
             if self._region_quantile == 1.0
             else self._get_top_quantile_trials(study, trials, self._region_quantile, target)
         )
+        if len(target_trials) == len(region_trials):
+            _logger.warning(
+                "Target and region quantiles select the same set of trials. "
+                "Parameter importances will be equal."
+            )
         quantile = len(target_trials) / len(region_trials)
         param_importances = {}
         for param_name, dist in non_single_dists.items():
