@@ -18,7 +18,6 @@ from optuna.study import StudyDirection
 from optuna.trial import FrozenTrial
 
 
-
 class _QuantileFilter:
     def __init__(
         self,
