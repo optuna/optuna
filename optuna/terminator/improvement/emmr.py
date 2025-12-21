@@ -5,7 +5,7 @@ import sys
 from typing import cast
 from typing import TYPE_CHECKING
 
-import numpy as npgit 
+import numpy as np
 
 from optuna._experimental import experimental_class
 from optuna._warnings import optuna_warn
