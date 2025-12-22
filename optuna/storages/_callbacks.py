@@ -14,6 +14,9 @@ class RetryFailedTrialCallback:
 
     When a trial fails, this callback can be used with a class in :mod:`optuna.storages` to
     recreate the trial in ``TrialState.WAITING`` to queue up the trial to be run again.
+    Note that the optimization loop must continue running after a failure for retries to
+    occur; therefore, exceptions must be caught in
+    :func:`~optuna.study.Study.optimize` (e.g., via the ``catch`` argument).
 
     The failed trial can be identified by the
     :func:`~optuna.storages.RetryFailedTrialCallback.retried_trial_number` function.
