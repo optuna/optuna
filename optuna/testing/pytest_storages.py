@@ -744,8 +744,7 @@ class StorageTestCase:
         for state in states:
             t = _generate_trial(generator)
             t.state = state
-            if t.state == TrialState.COMPLETE:
-                t.values = [0.0]
+            t.values = [0.0] if t.state == TrialState.COMPLETE else None
             storage.create_new_trial(study_id, template_trial=t)
 
         trials = storage.get_all_trials(study_id, states=None)
@@ -817,8 +816,7 @@ class StorageTestCase:
         for s in states:
             t = _generate_trial(generator)
             t.state = s
-            if t.state == TrialState.COMPLETE:
-                t.values = [0.0]
+            t.values = [0.0] if t.state == TrialState.COMPLETE else None
             storage.create_new_trial(study_id, template_trial=t)
 
         assert storage.get_n_trials(study_id, TrialState.COMPLETE) == 2
