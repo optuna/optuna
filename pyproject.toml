@@ -151,7 +151,7 @@ select = [
 ]
 
 [tool.ruff.lint.isort]
-known-first-party = ["optuna", "tests", "docs", "benchmarks"]
+known-first-party = ["optuna", "tests", "docs"]
 lines-after-imports = 2
 force-single-line = true
 force-sort-within-sections = true
