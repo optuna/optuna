@@ -42,10 +42,6 @@ dependencies = [
 dynamic = ["version"]
 
 [project.optional-dependencies]
-benchmark = [
-  "cma",
-  "virtualenv"
-]
 checking = [
   "mypy",
   "mypy_boto3_s3",
