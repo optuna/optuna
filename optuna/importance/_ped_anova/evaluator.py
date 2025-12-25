@@ -4,6 +4,7 @@ from collections.abc import Callable
 
 import numpy as np
 
+from optuna._deprecated import _DEPRECATION_WARNING_TEMPLATE
 from optuna._experimental import experimental_class
 from optuna._warnings import optuna_warn
 from optuna.distributions import BaseDistribution
@@ -12,13 +13,9 @@ from optuna.importance._base import _get_filtered_trials
 from optuna.importance._base import _sort_dict_by_importance
 from optuna.importance._base import BaseImportanceEvaluator
 from optuna.importance._ped_anova.scott_parzen_estimator import _build_parzen_estimator
-from optuna.logging import get_logger
 from optuna.study import Study
 from optuna.study import StudyDirection
 from optuna.trial import FrozenTrial
-
-
-_logger = get_logger(__name__)
 
 
 class _QuantileFilter:
@@ -28,8 +25,8 @@ class _QuantileFilter:
         is_lower_better: bool,
         min_n_top_trials: int,
         target: Callable[[FrozenTrial], float] | None,
-    ):
-        assert 0 <= quantile <= 1, "quantile must be in [0, 1]."
+    ) -> None:
+        assert 0 < quantile <= 1, "quantile must be in (0, 1]."
         assert min_n_top_trials > 0, "min_n_top_trials must be positive."
 
         self._quantile = quantile
@@ -65,30 +62,53 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
     Implements the PED-ANOVA hyperparameter importance evaluation algorithm.
 
     PED-ANOVA fits Parzen estimators of :class:`~optuna.trial.TrialState.COMPLETE` trials better
-    than a user-specified baseline. Users can specify the baseline by a quantile.
+    than a user-specified `target_quantile`.
     The importance can be interpreted as how important each hyperparameter is to get
-    the performance better than baseline.
+    the performance better than `target_quantile`.
 
     For further information about PED-ANOVA algorithm, please refer to the following paper:
 
     - `PED-ANOVA: Efficiently Quantifying Hyperparameter Importance in Arbitrary Subspaces
       <https://arxiv.org/abs/2304.10255>`__
 
+    `target_quantile` and `region_quantile` correspond to the parameters ``gamma'`` and ``gamma``
+    in the original paper, respectively.
+
     .. note::
 
-        The performance of PED-ANOVA depends on how many trials to consider above baseline.
-        To stabilize the analysis, it is preferable to include at least 5 trials above baseline.
+        The performance of PED-ANOVA depends on how many trials to consider above
+        `target_quantile`. To stabilize the analysis, it is preferable to include at least
+        5 trials above `target_quantile`.
 
     .. note::
 
         Please refer to `the original work <https://github.com/nabenabe0928/local-anova>`__.
 
     Args:
+        target_quantile:
+            Compute the importance of achieving top-``target_quantile`` quantile objective value.
+            For example, ``target_quantile=0.1`` means that the importances give the information
+            of which parameters were important to achieve the top-10% performance during
+            optimization.
+
+        region_quantile:
+            Define the region where we compute the importance. For example,
+            ``region_quantile=0.5`` means that we compute the importance in the region where
+            trials achieve top-50% performance. If ``region_quantile=1.0``, the importance is
+            computed in the whole search space.
+
         baseline_quantile:
             Compute the importance of achieving top-``baseline_quantile`` quantile objective value.
             For example, ``baseline_quantile=0.1`` means that the importances give the information
             of which parameters were important to achieve the top-10% performance during
             optimization.
+
+            .. warning::
+                Deprecated in v4.7.0. This feature will be removed in the future. The removal of
+                this feature is currently scheduled for v5.0.0, but this schedule is subject to
+                change. `baseline_quantile` is currently ignored. Use `target_quantile` instead.
+                See https://github.com/optuna/optuna/releases/tag/v4.7.0.
+
         evaluate_on_local:
             Whether we measure the importance in the local or global space.
             If :obj:`True`, the importances imply how importance each parameter is during
@@ -121,11 +141,26 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
     def __init__(
         self,
         *,
-        baseline_quantile: float = 0.1,
+        target_quantile: float = 0.1,  # gamma' in the original paper
+        region_quantile: float = 1.0,  # gamma in the original paper
+        baseline_quantile: float | None = None,
         evaluate_on_local: bool = True,
-    ):
-        assert 0.0 <= baseline_quantile <= 1.0, "baseline_quantile must be in [0, 1]."
-        self._baseline_quantile = baseline_quantile
+    ) -> None:
+        assert 0.0 < target_quantile < region_quantile <= 1.0, (
+            "condition 0.0 < `target_quantile` < `region_quantile` <= 1.0 must be satisfied"
+        )
+        if baseline_quantile is not None:
+            msg = _DEPRECATION_WARNING_TEMPLATE.format(
+                name="`baseline_quantile`", d_ver="4.7.0", r_ver="5.0.0"
+            )
+            optuna_warn(
+                f"{msg} `baseline_quantile` is currently ignored. Use `target_quantile` instead.",
+            )
+        if region_quantile != 1.0 and not evaluate_on_local:
+            optuna_warn("If `evaluate_on_local` is False, `region_quantile` has no effect.")
+
+        self._target_quantile = target_quantile
+        self._region_quantile = region_quantile
         self._evaluate_on_local = evaluate_on_local
 
         # Advanced Setups.
@@ -136,11 +171,11 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
         # How many `trials` must be included in `top_trials`.
         self._min_n_top_trials = 2
 
-    def _get_top_trials(
+    def _get_top_quantile_trials(
         self,
         study: Study,
         trials: list[FrozenTrial],
-        params: list[str],
+        quantile: float,
         target: Callable[[FrozenTrial], float] | None,
     ) -> list[FrozenTrial]:
         is_lower_better = study.directions[0] == StudyDirection.MINIMIZE
@@ -153,11 +188,8 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
             is_lower_better = True
 
         top_trials = _QuantileFilter(
-            self._baseline_quantile, is_lower_better, self._min_n_top_trials, target
+            quantile, is_lower_better, self._min_n_top_trials, target
         ).filter(trials)
-
-        if len(trials) == len(top_trials):
-            _logger.warning("All trials are in top trials, which gives equal importances.")
 
         return top_trials
 
@@ -165,19 +197,21 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
         self,
         param_name: str,
         dist: BaseDistribution,
-        top_trials: list[FrozenTrial],
-        all_trials: list[FrozenTrial],
+        target_trials: list[FrozenTrial],
+        region_trials: list[FrozenTrial],
     ) -> float:
         # When pdf_all == pdf_top, i.e. all_trials == top_trials, this method will give 0.0.
         prior_weight = self._prior_weight
-        pe_top = _build_parzen_estimator(param_name, dist, top_trials, self._n_steps, prior_weight)
+        pe_top = _build_parzen_estimator(
+            param_name, dist, target_trials, self._n_steps, prior_weight
+        )
         # NOTE: pe_top.n_steps could be different from self._n_steps.
         grids = np.arange(pe_top.n_steps)
         pdf_top = pe_top.pdf(grids) + 1e-12
 
         if self._evaluate_on_local:  # The importance of param during the study.
             pe_local = _build_parzen_estimator(
-                param_name, dist, all_trials, self._n_steps, prior_weight
+                param_name, dist, region_trials, self._n_steps, prior_weight
             )
             pdf_local = pe_local.pdf(grids) + 1e-12
         else:  # The importance of param in the search space.
@@ -205,23 +239,28 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
             return {}
 
         trials = _get_filtered_trials(study, params=params, target=target)
-        n_params = len(non_single_dists)
         # The following should be tested at _get_filtered_trials.
         assert target is not None or max([len(t.values) for t in trials], default=1) == 1
         if len(trials) <= self._min_n_top_trials:
-            param_importances = {k: 1.0 / n_params for k in non_single_dists}
-            param_importances.update({k: 0.0 for k in single_dists})
-            return {k: 0.0 for k in param_importances}
+            return {k: 0.0 for k in dists}
 
-        top_trials = self._get_top_trials(study, trials, params, target)
-        quantile = len(top_trials) / len(trials)
-        importance_sum = 0.0
+        target_trials = self._get_top_quantile_trials(study, trials, self._target_quantile, target)
+        region_trials = (
+            trials
+            if self._region_quantile == 1.0
+            else self._get_top_quantile_trials(study, trials, self._region_quantile, target)
+        )
+        if len(target_trials) == len(region_trials):
+            optuna_warn(
+                "Target and region quantiles select the same set of trials. "
+                "Parameter importances will be equal."
+            )
+        quantile = len(target_trials) / len(region_trials)
         param_importances = {}
         for param_name, dist in non_single_dists.items():
             param_importances[param_name] = quantile**2 * self._compute_pearson_divergence(
-                param_name, dist, top_trials=top_trials, all_trials=trials
+                param_name, dist, target_trials=target_trials, region_trials=region_trials
             )
-            importance_sum += param_importances[param_name]
 
         param_importances.update({k: 0.0 for k in single_dists})
         return _sort_dict_by_importance(param_importances)
