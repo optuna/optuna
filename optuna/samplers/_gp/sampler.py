@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Container
+import json
 from typing import Any
 from typing import TYPE_CHECKING
 
@@ -48,6 +50,10 @@ import logging
 _logger = logging.getLogger(__name__)
 
 EPS = 1e-10
+
+_RELATIVE_PARAMS_KEY = "gp:relative_params"
+# The value of system_attrs must be less than 2046 characters on RDBStorage.
+_SYSTEM_ATTR_MAX_LENGTH = 2045
 
 
 def _standardize_values(values: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -163,6 +169,15 @@ class GPSampler(BaseSampler):
             The ``constraints_func`` will be evaluated after each successful trial.
             The function won't be called when trials fail or are pruned, but this behavior is
             subject to change in future releases.
+        constant_liar:
+            Optional strategy for handling pending trials (e.g., in batch optimization).
+            If :obj:`None` (default), pending trials are ignored. If set to 'best',
+            'worst', or 'mean', the objective values of pending trials are
+            temporarily imputed using the best, worst, or mean objective value observed
+            among completed trials, respectively.
+
+            Note that this option is currently supported only for single-objective
+            optimization without constraints.
         warn_independent_sampling:
             If this is :obj:`True`, a warning message is emitted when
             the value of a parameter is sampled by using an independent sampler,
@@ -179,6 +194,7 @@ class GPSampler(BaseSampler):
         n_startup_trials: int = 10,
         deterministic_objective: bool = False,
         constraints_func: Callable[[FrozenTrial], Sequence[float]] | None = None,
+        constant_liar: str | None = None,
         warn_independent_sampling: bool = True,
     ) -> None:
         self._rng = LazyRandomState(seed)
@@ -193,10 +209,25 @@ class GPSampler(BaseSampler):
         self._constraints_gprs_cache_list: list[gp.GPRegressor] | None = None
         self._deterministic = deterministic_objective
         self._constraints_func = constraints_func
+        self._constant_liar = constant_liar
         self._warn_independent_sampling = warn_independent_sampling
 
         if constraints_func is not None:
             warn_experimental_argument("constraints_func")
+
+        if self._constant_liar not in (None, "best", "worst", "mean"):
+            raise ValueError(
+                "The constant_liar argument should be one of None, 'best', 'worst', or 'mean'."
+            )
+
+        if self._constant_liar is not None:
+            warn_experimental_argument("constant_liar")
+
+        if self._constant_liar and constraints_func is not None:
+            raise ValueError(
+                "Currently, we do not support `constant_liar=True` and `constraints_func` is "
+                "not None."
+            )
 
         # Control parameters of the acquisition function optimization.
         self._n_preliminary_samples: int = 2048
@@ -303,22 +334,50 @@ class GPSampler(BaseSampler):
     def sample_relative(
         self, study: Study, trial: FrozenTrial, search_space: dict[str, BaseDistribution]
     ) -> dict[str, Any]:
+        if self._constant_liar is not None and len(study.directions) > 1:
+            raise ValueError(
+                "Currently, constant liar strategy is not implemented for multi-objective "
+                "optimization."
+            )
+
         if search_space == {}:
             return {}
 
-        states = (TrialState.COMPLETE,)
-        trials = study._get_trials(deepcopy=False, states=states, use_cache=True)
+        states: Container[TrialState]
+        if self._constant_liar is not None:
+            states = (TrialState.COMPLETE, TrialState.RUNNING)
+            use_cache = False
+        else:
+            states = (TrialState.COMPLETE,)
+            use_cache = True
+        trials = study._get_trials(deepcopy=False, states=states, use_cache=use_cache)
 
-        if len(trials) < self._n_startup_trials:
+        if self._constant_liar is not None:
+            completed_trials = [t for t in trials if t.state == TrialState.COMPLETE]
+        else:
+            completed_trials = trials
+        if len(completed_trials) < self._n_startup_trials:
             return {}
+
+        _sign = np.array([-1.0 if d == StudyDirection.MINIMIZE else 1.0 for d in study.directions])
+        if self._constant_liar is not None:
+            trials = [t for t in trials if search_space.keys() <= get_params(t).keys()]
+            vals = _sign * np.array(
+                [t.values if t.values is not None else [np.nan] for t in trials]
+            )
+            if self._constant_liar == "worst":
+                constant_liar_values = np.nanmin(vals, axis=0)
+            elif self._constant_liar == "best":
+                constant_liar_values = np.nanmax(vals, axis=0)
+            elif self._constant_liar == "mean":
+                constant_liar_values = np.nanmean(vals, axis=0)
+            vals = np.where(np.isnan(vals), constant_liar_values, vals)
+        else:
+            vals = _sign * np.array([t.values for t in trials])
+        standardized_score_vals, _, _ = _standardize_values(vals)
 
         internal_search_space = gp_search_space.SearchSpace(search_space)
         normalized_params = internal_search_space.get_normalized_params(trials)
-
-        _sign = np.array([-1.0 if d == StudyDirection.MINIMIZE else 1.0 for d in study.directions])
-        standardized_score_vals, _, _ = _standardize_values(
-            _sign * np.array([trial.values for trial in trials])
-        )
 
         if (
             self._gprs_cache_list is not None
@@ -423,7 +482,19 @@ class GPSampler(BaseSampler):
                 )
 
         normalized_param = self._optimize_acqf(acqf, best_params)
-        return internal_search_space.get_unnormalized_param(normalized_param)
+        params = internal_search_space.get_unnormalized_param(normalized_param)
+
+        if params != {} and self._constant_liar is not None:
+            # Share the params obtained by the relative sampling with the other processes.
+            params_str = json.dumps(params)
+            for i in range(0, len(params_str), _SYSTEM_ATTR_MAX_LENGTH):
+                study._storage.set_trial_system_attr(
+                    trial._trial_id,
+                    f"{_RELATIVE_PARAMS_KEY}:{i // _SYSTEM_ATTR_MAX_LENGTH}",
+                    params_str[i : i + _SYSTEM_ATTR_MAX_LENGTH],
+                )
+
+        return params
 
     def sample_independent(
         self,
@@ -471,3 +542,20 @@ def _get_constraint_vals_and_feasibility(
     is_feasible = np.all(constraint_vals <= 0, axis=1)
     assert not isinstance(is_feasible, np.bool_), "MyPy Redefinition for NumPy v2.2.0."
     return constraint_vals, is_feasible
+
+
+def get_params(trial: FrozenTrial) -> dict[str, Any]:
+    if trial.state.is_finished():
+        return trial.params
+
+    params_strs = []
+    i = 0
+    while params_str_i := trial.system_attrs.get(f"{_RELATIVE_PARAMS_KEY}:{i}"):
+        params_strs.append(params_str_i)
+        i += 1
+
+    if len(params_strs) == 0:
+        return trial.params
+    params = json.loads("".join(params_strs))
+    params.update(trial.params)
+    return params
