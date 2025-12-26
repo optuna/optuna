@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Container
+import json
 from typing import Any
 from typing import TYPE_CHECKING
 
@@ -49,6 +50,10 @@ import logging
 _logger = logging.getLogger(__name__)
 
 EPS = 1e-10
+
+_RELATIVE_PARAMS_KEY = "gp:relative_params"
+# The value of system_attrs must be less than 2046 characters on RDBStorage.
+_SYSTEM_ATTR_MAX_LENGTH = 2045
 
 
 def _standardize_values(values: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -338,9 +343,11 @@ class GPSampler(BaseSampler):
         states: Container[TrialState]
         if self._constant_liar is not None:
             states = (TrialState.COMPLETE, TrialState.RUNNING)
+            use_cache = False
         else:
             states = (TrialState.COMPLETE,)
-        trials = study._get_trials(deepcopy=False, states=states, use_cache=True)
+            use_cache = True
+        trials = study._get_trials(deepcopy=False, states=states, use_cache=use_cache)
 
         if self._constant_liar is not None:
             completed_trials = [t for t in trials if t.state == TrialState.COMPLETE]
@@ -351,20 +358,17 @@ class GPSampler(BaseSampler):
 
         _sign = np.array([-1.0 if d == StudyDirection.MINIMIZE else 1.0 for d in study.directions])
         if self._constant_liar is not None:
-            trials = [t for t in trials if search_space.keys() <= t.params.keys()]
+            trials = [t for t in trials if search_space.keys() <= get_params(t).keys()]
             vals = _sign * np.array(
                 [t.values if t.values is not None else [np.nan] for t in trials]
             )
-            # _logger.warning(vals)
             if self._constant_liar == "worst":
                 constant_liar_values = np.nanmin(vals, axis=0)
             elif self._constant_liar == "best":
                 constant_liar_values = np.nanmax(vals, axis=0)
             elif self._constant_liar == "mean":
                 constant_liar_values = np.nanmean(vals, axis=0)
-            # _logger.warning(f"constant_liar_values: {constant_liar_values}")
             vals = np.where(np.isnan(vals), constant_liar_values, vals)
-            # _logger.warning(vals)
         else:
             vals = _sign * np.array([t.values for t in trials])
         standardized_score_vals, _, _ = _standardize_values(vals)
@@ -475,7 +479,19 @@ class GPSampler(BaseSampler):
                 )
 
         normalized_param = self._optimize_acqf(acqf, best_params)
-        return internal_search_space.get_unnormalized_param(normalized_param)
+        params = internal_search_space.get_unnormalized_param(normalized_param)
+
+        if params != {} and self._constant_liar is not None:
+            # Share the params obtained by the relative sampling with the other processes.
+            params_str = json.dumps(params)
+            for i in range(0, len(params_str), _SYSTEM_ATTR_MAX_LENGTH):
+                study._storage.set_trial_system_attr(
+                    trial._trial_id,
+                    f"{_RELATIVE_PARAMS_KEY}:{i // _SYSTEM_ATTR_MAX_LENGTH}",
+                    params_str[i : i + _SYSTEM_ATTR_MAX_LENGTH],
+                )
+
+        return params
 
     def sample_independent(
         self,
@@ -523,3 +539,20 @@ def _get_constraint_vals_and_feasibility(
     is_feasible = np.all(constraint_vals <= 0, axis=1)
     assert not isinstance(is_feasible, np.bool_), "MyPy Redefinition for NumPy v2.2.0."
     return constraint_vals, is_feasible
+
+
+def get_params(trial: FrozenTrial) -> dict[str, Any]:
+    if trial.state.is_finished():
+        return trial.params
+
+    params_strs = []
+    i = 0
+    while params_str_i := trial.system_attrs.get(f"{_RELATIVE_PARAMS_KEY}:{i}"):
+        params_strs.append(params_str_i)
+        i += 1
+
+    if len(params_strs) == 0:
+        return trial.params
+    params = json.loads("".join(params_strs))
+    params.update(trial.params)
+    return params

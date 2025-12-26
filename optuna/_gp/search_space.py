@@ -12,6 +12,7 @@ from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
+from optuna.samplers._gp.sampler import get_params
 
 
 if TYPE_CHECKING:
@@ -66,10 +67,12 @@ class SearchSpace:
         values = np.empty((len(trials), len(self._optuna_search_space)), dtype=float)
         for i, (param, distribution) in enumerate(self._optuna_search_space.items()):
             if isinstance(distribution, CategoricalDistribution):
-                values[:, i] = [distribution.to_internal_repr(t.params[param]) for t in trials]
+                values[:, i] = [
+                    distribution.to_internal_repr(get_params(t)[param]) for t in trials
+                ]
             else:
                 values[:, i] = _normalize_one_param(
-                    np.array([trial.params[param] for trial in trials]),
+                    np.array([get_params(trial)[param] for trial in trials]),
                     self._scale_types[i],
                     (self._bounds[i, 0], self._bounds[i, 1]),
                     self._steps[i],
