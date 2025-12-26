@@ -220,6 +220,9 @@ class GPSampler(BaseSampler):
                 "The constant_liar argument should be one of None, 'best', 'worst', or 'mean'."
             )
 
+        if self._constant_liar is not None:
+            warn_experimental_argument("constant_liar")
+
         if self._constant_liar and constraints_func is not None:
             raise ValueError(
                 "Currently, we do not support `constant_liar=True` and `constraints_func` is "
@@ -331,14 +334,14 @@ class GPSampler(BaseSampler):
     def sample_relative(
         self, study: Study, trial: FrozenTrial, search_space: dict[str, BaseDistribution]
     ) -> dict[str, Any]:
-        if search_space == {}:
-            return {}
-
         if self._constant_liar is not None and len(study.directions) > 1:
             raise ValueError(
                 "Currently, constant liar strategy is not implemented for multi-objective "
                 "optimization."
             )
+
+        if search_space == {}:
+            return {}
 
         states: Container[TrialState]
         if self._constant_liar is not None:
