@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Container
 from typing import Any
 from typing import TYPE_CHECKING
 
@@ -163,6 +164,15 @@ class GPSampler(BaseSampler):
             The ``constraints_func`` will be evaluated after each successful trial.
             The function won't be called when trials fail or are pruned, but this behavior is
             subject to change in future releases.
+        constant_liar:
+            Optional strategy for handling pending trials (e.g., in batch optimization).
+            If :obj:`None` (default), pending trials are ignored. If set to 'best',
+            'worst', or 'mean', the objective values of pending trials are
+            temporarily imputed using the best, worst, or mean objective value observed
+            among completed trials, respectively.
+
+            Note that this option is currently supported only for single-objective
+            optimization without constraints.
         warn_independent_sampling:
             If this is :obj:`True`, a warning message is emitted when
             the value of a parameter is sampled by using an independent sampler,
@@ -179,6 +189,7 @@ class GPSampler(BaseSampler):
         n_startup_trials: int = 10,
         deterministic_objective: bool = False,
         constraints_func: Callable[[FrozenTrial], Sequence[float]] | None = None,
+        constant_liar: str | None = None,
         warn_independent_sampling: bool = True,
     ) -> None:
         self._rng = LazyRandomState(seed)
@@ -193,10 +204,22 @@ class GPSampler(BaseSampler):
         self._constraints_gprs_cache_list: list[gp.GPRegressor] | None = None
         self._deterministic = deterministic_objective
         self._constraints_func = constraints_func
+        self._constant_liar = constant_liar
         self._warn_independent_sampling = warn_independent_sampling
 
         if constraints_func is not None:
             warn_experimental_argument("constraints_func")
+
+        if self._constant_liar not in (None, "best", "worst", "mean"):
+            raise ValueError(
+                "The constant_liar argument should be one of None, 'best', 'worst', or 'mean'."
+            )
+
+        if self._constant_liar and constraints_func is not None:
+            raise ValueError(
+                "Currently, we do not support `constant_liar=True` and `constraints_func` is "
+                "not None."
+            )
 
         # Control parameters of the acquisition function optimization.
         self._n_preliminary_samples: int = 2048
@@ -306,19 +329,48 @@ class GPSampler(BaseSampler):
         if search_space == {}:
             return {}
 
-        states = (TrialState.COMPLETE,)
+        if self._constant_liar is not None and len(study.directions) > 1:
+            raise ValueError(
+                "Currently, constant liar strategy is not implemented for multi-objective "
+                "optimization."
+            )
+
+        states: Container[TrialState]
+        if self._constant_liar is not None:
+            states = (TrialState.COMPLETE, TrialState.RUNNING)
+        else:
+            states = (TrialState.COMPLETE,)
         trials = study._get_trials(deepcopy=False, states=states, use_cache=True)
 
-        if len(trials) < self._n_startup_trials:
+        if self._constant_liar is not None:
+            completed_trials = [t for t in trials if t.state == TrialState.COMPLETE]
+        else:
+            completed_trials = trials
+        if len(completed_trials) < self._n_startup_trials:
             return {}
+
+        _sign = np.array([-1.0 if d == StudyDirection.MINIMIZE else 1.0 for d in study.directions])
+        if self._constant_liar is not None:
+            trials = [t for t in trials if search_space.keys() <= t.params.keys()]
+            vals = _sign * np.array(
+                [t.values if t.values is not None else [np.nan] for t in trials]
+            )
+            # _logger.warning(vals)
+            if self._constant_liar == "worst":
+                constant_liar_values = np.nanmin(vals, axis=0)
+            elif self._constant_liar == "best":
+                constant_liar_values = np.nanmax(vals, axis=0)
+            elif self._constant_liar == "mean":
+                constant_liar_values = np.nanmean(vals, axis=0)
+            # _logger.warning(f"constant_liar_values: {constant_liar_values}")
+            vals = np.where(np.isnan(vals), constant_liar_values, vals)
+            # _logger.warning(vals)
+        else:
+            vals = _sign * np.array([t.values for t in trials])
+        standardized_score_vals, _, _ = _standardize_values(vals)
 
         internal_search_space = gp_search_space.SearchSpace(search_space)
         normalized_params = internal_search_space.get_normalized_params(trials)
-
-        _sign = np.array([-1.0 if d == StudyDirection.MINIMIZE else 1.0 for d in study.directions])
-        standardized_score_vals, _, _ = _standardize_values(
-            _sign * np.array([trial.values for trial in trials])
-        )
 
         if (
             self._gprs_cache_list is not None
