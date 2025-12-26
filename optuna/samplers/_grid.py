@@ -189,7 +189,7 @@ class GridSampler(BaseSampler):
             raise ValueError(message)
 
         if param_name not in self._search_space:
-            message = "The parameter name, {}, is not found in the given grid.".format(param_name)
+            message = f"The parameter name, {param_name}, is not found in the given grid."
             raise ValueError(message)
 
         grid_id = trial.system_attrs["grid_id"]
@@ -225,9 +225,9 @@ class GridSampler(BaseSampler):
             return
 
         message = (
-            "{} contains a value with the type of {}, which is not supported by "
-            "`GridSampler`. Please make sure a value is `str`, `int`, `float`, `bool`"
-            " or `None` for persistent storage.".format(param_name, type(param_value))
+            f"{param_name} contains a value with the type of {type(param_value)}, "
+            "which is not supported by `GridSampler`. Please make sure a value is `str`, "
+            "`int`, `float`, `bool` or `None` for persistent storage."
         )
         optuna_warn(message)
 
