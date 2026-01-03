@@ -10,7 +10,6 @@ from optuna.distributions import BaseDistribution
 from optuna.samplers._lazy_random_state import LazyRandomState
 from optuna.search_space import intersection_search_space
 from optuna.study import StudyDirection
-from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
 
@@ -20,6 +19,8 @@ if TYPE_CHECKING:
     from optuna._gp import optim_sample
     from optuna._gp import prior
     from optuna._gp import search_space as gp_search_space
+    from optuna.trial import FrozenTrial
+
 else:
     from optuna._imports import _LazyImport
 
