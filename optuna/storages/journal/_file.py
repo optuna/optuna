@@ -13,11 +13,14 @@ import uuid
 
 from optuna._deprecated import deprecated_class
 from optuna._warnings import optuna_warn
+from optuna.logging import get_logger
 from optuna.storages.journal._base import BaseJournalBackend
 
 
 LOCK_FILE_SUFFIX = ".lock"
 RENAME_FILE_SUFFIX = ".rename"
+
+_logger = get_logger(__name__)
 
 
 class JournalFileBackend(BaseJournalBackend):
@@ -160,7 +163,7 @@ class JournalFileSymlinkLock(BaseJournalFileLock):
             except OSError as err:
                 if err.errno == errno.EEXIST:
                     if time.monotonic() - last_warning_time > warning_interval:
-                        optuna_warn(
+                        _logger.warning(
                             f"It is taking longer than {warning_interval} seconds to acquire "
                             f"the lock file: {self._lock_file} Retrying..."
                         )
@@ -253,7 +256,7 @@ class JournalFileOpenLock(BaseJournalFileLock):
             except OSError as err:
                 if err.errno == errno.EEXIST:
                     if time.monotonic() - last_warning_time > warning_interval:
-                        optuna_warn(
+                        _logger.warning(
                             f"It is taking longer than {warning_interval} seconds to acquire "
                             f"the lock file: {self._lock_file} Retrying..."
                         )
