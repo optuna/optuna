@@ -379,8 +379,11 @@ class StorageTestCase:
             storage.set_trial_state_values(trial_id, state=state, values=(0.0,))
             for state2 in ALL_STATES:
                 # Cannot update states of finished trials.
+                values: list[float] | None = None
+                if state2 == TrialState.COMPLETE:
+                    values = [0.0]
                 with pytest.raises(UpdateFinishedTrialError):
-                    storage.set_trial_state_values(trial_id, state=state2)
+                    storage.set_trial_state_values(trial_id, state=state2, values=values)
 
     def test_set_trial_state_values_for_floats(self, storage: BaseStorage) -> None:
         _test_set_trial_state_values_for_floats(storage)
@@ -448,7 +451,7 @@ class StorageTestCase:
                 trial_id_2, "y", 2, CategoricalDistribution(choices=("Meguro", "Shibuya", "Ebisu"))
             )
 
-        storage.set_trial_state_values(trial_id_2, state=TrialState.COMPLETE)
+        storage.set_trial_state_values(trial_id_2, state=TrialState.COMPLETE, values=[0.0])
         # Cannot assign params to finished trial.
         with pytest.raises(UpdateFinishedTrialError):
             storage.set_trial_param(trial_id_2, "y", 2, distribution_y_1)
@@ -549,7 +552,7 @@ class StorageTestCase:
         with pytest.raises(KeyError):
             storage.set_trial_intermediate_value(non_existent_trial_id, 0, 0.2)
 
-        storage.set_trial_state_values(trial_id_1, state=TrialState.COMPLETE)
+        storage.set_trial_state_values(trial_id_1, state=TrialState.COMPLETE, values=[0.0])
         # Cannot change values of finished trials.
         with pytest.raises(UpdateFinishedTrialError):
             storage.set_trial_intermediate_value(trial_id_1, 0, 0.2)
@@ -600,7 +603,7 @@ class StorageTestCase:
             storage.set_trial_user_attr(non_existent_trial_id, "key", "value")
 
         # Cannot set attributes of finished trials.
-        storage.set_trial_state_values(trial_id_1, state=TrialState.COMPLETE)
+        storage.set_trial_state_values(trial_id_1, state=TrialState.COMPLETE, values=[0.0])
         with pytest.raises(UpdateFinishedTrialError):
             storage.set_trial_user_attr(trial_id_1, "key", "value")
 
@@ -648,7 +651,7 @@ class StorageTestCase:
             storage.set_trial_system_attr(non_existent_trial_id, "key", "value")
 
         # Cannot set attributes of finished trials.
-        storage.set_trial_state_values(trial_id_1, state=TrialState.COMPLETE)
+        storage.set_trial_state_values(trial_id_1, state=TrialState.COMPLETE, values=[0.0])
         with pytest.raises(UpdateFinishedTrialError):
             storage.set_trial_system_attr(trial_id_1, "key", "value")
 
@@ -741,6 +744,7 @@ class StorageTestCase:
         for state in states:
             t = _generate_trial(generator)
             t.state = state
+            t.values = [0.0] if t.state == TrialState.COMPLETE else None
             storage.create_new_trial(study_id, template_trial=t)
 
         trials = storage.get_all_trials(study_id, states=None)
@@ -812,6 +816,7 @@ class StorageTestCase:
         for s in states:
             t = _generate_trial(generator)
             t.state = s
+            t.values = [0.0] if t.state == TrialState.COMPLETE else None
             storage.create_new_trial(study_id, template_trial=t)
 
         assert storage.get_n_trials(study_id, TrialState.COMPLETE) == 2
@@ -1101,7 +1106,7 @@ def _generate_trial(generator: random.Random) -> FrozenTrial:
     return FrozenTrial(
         number=0,  # dummy
         state=state,
-        value=generator.uniform(-10, 10),
+        value=generator.uniform(-10, 10) if state == TrialState.COMPLETE else None,
         datetime_start=datetime.now(),
         datetime_complete=datetime.now() if state.is_finished() else None,
         params=params,
