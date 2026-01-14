@@ -179,7 +179,7 @@ class JournalFileSymlinkLock(BaseJournalFileLock):
                             last_update_monotonic_time = time.monotonic()
 
                         if time.monotonic() - last_update_monotonic_time > self.grace_period:
-                            optuna_warn(
+                            _logger.warning(
                                 "The existing lock file has not been released "
                                 "for an extended period. Forcibly releasing the lock file."
                             )
@@ -272,7 +272,7 @@ class JournalFileOpenLock(BaseJournalFileLock):
                             last_update_monotonic_time = time.monotonic()
 
                         if time.monotonic() - last_update_monotonic_time > self.grace_period:
-                            optuna_warn(
+                            _logger.warning(
                                 "The existing lock file has not been released "
                                 "for an extended period. Forcibly releasing the lock file."
                             )
