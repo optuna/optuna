@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections.abc import Container
 import json
 from typing import Any
 from typing import TYPE_CHECKING
@@ -343,41 +342,56 @@ class GPSampler(BaseSampler):
         if search_space == {}:
             return {}
 
-        states: Container[TrialState]
-        if self._constant_liar is not None:
-            states = (TrialState.COMPLETE, TrialState.RUNNING)
-            use_cache = False
-        else:
-            states = (TrialState.COMPLETE,)
-            use_cache = True
-        trials = study._get_trials(deepcopy=False, states=states, use_cache=use_cache)
+        # states: Container[TrialState]
+        # if self._constant_liar is not None:
+        #     states = (TrialState.COMPLETE, TrialState.RUNNING)
+        #     use_cache = False
+        # else:
+        #     states = (TrialState.COMPLETE,)
+        #     use_cache = True
+        # trials = study._get_trials(deepcopy=False, states=states, use_cache=use_cache)
 
-        if self._constant_liar is not None:
-            completed_trials = [t for t in trials if t.state == TrialState.COMPLETE]
-        else:
-            completed_trials = trials
-        if len(completed_trials) < self._n_startup_trials:
+        # if self._constant_liar is not None:
+        #     completed_trials = [t for t in trials if t.state == TrialState.COMPLETE]
+        # else:
+        #     completed_trials = trials
+        # if len(completed_trials) < self._n_startup_trials:
+        #     return {}
+
+        states = (TrialState.COMPLETE,)
+        trials = study._get_trials(deepcopy=False, states=states, use_cache=True)
+        if len(trials) < self._n_startup_trials:
             return {}
 
         _sign = np.array([-1.0 if d == StudyDirection.MINIMIZE else 1.0 for d in study.directions])
-        if self._constant_liar is not None:
-            trials = [t for t in trials if search_space.keys() <= get_params(t).keys()]
-            vals = _sign * np.array(
-                [t.values if t.values is not None else [np.nan] for t in trials]
-            )
-            if self._constant_liar == "worst":
-                constant_liar_values = np.nanmin(vals, axis=0)
-            elif self._constant_liar == "best":
-                constant_liar_values = np.nanmax(vals, axis=0)
-            elif self._constant_liar == "mean":
-                constant_liar_values = np.nanmean(vals, axis=0)
-            vals = np.where(np.isnan(vals), constant_liar_values, vals)
-        else:
-            vals = _sign * np.array([t.values for t in trials])
+        vals = _sign * np.array([t.values for t in trials])
         standardized_score_vals, _, _ = _standardize_values(vals)
 
         internal_search_space = gp_search_space.SearchSpace(search_space)
         normalized_params = internal_search_space.get_normalized_params(trials)
+
+        normalized_params_of_running_trials = None
+        constant_liar_standardized_vals = None
+        if self._constant_liar is not None:
+            states = (TrialState.RUNNING,)
+            running_trials = study._get_trials(deepcopy=False, states=states, use_cache=False)
+            running_trials = [
+                t for t in running_trials if search_space.keys() <= get_params(t).keys()
+            ]
+            if len(running_trials) > 0:
+                normalized_params_of_running_trials = internal_search_space.get_normalized_params(
+                    running_trials
+                )
+                normalized_params_of_running_trials = torch.from_numpy(
+                    normalized_params_of_running_trials
+                )
+
+            if self._constant_liar == "worst":
+                constant_liar_standardized_vals = np.nanmin(standardized_score_vals, axis=0)
+            elif self._constant_liar == "best":
+                constant_liar_standardized_vals = np.nanmax(standardized_score_vals, axis=0)
+            elif self._constant_liar == "mean":
+                constant_liar_standardized_vals = np.nanmean(standardized_score_vals, axis=0)
 
         if (
             self._gprs_cache_list is not None
@@ -414,6 +428,8 @@ class GPSampler(BaseSampler):
                     gpr=gprs_list[0],
                     search_space=internal_search_space,
                     threshold=standardized_score_vals[:, 0].max(),
+                    normalized_params_of_running_trials=(normalized_params_of_running_trials),
+                    constant_liar_standardized_vals=(constant_liar_standardized_vals),
                 )
                 best_params = normalized_params[np.argmax(standardized_score_vals), np.newaxis]
             else:
@@ -423,6 +439,7 @@ class GPSampler(BaseSampler):
                     Y_train=torch.from_numpy(standardized_score_vals),
                     n_qmc_samples=128,  # NOTE(nabenabe): The BoTorch default value.
                     qmc_seed=self._rng.rng.randint(1 << 30),
+                    normalized_params_of_running_trials=normalized_params_of_running_trials,
                 )
                 best_params = self._get_best_params_for_multi_objective(
                     normalized_params, standardized_score_vals

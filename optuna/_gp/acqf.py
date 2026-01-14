@@ -119,11 +119,32 @@ class LogEI(BaseAcquisitionFunc):
         gpr: GPRegressor,
         search_space: SearchSpace,
         threshold: float,
+        normalized_params_of_running_trials: torch.Tensor | None,
+        constant_liar_standardized_vals: np.ndarray | None,
         stabilizing_noise: float = 1e-12,
     ) -> None:
         self._gpr = gpr
         self._stabilizing_noise = stabilizing_noise
         self._threshold = threshold
+        if normalized_params_of_running_trials is not None:
+            # mean, var = self._gpr.posterior(normalized_params_of_running_trials)
+            if constant_liar_standardized_vals is None:
+                raise ValueError(
+                    "constant_liar_standardized_vals must be provided "
+                    "when normalized_params_of_running_trials is provided."
+                )
+            # broad cast to match normalized_params_of_running_trials and convert to torch.Tensor
+            constant_liar_standardized_vals = torch.from_numpy(
+                np.broadcast_to(
+                    constant_liar_standardized_vals,
+                    normalized_params_of_running_trials.shape[:-1],
+                )
+            )
+
+            self._gpr.add_data(
+                normalized_params_of_running_trials,
+                constant_liar_standardized_vals,
+            )
         super().__init__(gpr.length_scales, search_space)
 
     def eval_acqf(self, x: torch.Tensor) -> torch.Tensor:

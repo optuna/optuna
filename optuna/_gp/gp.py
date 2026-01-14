@@ -146,6 +146,23 @@ class GPRegressor:
         self.noise_var = self.noise_var.detach()
         self.noise_var.grad = None
 
+    def add_data(self, x_running: torch.Tensor, y_running: torch.Tensor) -> None:
+        # TODO(sawa3030): Implement a faster way to add data 
+        # without recomputing everything from scratch.
+        self._X_train = torch.cat([self._X_train, x_running], dim=0)
+        self._y_train = torch.cat([self._y_train, y_running], dim=0)
+        self._squared_X_diff = (
+            self._X_train.unsqueeze(-2) - self._X_train.unsqueeze(-3)
+        ).square_()
+        if self._is_categorical.any():
+            self._squared_X_diff[..., self._is_categorical] = (
+                self._squared_X_diff[..., self._is_categorical] > 0.0
+            ).type(torch.float64)
+        self._cov_Y_Y_chol = None
+        self._cov_Y_Y_inv_Y = None
+
+        self._cache_matrix()
+
     def kernel(
         self, X1: torch.Tensor | None = None, X2: torch.Tensor | None = None
     ) -> torch.Tensor:
