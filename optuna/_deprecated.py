@@ -43,8 +43,7 @@ def _validate_two_version(old_version: str, new_version: str) -> None:
     if version.parse(old_version) > version.parse(new_version):
         raise ValueError(
             "Invalid version relationship. The deprecated version must be smaller than "
-            "the removed version, but (deprecated version, removed version) = ({}, {}) are "
-            "specified.".format(old_version, new_version)
+            f"the removed version, but {(old_version, new_version)=} are specified."
         )
 
 
