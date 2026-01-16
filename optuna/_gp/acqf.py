@@ -120,30 +120,28 @@ class LogEI(BaseAcquisitionFunc):
         search_space: SearchSpace,
         threshold: float,
         normalized_params_of_running_trials: torch.Tensor | None,
-        constant_liar_standardized_vals: np.ndarray | None,
+        constant_liar_values: np.ndarray | None,
         stabilizing_noise: float = 1e-12,
     ) -> None:
         self._gpr = gpr
         self._stabilizing_noise = stabilizing_noise
         self._threshold = threshold
         if normalized_params_of_running_trials is not None:
-            # mean, var = self._gpr.posterior(normalized_params_of_running_trials)
-            if constant_liar_standardized_vals is None:
+            if constant_liar_values is None:
                 raise ValueError(
-                    "constant_liar_standardized_vals must be provided "
+                    "constant_liar_values must be provided "
                     "when normalized_params_of_running_trials is provided."
                 )
-            # broad cast to match normalized_params_of_running_trials and convert to torch.Tensor
-            constant_liar_standardized_vals = torch.from_numpy(
+            constant_liar_values = torch.from_numpy(
                 np.broadcast_to(
-                    constant_liar_standardized_vals,
+                    constant_liar_values,
                     normalized_params_of_running_trials.shape[:-1],
                 )
             )
 
             self._gpr.add_data(
                 normalized_params_of_running_trials,
-                constant_liar_standardized_vals,
+                constant_liar_values,
             )
         super().__init__(gpr.length_scales, search_space)
 
@@ -226,7 +224,7 @@ class ConstrainedLogEI(BaseAcquisitionFunc):
         assert (
             len(constraints_gpr_list) == len(constraints_threshold_list) and constraints_gpr_list
         )
-        self._acqf = LogEI(gpr, search_space, threshold, stabilizing_noise)
+        self._acqf = LogEI(gpr, search_space, threshold, None, None, stabilizing_noise)
         self._constraints_acqf_list = [
             LogPI(_gpr, search_space, _threshold, stabilizing_noise)
             for _gpr, _threshold in zip(constraints_gpr_list, constraints_threshold_list)

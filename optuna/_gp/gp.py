@@ -147,7 +147,7 @@ class GPRegressor:
         self.noise_var.grad = None
 
     def add_data(self, x_running: torch.Tensor, y_running: torch.Tensor) -> None:
-        # TODO(sawa3030): Implement a faster way to add data 
+        # TODO(sawa3030): Implement a faster way to add data
         # without recomputing everything from scratch.
         self._X_train = torch.cat([self._X_train, x_running], dim=0)
         self._y_train = torch.cat([self._y_train, y_running], dim=0)
