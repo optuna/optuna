@@ -142,16 +142,16 @@ class FixedTrial(BaseTrial):
     def _suggest(self, name: str, distribution: BaseDistribution) -> Any:
         if name not in self._params:
             raise ValueError(
-                "The value of the parameter '{}' is not found. Please set it at "
-                "the construction of the FixedTrial object.".format(name)
+                f"The value of the parameter '{name}' is not found. Please set it at "
+                "the construction of the FixedTrial object."
             )
 
         value = self._params[name]
         param_value_in_internal_repr = distribution.to_internal_repr(value)
         if not distribution._contains(param_value_in_internal_repr):
             optuna_warn(
-                "The value {} of the parameter '{}' is out of "
-                "the range of the distribution {}.".format(value, name, distribution)
+                f"The value {value} of the parameter '{name}' is out of "
+                f"the range of the distribution {distribution}."
             )
 
         if name in self._distributions:
