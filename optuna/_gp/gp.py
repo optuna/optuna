@@ -275,7 +275,7 @@ class GPRegressor:
 
         def loss_func(raw_params: np.ndarray) -> tuple[float, np.ndarray]:
             raw_params_tensor = torch.from_numpy(raw_params).requires_grad_(True)
-            with torch.enable_grad():  # type: ignore[no-untyped-call]
+            with torch.enable_grad():
                 self.inverse_squared_lengthscales = torch.exp(raw_params_tensor[:n_params])
                 self.kernel_scale = torch.exp(raw_params_tensor[n_params])
                 self.noise_var = (
