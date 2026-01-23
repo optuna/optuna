@@ -51,7 +51,7 @@ class NamedTemporaryFilePool:
     @classmethod
     def cleanup(cls) -> None:
         with cls._lock:
-            path = copy.deepcopy(cls._path)
+            path = copy.copy(cls._path)
             cls._path = []
 
         for p in path:
