@@ -57,7 +57,5 @@ class NamedTemporaryFilePool:
         for p in path:
             try:
                 os.unlink(p)
-            except FileNotFoundError:
-                pass
-            except PermissionError:
+            except (FileNotFoundError, PermissionError):
                 pass
