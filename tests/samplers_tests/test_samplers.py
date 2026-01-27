@@ -1,6 +1,7 @@
 import multiprocessing
 from multiprocessing.managers import DictProxy
 import os
+import pickle
 from typing import Any
 from typing import Callable
 from typing import Sequence
@@ -16,16 +17,14 @@ from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
 from optuna.samplers import BaseSampler
 from optuna.samplers._lazy_random_state import LazyRandomState
-from optuna.testing.pytest_samplers import FixedSampler
-from optuna.testing.pytest_samplers import SamplerTestCase
-from optuna.trial import Trial
-
-import pickle
 from optuna.study import Study
-from optuna.trial import FrozenTrial
-from optuna.trial import TrialState
 from optuna.testing.objectives import fail_objective
 from optuna.testing.objectives import pruned_objective
+from optuna.testing.pytest_samplers import FixedSampler
+from optuna.testing.pytest_samplers import SamplerTestCase
+from optuna.trial import FrozenTrial
+from optuna.trial import Trial
+from optuna.trial import TrialState
 
 
 def get_gp_sampler(

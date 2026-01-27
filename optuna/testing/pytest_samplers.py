@@ -35,6 +35,7 @@ def parametrize_suggest_method(name: str) -> MarkDecorator:
         ],
     )
 
+
 def _create_new_trial(study: Study) -> FrozenTrial:
     trial_id = study._storage.create_new_trial(study._study_id)
     return study._storage.get_trial(trial_id)
@@ -96,7 +97,9 @@ class SamplerTestCase:
         self,
         single_only_sampler_class: Callable[[], BaseSampler],
     ) -> None:
-        study = optuna.study.create_study(directions=["maximize", "maximize"], sampler=single_only_sampler_class())
+        study = optuna.study.create_study(
+            directions=["maximize", "maximize"], sampler=single_only_sampler_class()
+        )
 
         distribution = FloatDistribution(0.0, 1.0)
         with pytest.raises(ValueError):
@@ -127,7 +130,9 @@ class SamplerTestCase:
         study = optuna.study.create_study(sampler=sampler_class())
         points = np.array(
             [
-                study.sampler.sample_independent(study, _create_new_trial(study), "x", distribution)
+                study.sampler.sample_independent(
+                    study, _create_new_trial(study), "x", distribution
+                )
                 for _ in range(100)
             ]
         )
@@ -157,11 +162,15 @@ class SamplerTestCase:
             IntDistribution(1, 100, log=True),
         ],
     )
-    def test_int(self, sampler_class: Callable[[], BaseSampler], distribution: IntDistribution) -> None:
+    def test_int(
+        self, sampler_class: Callable[[], BaseSampler], distribution: IntDistribution
+    ) -> None:
         study = optuna.study.create_study(sampler=sampler_class())
         points = np.array(
             [
-                study.sampler.sample_independent(study, _create_new_trial(study), "x", distribution)
+                study.sampler.sample_independent(
+                    study, _create_new_trial(study), "x", distribution
+                )
                 for _ in range(100)
             ]
         )
@@ -249,7 +258,9 @@ class SamplerTestCase:
             else:
                 assert isinstance(param_value, float)
 
-    def test_sample_relative_categorical(self, relative_sampler_class: Callable[[], BaseSampler]) -> None:
+    def test_sample_relative_categorical(
+        self, relative_sampler_class: Callable[[], BaseSampler]
+    ) -> None:
         search_space: dict[str, BaseDistribution] = dict(
             x=CategoricalDistribution([1, 10, 100]), y=CategoricalDistribution([-1, -10, -100])
         )
@@ -320,7 +331,9 @@ class SamplerTestCase:
             else:
                 assert isinstance(param_value, float)
 
-    def test_conditional_sample_independent(self, sampler_class: Callable[[], BaseSampler]) -> None:
+    def test_conditional_sample_independent(
+        self, sampler_class: Callable[[], BaseSampler]
+    ) -> None:
         # This test case reproduces the error reported in #2734.
         # See https://github.com/optuna/optuna/pull/2734#issuecomment-857649769.
 
@@ -414,7 +427,9 @@ class SamplerTestCase:
         ],
     )
     def test_multi_objective_sample_independent(
-        self, multi_objective_sampler_class: Callable[[], BaseSampler], distribution: BaseDistribution
+        self,
+        multi_objective_sampler_class: Callable[[], BaseSampler],
+        distribution: BaseDistribution,
     ) -> None:
         study = optuna.study.create_study(
             directions=["minimize", "maximize"], sampler=multi_objective_sampler_class()
@@ -426,7 +441,8 @@ class SamplerTestCase:
             assert distribution._contains(distribution.to_internal_repr(value))
 
             if not isinstance(distribution, CategoricalDistribution):
-                # Please see https://github.com/optuna/optuna/pull/393 why this assertion is needed.
+                # Please see https://github.com/optuna/optuna/pull/393 why this assertion
+                # is needed.
                 assert not isinstance(value, np.floating)
 
             if isinstance(distribution, FloatDistribution):
@@ -437,7 +453,6 @@ class SamplerTestCase:
                     value /= distribution.step
                     round_value = np.round(value)
                     np.testing.assert_almost_equal(round_value, value)
-
 
     def test_sample_single_distribution(self, sampler_class: Callable[[], BaseSampler]) -> None:
         relative_search_space = {
@@ -461,7 +476,6 @@ class SamplerTestCase:
             for param_name in relative_search_space.keys():
                 assert trial.params[param_name] == 1
 
-
     @parametrize_suggest_method("x")
     def test_single_parameter_objective(
         self, sampler_class: Callable[[], BaseSampler], suggest_method_x: Callable[[Trial], float]
@@ -479,8 +493,9 @@ class SamplerTestCase:
         assert len(study.trials) == 10
         assert all(t.state == TrialState.COMPLETE for t in study.trials)
 
-
-    def test_conditional_parameter_objective(self, sampler_class: Callable[[], BaseSampler]) -> None:
+    def test_conditional_parameter_objective(
+        self, sampler_class: Callable[[], BaseSampler]
+    ) -> None:
         def objective(trial: Trial) -> float:
             x = trial.suggest_categorical("x", [True, False])
             if x:
@@ -496,7 +511,6 @@ class SamplerTestCase:
 
         assert len(study.trials) == 10
         assert all(t.state == TrialState.COMPLETE for t in study.trials)
-
 
     @parametrize_suggest_method("x")
     @parametrize_suggest_method("y")
@@ -518,7 +532,6 @@ class SamplerTestCase:
 
         assert len(study.trials) == 3
         assert all(t.state == TrialState.COMPLETE for t in study.trials)
-
 
     @pytest.mark.parametrize(
         "second_low,second_high",
