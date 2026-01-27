@@ -106,7 +106,7 @@ class TestSampler(SamplerTestCase):
         ]
     )
     @staticmethod
-    def sampler_class(request) -> Callable[[], BaseSampler]:
+    def sampler_class(request: SubRequest) -> Callable[[], BaseSampler]:
         return request.param
 
     @pytest.fixture(
@@ -119,7 +119,7 @@ class TestSampler(SamplerTestCase):
         ]
     )
     @staticmethod
-    def relative_sampler_class(request) -> Callable[[], BaseSampler]:
+    def relative_sampler_class(request: SubRequest) -> Callable[[], BaseSampler]:
         return request.param
 
     @pytest.fixture(
@@ -133,7 +133,7 @@ class TestSampler(SamplerTestCase):
     )
     @staticmethod
     def multi_objective_sampler_class(
-        request,
+        request: SubRequest,
     ) -> Callable[[], BaseSampler]:
         return request.param
 
@@ -144,7 +144,7 @@ class TestSampler(SamplerTestCase):
     )
     @staticmethod
     def single_only_sampler_class(
-        request,
+        request: SubRequest,
     ) -> Callable[[], BaseSampler]:
         return request.param
 
