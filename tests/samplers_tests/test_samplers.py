@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import multiprocessing
 from multiprocessing.managers import DictProxy
 import os
