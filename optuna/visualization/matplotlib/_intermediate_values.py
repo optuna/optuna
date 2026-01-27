@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from optuna._experimental import experimental_func
 from optuna.logging import get_logger
 from optuna.study import Study
@@ -14,7 +16,7 @@ _logger = get_logger(__name__)
 
 
 @experimental_func("2.2.0")
-def plot_intermediate_values(study: Study) -> "Axes":
+def plot_intermediate_values(study: Study) -> Axes:
     """Plot intermediate values of all trials in a study with Matplotlib.
 
     .. seealso::
@@ -38,7 +40,7 @@ def plot_intermediate_values(study: Study) -> "Axes":
     return _get_intermediate_plot(_get_intermediate_plot_info(study))
 
 
-def _get_intermediate_plot(info: _IntermediatePlotInfo) -> "Axes":
+def _get_intermediate_plot(info: _IntermediatePlotInfo) -> Axes:
     # Set up the graph style.
     plt.style.use("ggplot")  # Use ggplot style sheet for similar outputs to plotly.
     _, ax = plt.subplots(tight_layout=True)
