@@ -74,23 +74,19 @@ class FixedSampler(BaseSampler):
 
 class SamplerTestCase:
     @pytest.fixture
-    @staticmethod
-    def sampler_class() -> Callable[[], BaseSampler]:
+    def sampler_class(self) -> Callable[[], BaseSampler]:
         raise NotImplementedError
 
     @pytest.fixture
-    @staticmethod
-    def relative_sampler_class() -> Callable[[], BaseSampler]:
+    def relative_sampler_class(self) -> Callable[[], BaseSampler]:
         raise NotImplementedError
 
     @pytest.fixture
-    @staticmethod
-    def multi_objective_sampler_class() -> Callable[[], BaseSampler]:
+    def multi_objective_sampler_class(self) -> Callable[[], BaseSampler]:
         raise NotImplementedError
 
     @pytest.fixture
-    @staticmethod
-    def single_only_sampler_class() -> Callable[[], BaseSampler]:
+    def single_only_sampler_class(self) -> Callable[[], BaseSampler]:
         raise NotImplementedError
 
     def test_raise_error_for_samplers_during_multi_objectives(

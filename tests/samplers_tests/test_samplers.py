@@ -105,8 +105,7 @@ class TestSampler(SamplerTestCase):
             lambda: get_gp_sampler(n_startup_trials=0, deterministic_objective=True),
         ]
     )
-    @staticmethod
-    def sampler_class(request: SubRequest) -> Callable[[], BaseSampler]:
+    def sampler_class(self, request: SubRequest) -> Callable[[], BaseSampler]:
         return request.param
 
     @pytest.fixture(
@@ -118,8 +117,7 @@ class TestSampler(SamplerTestCase):
             lambda: get_gp_sampler(n_startup_trials=0, deterministic_objective=True),
         ]
     )
-    @staticmethod
-    def relative_sampler_class(request: SubRequest) -> Callable[[], BaseSampler]:
+    def relative_sampler_class(self, request: SubRequest) -> Callable[[], BaseSampler]:
         return request.param
 
     @pytest.fixture(
@@ -131,8 +129,8 @@ class TestSampler(SamplerTestCase):
             lambda: get_gp_sampler(deterministic_objective=False),
         ]
     )
-    @staticmethod
     def multi_objective_sampler_class(
+        self,
         request: SubRequest,
     ) -> Callable[[], BaseSampler]:
         return request.param
@@ -142,15 +140,14 @@ class TestSampler(SamplerTestCase):
             lambda: optuna.samplers.CmaEsSampler(n_startup_trials=0),
         ]
     )
-    @staticmethod
     def single_only_sampler_class(
+        self,
         request: SubRequest,
     ) -> Callable[[], BaseSampler]:
         return request.param
 
     @pytest.fixture
-    @staticmethod
-    def unset_seed_in_test(request: SubRequest) -> None:
+    def unset_seed_in_test(self, request: SubRequest) -> None:
         # Unset the hashseed at beginning and restore it at end regardless of an exception
         # in the test.
         # See https://docs.pytest.org/en/stable/how-to/fixtures.html#adding-finalizers-directly
