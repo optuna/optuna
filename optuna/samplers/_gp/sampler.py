@@ -345,19 +345,6 @@ class GPSampler(BaseSampler):
 
         return torch.from_numpy(internal_search_space.get_normalized_params(running_trials))
 
-    def _compute_constant_liar_values(
-        self,
-        standardized_score_vals: np.ndarray,
-    ) -> np.ndarray | None:
-        if self._constant_liar == "worst":
-            return np.nanmin(standardized_score_vals, axis=0)
-        elif self._constant_liar == "best":
-            return np.nanmax(standardized_score_vals, axis=0)
-        elif self._constant_liar == "mean":
-            return np.nanmean(standardized_score_vals, axis=0)
-        else:
-            assert False, "Should not reach here."
-
     def sample_relative(
         self, study: Study, trial: FrozenTrial, search_space: dict[str, BaseDistribution]
     ) -> dict[str, Any]:
@@ -372,11 +359,13 @@ class GPSampler(BaseSampler):
 
         states = (TrialState.COMPLETE,)
         trials = study._get_trials(deepcopy=False, states=states, use_cache=True)
+
         if len(trials) < self._n_startup_trials:
             return {}
 
         internal_search_space = gp_search_space.SearchSpace(search_space)
         normalized_params = internal_search_space.get_normalized_params(trials)
+
         _sign = np.array([-1.0 if d == StudyDirection.MINIMIZE else 1.0 for d in study.directions])
         standardized_score_vals, _, _ = _standardize_values(
             _sign * np.array([trial.values for trial in trials])
@@ -417,15 +406,13 @@ class GPSampler(BaseSampler):
                     gpr=gprs_list[0],
                     search_space=internal_search_space,
                     threshold=standardized_score_vals[:, 0].max(),
+                    constant_liar_strategy=self._constant_liar,
                     normalized_params_of_running_trials=(
                         self._get_normalized_params_of_running_trials(
                             study, trials, search_space, internal_search_space
                         )
                         if self._constant_liar is not None
                         else None
-                    ),
-                    constant_liar_values=self._compute_constant_liar_values(
-                        standardized_score_vals
                     ),
                 )
                 best_params = normalized_params[np.argmax(standardized_score_vals), np.newaxis]
