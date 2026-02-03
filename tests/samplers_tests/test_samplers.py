@@ -18,8 +18,12 @@ from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
 from optuna.samplers import BaseSampler
 from optuna.samplers._lazy_random_state import LazyRandomState
+from optuna.testing.pytest_samplers import BasicSamplerTestCase
 from optuna.testing.pytest_samplers import FixedSampler
+from optuna.testing.pytest_samplers import MultiObjectiveSamplerTestCase
+from optuna.testing.pytest_samplers import RelativeSamplerTestCase
 from optuna.testing.pytest_samplers import SamplerTestCase
+from optuna.testing.pytest_samplers import SingleOnlySamplerTestCase
 from optuna.trial import Trial
 
 
@@ -86,7 +90,7 @@ def run_optimize(
     sequence_dict[k] = list(study.trials[-1].params.values())
 
 
-class TestSampler(SamplerTestCase):
+class TestBasicSampler(BasicSamplerTestCase):
     @pytest.fixture(
         params=[
             optuna.samplers.RandomSampler,
@@ -101,9 +105,11 @@ class TestSampler(SamplerTestCase):
             lambda: get_gp_sampler(n_startup_trials=0, deterministic_objective=True),
         ]
     )
-    def sampler_class(self, request: SubRequest) -> Callable[[], BaseSampler]:
+    def sampler(self, request: SubRequest) -> Callable[[], BaseSampler]:
         return request.param
 
+
+class TestRelativeSampler(RelativeSamplerTestCase):
     @pytest.fixture(
         params=[
             lambda: optuna.samplers.TPESampler(n_startup_trials=0, multivariate=True),
@@ -113,9 +119,11 @@ class TestSampler(SamplerTestCase):
             lambda: get_gp_sampler(n_startup_trials=0, deterministic_objective=True),
         ]
     )
-    def relative_sampler_class(self, request: SubRequest) -> Callable[[], BaseSampler]:
+    def sampler(self, request: SubRequest) -> Callable[[], BaseSampler]:
         return request.param
 
+
+class TestMultiObjectiveSampler(MultiObjectiveSamplerTestCase):
     @pytest.fixture(
         params=[
             optuna.samplers.NSGAIISampler,
@@ -125,23 +133,27 @@ class TestSampler(SamplerTestCase):
             lambda: get_gp_sampler(deterministic_objective=False),
         ]
     )
-    def multi_objective_sampler_class(
+    def sampler(
         self,
         request: SubRequest,
     ) -> Callable[[], BaseSampler]:
         return request.param
 
+
+class TestSingleOnlySampler(SingleOnlySamplerTestCase):
     @pytest.fixture(
         params=[
             lambda: optuna.samplers.CmaEsSampler(n_startup_trials=0),
         ]
     )
-    def single_only_sampler_class(
+    def sampler(
         self,
         request: SubRequest,
     ) -> Callable[[], BaseSampler]:
         return request.param
 
+
+class TestMiscSampler(SamplerTestCase):
     @pytest.fixture
     def unset_seed_in_test(self, request: SubRequest) -> None:
         # Unset the hashseed at beginning and restore it at end regardless of an exception
