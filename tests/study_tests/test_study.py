@@ -1769,6 +1769,7 @@ def test_get_best_trial(storage_mode: str) -> None:
             assert best_trial_no_copy.params == best_trial_with_copy.params
             assert best_trial_no_copy.state == best_trial_with_copy.state
 
+
 def test_after_trial() -> None:
     n_calls = 0
     n_trials = 3
@@ -1793,11 +1794,10 @@ def test_after_trial() -> None:
     sampler = SamplerAfterTrial()
     study = optuna.create_study(directions=["minimize", "minimize"], sampler=sampler)
 
-    study.optimize(
-        lambda t: [t.suggest_float("y", -3, 3), t.suggest_int("x", 0, 10)], n_trials=3
-    )
+    study.optimize(lambda t: [t.suggest_float("y", -3, 3), t.suggest_int("x", 0, 10)], n_trials=3)
 
     assert n_calls == n_trials
+
 
 def test_after_trial_pruning() -> None:
     n_calls = 0
@@ -1825,6 +1825,7 @@ def test_after_trial_pruning() -> None:
     study.optimize(pruned_objective, n_trials=n_trials)
 
     assert n_calls == n_trials
+
 
 def test_after_trial_failing() -> None:
     n_calls = 0
@@ -1854,6 +1855,7 @@ def test_after_trial_failing() -> None:
 
     # Called once after the first failing trial before returning from optimize.
     assert n_calls == 1
+
 
 def test_after_trial_failing_in_after_trial() -> None:
     n_calls = 0
@@ -1893,6 +1895,7 @@ def test_after_trial_failing_in_after_trial() -> None:
 
     assert len(study.trials) == 1
     assert n_calls == 2
+
 
 def test_after_trial_with_study_tell() -> None:
     n_calls = 0

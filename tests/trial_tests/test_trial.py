@@ -749,6 +749,7 @@ def test_suggest_int_positional_args(positional_args_names: list[str]) -> None:
     # No error should not be raised even if the coding style is old.
     trial.suggest_int("x", -1, 1, *args)
 
+
 def test_before_trial() -> None:
     n_calls = 0
     n_trials = 3
