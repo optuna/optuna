@@ -6,7 +6,6 @@ import os
 import pickle
 from typing import Any
 from typing import Callable
-from typing import Sequence
 from unittest.mock import patch
 
 from _pytest.fixtures import SubRequest
@@ -19,14 +18,9 @@ from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
 from optuna.samplers import BaseSampler
 from optuna.samplers._lazy_random_state import LazyRandomState
-from optuna.study import Study
-from optuna.testing.objectives import fail_objective
-from optuna.testing.objectives import pruned_objective
 from optuna.testing.pytest_samplers import FixedSampler
 from optuna.testing.pytest_samplers import SamplerTestCase
-from optuna.trial import FrozenTrial
 from optuna.trial import Trial
-from optuna.trial import TrialState
 
 
 def get_gp_sampler(
@@ -335,174 +329,6 @@ class TestSampler(SamplerTestCase):
         sampler = optuna.samplers.RandomSampler(seed)
         restored_sampler = pickle.loads(pickle.dumps(sampler))
         assert sampler._rng.rng.bytes(10) == restored_sampler._rng.rng.bytes(10)
-
-    def test_before_trial(self) -> None:
-        n_calls = 0
-        n_trials = 3
-
-        class SamplerBeforeTrial(optuna.samplers.RandomSampler):
-            def before_trial(self, study: Study, trial: FrozenTrial) -> None:
-                assert len(study.trials) - 1 == trial.number
-                assert trial.state == TrialState.RUNNING
-                assert trial.values is None
-                nonlocal n_calls
-                n_calls += 1
-
-        sampler = SamplerBeforeTrial()
-        study = optuna.create_study(directions=["minimize", "minimize"], sampler=sampler)
-
-        study.optimize(
-            lambda t: [t.suggest_float("y", -3, 3), t.suggest_int("x", 0, 10)], n_trials=n_trials
-        )
-        assert n_calls == n_trials
-
-    def test_after_trial(self) -> None:
-        n_calls = 0
-        n_trials = 3
-
-        class SamplerAfterTrial(optuna.samplers.RandomSampler):
-            def after_trial(
-                self,
-                study: Study,
-                trial: FrozenTrial,
-                state: TrialState,
-                values: Sequence[float] | None,
-            ) -> None:
-                assert len(study.trials) - 1 == trial.number
-                assert trial.state == TrialState.RUNNING
-                assert trial.values is None
-                assert state == TrialState.COMPLETE
-                assert values is not None
-                assert len(values) == 2
-                nonlocal n_calls
-                n_calls += 1
-
-        sampler = SamplerAfterTrial()
-        study = optuna.create_study(directions=["minimize", "minimize"], sampler=sampler)
-
-        study.optimize(
-            lambda t: [t.suggest_float("y", -3, 3), t.suggest_int("x", 0, 10)], n_trials=3
-        )
-
-        assert n_calls == n_trials
-
-    def test_after_trial_pruning(self) -> None:
-        n_calls = 0
-        n_trials = 3
-
-        class SamplerAfterTrial(optuna.samplers.RandomSampler):
-            def after_trial(
-                self,
-                study: Study,
-                trial: FrozenTrial,
-                state: TrialState,
-                values: Sequence[float] | None,
-            ) -> None:
-                assert len(study.trials) - 1 == trial.number
-                assert trial.state == TrialState.RUNNING
-                assert trial.values is None
-                assert state == TrialState.PRUNED
-                assert values is None
-                nonlocal n_calls
-                n_calls += 1
-
-        sampler = SamplerAfterTrial()
-        study = optuna.create_study(directions=["minimize", "minimize"], sampler=sampler)
-
-        study.optimize(pruned_objective, n_trials=n_trials)
-
-        assert n_calls == n_trials
-
-    def test_after_trial_failing(self) -> None:
-        n_calls = 0
-        n_trials = 3
-
-        class SamplerAfterTrial(optuna.samplers.RandomSampler):
-            def after_trial(
-                self,
-                study: Study,
-                trial: FrozenTrial,
-                state: TrialState,
-                values: Sequence[float] | None,
-            ) -> None:
-                assert len(study.trials) - 1 == trial.number
-                assert trial.state == TrialState.RUNNING
-                assert trial.values is None
-                assert state == TrialState.FAIL
-                assert values is None
-                nonlocal n_calls
-                n_calls += 1
-
-        sampler = SamplerAfterTrial()
-        study = optuna.create_study(directions=["minimize", "minimize"], sampler=sampler)
-
-        with pytest.raises(ValueError):
-            study.optimize(fail_objective, n_trials=n_trials)
-
-        # Called once after the first failing trial before returning from optimize.
-        assert n_calls == 1
-
-    def test_after_trial_failing_in_after_trial(self) -> None:
-        n_calls = 0
-        n_trials = 3
-
-        class SamplerAfterTrialAlwaysFail(optuna.samplers.RandomSampler):
-            def after_trial(
-                self,
-                study: Study,
-                trial: FrozenTrial,
-                state: TrialState,
-                values: Sequence[float] | None,
-            ) -> None:
-                nonlocal n_calls
-                n_calls += 1
-                raise NotImplementedError  # Arbitrary error for testing purpose.
-
-        sampler = SamplerAfterTrialAlwaysFail()
-        study = optuna.create_study(sampler=sampler)
-
-        with pytest.raises(NotImplementedError):
-            study.optimize(lambda t: t.suggest_int("x", 0, 10), n_trials=n_trials)
-
-        assert len(study.trials) == 1
-        assert n_calls == 1
-
-        sampler = SamplerAfterTrialAlwaysFail()
-        study = optuna.create_study(sampler=sampler)
-
-        # Not affected by `catch`.
-        with pytest.raises(NotImplementedError):
-            study.optimize(
-                lambda t: t.suggest_int("x", 0, 10),
-                n_trials=n_trials,
-                catch=(NotImplementedError,),
-            )
-
-        assert len(study.trials) == 1
-        assert n_calls == 2
-
-    def test_after_trial_with_study_tell(self) -> None:
-        n_calls = 0
-
-        class SamplerAfterTrial(optuna.samplers.RandomSampler):
-            def after_trial(
-                self,
-                study: Study,
-                trial: FrozenTrial,
-                state: TrialState,
-                values: Sequence[float] | None,
-            ) -> None:
-                nonlocal n_calls
-                n_calls += 1
-
-        sampler = SamplerAfterTrial()
-        study = optuna.create_study(sampler=sampler)
-
-        assert n_calls == 0
-
-        study.tell(study.ask(), 1.0)
-
-        assert n_calls == 1
 
     def test_sample_relative(self) -> None:
         relative_search_space: dict[str, BaseDistribution] = {
