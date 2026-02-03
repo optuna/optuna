@@ -38,7 +38,8 @@ from optuna.exceptions import ExperimentalWarning
 from optuna.study import StudyDirection
 from optuna.study._constrained_optimization import _CONSTRAINTS_KEY
 from optuna.study.study import _SYSTEM_ATTR_METRIC_NAMES
-from optuna.testing.objectives import fail_objective, pruned_objective
+from optuna.testing.objectives import fail_objective
+from optuna.testing.objectives import pruned_objective
 from optuna.testing.storages import STORAGE_MODES
 from optuna.testing.storages import StorageSupplier
 from optuna.trial import FrozenTrial
