@@ -135,10 +135,12 @@ def test_group_decomposed_search_space() -> None:
 
     # Parameters which include one of search spaces in the group.
     study.optimize(
-        lambda t: t.suggest_int("y", 0, 10)
-        + t.suggest_float("z", -3, 3)
-        + t.suggest_float("u", 1e-2, 1e2, log=True)
-        + bool(t.suggest_categorical("v", ["A", "B", "C"])),
+        lambda t: (
+            t.suggest_int("y", 0, 10)
+            + t.suggest_float("z", -3, 3)
+            + t.suggest_float("u", 1e-2, 1e2, log=True)
+            + bool(t.suggest_categorical("v", ["A", "B", "C"]))
+        ),
         n_trials=1,
     )
     assert search_space.calculate(study).search_spaces == [

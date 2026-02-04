@@ -469,9 +469,9 @@ def frozen_trial_factory(
         1.0, 100.0
     ),
     value_fn: Callable[[int], int | float] | None = None,
-    state_fn: Callable[
-        [int], optuna.trial.TrialState
-    ] = lambda _: optuna.trial.TrialState.COMPLETE,
+    state_fn: Callable[[int], optuna.trial.TrialState] = lambda _: (
+        optuna.trial.TrialState.COMPLETE
+    ),
 ) -> optuna.trial.FrozenTrial:
     if value_fn is None:
         value = random.random() * 99.0 + 1.0
