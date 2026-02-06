@@ -168,15 +168,6 @@ class GPSampler(BaseSampler):
             The ``constraints_func`` will be evaluated after each successful trial.
             The function won't be called when trials fail or are pruned, but this behavior is
             subject to change in future releases.
-        constant_liar:
-            Optional strategy for handling pending trials (e.g., in batch optimization).
-            If :obj:`None` (default), pending trials are ignored. If set to 'best',
-            'worst', or 'mean', the objective values of pending trials are
-            temporarily imputed using the best, worst, or mean objective value observed
-            among completed trials, respectively.
-
-            Note that this option is currently supported only for single-objective
-            optimization without constraints.
         warn_independent_sampling:
             If this is :obj:`True`, a warning message is emitted when
             the value of a parameter is sampled by using an independent sampler,
@@ -193,7 +184,6 @@ class GPSampler(BaseSampler):
         n_startup_trials: int = 10,
         deterministic_objective: bool = False,
         constraints_func: Callable[[FrozenTrial], Sequence[float]] | None = None,
-        constant_liar: str | None = None,
         warn_independent_sampling: bool = True,
     ) -> None:
         self._rng = LazyRandomState(seed)
@@ -208,25 +198,10 @@ class GPSampler(BaseSampler):
         self._constraints_gprs_cache_list: list[gp.GPRegressor] | None = None
         self._deterministic = deterministic_objective
         self._constraints_func = constraints_func
-        self._constant_liar = constant_liar
         self._warn_independent_sampling = warn_independent_sampling
 
         if constraints_func is not None:
             warn_experimental_argument("constraints_func")
-
-        if self._constant_liar not in (None, "best", "worst", "mean"):
-            raise ValueError(
-                "The constant_liar argument should be one of None, 'best', 'worst', or 'mean'."
-            )
-
-        if self._constant_liar is not None:
-            warn_experimental_argument("constant_liar")
-
-        if self._constant_liar and constraints_func is not None:
-            raise ValueError(
-                "Currently, we do not support `constant_liar=True` and `constraints_func` is "
-                "not None."
-            )
 
         # Control parameters of the acquisition function optimization.
         self._n_preliminary_samples: int = 2048
@@ -337,38 +312,28 @@ class GPSampler(BaseSampler):
         search_space: dict[str, BaseDistribution],
         internal_search_space: gp_search_space.SearchSpace,
     ) -> torch.Tensor | None:
-        states = (TrialState.RUNNING,)
-        running_trials = study._get_trials(deepcopy=False, states=states, use_cache=False)
-        running_trials = [t for t in running_trials if search_space.keys() <= get_params(t).keys()]
-        if len(running_trials) == 0:
-            return None
-
+        running_trials = [t for t in trials if search_space.keys() <= get_params(t).keys() and t.state == TrialState.RUNNING]
         return torch.from_numpy(internal_search_space.get_normalized_params(running_trials))
 
     def sample_relative(
         self, study: Study, trial: FrozenTrial, search_space: dict[str, BaseDistribution]
     ) -> dict[str, Any]:
-        if self._constant_liar is not None and len(study.directions) > 1:
-            raise ValueError(
-                "Currently, constant liar strategy is not implemented for multi-objective "
-                "optimization."
-            )
-
         if search_space == {}:
             return {}
 
-        states = (TrialState.COMPLETE,)
-        trials = study._get_trials(deepcopy=False, states=states, use_cache=True)
+        states = (TrialState.COMPLETE, TrialState.RUNNING)
+        trials = study._get_trials(deepcopy=False, states=states, use_cache=False)
+        complete_trials = [t for t in trials if t.state == TrialState.COMPLETE]
 
-        if len(trials) < self._n_startup_trials:
+        if len(complete_trials) < self._n_startup_trials:
             return {}
 
         internal_search_space = gp_search_space.SearchSpace(search_space)
-        normalized_params = internal_search_space.get_normalized_params(trials)
+        normalized_params = internal_search_space.get_normalized_params(complete_trials)
 
         _sign = np.array([-1.0 if d == StudyDirection.MINIMIZE else 1.0 for d in study.directions])
         standardized_score_vals, _, _ = _standardize_values(
-            _sign * np.array([trial.values for trial in trials])
+            _sign * np.array([trial.values for trial in complete_trials])
         )
 
         if (
@@ -406,13 +371,10 @@ class GPSampler(BaseSampler):
                     gpr=gprs_list[0],
                     search_space=internal_search_space,
                     threshold=standardized_score_vals[:, 0].max(),
-                    constant_liar_strategy=self._constant_liar,
                     normalized_params_of_running_trials=(
                         self._get_normalized_params_of_running_trials(
                             study, trials, search_space, internal_search_space
                         )
-                        if self._constant_liar is not None
-                        else None
                     ),
                 )
                 best_params = normalized_params[np.argmax(standardized_score_vals), np.newaxis]
@@ -430,7 +392,7 @@ class GPSampler(BaseSampler):
         else:
             if n_objectives == 1:
                 assert len(gprs_list) == 1
-                constraint_vals, is_feasible = _get_constraint_vals_and_feasibility(study, trials)
+                constraint_vals, is_feasible = _get_constraint_vals_and_feasibility(study, complete_trials)
                 y_with_neginf = np.where(is_feasible, standardized_score_vals[:, 0], -np.inf)
                 # TODO(kAIto47802): If all trials are infeasible, the acquisition function
                 # for the objective function can be ignored, so skipping the computation
@@ -454,7 +416,7 @@ class GPSampler(BaseSampler):
                     None if np.isneginf(best_feasible_y) else normalized_params[i_opt, np.newaxis]
                 )
             else:
-                constraint_vals, is_feasible = _get_constraint_vals_and_feasibility(study, trials)
+                constraint_vals, is_feasible = _get_constraint_vals_and_feasibility(study, complete_trials)
                 constr_gpr_list, constr_threshold_list = self._get_constraints_acqf_args(
                     constraint_vals, internal_search_space, normalized_params
                 )
@@ -484,7 +446,7 @@ class GPSampler(BaseSampler):
         normalized_param = self._optimize_acqf(acqf, best_params)
         params = internal_search_space.get_unnormalized_param(normalized_param)
 
-        if params != {} and self._constant_liar is not None:
+        if params != {}:
             # Share the params obtained by the relative sampling with the other processes.
             params_str = json.dumps(params)
             for i in range(0, len(params_str), _SYSTEM_ATTR_MAX_LENGTH):

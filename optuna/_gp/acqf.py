@@ -119,23 +119,15 @@ class LogEI(BaseAcquisitionFunc):
         gpr: GPRegressor,
         search_space: SearchSpace,
         threshold: float,
-        constant_liar_strategy: str | None,
-        normalized_params_of_running_trials: torch.Tensor | None,
+        normalized_params_of_running_trials: torch.Tensor,
         stabilizing_noise: float = 1e-12,
     ) -> None:
         self._gpr = gpr
         self._stabilizing_noise = stabilizing_noise
         self._threshold = threshold
-        if normalized_params_of_running_trials is not None:
-            if constant_liar_strategy == "worst":
-                constant_liar_value = self._gpr._y_train.min()
-            elif constant_liar_strategy == "best":
-                constant_liar_value = self._gpr._y_train.max()
-            elif constant_liar_strategy == "mean":
-                constant_liar_value = self._gpr._y_train.mean()
-            else:
-                assert False, "Should not reach here."
 
+        if normalized_params_of_running_trials.shape[0] != 0:
+            constant_liar_value = self._gpr._y_train.min()
             constant_liar_y = constant_liar_value.expand(
                 normalized_params_of_running_trials.shape[0]
             )
@@ -144,6 +136,7 @@ class LogEI(BaseAcquisitionFunc):
                 normalized_params_of_running_trials,
                 constant_liar_y,
             )
+        
         super().__init__(gpr.length_scales, search_space)
 
     def eval_acqf(self, x: torch.Tensor) -> torch.Tensor:
