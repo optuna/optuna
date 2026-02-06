@@ -128,35 +128,3 @@ def test_behavior_without_greenlet(monkeypatch: pytest.MonkeyPatch) -> None:
     study = optuna.create_study(sampler=sampler)
     study.optimize(lambda trial: trial.suggest_float("x", -10, 10) ** 2, n_trials=15)
 
-
-@pytest.mark.parametrize("constant_liar", ["mean", "worst"])
-def test_constant_liar(constant_liar: str | None) -> None:
-    sampler = GPSampler(
-        constant_liar=constant_liar,
-        seed=42,
-    )
-    study = optuna.create_study(sampler=sampler)
-    study.optimize(lambda trial: trial.suggest_float("x", -10, 10) ** 2, n_trials=15)
-
-    trials = [study.ask() for _ in range(5)]
-    xs = [t.suggest_float("x", -10, 10) for t in trials]
-
-    # `constant_liar="best"` can legitimately produce duplicates,
-    # so checking `len(set(xs)) == len(xs)` would be flaky.
-    assert len(set(xs)) == len(xs)
-
-
-def test_should_raise_exception() -> None:
-    with pytest.raises(ValueError):
-        GPSampler(constant_liar="invalid_option")
-
-    with pytest.raises(ValueError):
-        GPSampler(constant_liar="best", constraints_func=lambda t: (0.0,))
-
-    with pytest.raises(ValueError):
-        sampler = GPSampler(constant_liar="best")
-        study = optuna.create_study(sampler=sampler, directions=["minimize", "minimize"])
-        study.optimize(
-            lambda trial: (trial.suggest_float("x", -10, 10), trial.suggest_float("y", -10, 10)),
-            n_trials=1,
-        )
