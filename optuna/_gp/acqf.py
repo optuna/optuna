@@ -119,14 +119,14 @@ class LogEI(BaseAcquisitionFunc):
         gpr: GPRegressor,
         search_space: SearchSpace,
         threshold: float,
-        normalized_params_of_running_trials: np.ndarray = np.ndarray([]),
+        normalized_params_of_running_trials: np.ndarray = np.array([]),
         stabilizing_noise: float = 1e-12,
     ) -> None:
         self._gpr = gpr
         self._stabilizing_noise = stabilizing_noise
         self._threshold = threshold
 
-        if normalized_params_of_running_trials.shape[0] != 0:
+        if normalized_params_of_running_trials.size != 0:
             normalized_params_of_running_trials = torch.from_numpy(
                 normalized_params_of_running_trials
             )
@@ -221,7 +221,7 @@ class ConstrainedLogEI(BaseAcquisitionFunc):
         assert (
             len(constraints_gpr_list) == len(constraints_threshold_list) and constraints_gpr_list
         )
-        self._acqf = LogEI(gpr, search_space, threshold, torch.Tensor(), stabilizing_noise)
+        self._acqf = LogEI(gpr, search_space, threshold, np.array([]), stabilizing_noise)
         self._constraints_acqf_list = [
             LogPI(_gpr, search_space, _threshold, stabilizing_noise)
             for _gpr, _threshold in zip(constraints_gpr_list, constraints_threshold_list)
