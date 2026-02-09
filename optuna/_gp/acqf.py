@@ -119,7 +119,7 @@ class LogEI(BaseAcquisitionFunc):
         gpr: GPRegressor,
         search_space: SearchSpace,
         threshold: float,
-        normalized_params_of_running_trials: torch.Tensor = torch.Tensor(),
+        normalized_params_of_running_trials: np.ndarray = np.ndarray([]),
         stabilizing_noise: float = 1e-12,
     ) -> None:
         self._gpr = gpr
@@ -127,6 +127,9 @@ class LogEI(BaseAcquisitionFunc):
         self._threshold = threshold
 
         if normalized_params_of_running_trials.shape[0] != 0:
+            normalized_params_of_running_trials = torch.from_numpy(
+                normalized_params_of_running_trials
+            )
             constant_liar_value = self._gpr._y_train.max()
             constant_liar_y = constant_liar_value.expand(
                 normalized_params_of_running_trials.shape[0]

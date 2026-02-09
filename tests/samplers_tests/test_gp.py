@@ -127,4 +127,3 @@ def test_behavior_without_greenlet(monkeypatch: pytest.MonkeyPatch) -> None:
     sampler = optuna.samplers.GPSampler(seed=42)
     study = optuna.create_study(sampler=sampler)
     study.optimize(lambda trial: trial.suggest_float("x", -10, 10) ** 2, n_trials=15)
-

@@ -307,9 +307,7 @@ class GPSampler(BaseSampler):
 
     def _get_normalized_params_of_running_trials(
         self,
-        study: Study,
         trials: list[FrozenTrial],
-        search_space: dict[str, BaseDistribution],
         internal_search_space: gp_search_space.SearchSpace,
     ) -> torch.Tensor:
         running_trials = [
@@ -318,7 +316,7 @@ class GPSampler(BaseSampler):
             if internal_search_space._optuna_search_space.keys() <= get_params(t).keys()
             and t.state == TrialState.RUNNING
         ]
-        return torch.from_numpy(internal_search_space.get_normalized_params(running_trials))
+        return internal_search_space.get_normalized_params(running_trials)
 
     def sample_relative(
         self, study: Study, trial: FrozenTrial, search_space: dict[str, BaseDistribution]
@@ -378,7 +376,7 @@ class GPSampler(BaseSampler):
                     threshold=standardized_score_vals[:, 0].max(),
                     normalized_params_of_running_trials=(
                         self._get_normalized_params_of_running_trials(
-                            study, trials, search_space, internal_search_space
+                            trials, internal_search_space
                         )
                     ),
                 )
