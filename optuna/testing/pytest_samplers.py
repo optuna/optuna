@@ -72,13 +72,13 @@ class FixedSampler(BaseSampler):
         return self.unknown_param_value
 
 
-class SamplerTestCase:
+class _BaseSamplerTestCase:
     @pytest.fixture
     def sampler(self) -> Callable[[], BaseSampler]:
         raise NotImplementedError
 
 
-class BasicSamplerTestCase(SamplerTestCase):
+class BasicSamplerTestCase(_BaseSamplerTestCase):
     @pytest.mark.parametrize(
         "distribution",
         [
@@ -345,7 +345,7 @@ class BasicSamplerTestCase(SamplerTestCase):
         assert all(t.state == TrialState.COMPLETE for t in study.trials)
 
 
-class RelativeSamplerTestCase(SamplerTestCase):
+class RelativeSamplerTestCase(_BaseSamplerTestCase):
     @pytest.mark.parametrize(
         "x_distribution",
         [
@@ -490,7 +490,7 @@ class RelativeSamplerTestCase(SamplerTestCase):
         study.optimize(objective, n_trials=10, n_jobs=n_jobs)
 
 
-class MultiObjectiveSamplerTestCase(SamplerTestCase):
+class MultiObjectiveSamplerTestCase(_BaseSamplerTestCase):
     @pytest.mark.parametrize(
         "distribution",
         [
@@ -539,7 +539,7 @@ class MultiObjectiveSamplerTestCase(SamplerTestCase):
                     np.testing.assert_almost_equal(round_value, value)
 
 
-class SingleOnlySamplerTestCase(SamplerTestCase):
+class SingleOnlySamplerTestCase(_BaseSamplerTestCase):
     def test_raise_error_for_samplers_during_multi_objectives(
         self,
         sampler: Callable[[], BaseSampler],
