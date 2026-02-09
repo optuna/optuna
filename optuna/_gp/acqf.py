@@ -127,7 +127,7 @@ class LogEI(BaseAcquisitionFunc):
         self._threshold = threshold
 
         if normalized_params_of_running_trials.shape[0] != 0:
-            constant_liar_value = self._gpr._y_train.min()
+            constant_liar_value = self._gpr._y_train.max()
             constant_liar_y = constant_liar_value.expand(
                 normalized_params_of_running_trials.shape[0]
             )
