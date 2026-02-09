@@ -136,7 +136,7 @@ class LogEI(BaseAcquisitionFunc):
                 normalized_params_of_running_trials,
                 constant_liar_y,
             )
-        
+
         super().__init__(gpr.length_scales, search_space)
 
     def eval_acqf(self, x: torch.Tensor) -> torch.Tensor:

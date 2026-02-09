@@ -311,8 +311,13 @@ class GPSampler(BaseSampler):
         trials: list[FrozenTrial],
         search_space: dict[str, BaseDistribution],
         internal_search_space: gp_search_space.SearchSpace,
-    ) -> torch.Tensor | None:
-        running_trials = [t for t in trials if search_space.keys() <= get_params(t).keys() and t.state == TrialState.RUNNING]
+    ) -> torch.Tensor:
+        running_trials = [
+            t
+            for t in trials
+            if internal_search_space._optuna_search_space.keys() <= get_params(t).keys()
+            and t.state == TrialState.RUNNING
+        ]
         return torch.from_numpy(internal_search_space.get_normalized_params(running_trials))
 
     def sample_relative(
@@ -392,7 +397,9 @@ class GPSampler(BaseSampler):
         else:
             if n_objectives == 1:
                 assert len(gprs_list) == 1
-                constraint_vals, is_feasible = _get_constraint_vals_and_feasibility(study, complete_trials)
+                constraint_vals, is_feasible = _get_constraint_vals_and_feasibility(
+                    study, complete_trials
+                )
                 y_with_neginf = np.where(is_feasible, standardized_score_vals[:, 0], -np.inf)
                 # TODO(kAIto47802): If all trials are infeasible, the acquisition function
                 # for the objective function can be ignored, so skipping the computation
@@ -416,7 +423,9 @@ class GPSampler(BaseSampler):
                     None if np.isneginf(best_feasible_y) else normalized_params[i_opt, np.newaxis]
                 )
             else:
-                constraint_vals, is_feasible = _get_constraint_vals_and_feasibility(study, complete_trials)
+                constraint_vals, is_feasible = _get_constraint_vals_and_feasibility(
+                    study, complete_trials
+                )
                 constr_gpr_list, constr_threshold_list = self._get_constraints_acqf_args(
                     constraint_vals, internal_search_space, normalized_params
                 )
