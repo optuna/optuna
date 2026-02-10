@@ -958,9 +958,9 @@ def frozen_trial_factory(
     dist: optuna.distributions.BaseDistribution = optuna.distributions.FloatDistribution(
         1.0, 100.0
     ),
-    state_fn: Callable[
-        [int], optuna.trial.TrialState
-    ] = lambda _: optuna.trial.TrialState.COMPLETE,
+    state_fn: Callable[[int], optuna.trial.TrialState] = lambda _: (
+        optuna.trial.TrialState.COMPLETE
+    ),
     value_fn: Callable[[int], int | float] | None = None,
     target_fn: Callable[[float], float] = lambda val: (val - 20.0) ** 2,
     interm_val_fn: Callable[[int], dict[int, float]] = lambda _: {},
@@ -1043,10 +1043,12 @@ def test_group() -> None:
 
     with patch.object(sampler, "_sample_relative", wraps=sampler._sample_relative) as mock:
         study.optimize(
-            lambda t: t.suggest_int("y", 0, 10)
-            + t.suggest_float("z", -3, 3)
-            + t.suggest_float("u", 1e-2, 1e2, log=True)
-            + bool(t.suggest_categorical("v", ["A", "B", "C"])),
+            lambda t: (
+                t.suggest_int("y", 0, 10)
+                + t.suggest_float("z", -3, 3)
+                + t.suggest_float("u", 1e-2, 1e2, log=True)
+                + bool(t.suggest_categorical("v", ["A", "B", "C"]))
+            ),
             n_trials=1,
         )
         assert mock.call_count == 2

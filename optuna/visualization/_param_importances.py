@@ -1,18 +1,23 @@
 from __future__ import annotations
 
-from collections.abc import Callable
 from typing import NamedTuple
+from typing import TYPE_CHECKING
 
 import optuna
-from optuna.distributions import BaseDistribution
-from optuna.importance._base import BaseImportanceEvaluator
 from optuna.logging import get_logger
-from optuna.study import Study
-from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 from optuna.visualization._plotly_imports import _imports
 from optuna.visualization._utils import _check_plot_args
 from optuna.visualization._utils import _filter_nonfinite
+
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from optuna.distributions import BaseDistribution
+    from optuna.importance._base import BaseImportanceEvaluator
+    from optuna.study import Study
+    from optuna.trial import FrozenTrial
 
 
 if _imports.is_successful():
