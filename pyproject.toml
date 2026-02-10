@@ -42,11 +42,6 @@ dependencies = [
 dynamic = ["version"]
 
 [project.optional-dependencies]
-benchmark = [
-  "asv>=0.5.0",
-  "cma",
-  "virtualenv"
-]
 checking = [
   "mypy",
   "mypy_boto3_s3",
@@ -144,7 +139,6 @@ exclude = [
   "build",
   "dist",
   "docs",
-  ".asv",
   "optuna/storages/_grpc/auto_generated",
 ]
 
@@ -157,7 +151,7 @@ select = [
 ]
 
 [tool.ruff.lint.isort]
-known-first-party = ["optuna", "tests", "docs", "benchmarks"]
+known-first-party = ["optuna", "tests", "docs"]
 lines-after-imports = 2
 force-single-line = true
 force-sort-within-sections = true

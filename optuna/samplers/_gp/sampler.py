@@ -331,6 +331,14 @@ class GPSampler(BaseSampler):
         if len(complete_trials) < self._n_startup_trials:
             return {}
 
+        # Force CPU device for all torch operations to avoid issues when
+        # torch.set_default_device("cuda") is set globally (issue #6113).
+        with torch.device("cpu"):
+            return self._sample_relative_impl(study, trials, search_space)
+
+    def _sample_relative_impl(
+        self, study: Study, trials: list[FrozenTrial], search_space: dict[str, BaseDistribution]
+    ) -> dict[str, Any]:
         internal_search_space = gp_search_space.SearchSpace(search_space)
         normalized_params = internal_search_space.get_normalized_params(complete_trials)
 

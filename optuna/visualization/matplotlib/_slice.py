@@ -1,18 +1,23 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from collections.abc import Callable
 import math
 from typing import Any
+from typing import TYPE_CHECKING
 
 from optuna._experimental import experimental_func
-from optuna.study import Study
-from optuna.trial import FrozenTrial
 from optuna.visualization._slice import _get_slice_plot_info
 from optuna.visualization._slice import _PlotValues
 from optuna.visualization._slice import _SlicePlotInfo
 from optuna.visualization._slice import _SliceSubplotInfo
 from optuna.visualization.matplotlib._matplotlib_imports import _imports
+
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from optuna.study import Study
+    from optuna.trial import FrozenTrial
 
 
 if _imports.is_successful():

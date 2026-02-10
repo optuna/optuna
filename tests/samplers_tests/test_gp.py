@@ -127,3 +127,36 @@ def test_behavior_without_greenlet(monkeypatch: pytest.MonkeyPatch) -> None:
     sampler = optuna.samplers.GPSampler(seed=42)
     study = optuna.create_study(sampler=sampler)
     study.optimize(lambda trial: trial.suggest_float("x", -10, 10) ** 2, n_trials=15)
+
+
+def test_gpsampler_with_cuda_default_device() -> None:
+    """Test that GPSampler works when torch.set_default_device('cuda') is set.
+
+    Regression test for issue #6113. When users set torch.set_default_device('cuda'),
+    GPSampler should still work by forcing CPU device internally.
+    """
+    import torch
+
+    if not torch.cuda.is_available():
+        pytest.skip("CUDA not available")
+
+    # Set CUDA as the default device (simulating user's global setting)
+    original_device = torch.get_default_device()
+    torch.set_default_device("cuda")
+
+    try:
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
+            sampler = GPSampler(n_startup_trials=2, seed=42)
+
+        study = optuna.create_study(sampler=sampler)
+        # Run enough trials to trigger GP sampling (past startup trials)
+        study.optimize(lambda trial: trial.suggest_float("x", -10, 10) ** 2, n_trials=5)
+
+        assert len(study.trials) == 5
+    finally:
+        # Restore original device setting
+        if original_device is None:
+            torch.set_default_device(None)
+        else:
+            torch.set_default_device(original_device)

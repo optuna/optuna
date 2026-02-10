@@ -75,8 +75,8 @@ def experimental_func(
         @functools.wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> FT:
             warnings.warn(
-                "{} is experimental (supported from v{}). "
-                "The interface can change in the future.".format(_name, version),
+                f"{_name} is experimental (supported from v{version}). "
+                "The interface can change in the future.",
                 ExperimentalWarning,
                 stacklevel=2,
             )

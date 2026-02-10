@@ -2,14 +2,18 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from typing import cast
+from typing import TYPE_CHECKING
 
 import numpy as np
 
 import optuna
 from optuna.study._constrained_optimization import _get_feasible_trials
 from optuna.study._study_direction import StudyDirection
-from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
+
+
+if TYPE_CHECKING:
+    from optuna.trial import FrozenTrial
 
 
 def _get_pareto_front_trials_by_trials(

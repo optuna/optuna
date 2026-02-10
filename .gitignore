@@ -129,9 +129,6 @@ docs/source/sg_execution_times.rst
 docs/source/tutorial/**
 !docs/source/tutorial/index.rst
 
-# asv
-.asv
-
 # Dask
 dask-worker-space/
 

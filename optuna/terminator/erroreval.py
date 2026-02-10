@@ -2,14 +2,18 @@ from __future__ import annotations
 
 import abc
 from typing import cast
+from typing import TYPE_CHECKING
 
 import numpy as np
 
 from optuna._experimental import experimental_class
 from optuna.study import StudyDirection
-from optuna.trial import FrozenTrial
-from optuna.trial import Trial
 from optuna.trial._state import TrialState
+
+
+if TYPE_CHECKING:
+    from optuna.trial import FrozenTrial
+    from optuna.trial import Trial
 
 
 _CROSS_VALIDATION_SCORES_KEY = "terminator:cv_scores"
