@@ -334,10 +334,26 @@ class GPSampler(BaseSampler):
         # Force CPU device for all torch operations to avoid issues when
         # torch.set_default_device("cuda") is set globally (issue #6113).
         with torch.device("cpu"):
-            return self._sample_relative_impl(study, trials, search_space)
+            params = self._sample_relative_impl(study, complete_trials, trials, search_space)
+
+        if params != {}:
+            # Share the params obtained by the relative sampling with the other processes.
+            params_str = json.dumps(params)
+            for i in range(0, len(params_str), _SYSTEM_ATTR_MAX_LENGTH):
+                study._storage.set_trial_system_attr(
+                    trial._trial_id,
+                    f"{_RELATIVE_PARAMS_KEY}:{i // _SYSTEM_ATTR_MAX_LENGTH}",
+                    params_str[i : i + _SYSTEM_ATTR_MAX_LENGTH],
+                )
+
+        return params
 
     def _sample_relative_impl(
-        self, study: Study, trials: list[FrozenTrial], search_space: dict[str, BaseDistribution]
+        self,
+        study: Study,
+        complete_trials: list[FrozenTrial],
+        trials: list[FrozenTrial],
+        search_space: dict[str, BaseDistribution],
     ) -> dict[str, Any]:
         internal_search_space = gp_search_space.SearchSpace(search_space)
         normalized_params = internal_search_space.get_normalized_params(complete_trials)
@@ -459,19 +475,7 @@ class GPSampler(BaseSampler):
                 )
 
         normalized_param = self._optimize_acqf(acqf, best_params)
-        params = internal_search_space.get_unnormalized_param(normalized_param)
-
-        if params != {}:
-            # Share the params obtained by the relative sampling with the other processes.
-            params_str = json.dumps(params)
-            for i in range(0, len(params_str), _SYSTEM_ATTR_MAX_LENGTH):
-                study._storage.set_trial_system_attr(
-                    trial._trial_id,
-                    f"{_RELATIVE_PARAMS_KEY}:{i // _SYSTEM_ATTR_MAX_LENGTH}",
-                    params_str[i : i + _SYSTEM_ATTR_MAX_LENGTH],
-                )
-
-        return params
+        return internal_search_space.get_unnormalized_param(normalized_param)
 
     def sample_independent(
         self,
