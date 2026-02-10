@@ -173,6 +173,7 @@ class GPRegressor:
             scipy.linalg.solve_triangular(cov_Y_Y_chol, y_total, lower=True),
             lower=False,
         )
+
         # NOTE(nabenabe): Here we use NumPy to guarantee the reproducibility from the past.
         self._cov_Y_Y_chol = torch.from_numpy(cov_Y_Y_chol)
         self._cov_Y_Y_inv_Y = torch.from_numpy(cov_Y_Y_inv_Y)
