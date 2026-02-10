@@ -108,6 +108,7 @@ class GPRegressor:
             self._squared_X_diff[..., self._is_categorical] = (
                 self._squared_X_diff[..., self._is_categorical] > 0.0
             ).type(torch.float64)
+        self._cov_Y_Y: np.ndarray | None = None
         self._cov_Y_Y_chol: torch.Tensor | None = None
         self._cov_Y_Y_inv_Y: torch.Tensor | None = None
         # TODO(nabenabe): Rename the attributes to private with `_`.
@@ -124,10 +125,10 @@ class GPRegressor:
             "Cannot call cache_matrix more than once."
         )
         with torch.no_grad():
-            cov_Y_Y = self.kernel().detach().numpy()
+            self._cov_Y_Y = self.kernel().detach().numpy()
 
-        cov_Y_Y[np.diag_indices(self._X_train.shape[0])] += self.noise_var.item()
-        cov_Y_Y_chol = np.linalg.cholesky(cov_Y_Y)
+        self._cov_Y_Y[np.diag_indices(self._X_train.shape[0])] += self.noise_var.item()
+        cov_Y_Y_chol = np.linalg.cholesky(self._cov_Y_Y)
         # cov_Y_Y_inv @ y = v --> y = cov_Y_Y @ v --> y = cov_Y_Y_chol @ cov_Y_Y_chol.T @ v
         # NOTE(nabenabe): Don't use np.linalg.inv because it is too slow und unstable.
         # cf. https://github.com/optuna/optuna/issues/6230
@@ -146,22 +147,37 @@ class GPRegressor:
         self.noise_var = self.noise_var.detach()
         self.noise_var.grad = None
 
-    def add_data(self, x_running: torch.Tensor, y_running: torch.Tensor) -> None:
-        # TODO(sawa3030): Implement a faster way to add data
-        # without recomputing everything from scratch.
-        self._X_train = torch.cat([self._X_train, x_running], dim=0)
-        self._y_train = torch.cat([self._y_train, y_running], dim=0)
-        self._squared_X_diff = (
-            self._X_train.unsqueeze(-2) - self._X_train.unsqueeze(-3)
-        ).square_()
-        if self._is_categorical.any():
-            self._squared_X_diff[..., self._is_categorical] = (
-                self._squared_X_diff[..., self._is_categorical] > 0.0
-            ).type(torch.float64)
-        self._cov_Y_Y_chol = None
-        self._cov_Y_Y_inv_Y = None
+    def append_running_data(self, X_running: torch.Tensor, y_running: torch.Tensor) -> None:
+        n_train = self._X_train.shape[0]
+        n_running = X_running.shape[0]
+        n_total = n_train + n_running
 
-        self._cache_matrix()
+        cov_Y_Y_new = np.empty((n_total, n_total), dtype=np.float64)
+        cov_Y_Y_new[:n_train, :n_train] = self._cov_Y_Y
+        self._cov_Y_Y = cov_Y_Y_new
+
+        with torch.no_grad():
+            self._cov_Y_Y[n_train:, :n_train] = self.kernel(X_running).detach().numpy()
+            self._cov_Y_Y[:n_train, n_train:] = self.kernel(X_running).T.detach().numpy()
+            kernel_running_running = self.kernel(X_running, X_running).detach().numpy()
+            kernel_running_running[np.diag_indices(n_running)] += self.noise_var.item()
+            self._cov_Y_Y[n_train:, n_train:] = kernel_running_running
+
+        cov_Y_Y_chol = np.linalg.cholesky(self._cov_Y_Y)
+        # cov_Y_Y_inv @ y = v --> y = cov_Y_Y @ v --> y = cov_Y_Y_chol @ cov_Y_Y_chol.T @ v
+        # NOTE(nabenabe): Don't use np.linalg.inv because it is too slow und unstable.
+        # cf. https://github.com/optuna/optuna/issues/6230
+        y_total = torch.cat([self._y_train, y_running], dim=0).numpy()
+        cov_Y_Y_inv_Y = scipy.linalg.solve_triangular(
+            cov_Y_Y_chol.T,
+            scipy.linalg.solve_triangular(cov_Y_Y_chol, y_total, lower=True),
+            lower=False,
+        )
+        # NOTE(nabenabe): Here we use NumPy to guarantee the reproducibility from the past.
+        self._cov_Y_Y_chol = torch.from_numpy(cov_Y_Y_chol)
+        self._cov_Y_Y_inv_Y = torch.from_numpy(cov_Y_Y_inv_Y)
+        self._X_train = torch.cat([self._X_train, X_running], dim=0)
+        self._y_train = torch.cat([self._y_train, y_running], dim=0)
 
     def kernel(
         self, X1: torch.Tensor | None = None, X2: torch.Tensor | None = None

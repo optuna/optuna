@@ -135,7 +135,7 @@ class LogEI(BaseAcquisitionFunc):
                 normalized_params_of_running_trials.shape[0]
             )
 
-            self._gpr.add_data(
+            self._gpr.append_running_data(
                 normalized_params_of_running_trials,
                 constant_liar_y,
             )
