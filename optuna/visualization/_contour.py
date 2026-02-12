@@ -276,7 +276,7 @@ def _get_contour_info(
 
         for input_p_name in params:
             if input_p_name not in all_params:
-                raise ValueError("Parameter {} does not exist in your study.".format(input_p_name))
+                raise ValueError(f"Parameter {input_p_name!r} does not exist in your study.")
         sorted_params = sorted(set(params))
 
     sub_plot_infos: list[list[_SubContourInfo]]
@@ -317,10 +317,10 @@ def _get_contour_subplot_info(
         return _SubContourInfo(xaxis=xaxis, yaxis=yaxis, z_values={})
 
     if len(xaxis.indices) < 2:
-        _logger.warning("Param {} unique value length is less than 2.".format(x_param))
+        _logger.warning(f"Param {x_param!r} unique value length is less than 2.")
         return _SubContourInfo(xaxis=xaxis, yaxis=yaxis, z_values={})
     if len(yaxis.indices) < 2:
-        _logger.warning("Param {} unique value length is less than 2.".format(y_param))
+        _logger.warning(f"Param {y_param!r} unique value length is less than 2.")
         return _SubContourInfo(xaxis=xaxis, yaxis=yaxis, z_values={})
 
     z_values: dict[tuple[int, int], float] = {}
