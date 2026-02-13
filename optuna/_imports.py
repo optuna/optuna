@@ -59,8 +59,9 @@ class _DeferredImportExceptionContextManager:
         if isinstance(exc_value, (ImportError, SyntaxError)):
             if isinstance(exc_value, ImportError):
                 message = (
-                    f"Tried to import {exc_value.name!r} but failed. Please make sure that the "
-                    f"package is installed correctly to use this feature. Actual error: {exc_value}."
+                    f"Tried to import {exc_value.name} but failed. Please make sure that the "
+                    "package is installed correctly to use this feature. Actual error: "
+                    f"{exc_value}."
                 )
             elif isinstance(exc_value, SyntaxError):
                 message = (
