@@ -656,7 +656,7 @@ class Trial(BaseTrial):
         contained = distribution._contains(param_value_in_internal_repr)
         if not contained:
             optuna_warn(
-                f"Fixed parameter {name!r} with value {param_value} is out of range "
+                f"Fixed parameter {name} with value {param_value} is out of range "
                 f"for distribution {distribution}."
             )
         return True
@@ -669,7 +669,7 @@ class Trial(BaseTrial):
 
         if name not in self.relative_search_space:
             raise ValueError(
-                f"The parameter {name!r} was sampled by `sample_relative` method "
+                f"The parameter {name} was sampled by `sample_relative` method "
                 "but it is not contained in the relative search space."
             )
 
