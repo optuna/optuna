@@ -295,9 +295,7 @@ class BaseStorage(abc.ABC):
         """
         trials = self.get_all_trials(study_id, deepcopy=False)
         if len(trials) <= trial_number:
-            raise KeyError(
-                f"No trial with {trial_number=} exists in study with {study_id=}."
-            )
+            raise KeyError(f"No trial with {trial_number=} exists in study with {study_id=}.")
         return trials[trial_number]._trial_id
 
     def get_trial_number_from_id(self, trial_id: int) -> int:
