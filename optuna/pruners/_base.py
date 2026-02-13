@@ -1,6 +1,11 @@
-import abc
+from __future__ import annotations
 
-import optuna
+import abc
+from typing import TYPE_CHECKING
+
+
+if TYPE_CHECKING:
+    import optuna
 
 
 class BasePruner(abc.ABC):
