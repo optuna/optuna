@@ -120,7 +120,7 @@ else:
                 module = self._get_module(self._class_to_module[name])
                 value = getattr(module, name)
             else:
-                raise AttributeError(f"module {self.__name__!r} has no attribute {name!r}")
+                raise AttributeError(f"module {self.__name__} has no attribute {name}")
 
             setattr(self, name, value)
             return value
