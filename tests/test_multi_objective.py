@@ -81,3 +81,38 @@ def test_get_pareto_front_trials_with_constraint(
             _trial_to_values(t)
             for t in _get_pareto_front_trials_by_trials(trials, study_dirs, consider_constraint)
         }
+
+
+def test_get_pareto_front_trials_all_infeasible() -> None:
+    """When all trials are infeasible, best_trials should return those with minimum violation."""
+    study = create_study(directions=["minimize", "minimize"])
+    trials = [
+        trial.create_trial(values=[1.0, 2.0], system_attrs={"constraints": [3.0, 0.0]}),
+        trial.create_trial(values=[2.0, 1.0], system_attrs={"constraints": [1.0, 0.0]}),
+        trial.create_trial(values=[3.0, 3.0], system_attrs={"constraints": [1.0, 0.0]}),
+        trial.create_trial(values=[0.5, 0.5], system_attrs={"constraints": [2.0, 1.0]}),
+    ]
+    study.add_trials(trials)
+
+    result = _get_pareto_front_trials_by_trials(
+        study.trials, study.directions, consider_constraint=True
+    )
+    # Trials with violation=1.0 should be returned (indices 1 and 2).
+    result_values = {_trial_to_values(t) for t in result}
+    assert result_values == {(2.0, 1.0), (3.0, 3.0)}
+
+
+def test_get_pareto_front_trials_all_infeasible_uniform_violation() -> None:
+    """When all trials are infeasible with equal violation, all should be on the front."""
+    study = create_study(directions=["minimize", "maximize"])
+    trials = [
+        trial.create_trial(values=[1.0, 3.0], system_attrs={"constraints": [1.0]}),
+        trial.create_trial(values=[2.0, 2.0], system_attrs={"constraints": [1.0]}),
+        trial.create_trial(values=[3.0, 1.0], system_attrs={"constraints": [1.0]}),
+    ]
+    study.add_trials(trials)
+
+    result = _get_pareto_front_trials_by_trials(
+        study.trials, study.directions, consider_constraint=True
+    )
+    assert len(result) == 3

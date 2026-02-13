@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 import optuna
+from optuna.study._constrained_optimization import _CONSTRAINTS_KEY
 from optuna.study._constrained_optimization import _get_feasible_trials
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import TrialState
@@ -24,7 +25,23 @@ def _get_pareto_front_trials_by_trials(
     # NOTE(nabenabe0928): Vectorization relies on all the trials being complete.
     trials = [t for t in trials if t.state == TrialState.COMPLETE]
     if consider_constraint:
-        trials = _get_feasible_trials(trials)
+        feasible_trials = _get_feasible_trials(trials)
+        if len(feasible_trials) > 0:
+            trials = feasible_trials
+        elif len(trials) > 0:
+            # When all trials are infeasible, constrained domination ranks them by overall
+            # constraint violation. The Pareto front consists of trials with the minimum
+            # violation, as no infeasible trial with a larger violation can dominate one
+            # with a smaller violation.
+            violations = []
+            for t in trials:
+                constraints = t.system_attrs.get(_CONSTRAINTS_KEY)
+                if constraints is None:
+                    violations.append(float("inf"))
+                else:
+                    violations.append(sum(v for v in constraints if v > 0))
+            min_violation = min(violations)
+            return [t for t, v in zip(trials, violations) if v == min_violation]
     if len(trials) == 0:
         return []
 
