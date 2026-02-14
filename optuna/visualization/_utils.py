@@ -5,6 +5,7 @@ from collections.abc import Sequence
 import json
 from typing import Any
 from typing import cast
+from typing import TYPE_CHECKING
 
 import numpy as np
 
@@ -15,8 +16,10 @@ from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
 from optuna.study import Study
 from optuna.study._study_direction import StudyDirection
-from optuna.trial import FrozenTrial
 from optuna.visualization import _plotly_imports
+
+if TYPE_CHECKING:
+    from optuna.trial import FrozenTrial
 
 
 __all__ = ["is_available"]
