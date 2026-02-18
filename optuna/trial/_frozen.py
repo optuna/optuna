@@ -192,15 +192,8 @@ class FrozenTrial(BaseTrial):
         return hash(tuple(getattr(self, field) for field in self.__dict__))
 
     def __repr__(self) -> str:
-        return "{cls}({kwargs})".format(
-            cls=self.__class__.__name__,
-            kwargs=", ".join(
-               f"{field if not field.startswith('_') else field[1:]}={repr(getattr(self,field))}"
-               for field in self.__dict__
-            )
-            + ", value=None",
-        )
-
+        return  f'{self.__class__.__name__}({", ".join(
+               f"{field if not field.startswith('_') else field[1:]}={repr(getattr(self,field))}"for field in self.__dict__)}, value=None'
 
     def suggest_float(
         self,
@@ -327,10 +320,8 @@ class FrozenTrial(BaseTrial):
 
         if set(self.params.keys()) != set(self.distributions.keys()):
             raise ValueError(
-                "Inconsistent parameters {} and distributions {}.".format(
-                    set(self.params.keys()), set(self.distributions.keys())
+                f"Inconsistent parameters {set(self.params.keys())} and distributions {set(self.distributions.keys())}."
                 )
-            )
 
         for param_name, param_value in self.params.items():
             distribution = self.distributions[param_name]
@@ -338,23 +329,20 @@ class FrozenTrial(BaseTrial):
             param_value_in_internal_repr = distribution.to_internal_repr(param_value)
             if not distribution._contains(param_value_in_internal_repr):
                 raise ValueError(
-                    "The value {} of parameter '{}' isn't contained in the distribution "
-                    "{}.".format(param_value, param_name, distribution)
+                    f"The value {param_value} of parameter '{param_name}' isn't contained in the distribution '{distribution}'."
                 )
 
     def _suggest(self, name: str, distribution: BaseDistribution) -> Any:
         if name not in self._params:
             raise ValueError(
-                "The value of the parameter '{}' is not found. Please set it at "
-                "the construction of the FrozenTrial object.".format(name)
+                f"The value of the parameter '{name}' is not found. Please set it at the construction of the FrozenTrial object."
             )
 
         value = self._params[name]
         param_value_in_internal_repr = distribution.to_internal_repr(value)
         if not distribution._contains(param_value_in_internal_repr):
             optuna_warn(
-                "The value {} of the parameter '{}' is out of "
-                "the range of the distribution {}.".format(value, name, distribution)
+                f"The value {value} of the parameter '{name}' is out of the range of the distribution {distribution}."
             )
 
         if name in self._distributions:
