@@ -119,17 +119,23 @@ class LogEI(BaseAcquisitionFunc):
         gpr: GPRegressor,
         search_space: SearchSpace,
         threshold: float,
-        normalized_params_of_running_trials: np.ndarray = np.array([]),
+        normalized_params_of_running_trials: np.ndarray | None = None,
         stabilizing_noise: float = 1e-12,
     ) -> None:
         self._gpr = gpr
         self._stabilizing_noise = stabilizing_noise
         self._threshold = threshold
 
-        if normalized_params_of_running_trials.size != 0:
+        if normalized_params_of_running_trials is not None:
             normalized_params_of_running_trials = torch.from_numpy(
                 normalized_params_of_running_trials
             )
+
+            # NOTE(sawa3030): To handle running trials, the `best` constant liar strategy is
+            # currently implemented, as it is simple and performs well in our benchmarks.
+            # We plan to implement Monte-Carlo based approaches (e.g., BoTorch’s fantasize)
+            # in the near future.
+            # See https://github.com/optuna/optuna/pull/6430 for details.
             constant_liar_value = self._gpr._y_train.max()
             constant_liar_y = constant_liar_value.expand(
                 normalized_params_of_running_trials.shape[0]
@@ -221,7 +227,7 @@ class ConstrainedLogEI(BaseAcquisitionFunc):
         assert (
             len(constraints_gpr_list) == len(constraints_threshold_list) and constraints_gpr_list
         )
-        self._acqf = LogEI(gpr, search_space, threshold, np.array([]), stabilizing_noise)
+        self._acqf = LogEI(gpr, search_space, threshold, None, stabilizing_noise)
         self._constraints_acqf_list = [
             LogPI(_gpr, search_space, _threshold, stabilizing_noise)
             for _gpr, _threshold in zip(constraints_gpr_list, constraints_threshold_list)

@@ -103,6 +103,8 @@ class GPRegressor:
         self._is_categorical = is_categorical
         self._X_train = X_train
         self._y_train = y_train
+        self._X_all = X_train
+        self._y_all = y_train
         self._squared_X_diff = (X_train.unsqueeze(-2) - X_train.unsqueeze(-3)).square_()
         if self._is_categorical.any():
             self._squared_X_diff[..., self._is_categorical] = (
@@ -167,18 +169,17 @@ class GPRegressor:
         # cov_Y_Y_inv @ y = v --> y = cov_Y_Y @ v --> y = cov_Y_Y_chol @ cov_Y_Y_chol.T @ v
         # NOTE(nabenabe): Don't use np.linalg.inv because it is too slow und unstable.
         # cf. https://github.com/optuna/optuna/issues/6230
-        y_total = torch.cat([self._y_train, y_running], dim=0).cpu().numpy()
+        self._y_all = torch.cat([self._y_train, y_running], dim=0)
         cov_Y_Y_inv_Y = scipy.linalg.solve_triangular(
             cov_Y_Y_chol.T,
-            scipy.linalg.solve_triangular(cov_Y_Y_chol, y_total, lower=True),
+            scipy.linalg.solve_triangular(cov_Y_Y_chol, self._y_all.cpu().numpy(), lower=True),
             lower=False,
         )
 
         # NOTE(nabenabe): Here we use NumPy to guarantee the reproducibility from the past.
         self._cov_Y_Y_chol = torch.from_numpy(cov_Y_Y_chol)
         self._cov_Y_Y_inv_Y = torch.from_numpy(cov_Y_Y_inv_Y)
-        self._X_train = torch.cat([self._X_train, X_running], dim=0)
-        self._y_train = torch.cat([self._y_train, y_running], dim=0)
+        self._X_all = torch.cat([self._X_train, X_running], dim=0)
 
     def kernel(
         self, X1: torch.Tensor | None = None, X2: torch.Tensor | None = None
@@ -227,7 +228,7 @@ class GPRegressor:
         )
         is_single_point = x.ndim == 1
         x_ = x if not is_single_point else x.unsqueeze(0)
-        mean = torch.linalg.vecdot(cov_fx_fX := self.kernel(x_), self._cov_Y_Y_inv_Y)
+        mean = torch.linalg.vecdot(cov_fx_fX := self.kernel(x_, self._X_all), self._cov_Y_Y_inv_Y)
         # K @ inv(C) = V --> K = V @ C --> K = V @ L @ L.T
         V = torch.linalg.solve_triangular(
             self._cov_Y_Y_chol,

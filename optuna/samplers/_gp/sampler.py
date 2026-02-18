@@ -309,14 +309,18 @@ class GPSampler(BaseSampler):
         self,
         trials: list[FrozenTrial],
         internal_search_space: gp_search_space.SearchSpace,
-    ) -> torch.Tensor:
+    ) -> np.ndarray | None:
         running_trials = [
             t
             for t in trials
             if internal_search_space._optuna_search_space.keys() <= get_params(t).keys()
             and t.state == TrialState.RUNNING
         ]
-        return internal_search_space.get_normalized_params(running_trials)
+        if len(running_trials) == 0:
+            return None
+        return internal_search_space.get_normalized_params(
+            running_trials, [get_params(t) for t in running_trials]
+        )
 
     def sample_relative(
         self, study: Study, trial: FrozenTrial, search_space: dict[str, BaseDistribution]
@@ -326,15 +330,15 @@ class GPSampler(BaseSampler):
 
         states = (TrialState.COMPLETE, TrialState.RUNNING)
         trials = study._get_trials(deepcopy=False, states=states, use_cache=False)
-        complete_trials = [t for t in trials if t.state == TrialState.COMPLETE]
+        completed_trials = [t for t in trials if t.state == TrialState.COMPLETE]
 
-        if len(complete_trials) < self._n_startup_trials:
+        if len(completed_trials) < self._n_startup_trials:
             return {}
 
         # Force CPU device for all torch operations to avoid issues when
         # torch.set_default_device("cuda") is set globally (issue #6113).
         with torch.device("cpu"):
-            params = self._sample_relative_impl(study, complete_trials, trials, search_space)
+            params = self._sample_relative_impl(study, completed_trials, trials, search_space)
 
         if params != {}:
             # Share the params obtained by the relative sampling with the other processes.
@@ -351,16 +355,16 @@ class GPSampler(BaseSampler):
     def _sample_relative_impl(
         self,
         study: Study,
-        complete_trials: list[FrozenTrial],
+        completed_trials: list[FrozenTrial],
         trials: list[FrozenTrial],
         search_space: dict[str, BaseDistribution],
     ) -> dict[str, Any]:
         internal_search_space = gp_search_space.SearchSpace(search_space)
-        normalized_params = internal_search_space.get_normalized_params(complete_trials)
+        normalized_params = internal_search_space.get_normalized_params(completed_trials)
 
         _sign = np.array([-1.0 if d == StudyDirection.MINIMIZE else 1.0 for d in study.directions])
         standardized_score_vals, _, _ = _standardize_values(
-            _sign * np.array([trial.values for trial in complete_trials])
+            _sign * np.array([trial.values for trial in completed_trials])
         )
 
         if (
@@ -420,7 +424,7 @@ class GPSampler(BaseSampler):
             if n_objectives == 1:
                 assert len(gprs_list) == 1
                 constraint_vals, is_feasible = _get_constraint_vals_and_feasibility(
-                    study, complete_trials
+                    study, completed_trials
                 )
                 y_with_neginf = np.where(is_feasible, standardized_score_vals[:, 0], -np.inf)
                 # TODO(kAIto47802): If all trials are infeasible, the acquisition function
@@ -446,7 +450,7 @@ class GPSampler(BaseSampler):
                 )
             else:
                 constraint_vals, is_feasible = _get_constraint_vals_and_feasibility(
-                    study, complete_trials
+                    study, completed_trials
                 )
                 constr_gpr_list, constr_threshold_list = self._get_constraints_acqf_args(
                     constraint_vals, internal_search_space, normalized_params
@@ -486,8 +490,8 @@ class GPSampler(BaseSampler):
     ) -> Any:
         if self._warn_independent_sampling:
             states = (TrialState.COMPLETE,)
-            complete_trials = study._get_trials(deepcopy=False, states=states, use_cache=True)
-            if len(complete_trials) >= self._n_startup_trials:
+            completed_trials = study._get_trials(deepcopy=False, states=states, use_cache=True)
+            if len(completed_trials) >= self._n_startup_trials:
                 self._log_independent_sampling(trial, param_name)
         return self._independent_sampler.sample_independent(
             study, trial, param_name, param_distribution
