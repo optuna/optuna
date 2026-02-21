@@ -145,8 +145,20 @@ class Study:
             If your study is multi-objective,
             use :attr:`~optuna.study.Study.best_trials` instead.
 
+        .. note::
+            For constrained optimization studies (using samplers like NSGAIISampler with 
+            constraints_func), this method only considers feasible trials that satisfy all 
+            constraints. If no feasible trials exist, this raises a ValueError.
+            
+            To access the best infeasible trials when no feasible ones exist, you'll need to 
+            implement custom logic to rank trials by constraint violation.
+
         Returns:
             A :class:`~optuna.trial.FrozenTrial` object of the best trial.
+
+        Raises:
+            ValueError: If no feasible trials exist in a constrained study, or if no completed 
+                trials exist.
 
         .. seealso::
             The :ref:`reuse_best_trial` tutorial provides a detailed example of how to use this
@@ -164,8 +176,39 @@ class Study:
         ``all(v0 <= v1) for v0, v1 in zip(t0.values, t1.values)`` and
         ``any(v0 < v1) for v0, v1 in zip(t0.values, t1.values)`` are held.
 
+        .. note::
+            For constrained optimization studies (using samplers like NSGAIISampler with 
+            constraints_func), this method only considers feasible trials that satisfy all 
+            constraints. If no feasible trials exist, this returns an empty list.
+            
+            While the sampler's internal constrained domination logic can rank infeasible trials 
+            by constraint violation, the Study API maintains consistency by only returning feasible 
+            trials. To access infeasible trials when needed, filter trials manually using
+            ``study.get_trials()`` and implement custom ranking by constraint violation.
+
         Returns:
-            A list of :class:`~optuna.trial.FrozenTrial` objects.
+            A list of :class:`~optuna.trial.FrozenTrial` objects representing the Pareto front.
+            Returns an empty list if no feasible trials exist in constrained studies, or if no 
+            completed trials exist.
+
+        Example:
+            .. code-block:: python
+
+                import optuna
+
+                # For constrained studies, only feasible trials are returned
+                study = optuna.create_study(
+                    directions=["minimize", "minimize"],
+                    sampler=optuna.samplers.NSGAIISampler(constraints_func=lambda trial: [1.0])
+                )
+                # If all trials violate constraints, best_trials will be empty
+                assert study.best_trials == []
+
+                # To access infeasible trials, use custom logic:
+                completed_trials = [t for t in study.get_trials() 
+                                   if t.state == optuna.trial.TrialState.COMPLETE]
+                # Rank by constraint violation if needed
+
         """
 
         # Check whether the study is constrained optimization.
