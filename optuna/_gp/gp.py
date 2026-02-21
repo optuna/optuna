@@ -25,10 +25,11 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from optuna._gp.scipy_blas_thread_patch import single_blas_thread_if_scipy_v1_15_or_newer
+from optuna._gp.scipy_blas_thread_patch import (
+    single_blas_thread_if_scipy_v1_15_or_newer,
+)
 from optuna._warnings import optuna_warn
 from optuna.logging import get_logger
-
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -55,8 +56,16 @@ def warn_and_convert_inf(values: np.ndarray) -> np.ndarray:
     # pass nan in values by design.
     return np.clip(
         values,
-        np.where(is_any_finite, np.min(np.where(is_values_finite, values, np.inf), axis=0), 0.0),
-        np.where(is_any_finite, np.max(np.where(is_values_finite, values, -np.inf), axis=0), 0.0),
+        np.where(
+            is_any_finite,
+            np.min(np.where(is_values_finite, values, np.inf), axis=0),
+            0.0,
+        ),
+        np.where(
+            is_any_finite,
+            np.max(np.where(is_values_finite, values, -np.inf), axis=0),
+            0.0,
+        ),
     )
 
 
@@ -99,6 +108,7 @@ class GPRegressor:
         inverse_squared_lengthscales: torch.Tensor,  # (len(params), )
         kernel_scale: torch.Tensor,  # Scalar
         noise_var: torch.Tensor,  # Scalar
+        custom_noise_vars: torch.Tensor | None = None,  # (len(trials), ) or None
     ) -> None:
         self._is_categorical = is_categorical
         self._X_train = X_train
@@ -114,26 +124,33 @@ class GPRegressor:
         self.inverse_squared_lengthscales = inverse_squared_lengthscales
         self.kernel_scale = kernel_scale
         self.noise_var = noise_var
+        self.custom_noise_vars = custom_noise_vars
 
     @property
     def length_scales(self) -> np.ndarray:
         return 1.0 / np.sqrt(self.inverse_squared_lengthscales.detach().cpu().numpy())
 
     def _cache_matrix(self) -> None:
-        assert self._cov_Y_Y_chol is None and self._cov_Y_Y_inv_Y is None, (
-            "Cannot call cache_matrix more than once."
-        )
+        assert (
+            self._cov_Y_Y_chol is None and self._cov_Y_Y_inv_Y is None
+        ), "Cannot call cache_matrix more than once."
         with torch.no_grad():
             cov_Y_Y = self.kernel().detach().cpu().numpy()
 
-        cov_Y_Y[np.diag_indices(self._X_train.shape[0])] += self.noise_var.item()
+        diag_indices = np.diag_indices(self._X_train.shape[0])
+        cov_Y_Y[diag_indices] += self.noise_var.item()
+        if self.custom_noise_vars is not None:
+            cov_Y_Y[diag_indices] += self.custom_noise_vars.cpu().numpy()
+
         cov_Y_Y_chol = np.linalg.cholesky(cov_Y_Y)
         # cov_Y_Y_inv @ y = v --> y = cov_Y_Y @ v --> y = cov_Y_Y_chol @ cov_Y_Y_chol.T @ v
         # NOTE(nabenabe): Don't use np.linalg.inv because it is too slow und unstable.
         # cf. https://github.com/optuna/optuna/issues/6230
         cov_Y_Y_inv_Y = scipy.linalg.solve_triangular(
             cov_Y_Y_chol.T,
-            scipy.linalg.solve_triangular(cov_Y_Y_chol, self._y_train.cpu().numpy(), lower=True),
+            scipy.linalg.solve_triangular(
+                cov_Y_Y_chol, self._y_train.cpu().numpy(), lower=True
+            ),
             lower=False,
         )
         # NOTE(nabenabe): Here we use NumPy to guarantee the reproducibility from the past.
@@ -168,15 +185,19 @@ class GPRegressor:
             if X2 is None:
                 X2 = self._X_train
 
-            sqd = (X1 - X2 if X1.ndim == 1 else X1.unsqueeze(-2) - X2.unsqueeze(-3)).square_()
+            sqd = (
+                X1 - X2 if X1.ndim == 1 else X1.unsqueeze(-2) - X2.unsqueeze(-3)
+            ).square_()
             if self._is_categorical.any():
-                sqd[..., self._is_categorical] = (sqd[..., self._is_categorical] > 0.0).type(
-                    torch.float64
-                )
+                sqd[..., self._is_categorical] = (
+                    sqd[..., self._is_categorical] > 0.0
+                ).type(torch.float64)
         sqdist = sqd.matmul(self.inverse_squared_lengthscales)
         return Matern52Kernel.apply(sqdist) * self.kernel_scale  # type: ignore
 
-    def posterior(self, x: torch.Tensor, joint: bool = False) -> tuple[torch.Tensor, torch.Tensor]:
+    def posterior(
+        self, x: torch.Tensor, joint: bool = False
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         """
         This method computes the posterior mean and variance given the points `x` where both mean
         and variance tensors will have the shape of x.shape[:-1].
@@ -188,21 +209,25 @@ class GPRegressor:
 
         Please note that we clamp the variance to avoid negative values due to numerical errors.
         """
-        assert self._cov_Y_Y_chol is not None and self._cov_Y_Y_inv_Y is not None, (
-            "Call cache_matrix before calling posterior."
-        )
+        assert (
+            self._cov_Y_Y_chol is not None and self._cov_Y_Y_inv_Y is not None
+        ), "Call cache_matrix before calling posterior."
         is_single_point = x.ndim == 1
         x_ = x if not is_single_point else x.unsqueeze(0)
         mean = torch.linalg.vecdot(cov_fx_fX := self.kernel(x_), self._cov_Y_Y_inv_Y)
         # K @ inv(C) = V --> K = V @ C --> K = V @ L @ L.T
         V = torch.linalg.solve_triangular(
             self._cov_Y_Y_chol,
-            torch.linalg.solve_triangular(self._cov_Y_Y_chol.T, cov_fx_fX, upper=True, left=False),
+            torch.linalg.solve_triangular(
+                self._cov_Y_Y_chol.T, cov_fx_fX, upper=True, left=False
+            ),
             upper=False,
             left=False,
         )
         if joint:
-            assert not is_single_point, "Call posterior with joint=False for a single point."
+            assert (
+                not is_single_point
+            ), "Call posterior with joint=False for a single point."
             cov_fx_fx = self.kernel(x_, x_)
             # NOTE(nabenabe): Indeed, var_ here is a covariance matrix.
             var_ = cov_fx_fx - V.matmul(cov_fx_fX.transpose(-1, -2))
@@ -241,10 +266,18 @@ class GPRegressor:
         """
         n_points = self._X_train.shape[0]
         const = -0.5 * n_points * math.log(2 * math.pi)
-        cov_Y_Y = self.kernel() + self.noise_var * torch.eye(n_points, dtype=torch.float64)
+
+        cov_Y_Y = self.kernel() + self.noise_var * torch.eye(
+            n_points, dtype=torch.float64
+        )
+        if self.custom_noise_vars is not None:
+            cov_Y_Y += torch.diag(self.custom_noise_vars)
+
         L = torch.linalg.cholesky(cov_Y_Y)
         logdet_part = -L.diagonal().log().sum()
-        inv_L_y = torch.linalg.solve_triangular(L, self._y_train[:, None], upper=False)[:, 0]
+        inv_L_y = torch.linalg.solve_triangular(L, self._y_train[:, None], upper=False)[
+            :, 0
+        ]
         quad_part = -0.5 * (inv_L_y @ inv_L_y)
         return logdet_part + const + quad_part
 
@@ -276,7 +309,9 @@ class GPRegressor:
         def loss_func(raw_params: np.ndarray) -> tuple[float, np.ndarray]:
             raw_params_tensor = torch.from_numpy(raw_params).requires_grad_(True)
             with torch.enable_grad():
-                self.inverse_squared_lengthscales = torch.exp(raw_params_tensor[:n_params])
+                self.inverse_squared_lengthscales = torch.exp(
+                    raw_params_tensor[:n_params]
+                )
                 self.kernel_scale = torch.exp(raw_params_tensor[n_params])
                 self.noise_var = (
                     torch.tensor(minimum_noise, dtype=torch.float64)
@@ -324,6 +359,7 @@ def fit_kernel_params(
     deterministic_objective: bool,
     gpr_cache: GPRegressor | None = None,
     gtol: float = 1e-2,
+    custom_noise_vars: np.ndarray | None = None,
 ) -> GPRegressor:
     default_kernel_params = torch.ones(X.shape[1] + 2, dtype=torch.float64)
     # TODO: Move this function into a method of `GPRegressor`
@@ -336,6 +372,11 @@ def fit_kernel_params(
             inverse_squared_lengthscales=default_kernel_params[:-2].clone(),
             kernel_scale=default_kernel_params[-2].clone(),
             noise_var=default_kernel_params[-1].clone(),
+            custom_noise_vars=(
+                torch.from_numpy(custom_noise_vars)
+                if custom_noise_vars is not None
+                else None
+            ),
         )
 
     default_gpr_cache = _default_gpr()
@@ -355,6 +396,11 @@ def fit_kernel_params(
                 inverse_squared_lengthscales=gpr_cache_to_use.inverse_squared_lengthscales,
                 kernel_scale=gpr_cache_to_use.kernel_scale,
                 noise_var=gpr_cache_to_use.noise_var,
+                custom_noise_vars=(
+                    torch.from_numpy(custom_noise_vars)
+                    if custom_noise_vars is not None
+                    else None
+                ),
             )._fit_kernel_params(
                 log_prior=log_prior,
                 minimum_noise=minimum_noise,
