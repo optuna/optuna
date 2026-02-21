@@ -6,6 +6,7 @@ import torch
 
 from optuna._gp.gp import GPRegressor
 from optuna._gp.gp import warn_and_convert_inf
+from optuna._gp.gp import fit_kernel_params
 import optuna._gp.prior as prior
 
 
@@ -67,7 +68,11 @@ def test_warn_and_convert_inf_for_1d_array(values: np.ndarray, ans: np.ndarray) 
             np.array([1.0, 2.0]),
             np.array([False, False, True]),
         ),
-        (np.array([[1.0, 0.0], [0.0, 1.0]]), np.array([1.0, 2.0]), np.array([True, True])),
+        (
+            np.array([[1.0, 0.0], [0.0, 1.0]]),
+            np.array([1.0, 2.0]),
+            np.array([True, True]),
+        ),
         (np.array([[0.0]]), np.array([0.0]), np.array([True])),
         (np.array([[0.0]]), np.array([0.0]), np.array([False])),
     ],
@@ -140,3 +145,39 @@ def test_posterior(x_shape: tuple[int, ...]) -> None:
     ), "Diagonal Check."
     assert torch.allclose(covar, covar.transpose(-2, -1)), "Symmetric Check."
     assert torch.all(torch.det(covar) >= 0.0), "Postive Semi-definite Check."
+
+
+def test_gp_heteroscedastic_noise() -> None:
+    X = np.array([[0.0], [1.0], [2.0]])
+
+    Y = np.array([0.0, 10.0, 0.0])
+    is_categorical = np.array([False])
+
+    def dummy_log_prior(gpr: GPRegressor) -> torch.Tensor:
+        return torch.tensor(0.0, dtype=torch.float64)
+
+    gpr_standard = fit_kernel_params(
+        X,
+        Y,
+        is_categorical,
+        dummy_log_prior,
+        minimum_noise=1e-5,
+        deterministic_objective=False,
+    )
+    mean_standard, _ = gpr_standard.posterior(
+        torch.tensor([[1.0]], dtype=torch.float64)
+    )
+
+    custom_noise_vars = np.array([0.0, 100.0, 0.0])
+    gpr_custom = fit_kernel_params(
+        X,
+        Y,
+        is_categorical,
+        dummy_log_prior,
+        minimum_noise=1e-5,
+        deterministic_objective=False,
+        custom_noise_vars=custom_noise_vars,
+    )
+    mean_custom, _ = gpr_custom.posterior(torch.tensor([[1.0]], dtype=torch.float64))
+
+    assert mean_custom.item() < mean_standard.item()
