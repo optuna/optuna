@@ -1,10 +1,12 @@
-from optuna._imports import _INTEGRATION_IMPORT_ERROR_TEMPLATE
 
 
 try:
     from optuna_integration.cma import PyCmaSampler
 except ModuleNotFoundError:
-    raise ModuleNotFoundError(_INTEGRATION_IMPORT_ERROR_TEMPLATE.format("cma"))
+    raise ModuleNotFoundError((
+            f"\nCould not find `optuna-integration` for `cma`.\n"
+            f"Please run `pip install optuna-integration[cma]`.\n"
+        )
 
 
 __all__ = ["PyCmaSampler"]
