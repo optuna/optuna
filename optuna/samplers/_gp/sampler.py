@@ -18,6 +18,7 @@ from optuna.study._multi_objective import _is_pareto_front
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
+
 if TYPE_CHECKING:
     from collections.abc import Callable
     from collections.abc import Sequence
@@ -42,6 +43,7 @@ else:
     prior = _LazyImport("optuna._gp.prior")
 
 import logging
+
 
 _logger = logging.getLogger(__name__)
 
@@ -183,14 +185,10 @@ class GPSampler(BaseSampler):
         warn_independent_sampling: bool = True,
     ) -> None:
         self._rng = LazyRandomState(seed)
-        self._independent_sampler = (
-            independent_sampler or optuna.samplers.RandomSampler(seed=seed)
-        )
+        self._independent_sampler = independent_sampler or optuna.samplers.RandomSampler(seed=seed)
         self._intersection_search_space = optuna.search_space.IntersectionSearchSpace()
         self._n_startup_trials = n_startup_trials
-        self._log_prior: Callable[[gp.GPRegressor], torch.Tensor] = (
-            prior.default_log_prior
-        )
+        self._log_prior: Callable[[gp.GPRegressor], torch.Tensor] = prior.default_log_prior
         self._minimum_noise: float = prior.DEFAULT_MINIMUM_NOISE_VAR
         # We cache the kernel parameters for initial values of fitting the next time.
         # TODO(nabenabe): Make the cache lists system_attrs to make GPSampler stateless.
@@ -227,9 +225,7 @@ class GPSampler(BaseSampler):
         self, study: Study, trial: FrozenTrial
     ) -> dict[str, BaseDistribution]:
         search_space = {}
-        for name, distribution in self._intersection_search_space.calculate(
-            study
-        ).items():
+        for name, distribution in self._intersection_search_space.calculate(study).items():
             if distribution.single():
                 continue
             search_space[name] = distribution
@@ -260,9 +256,7 @@ class GPSampler(BaseSampler):
         normalized_params: np.ndarray,
     ) -> tuple[list[gp.GPRegressor], list[float]]:
         # NOTE(nabenabe): Flip the sign of constraints since they are always to be minimized.
-        standardized_constraint_vals, means, stds = _standardize_values(
-            -constraint_vals
-        )
+        standardized_constraint_vals, means, stds = _standardize_values(-constraint_vals)
         if (
             self._gprs_cache_list is not None
             and len(self._gprs_cache_list[0].inverse_squared_lengthscales)
@@ -338,9 +332,7 @@ class GPSampler(BaseSampler):
         internal_search_space = gp_search_space.SearchSpace(search_space)
         normalized_params = internal_search_space.get_normalized_params(trials)
 
-        _sign = np.array(
-            [-1.0 if d == StudyDirection.MINIMIZE else 1.0 for d in study.directions]
-        )
+        _sign = np.array([-1.0 if d == StudyDirection.MINIMIZE else 1.0 for d in study.directions])
         standardized_score_vals, _, stds = _standardize_values(
             _sign * np.array([trial.values for trial in trials])
         )
@@ -375,9 +367,7 @@ class GPSampler(BaseSampler):
         n_objectives = standardized_score_vals.shape[-1]
         is_categorical = internal_search_space.is_categorical
         for i in range(n_objectives):
-            cache = (
-                self._gprs_cache_list[i] if self._gprs_cache_list is not None else None
-            )
+            cache = self._gprs_cache_list[i] if self._gprs_cache_list is not None else None
             custom_noise = scaled_noise_vars[:, i] if has_custom_noise else None
             gprs_list.append(
                 gp.fit_kernel_params(
@@ -403,9 +393,7 @@ class GPSampler(BaseSampler):
                     search_space=internal_search_space,
                     threshold=standardized_score_vals[:, 0].max(),
                 )
-                best_params = normalized_params[
-                    np.argmax(standardized_score_vals), np.newaxis
-                ]
+                best_params = normalized_params[np.argmax(standardized_score_vals), np.newaxis]
             else:
                 acqf = acqf_module.LogEHVI(
                     gpr_list=gprs_list,
@@ -420,21 +408,15 @@ class GPSampler(BaseSampler):
         else:
             if n_objectives == 1:
                 assert len(gprs_list) == 1
-                constraint_vals, is_feasible = _get_constraint_vals_and_feasibility(
-                    study, trials
-                )
-                y_with_neginf = np.where(
-                    is_feasible, standardized_score_vals[:, 0], -np.inf
-                )
+                constraint_vals, is_feasible = _get_constraint_vals_and_feasibility(study, trials)
+                y_with_neginf = np.where(is_feasible, standardized_score_vals[:, 0], -np.inf)
                 # TODO(kAIto47802): If all trials are infeasible, the acquisition function
                 # for the objective function can be ignored, so skipping the computation
                 # of gpr can speed up.
                 # TODO(kAIto47802): Consider the case where all trials are feasible.
                 # We can ignore constraints in this case.
-                constr_gpr_list, constr_threshold_list = (
-                    self._get_constraints_acqf_args(
-                        constraint_vals, internal_search_space, normalized_params
-                    )
+                constr_gpr_list, constr_threshold_list = self._get_constraints_acqf_args(
+                    constraint_vals, internal_search_space, normalized_params
                 )
                 i_opt = np.argmax(y_with_neginf)
                 best_feasible_y = y_with_neginf[i_opt]
@@ -447,18 +429,12 @@ class GPSampler(BaseSampler):
                 )
                 assert normalized_params.shape[:-1] == y_with_neginf.shape
                 best_params = (
-                    None
-                    if np.isneginf(best_feasible_y)
-                    else normalized_params[i_opt, np.newaxis]
+                    None if np.isneginf(best_feasible_y) else normalized_params[i_opt, np.newaxis]
                 )
             else:
-                constraint_vals, is_feasible = _get_constraint_vals_and_feasibility(
-                    study, trials
-                )
-                constr_gpr_list, constr_threshold_list = (
-                    self._get_constraints_acqf_args(
-                        constraint_vals, internal_search_space, normalized_params
-                    )
+                constraint_vals, is_feasible = _get_constraint_vals_and_feasibility(study, trials)
+                constr_gpr_list, constr_threshold_list = self._get_constraints_acqf_args(
+                    constraint_vals, internal_search_space, normalized_params
                 )
                 is_all_infeasible = not any(is_feasible)
                 acqf = acqf_module.ConstrainedLogEHVI(
@@ -495,9 +471,7 @@ class GPSampler(BaseSampler):
     ) -> Any:
         if self._warn_independent_sampling:
             states = (TrialState.COMPLETE,)
-            complete_trials = study._get_trials(
-                deepcopy=False, states=states, use_cache=True
-            )
+            complete_trials = study._get_trials(deepcopy=False, states=states, use_cache=True)
             if len(complete_trials) >= self._n_startup_trials:
                 self._log_independent_sampling(trial, param_name)
         return self._independent_sampler.sample_independent(
@@ -515,9 +489,7 @@ class GPSampler(BaseSampler):
         values: Sequence[float] | None,
     ) -> None:
         if self._constraints_func is not None:
-            _process_constraints_after_trial(
-                self._constraints_func, study, trial, state
-            )
+            _process_constraints_after_trial(self._constraints_func, study, trial, state)
         self._independent_sampler.after_trial(study, trial, state, values)
 
 

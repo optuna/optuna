@@ -4,9 +4,9 @@ import numpy as np
 import pytest
 import torch
 
+from optuna._gp.gp import fit_kernel_params
 from optuna._gp.gp import GPRegressor
 from optuna._gp.gp import warn_and_convert_inf
-from optuna._gp.gp import fit_kernel_params
 import optuna._gp.prior as prior
 
 
@@ -164,9 +164,7 @@ def test_gp_heteroscedastic_noise() -> None:
         minimum_noise=1e-5,
         deterministic_objective=False,
     )
-    mean_standard, _ = gpr_standard.posterior(
-        torch.tensor([[1.0]], dtype=torch.float64)
-    )
+    mean_standard, _ = gpr_standard.posterior(torch.tensor([[1.0]], dtype=torch.float64))
 
     custom_noise_vars = np.array([0.0, 100.0, 0.0])
     gpr_custom = fit_kernel_params(
