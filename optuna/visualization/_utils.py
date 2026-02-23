@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-from collections.abc import Callable
-from collections.abc import Sequence
 import json
+from typing import TYPE_CHECKING
 from typing import Any
 from typing import cast
 
@@ -15,8 +14,12 @@ from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
 from optuna.study import Study
 from optuna.study._study_direction import StudyDirection
-from optuna.trial import FrozenTrial
 from optuna.visualization import _plotly_imports
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+    from collections.abc import Sequence
+    from optuna.trial import FrozenTrial
 
 
 __all__ = ["is_available"]
@@ -141,7 +144,7 @@ def _filter_nonfinite(
     if target is None:
 
         def _target(t: FrozenTrial) -> float:
-            return cast(float, t.value)
+            return cast("float", t.value)
 
         target = _target
 
