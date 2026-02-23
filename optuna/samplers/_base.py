@@ -1,21 +1,22 @@
 from __future__ import annotations
 
 import abc
-from collections.abc import Callable
-from collections.abc import Sequence
 from typing import Any
 from typing import TYPE_CHECKING
 
 import numpy as np
 
 from optuna._warnings import optuna_warn
-from optuna.distributions import BaseDistribution
-from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+    from collections.abc import Sequence
+
+    from optuna.distributions import BaseDistribution
     from optuna.study import Study
+    from optuna.trial import FrozenTrial
 
 
 _INDEPENDENT_SAMPLING_WARNING_TEMPLATE = (
