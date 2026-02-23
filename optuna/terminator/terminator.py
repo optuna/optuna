@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import abc
+from typing import TYPE_CHECKING
 
 from optuna._experimental import experimental_class
-from optuna.study.study import Study
 from optuna.terminator.erroreval import BaseErrorEvaluator
 from optuna.terminator.erroreval import CrossValidationErrorEvaluator
 from optuna.terminator.erroreval import StaticErrorEvaluator
@@ -12,6 +12,9 @@ from optuna.terminator.improvement.evaluator import BestValueStagnationEvaluator
 from optuna.terminator.improvement.evaluator import DEFAULT_MIN_N_TRIALS
 from optuna.terminator.improvement.evaluator import RegretBoundEvaluator
 from optuna.trial import TrialState
+
+if TYPE_CHECKING:
+    from optuna.study.study import Study
 
 
 class BaseTerminator(metaclass=abc.ABCMeta):
