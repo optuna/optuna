@@ -2,10 +2,13 @@ from __future__ import annotations
 
 import math
 from typing import Any
+from typing import TYPE_CHECKING
 
-import optuna
 from optuna.pruners import BasePruner
 from optuna.pruners._percentile import _is_first_in_interval_step
+
+if TYPE_CHECKING:
+    import optuna
 
 
 def _check_value(value: Any) -> float:
