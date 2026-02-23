@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from collections.abc import Mapping
-from collections.abc import Sequence
 import itertools
 from numbers import Real
 from typing import Any
@@ -11,16 +9,19 @@ from typing import Union
 import numpy as np
 
 from optuna._warnings import optuna_warn
-from optuna.distributions import BaseDistribution
 from optuna.logging import get_logger
 from optuna.samplers import BaseSampler
 from optuna.samplers._lazy_random_state import LazyRandomState
-from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
+    from collections.abc import Sequence
+
+    from optuna.distributions import BaseDistribution
     from optuna.study import Study
+    from optuna.trial import FrozenTrial
 
 
 GridValueType = Union[str, float, int, bool, None]
