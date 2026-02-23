@@ -18,6 +18,7 @@ from optuna import logging
 from optuna import progress_bar as pbar_module
 from optuna._warnings import optuna_warn
 from optuna.exceptions import ExperimentalWarning
+from optuna.storages._heartbeat import BaseHeartbeat
 from optuna.storages._heartbeat import get_heartbeat_thread
 from optuna.storages._heartbeat import is_heartbeat_enabled
 from optuna.study._tell import _tell_with_warning
@@ -252,6 +253,15 @@ def _run_trial(
                 )
             else:
                 assert False, "Should not reach."
+            
+            # Call failed_trial_callback for exception-based failures if available
+            # This enables RetryFailedTrialCallback to work with normal exceptions,
+            # not just stale trials from heartbeat timeouts
+            if func_err is not None and isinstance(study._storage, BaseHeartbeat):
+                failed_trial_callback = study._storage.get_failed_trial_callback()
+                if failed_trial_callback is not None:
+                    frozen_trial = copy.deepcopy(study._storage.get_trial(trial._trial_id))
+                    failed_trial_callback(study, frozen_trial)
         else:
             assert False, "Should not reach."
 
