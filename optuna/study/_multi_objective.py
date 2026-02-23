@@ -21,12 +21,43 @@ def _get_pareto_front_trials_by_trials(
     directions: Sequence[StudyDirection],
     consider_constraint: bool = False,
 ) -> list[FrozenTrial]:
+    from optuna.study._constrained_optimization import _CONSTRAINTS_KEY
+    
     # NOTE(nabenabe0928): Vectorization relies on all the trials being complete.
     trials = [t for t in trials if t.state == TrialState.COMPLETE]
-    if consider_constraint:
-        trials = _get_feasible_trials(trials)
+    
     if len(trials) == 0:
         return []
+
+    if consider_constraint:
+        feasible_trials = _get_feasible_trials(trials)
+        if len(feasible_trials) > 0:
+            # If there are feasible trials, use them for Pareto front calculation
+            trials = feasible_trials
+        else:
+            # If no feasible trials exist, compute Pareto front based on constraint violations
+            # This follows the constrained domination logic: when all trials are infeasible,
+            # the ones with smaller overall violation form the Pareto front
+            infeasible_trials = []
+            for trial in trials:
+                constraints = trial.system_attrs.get(_CONSTRAINTS_KEY)
+                if constraints is not None:
+                    infeasible_trials.append(trial)
+            
+            if len(infeasible_trials) == 0:
+                return []
+            
+            # Calculate Pareto front based on constraint violations for infeasible trials
+            # Use negative violations as "objective" values (smaller violation = better)
+            violation_values = []
+            for trial in infeasible_trials:
+                constraints = trial.system_attrs.get(_CONSTRAINTS_KEY)
+                total_violation = sum(max(0, c) for c in constraints)
+                violation_values.append([-total_violation])  # Negative for minimization
+            
+            violation_array = np.asarray(violation_values)
+            on_front = _is_pareto_front(violation_array, assume_unique_lexsorted=False)
+            return [t for t, is_pareto in zip(infeasible_trials, on_front) if is_pareto]
 
     if any(len(t.values) != len(directions) for t in trials):
         raise ValueError(
