@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 import math
+from typing import TYPE_CHECKING
 
-import optuna
 from optuna.pruners._base import BasePruner
 from optuna.study._study_direction import StudyDirection
 from optuna.trial._state import TrialState
+
+if TYPE_CHECKING:
+    import optuna
 
 
 class SuccessiveHalvingPruner(BasePruner):
