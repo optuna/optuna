@@ -32,7 +32,6 @@ from optuna.trial import TrialState
 _logger = optuna.logging.get_logger(__name__)
 
 NOT_FOUND_MSG = "Record does not exist."
-UNUPDATABLE_MSG = "Trial#{trial_number} has already finished and can not be updated."
 # A heuristic interval number to dump snapshots
 SNAPSHOT_INTERVAL = 100
 
@@ -338,7 +337,7 @@ class JournalStorage(BaseStorage):
                 )
                 if existing_trial.state.is_finished():
                     raise UpdateFinishedTrialError(
-                        UNUPDATABLE_MSG.format(trial_number=existing_trial.number)
+                        f"Trial#{existing_trial.number} has already finished and can not be updated."
                     )
                 if existing_trial.state != TrialState.WAITING:
                     # This line is equivalent to `existing_trial.state == TrialState.RUNNING`.
@@ -672,7 +671,7 @@ class JournalStorageReplayResult:
         elif self._trials[trial_id].state.is_finished():
             if self._is_issued_by_this_worker(log):
                 raise UpdateFinishedTrialError(
-                    UNUPDATABLE_MSG.format(trial_number=self._trials[trial_id].number)
+                    f"Trial#{self._trials[trial_id].number} has already finished and can not be updated."
                 )
             return False
         else:
