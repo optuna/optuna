@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from collections.abc import Sequence
+from typing import TYPE_CHECKING
 from typing import Any
 from typing import NamedTuple
 
@@ -9,10 +10,12 @@ import optuna
 from optuna import _deprecated
 from optuna._warnings import optuna_warn
 from optuna.samplers._base import _CONSTRAINTS_KEY
-from optuna.study import Study
 from optuna.study._multi_objective import _get_pareto_front_trials_by_trials
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
+
+if TYPE_CHECKING:
+    from optuna.study import Study
 from optuna.visualization._plotly_imports import _imports
 from optuna.visualization._utils import _make_hovertext
 
