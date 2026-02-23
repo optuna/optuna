@@ -4,18 +4,18 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-import optuna
 from optuna._experimental import experimental_class
 from optuna._warnings import optuna_warn
 from optuna.pruners import BasePruner
 from optuna.study._study_direction import StudyDirection
-from optuna.trial import FrozenTrial
 
 
 if TYPE_CHECKING:
     from typing import Literal
 
+    import optuna
     import scipy.stats as ss
+    from optuna.trial import FrozenTrial
 else:
     from optuna._imports import _LazyImport
 
