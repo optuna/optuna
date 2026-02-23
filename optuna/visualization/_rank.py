@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from collections.abc import Callable
 import math
 import typing
+from typing import TYPE_CHECKING
 from typing import Any
 from typing import NamedTuple
 
@@ -10,9 +10,12 @@ import numpy as np
 
 from optuna.logging import get_logger
 from optuna.samplers._base import _CONSTRAINTS_KEY
-from optuna.study import Study
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+    from optuna.study import Study
 from optuna.visualization._plotly_imports import _imports
 from optuna.visualization._utils import _check_plot_args
 from optuna.visualization._utils import _is_log_scale
@@ -137,7 +140,7 @@ def _get_rank_info(
     if target is None:
 
         def target(trial: FrozenTrial) -> float:
-            return typing.cast(float, trial.value)
+            return typing.cast("float", trial.value)
 
         has_custom_target = False
     target_values = np.array([target(trial) for trial in trials])
