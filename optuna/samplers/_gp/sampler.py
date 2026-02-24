@@ -416,6 +416,11 @@ class GPSampler(BaseSampler):
                     Y_train=torch.from_numpy(standardized_score_vals),
                     n_qmc_samples=128,  # NOTE(nabenabe): The BoTorch default value.
                     qmc_seed=self._rng.rng.randint(1 << 30),
+                    normalized_params_of_running_trials=(
+                        self._get_normalized_params_of_running_trials(
+                            trials, internal_search_space
+                        )
+                    ),
                 )
                 best_params = self._get_best_params_for_multi_objective(
                     normalized_params, standardized_score_vals

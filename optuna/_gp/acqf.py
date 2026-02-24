@@ -251,6 +251,7 @@ class LogEHVI(BaseAcquisitionFunc):
         n_qmc_samples: int,
         qmc_seed: int | None,
         stabilizing_noise: float = 1e-12,
+        normalized_params_of_running_trials: np.ndarray | None = None,
     ) -> None:
         def _get_non_dominated_box_bounds() -> tuple[torch.Tensor, torch.Tensor]:
             # NOTE(nabenabe): Y is to be maximized, loss_vals is to be minimized.
@@ -264,6 +265,27 @@ class LogEHVI(BaseAcquisitionFunc):
 
         self._stabilizing_noise = stabilizing_noise
         self._gpr_list = gpr_list
+        if normalized_params_of_running_trials is not None:
+            normalized_params_of_running_trials = torch.from_numpy(
+                normalized_params_of_running_trials
+            )
+
+            # NOTE(sawa3030): To handle running trials, the `best` constant liar strategy is
+            # currently implemented, as it is simple and performs well in our benchmarks.
+            # We plan to implement Monte-Carlo based approaches (e.g., BoTorch’s fantasize)
+            # in the near future.
+            # See https://github.com/optuna/optuna/pull/6430 for details.
+
+            for gpr in self._gpr_list:
+                constant_liar_value = gpr._y_train.max()
+                constant_liar_y = constant_liar_value.expand(
+                    normalized_params_of_running_trials.shape[0]
+                )
+                gpr.append_running_data(
+                    normalized_params_of_running_trials,
+                    constant_liar_y,
+                )
+
         self._fixed_samples = _sample_from_normal_sobol(
             dim=Y_train.shape[-1], n_samples=n_qmc_samples, seed=qmc_seed
         )
