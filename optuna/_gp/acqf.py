@@ -277,10 +277,8 @@ class LogEHVI(BaseAcquisitionFunc):
             # See https://github.com/optuna/optuna/pull/6430 for details.
 
             for gpr in self._gpr_list:
-                constant_liar_value = gpr._y_train.max()
-                constant_liar_y = constant_liar_value.expand(
-                    normalized_params_of_running_trials.shape[0]
-                )
+                constant_liar_y, _ = gpr.posterior(normalized_params_of_running_trials)
+
                 gpr.append_running_data(
                     normalized_params_of_running_trials,
                     constant_liar_y,
