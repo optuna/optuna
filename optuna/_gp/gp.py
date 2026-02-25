@@ -174,7 +174,7 @@ class GPRegressor:
                     torch.float64
                 )
         sqdist = sqd.matmul(self.inverse_squared_lengthscales)
-        return Matern52Kernel.apply(sqdist) * self.kernel_scale  # type: ignore
+        return Matern52Kernel.apply(sqdist) * self.kernel_scale
 
     def posterior(self, x: torch.Tensor, joint: bool = False) -> tuple[torch.Tensor, torch.Tensor]:
         """
@@ -284,11 +284,11 @@ class GPRegressor:
                     else torch.exp(raw_params_tensor[n_params + 1]) + minimum_noise
                 )
                 loss = -self.marginal_log_likelihood() - log_prior(self)
-                loss.backward()  # type: ignore
+                loss.backward()
                 # scipy.minimize requires all the gradients to be zero for termination.
-                raw_noise_var_grad = raw_params_tensor.grad[n_params + 1]  # type: ignore
+                raw_noise_var_grad = raw_params_tensor.grad[n_params + 1]
                 assert not deterministic_objective or raw_noise_var_grad == 0
-            return loss.item(), raw_params_tensor.grad.detach().cpu().numpy()  # type: ignore
+            return loss.item(), raw_params_tensor.grad.detach().cpu().numpy()
 
         with single_blas_thread_if_scipy_v1_15_or_newer():
             # jac=True means loss_func returns the gradient for gradient descent.

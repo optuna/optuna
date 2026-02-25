@@ -34,7 +34,7 @@ def _sample_from_normal_sobol(dim: int, n_samples: int, seed: int | None) -> tor
     # NOTE(nabenabe): Normal Sobol sampling based on BoTorch.
     # https://github.com/pytorch/botorch/blob/v0.13.0/botorch/sampling/qmc.py#L26-L97
     # https://github.com/pytorch/botorch/blob/v0.13.0/botorch/utils/sampling.py#L109-L138
-    sobol_samples = torch.quasirandom.SobolEngine(  # type: ignore[no-untyped-call]
+    sobol_samples = torch.quasirandom.SobolEngine(
         dimension=dim, scramble=True, seed=seed
     ).draw(n_samples, dtype=torch.float64)
     samples = 2.0 * (sobol_samples - 0.5)  # The Sobol sequence in [-1, 1].
@@ -109,8 +109,8 @@ class BaseAcquisitionFunc(ABC):
         assert x.ndim == 1
         x_tensor = torch.from_numpy(x).requires_grad_(True)
         val = self.eval_acqf(x_tensor)
-        val.backward()  # type: ignore
-        return val.item(), x_tensor.grad.detach().numpy()  # type: ignore
+        val.backward()
+        return val.item(), x_tensor.grad.detach().numpy()
 
 
 class LogEI(BaseAcquisitionFunc):

@@ -97,7 +97,7 @@ def _get_rank_plot(
     cbar.ax.set_yticklabels(tick_info.text)
     # NOTE(Alnusjaponica): The class of cbar.outline inherits matplotlib.patches.Patch,
     # which has set_edgecolor method. However, mypy does not recognize it.
-    cbar.outline.set_edgecolor("gray")  # type: ignore[operator]
+    cbar.outline.set_edgecolor("gray")
     return axs
 
 

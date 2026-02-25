@@ -82,8 +82,8 @@ def _get_timeline_plot(info: _TimelineInfo) -> "Axes":
     # https://github.com/matplotlib/matplotlib/blob/v3.10.1/lib/matplotlib/axes/_axes.py#L2701-L2836
     ax.barh(
         y=[b.number for b in info.bars],
-        width=[b.complete - b.start for b in info.bars],  # type: ignore[arg-type]
-        left=[b.start for b in info.bars],  # type: ignore[arg-type]
+        width=[b.complete - b.start for b in info.bars],
+        left=[b.start for b in info.bars],
         color=[_cm[_get_state_name(b)] for b in info.bars],
     )
 
@@ -104,10 +104,10 @@ def _get_timeline_plot(info: _TimelineInfo) -> "Axes":
     # Officially, ax.set_xlim expects arguments right and left to be float,
     # but ax.barh() accepts datetime, so we leave the type as datetime.
     ax.set_xlim(
-        right=last_complete_time + margin,  # type: ignore[arg-type]
-        left=first_start_time - margin,  # type: ignore[arg-type]
+        right=last_complete_time + margin,
+        left=first_start_time - margin,
     )
     ax.yaxis.set_major_locator(matplotlib.ticker.MaxNLocator(integer=True))
-    ax.xaxis.set_major_formatter(DateFormatter("%H:%M:%S"))  # type: ignore[no-untyped-call]
+    ax.xaxis.set_major_formatter(DateFormatter("%H:%M:%S"))
     plt.gcf().autofmt_xdate()
     return ax

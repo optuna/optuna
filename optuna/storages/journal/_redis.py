@@ -77,7 +77,7 @@ class JournalRedisBackend(BaseJournalBackend, BaseJournalSnapshot):
         self._redis.setnx(f"{self._prefix}:log_number", -1)
         for log in logs:
             if not self._use_cluster:
-                self._redis.eval(  # type: ignore
+                self._redis.eval(
                     "local i = redis.call('incr', string.format('%s:log_number', ARGV[1])) "
                     "redis.call('set', string.format('%s:log:%d', ARGV[1], i), ARGV[2])",
                     0,
