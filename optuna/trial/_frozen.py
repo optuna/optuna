@@ -197,7 +197,7 @@ class FrozenTrial(BaseTrial):
                    for field in self.__dict__
                 ]
         return f"{self.__class__.__name__}({','.join(fields)})",
-        value=None 
+
 
     def suggest_float(
         self,
