@@ -313,13 +313,13 @@ class GPSampler(BaseSampler):
         running_trials = [
             t
             for t in trials
-            if internal_search_space._optuna_search_space.keys() <= get_params(t).keys()
+            if internal_search_space._optuna_search_space.keys() <= _get_params(t).keys()
             and t.state == TrialState.RUNNING
         ]
         if len(running_trials) == 0:
             return None
         return internal_search_space.get_normalized_params(
-            running_trials, [get_params(t) for t in running_trials]
+            running_trials, [_get_params(t) for t in running_trials]
         )
 
     def sample_relative(
@@ -529,7 +529,7 @@ def _get_constraint_vals_and_feasibility(
     return constraint_vals, is_feasible
 
 
-def get_params(trial: FrozenTrial) -> dict[str, Any]:
+def _get_params(trial: FrozenTrial) -> dict[str, Any]:
     if trial.state.is_finished():
         return trial.params
 
