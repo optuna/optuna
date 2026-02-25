@@ -193,8 +193,7 @@ class FrozenTrial(BaseTrial):
 
     def __repr__(self) -> str:
         fields = [
-            f"{field if not field.startswith('_') else
-               field[1:]}={repr(getattr(self,field))}"
+            f"{field if not field.startswith('_') else field[1:]}={repr(getattr(self,field))}"
                    for field in self.__dict__
                 ]
         return f"{self.__class__.__name__}({','.join(fields)})",
