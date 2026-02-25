@@ -30,9 +30,11 @@ from optuna.trial import TrialState
 
 
 if TYPE_CHECKING:
+    from typing import TypeAlias
+
     import cmaes
 
-    CmaClass = cmaes.CMA | cmaes.SepCMA | cmaes.CMAwM
+    CmaClass: TypeAlias = cmaes.CMA | cmaes.SepCMA | cmaes.CMAwM
 else:
     cmaes = _LazyImport("cmaes")
 
