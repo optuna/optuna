@@ -7,7 +7,6 @@ import pickle
 from typing import Any
 from typing import cast
 from typing import TYPE_CHECKING
-from typing import Union
 
 import numpy as np
 
@@ -31,9 +30,11 @@ from optuna.trial import TrialState
 
 
 if TYPE_CHECKING:
+    from typing import TypeAlias
+
     import cmaes
 
-    CmaClass = Union[cmaes.CMA, cmaes.SepCMA, cmaes.CMAwM]
+    CmaClass: TypeAlias = cmaes.CMA | cmaes.SepCMA | cmaes.CMAwM
 else:
     cmaes = _LazyImport("cmaes")
 
