@@ -99,8 +99,8 @@ html_theme = "sphinx_rtd_theme"
 html_theme_options = {
     "logo_only": True,
     "navigation_with_keys": True,
-    "theme_language_selector": False,
-    "theme_version_selector": False,
+    "language_selector": False,
+    "version_selector": False,
 }
 
 html_favicon = "../image/favicon.ico"
