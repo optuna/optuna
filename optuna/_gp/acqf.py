@@ -270,18 +270,16 @@ class LogEHVI(BaseAcquisitionFunc):
                 normalized_params_of_running_trials
             )
 
-            # NOTE(sawa3030): To handle running trials, the `best` constant liar strategy is
+            # NOTE(sawa3030): To handle running trials, the Kriging Believer strategy is
             # currently implemented, as it is simple and performs well in our benchmarks.
             # We plan to implement Monte-Carlo based approaches (e.g., BoTorch’s fantasize)
             # in the near future.
-            # See https://github.com/optuna/optuna/pull/6430 for details.
+            # See https://github.com/optuna/optuna/pull/6481 for details.
 
             for gpr in self._gpr_list:
-                constant_liar_y, _ = gpr.posterior(normalized_params_of_running_trials)
-
                 gpr.append_running_data(
                     normalized_params_of_running_trials,
-                    constant_liar_y,
+                    gpr.posterior(normalized_params_of_running_trials)[0],
                 )
 
         self._fixed_samples = _sample_from_normal_sobol(
