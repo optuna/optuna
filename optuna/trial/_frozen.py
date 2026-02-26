@@ -193,11 +193,10 @@ class FrozenTrial(BaseTrial):
 
     def __repr__(self) -> str:
         fields = [
-            f"{field if not field.startswith('_') else field[1:]}={repr(getattr(self,field))}"
-                   for field in self.__dict__
-                ]
-        return f"{self.__class__.__name__}({','.join(fields)})",
-
+            f"{field if not field.startswith('_') else field[1:]}={repr(getattr(self, field))}"
+            for field in self.__dict__
+        ]
+        return (f"{self.__class__.__name__}({','.join(fields)})",)
 
     def suggest_float(
         self,
@@ -315,8 +314,7 @@ class FrozenTrial(BaseTrial):
                 )
 
         if self.state == TrialState.FAIL and self._values is not None:
-            raise ValueError(f"values should be None for a failed trial, "
-                             f"but got {self._values}.")
+            raise ValueError(f"values should be None for a failed trial, but got {self._values}.")
         if self.state == TrialState.COMPLETE:
             if self._values is None:
                 raise ValueError("values should be set for a complete trial.")
@@ -326,8 +324,8 @@ class FrozenTrial(BaseTrial):
         if set(self.params.keys()) != set(self.distributions.keys()):
             raise ValueError(
                 f"Inconsistent parameters {set(self.params.keys())} and"
-                 f"distributions {set(self.distributions.keys())}."
-                )
+                f"distributions {set(self.distributions.keys())}."
+            )
 
         for param_name, param_value in self.params.items():
             distribution = self.distributions[param_name]
@@ -336,14 +334,14 @@ class FrozenTrial(BaseTrial):
             if not distribution._contains(param_value_in_internal_repr):
                 raise ValueError(
                     f"The value {param_value} of parameter '{param_name}'isn't"
-                     f"contained in the distribution '{distribution}'."
+                    f"contained in the distribution '{distribution}'."
                 )
 
     def _suggest(self, name: str, distribution: BaseDistribution) -> Any:
         if name not in self._params:
             raise ValueError(
                 f"The value of the parameter '{name}' is not found."
-                 f"Please set it at the construction of the FrozenTrial object."
+                f"Please set it at the construction of the FrozenTrial object."
             )
 
         value = self._params[name]
