@@ -1,8 +1,12 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import numpy as np
 
-from optuna._gp import acqf as acqf_module
+
+if TYPE_CHECKING:
+    from optuna._gp import acqf as acqf_module
 
 
 def optimize_acqf_sample(
