@@ -195,10 +195,7 @@ class FrozenTrial(BaseTrial):
         return "{cls}({kwargs})".format(
             cls=self.__class__.__name__,
             kwargs=", ".join(
-                "{field}={value}".format(
-                    field=field if not field.startswith("_") else field[1:],
-                    value=repr(getattr(self, field)),
-                )
+                f"{field if not field.startswith("_") else field[1:]}={repr(getattr(self, field))}"
                 for field in self.__dict__
             )
             + ", value=None",
