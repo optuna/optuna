@@ -139,6 +139,9 @@ class FloatDistribution(BaseDistribution):
     def __init__(
         self, low: float, high: float, log: bool = False, step: None | float = None
     ) -> None:
+        if math.isnan(low) or math.isnan(high):
+            raise ValueError(f"Distribution bounds cannot be NaN, but got ({low=}, {high=}).")
+
         if log and step is not None:
             raise ValueError("The parameter `step` is not supported when `log` is true.")
 
