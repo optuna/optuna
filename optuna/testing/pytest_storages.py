@@ -991,17 +991,22 @@ def _test_set_and_get_trial_param_for_floats(storage: BaseStorage) -> None:
     trial_id = storage.create_new_trial(study_id)
 
     for key, value in FLOAT_ATTRS.items():
-        float_distribution = FloatDistribution(low=value, high=value)
-        categorical_distribution = CategoricalDistribution(choices=(value,))
-        for distribution in (float_distribution, categorical_distribution):
-            # NOTE: suggest_float does not generate infinite values and NaN.
-            if isinstance(distribution, FloatDistribution) and not math.isfinite(value):
-                continue
-            param_name = distribution.__class__.__name__ + key
-            internal_repr = distribution.to_internal_repr(value)
-            storage.set_trial_param(trial_id, param_name, internal_repr, distribution)
+        # NOTE: suggest_float does not generate infinite values and NaN.
+        # FloatDistribution also rejects NaN bounds, so skip non-finite values early.
+        if math.isfinite(value):
+            float_distribution = FloatDistribution(low=value, high=value)
+            param_name = float_distribution.__class__.__name__ + key
+            internal_repr = float_distribution.to_internal_repr(value)
+            storage.set_trial_param(trial_id, param_name, internal_repr, float_distribution)
             assert is_equal_floats(storage.get_trial_param(trial_id, param_name), internal_repr)
-            assert storage.get_trial(trial_id).distributions[param_name] == distribution
+            assert storage.get_trial(trial_id).distributions[param_name] == float_distribution
+
+        categorical_distribution = CategoricalDistribution(choices=(value,))
+        param_name = categorical_distribution.__class__.__name__ + key
+        internal_repr = categorical_distribution.to_internal_repr(value)
+        storage.set_trial_param(trial_id, param_name, internal_repr, categorical_distribution)
+        assert is_equal_floats(storage.get_trial_param(trial_id, param_name), internal_repr)
+        assert storage.get_trial(trial_id).distributions[param_name] == categorical_distribution
 
 
 def _test_set_trial_intermediate_value_for_floats(storage: BaseStorage) -> None:
