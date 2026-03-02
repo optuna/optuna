@@ -22,15 +22,6 @@ if TYPE_CHECKING:
     _T = TypeVar("_T")
 
 
-_DEPRECATION_WARNING_TEMPLATE = (
-    "Positional arguments {deprecated_positional_arg_names} in {func_name}() "
-    "have been deprecated since v{d_ver}. "
-    "They will be replaced with the corresponding keyword arguments in v{r_ver}, "
-    "so please use the keyword specification instead. "
-    "See https://github.com/optuna/optuna/releases/tag/v{d_ver} for details."
-)
-
-
 def _get_positional_arg_names(func: "Callable[_P, _T]") -> list[str]:
     params = signature(func).parameters
     positional_arg_names = [
@@ -101,12 +92,14 @@ def convert_positional_args(
 
                 if deprecated_version or removed_version:
                     warning_messages.append(
-                        _DEPRECATION_WARNING_TEMPLATE.format(
-                            deprecated_positional_arg_names=previous_positional_arg_names,
-                            func_name=func.__name__,
-                            d_ver=deprecated_version,
-                            r_ver=removed_version,
-                        )
+                        f"Positional arguments {previous_positional_arg_names} "
+                        f"in {func.__name__}() have been deprecated since "
+                        f"v{deprecated_version}. They will be replaced with "
+                        f"the corresponding keyword arguments in "
+                        f"v{removed_version}, so please use the keyword "
+                        f"specification instead. See "
+                        f"https://github.com/optuna/optuna/releases/tag/"
+                        f"v{deprecated_version} for details."
                     )
 
             if warning_messages:
