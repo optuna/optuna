@@ -500,6 +500,16 @@ def test_int_init_error() -> None:
 
 
 def test_float_init_error() -> None:
+    # NaN bounds should raise ValueError.
+    with pytest.raises(ValueError):
+        distributions.FloatDistribution(low=float("nan"), high=10.0)
+
+    with pytest.raises(ValueError):
+        distributions.FloatDistribution(low=0.0, high=float("nan"))
+
+    with pytest.raises(ValueError):
+        distributions.FloatDistribution(low=float("nan"), high=float("nan"))
+
     # Empty distributions cannot be instantiated.
     with pytest.raises(ValueError):
         distributions.FloatDistribution(low=0.0, high=-100.0)
