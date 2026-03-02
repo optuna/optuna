@@ -119,11 +119,33 @@ class LogEI(BaseAcquisitionFunc):
         gpr: GPRegressor,
         search_space: SearchSpace,
         threshold: float,
+        normalized_params_of_running_trials: np.ndarray | None = None,
         stabilizing_noise: float = 1e-12,
     ) -> None:
         self._gpr = gpr
         self._stabilizing_noise = stabilizing_noise
         self._threshold = threshold
+
+        if normalized_params_of_running_trials is not None:
+            normalized_params_of_running_trials = torch.from_numpy(
+                normalized_params_of_running_trials
+            )
+
+            # NOTE(sawa3030): To handle running trials, the `best` constant liar strategy is
+            # currently implemented, as it is simple and performs well in our benchmarks.
+            # We plan to implement Monte-Carlo based approaches (e.g., BoTorch’s fantasize)
+            # in the near future.
+            # See https://github.com/optuna/optuna/pull/6430 for details.
+            constant_liar_value = self._gpr._y_train.max()
+            constant_liar_y = constant_liar_value.expand(
+                normalized_params_of_running_trials.shape[0]
+            )
+
+            self._gpr.append_running_data(
+                normalized_params_of_running_trials,
+                constant_liar_y,
+            )
+
         super().__init__(gpr.length_scales, search_space)
 
     def eval_acqf(self, x: torch.Tensor) -> torch.Tensor:
@@ -205,7 +227,7 @@ class ConstrainedLogEI(BaseAcquisitionFunc):
         assert (
             len(constraints_gpr_list) == len(constraints_threshold_list) and constraints_gpr_list
         )
-        self._acqf = LogEI(gpr, search_space, threshold, stabilizing_noise)
+        self._acqf = LogEI(gpr, search_space, threshold, None, stabilizing_noise)
         self._constraints_acqf_list = [
             LogPI(_gpr, search_space, _threshold, stabilizing_noise)
             for _gpr, _threshold in zip(constraints_gpr_list, constraints_threshold_list)
@@ -229,6 +251,7 @@ class LogEHVI(BaseAcquisitionFunc):
         n_qmc_samples: int,
         qmc_seed: int | None,
         stabilizing_noise: float = 1e-12,
+        normalized_params_of_running_trials: np.ndarray | None = None,
     ) -> None:
         def _get_non_dominated_box_bounds() -> tuple[torch.Tensor, torch.Tensor]:
             # NOTE(nabenabe): Y is to be maximized, loss_vals is to be minimized.
@@ -242,6 +265,23 @@ class LogEHVI(BaseAcquisitionFunc):
 
         self._stabilizing_noise = stabilizing_noise
         self._gpr_list = gpr_list
+        if normalized_params_of_running_trials is not None:
+            normalized_params_of_running_trials = torch.from_numpy(
+                normalized_params_of_running_trials
+            )
+
+            # NOTE(sawa3030): To handle running trials, the Kriging Believer strategy is
+            # currently implemented, as it is simple and performs well in our benchmarks.
+            # We plan to implement Monte-Carlo based approaches (e.g., BoTorch’s fantasize)
+            # in the near future.
+            # See https://github.com/optuna/optuna/pull/6481 for details.
+
+            for gpr in self._gpr_list:
+                gpr.append_running_data(
+                    normalized_params_of_running_trials,
+                    gpr.posterior(normalized_params_of_running_trials)[0],
+                )
+
         self._fixed_samples = _sample_from_normal_sobol(
             dim=Y_train.shape[-1], n_samples=n_qmc_samples, seed=qmc_seed
         )

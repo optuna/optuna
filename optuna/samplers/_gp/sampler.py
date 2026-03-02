@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from typing import Any
 from typing import TYPE_CHECKING
 
@@ -48,6 +49,10 @@ import logging
 _logger = logging.getLogger(__name__)
 
 EPS = 1e-10
+
+_RELATIVE_PARAMS_KEY = "gp:relative_params"
+# The value of system_attrs must be less than 2046 characters on RDBStorage.
+_SYSTEM_ATTR_MAX_LENGTH = 2045
 
 
 def _standardize_values(values: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -300,32 +305,66 @@ class GPSampler(BaseSampler):
         chosen_indices = self._rng.rng.choice(n_pareto_sols, size=size, replace=False)
         return pareto_params[chosen_indices]
 
+    def _get_normalized_params_of_running_trials(
+        self,
+        trials: list[FrozenTrial],
+        internal_search_space: gp_search_space.SearchSpace,
+    ) -> np.ndarray | None:
+        running_trials = [
+            t
+            for t in trials
+            if internal_search_space._optuna_search_space.keys() <= get_params(t).keys()
+            and t.state == TrialState.RUNNING
+        ]
+        if len(running_trials) == 0:
+            return None
+        return internal_search_space.get_normalized_params(
+            running_trials, [get_params(t) for t in running_trials]
+        )
+
     def sample_relative(
         self, study: Study, trial: FrozenTrial, search_space: dict[str, BaseDistribution]
     ) -> dict[str, Any]:
         if search_space == {}:
             return {}
 
-        states = (TrialState.COMPLETE,)
-        trials = study._get_trials(deepcopy=False, states=states, use_cache=True)
+        states = (TrialState.COMPLETE, TrialState.RUNNING)
+        trials = study._get_trials(deepcopy=False, states=states, use_cache=False)
+        completed_trials = [t for t in trials if t.state == TrialState.COMPLETE]
 
-        if len(trials) < self._n_startup_trials:
+        if len(completed_trials) < self._n_startup_trials:
             return {}
 
         # Force CPU device for all torch operations to avoid issues when
         # torch.set_default_device("cuda") is set globally (issue #6113).
         with torch.device("cpu"):
-            return self._sample_relative_impl(study, trials, search_space)
+            params = self._sample_relative_impl(study, completed_trials, trials, search_space)
+
+        if params != {}:
+            # Share the params obtained by the relative sampling with the other processes.
+            params_str = json.dumps(params)
+            for i in range(0, len(params_str), _SYSTEM_ATTR_MAX_LENGTH):
+                study._storage.set_trial_system_attr(
+                    trial._trial_id,
+                    f"{_RELATIVE_PARAMS_KEY}:{i // _SYSTEM_ATTR_MAX_LENGTH}",
+                    params_str[i : i + _SYSTEM_ATTR_MAX_LENGTH],
+                )
+
+        return params
 
     def _sample_relative_impl(
-        self, study: Study, trials: list[FrozenTrial], search_space: dict[str, BaseDistribution]
+        self,
+        study: Study,
+        completed_trials: list[FrozenTrial],
+        trials: list[FrozenTrial],
+        search_space: dict[str, BaseDistribution],
     ) -> dict[str, Any]:
         internal_search_space = gp_search_space.SearchSpace(search_space)
-        normalized_params = internal_search_space.get_normalized_params(trials)
+        normalized_params = internal_search_space.get_normalized_params(completed_trials)
 
         _sign = np.array([-1.0 if d == StudyDirection.MINIMIZE else 1.0 for d in study.directions])
         standardized_score_vals, _, _ = _standardize_values(
-            _sign * np.array([trial.values for trial in trials])
+            _sign * np.array([trial.values for trial in completed_trials])
         )
 
         if (
@@ -363,6 +402,11 @@ class GPSampler(BaseSampler):
                     gpr=gprs_list[0],
                     search_space=internal_search_space,
                     threshold=standardized_score_vals[:, 0].max(),
+                    normalized_params_of_running_trials=(
+                        self._get_normalized_params_of_running_trials(
+                            trials, internal_search_space
+                        )
+                    ),
                 )
                 best_params = normalized_params[np.argmax(standardized_score_vals), np.newaxis]
             else:
@@ -372,6 +416,11 @@ class GPSampler(BaseSampler):
                     Y_train=torch.from_numpy(standardized_score_vals),
                     n_qmc_samples=128,  # NOTE(nabenabe): The BoTorch default value.
                     qmc_seed=self._rng.rng.randint(1 << 30),
+                    normalized_params_of_running_trials=(
+                        self._get_normalized_params_of_running_trials(
+                            trials, internal_search_space
+                        )
+                    ),
                 )
                 best_params = self._get_best_params_for_multi_objective(
                     normalized_params, standardized_score_vals
@@ -379,7 +428,9 @@ class GPSampler(BaseSampler):
         else:
             if n_objectives == 1:
                 assert len(gprs_list) == 1
-                constraint_vals, is_feasible = _get_constraint_vals_and_feasibility(study, trials)
+                constraint_vals, is_feasible = _get_constraint_vals_and_feasibility(
+                    study, completed_trials
+                )
                 y_with_neginf = np.where(is_feasible, standardized_score_vals[:, 0], -np.inf)
                 # TODO(kAIto47802): If all trials are infeasible, the acquisition function
                 # for the objective function can be ignored, so skipping the computation
@@ -403,7 +454,9 @@ class GPSampler(BaseSampler):
                     None if np.isneginf(best_feasible_y) else normalized_params[i_opt, np.newaxis]
                 )
             else:
-                constraint_vals, is_feasible = _get_constraint_vals_and_feasibility(study, trials)
+                constraint_vals, is_feasible = _get_constraint_vals_and_feasibility(
+                    study, completed_trials
+                )
                 constr_gpr_list, constr_threshold_list = self._get_constraints_acqf_args(
                     constraint_vals, internal_search_space, normalized_params
                 )
@@ -442,8 +495,8 @@ class GPSampler(BaseSampler):
     ) -> Any:
         if self._warn_independent_sampling:
             states = (TrialState.COMPLETE,)
-            complete_trials = study._get_trials(deepcopy=False, states=states, use_cache=True)
-            if len(complete_trials) >= self._n_startup_trials:
+            completed_trials = study._get_trials(deepcopy=False, states=states, use_cache=True)
+            if len(completed_trials) >= self._n_startup_trials:
                 self._log_independent_sampling(trial, param_name)
         return self._independent_sampler.sample_independent(
             study, trial, param_name, param_distribution
@@ -479,3 +532,20 @@ def _get_constraint_vals_and_feasibility(
     is_feasible = np.all(constraint_vals <= 0, axis=1)
     assert not isinstance(is_feasible, np.bool_), "MyPy Redefinition for NumPy v2.2.0."
     return constraint_vals, is_feasible
+
+
+def get_params(trial: FrozenTrial) -> dict[str, Any]:
+    if trial.state.is_finished():
+        return trial.params
+
+    params_strs = []
+    i = 0
+    while params_str_i := trial.system_attrs.get(f"{_RELATIVE_PARAMS_KEY}:{i}"):
+        params_strs.append(params_str_i)
+        i += 1
+
+    if len(params_strs) == 0:
+        return trial.params
+    params = json.loads("".join(params_strs))
+    params.update(trial.params)
+    return params
