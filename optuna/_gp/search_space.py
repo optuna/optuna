@@ -65,8 +65,13 @@ class SearchSpace:
         trial_params: list[dict[str, Any]] | None = None,
     ) -> np.ndarray:
         values = np.empty((len(trials), len(self._optuna_search_space)), dtype=float)
+
+        # `trial_params` can be passed explicitly when `trials` contain unfinished trials.
+        # In that case, parameter values may not be available in `trial.params`, so callers
+        # should provide them explicitly. Otherwise, they are taken from `trials`.
         if trial_params is None:
             trial_params = [trial.params for trial in trials]
+
         for i, (param, distribution) in enumerate(self._optuna_search_space.items()):
             if isinstance(distribution, CategoricalDistribution):
                 values[:, i] = [
