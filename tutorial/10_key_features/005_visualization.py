@@ -85,7 +85,7 @@ def define_model(trial):
 
     in_features = 28 * 28
     for i in range(n_layers):
-        out_features = trial.suggest_int("n_units_l{}".format(i), 64, 512)
+        out_features = trial.suggest_int(f"n_units_l{i}", 64, 512)
         layers.append(nn.Linear(in_features, out_features))
         layers.append(nn.ReLU())
 
