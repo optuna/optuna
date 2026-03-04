@@ -181,6 +181,7 @@ class LogPI(BaseAcquisitionFunc):
             # currently implemented, as it is simple and performs well in our benchmarks.
             # We plan to implement Monte-Carlo based approaches (e.g., BoTorch’s fantasize)
             # in the near future.
+            # See https://github.com/optuna/optuna/pull/6481 for details.
 
             self._gpr.append_running_data(
                 normalized_params_of_running_trials,
