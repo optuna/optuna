@@ -331,7 +331,7 @@ class GPSampler(BaseSampler):
         states = (TrialState.COMPLETE, TrialState.RUNNING)
         # At present, running trials are taken into account only in single-objective
         # unconstrained optimization.
-        use_cache = len(study.directions) > 1 or self._constraints_func is not None
+        use_cache = len(study.directions) > 1 and self._constraints_func is not None
         trials = study._get_trials(deepcopy=False, states=states, use_cache=use_cache)
         completed_trials = [t for t in trials if t.state == TrialState.COMPLETE]
 
@@ -451,6 +451,11 @@ class GPSampler(BaseSampler):
                     threshold=best_feasible_y,
                     constraints_gpr_list=constr_gpr_list,
                     constraints_threshold_list=constr_threshold_list,
+                    normalized_params_of_running_trials=(
+                        self._get_normalized_params_of_running_trials(
+                            trials, internal_search_space
+                        )
+                    ),
                 )
                 assert normalized_params.shape[:-1] == y_with_neginf.shape
                 best_params = (

@@ -165,11 +165,27 @@ class LogPI(BaseAcquisitionFunc):
         gpr: GPRegressor,
         search_space: SearchSpace,
         threshold: float,
+        normalized_params_of_running_trials: np.ndarray | None = None,
         stabilizing_noise: float = 1e-12,
     ) -> None:
         self._gpr = gpr
         self._stabilizing_noise = stabilizing_noise
         self._threshold = threshold
+
+        if normalized_params_of_running_trials is not None:
+            normalized_params_of_running_trials = torch.from_numpy(
+                normalized_params_of_running_trials
+            )
+
+            # NOTE(sawa3030): To handle running trials, the Kriging Believer strategy is
+            # currently implemented, as it is simple and performs well in our benchmarks.
+            # We plan to implement Monte-Carlo based approaches (e.g., BoTorch’s fantasize)
+            # in the near future.
+
+            self._gpr.append_running_data(
+                normalized_params_of_running_trials,
+                gpr.posterior(normalized_params_of_running_trials)[0],
+            )
         super().__init__(gpr.length_scales, search_space)
 
     def eval_acqf(self, x: torch.Tensor) -> torch.Tensor:
@@ -222,14 +238,23 @@ class ConstrainedLogEI(BaseAcquisitionFunc):
         threshold: float,
         constraints_gpr_list: list[GPRegressor],
         constraints_threshold_list: list[float],
+        normalized_params_of_running_trials: np.ndarray | None = None,
         stabilizing_noise: float = 1e-12,
     ) -> None:
         assert (
             len(constraints_gpr_list) == len(constraints_threshold_list) and constraints_gpr_list
         )
-        self._acqf = LogEI(gpr, search_space, threshold, None, stabilizing_noise)
+        self._acqf = LogEI(
+            gpr, search_space, threshold, normalized_params_of_running_trials, stabilizing_noise
+        )
         self._constraints_acqf_list = [
-            LogPI(_gpr, search_space, _threshold, stabilizing_noise)
+            LogPI(
+                _gpr,
+                search_space,
+                _threshold,
+                normalized_params_of_running_trials,
+                stabilizing_noise,
+            )
             for _gpr, _threshold in zip(constraints_gpr_list, constraints_threshold_list)
         ]
         super().__init__(gpr.length_scales, search_space)
@@ -339,7 +364,7 @@ class ConstrainedLogEHVI(BaseAcquisitionFunc):
             else None
         )
         self._constraints_acqf_list = [
-            LogPI(_gpr, search_space, _threshold, stabilizing_noise)
+            LogPI(_gpr, search_space, _threshold, None, stabilizing_noise)
             for _gpr, _threshold in zip(constraints_gpr_list, constraints_threshold_list)
         ]
         # Since all the objectives are equally important, we simply use the mean of
