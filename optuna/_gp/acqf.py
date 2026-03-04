@@ -250,8 +250,8 @@ class LogEHVI(BaseAcquisitionFunc):
         Y_train: torch.Tensor,
         n_qmc_samples: int,
         qmc_seed: int | None,
-        stabilizing_noise: float = 1e-12,
         normalized_params_of_running_trials: np.ndarray | None = None,
+        stabilizing_noise: float = 1e-12,
     ) -> None:
         def _get_non_dominated_box_bounds() -> tuple[torch.Tensor, torch.Tensor]:
             # NOTE(nabenabe): Y is to be maximized, loss_vals is to be minimized.
@@ -334,7 +334,15 @@ class ConstrainedLogEHVI(BaseAcquisitionFunc):
             len(constraints_gpr_list) == len(constraints_threshold_list) and constraints_gpr_list
         )
         self._acqf = (
-            LogEHVI(gpr_list, search_space, Y_feasible, n_qmc_samples, qmc_seed, stabilizing_noise)
+            LogEHVI(
+                gpr_list,
+                search_space,
+                Y_feasible,
+                n_qmc_samples,
+                qmc_seed,
+                None,
+                stabilizing_noise,
+            )
             if Y_feasible is not None
             else None
         )
