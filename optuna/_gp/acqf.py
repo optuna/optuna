@@ -353,6 +353,7 @@ class ConstrainedLogEHVI(BaseAcquisitionFunc):
         qmc_seed: int | None,
         constraints_gpr_list: list[GPRegressor],
         constraints_threshold_list: list[float],
+        normalized_params_of_running_trials: np.ndarray | None = None,
         stabilizing_noise: float = 1e-12,
     ) -> None:
         assert (
@@ -365,14 +366,20 @@ class ConstrainedLogEHVI(BaseAcquisitionFunc):
                 Y_feasible,
                 n_qmc_samples,
                 qmc_seed,
-                None,
+                normalized_params_of_running_trials,
                 stabilizing_noise,
             )
             if Y_feasible is not None
             else None
         )
         self._constraints_acqf_list = [
-            LogPI(_gpr, search_space, _threshold, None, stabilizing_noise)
+            LogPI(
+                _gpr,
+                search_space,
+                _threshold,
+                normalized_params_of_running_trials,
+                stabilizing_noise,
+            )
             for _gpr, _threshold in zip(constraints_gpr_list, constraints_threshold_list)
         ]
         # Since all the objectives are equally important, we simply use the mean of

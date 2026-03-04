@@ -481,6 +481,11 @@ class GPSampler(BaseSampler):
                     qmc_seed=self._rng.rng.randint(1 << 30),
                     constraints_gpr_list=constr_gpr_list,
                     constraints_threshold_list=constr_threshold_list,
+                    normalized_params_of_running_trials=(
+                        self._get_normalized_params_of_running_trials(
+                            trials, internal_search_space
+                        )
+                    ),
                 )
                 best_params = (
                     self._get_best_params_for_multi_objective(
