@@ -331,8 +331,7 @@ class GPSampler(BaseSampler):
         states = (TrialState.COMPLETE, TrialState.RUNNING)
         # At present, running trials are taken into account only in single-objective
         # unconstrained optimization.
-        use_cache = len(study.directions) > 1 and self._constraints_func is not None
-        trials = study._get_trials(deepcopy=False, states=states, use_cache=use_cache)
+        trials = study._get_trials(deepcopy=False, states=states, use_cache=False)
         completed_trials = [t for t in trials if t.state == TrialState.COMPLETE]
 
         if len(completed_trials) < self._n_startup_trials:
