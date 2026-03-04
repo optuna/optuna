@@ -140,3 +140,52 @@ def test_posterior(x_shape: tuple[int, ...]) -> None:
     ), "Diagonal Check."
     assert torch.allclose(covar, covar.transpose(-2, -1)), "Symmetric Check."
     assert torch.all(torch.det(covar) >= 0.0), "Postive Semi-definite Check."
+
+
+@pytest.mark.parametrize("n_running", [1, 5])
+def test_append_running_data(n_running: int) -> None:
+    dim = 3
+    rng = np.random.RandomState(0)
+    X = torch.from_numpy(rng.random(size=(10, dim)))
+    Y = torch.from_numpy(rng.randn(10))
+    Y = (Y - Y.mean()) / Y.std()
+    log_prior = prior.default_log_prior
+    minimum_noise = prior.DEFAULT_MINIMUM_NOISE_VAR
+    gtol: float = 1e-2
+    gpr = GPRegressor(
+        X_train=X,
+        y_train=Y,
+        is_categorical=torch.from_numpy(np.zeros(X.shape[-1], dtype=bool)),
+        inverse_squared_lengthscales=torch.ones(X.shape[1], dtype=torch.float64),
+        kernel_scale=torch.tensor(1.0, dtype=torch.float64),
+        noise_var=torch.tensor(1.0, dtype=torch.float64),
+    )._fit_kernel_params(
+        log_prior=log_prior,
+        minimum_noise=minimum_noise,
+        deterministic_objective=False,
+        gtol=gtol,
+    )
+
+    X_running = torch.from_numpy(rng.random(size=(n_running, dim)))
+    y_running = torch.from_numpy(rng.randn(n_running))
+
+    reference_gpr = GPRegressor(
+        X_train=torch.cat([X, X_running], dim=0),
+        y_train=torch.cat([Y, y_running], dim=0),
+        is_categorical=torch.from_numpy(np.zeros(X.shape[-1] + n_running, dtype=bool)),
+        inverse_squared_lengthscales=gpr.inverse_squared_lengthscales.clone(),
+        kernel_scale=gpr.kernel_scale.clone(),
+        noise_var=gpr.noise_var.clone(),
+    )
+    reference_gpr._cache_matrix()
+
+    gpr.append_running_data(X_running, y_running)
+
+    assert torch.allclose(reference_gpr._cov_Y_Y_chol, gpr._cov_Y_Y_chol)
+    assert torch.allclose(reference_gpr._cov_Y_Y_inv_Y, gpr._cov_Y_Y_inv_Y)
+
+    x = torch.from_numpy(rng.random(size=(1, dim)))
+    mean, var = gpr.posterior(x)
+    reference_mean, reference_var = reference_gpr.posterior(x)
+    assert torch.allclose(mean, reference_mean)
+    assert torch.allclose(var, reference_var)

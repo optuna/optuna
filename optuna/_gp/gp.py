@@ -126,10 +126,10 @@ class GPRegressor:
             "Cannot call cache_matrix more than once."
         )
         with torch.no_grad():
-            _cov_Y_Y = self.kernel().detach().cpu().numpy()
+            cov_Y_Y = self.kernel().detach().cpu().numpy()
 
-        _cov_Y_Y[np.diag_indices(self._X_train.shape[0])] += self.noise_var.item()
-        cov_Y_Y_chol = np.linalg.cholesky(_cov_Y_Y)
+        cov_Y_Y[np.diag_indices(self._X_train.shape[0])] += self.noise_var.item()
+        cov_Y_Y_chol = np.linalg.cholesky(cov_Y_Y)
         # cov_Y_Y_inv @ y = v --> y = cov_Y_Y @ v --> y = cov_Y_Y_chol @ cov_Y_Y_chol.T @ v
         # NOTE(nabenabe): Don't use np.linalg.inv because it is too slow und unstable.
         # cf. https://github.com/optuna/optuna/issues/6230
@@ -159,12 +159,12 @@ class GPRegressor:
         cov_Y_Y_chol = np.zeros((n_total, n_total), dtype=np.float64)
         cov_Y_Y_chol[:n_train, :n_train] = self._cov_Y_Y_chol.numpy()
         with torch.no_grad():
-            kernel_train_running = self.kernel(X_running).detach().cpu().numpy()
+            kernel_running_train = self.kernel(X_running).detach().cpu().numpy()
             kernel_running_running = self.kernel(X_running, X_running).detach().cpu().numpy()
             kernel_running_running[np.diag_indices(n_running)] += self.noise_var.item()
 
         cov_Y_Y_chol[n_train:, :n_train] = scipy.linalg.solve_triangular(
-            self._cov_Y_Y_chol.cpu().numpy(), kernel_train_running.T, lower=True
+            self._cov_Y_Y_chol.cpu().numpy(), kernel_running_train.T, lower=True
         ).T
         cov_Y_Y_chol[n_train:, n_train:] = np.linalg.cholesky(
             kernel_running_running
