@@ -4,10 +4,10 @@ import copy
 from typing import TYPE_CHECKING
 
 import optuna
-from optuna.distributions import BaseDistribution
 
 
 if TYPE_CHECKING:
+    from optuna.distributions import BaseDistribution
     from optuna.study import Study
 
 

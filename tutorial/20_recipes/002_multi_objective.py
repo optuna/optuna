@@ -32,10 +32,10 @@ def define_model(trial):
 
     in_features = 28 * 28
     for i in range(n_layers):
-        out_features = trial.suggest_int("n_units_l{}".format(i), 4, 128)
+        out_features = trial.suggest_int(f"n_units_l{i}", 4, 128)
         layers.append(nn.Linear(in_features, out_features))
         layers.append(nn.ReLU())
-        p = trial.suggest_float("dropout_{}".format(i), 0.2, 0.5)
+        p = trial.suggest_float(f"dropout_{i}", 0.2, 0.5)
         layers.append(nn.Dropout(p))
 
         in_features = out_features

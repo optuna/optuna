@@ -48,6 +48,10 @@ class WilcoxonPruner(BasePruner):
     .. seealso::
         Please refer to :meth:`~optuna.trial.Trial.report`.
 
+    .. note::
+        This sampler requires ``scipy``.
+        You can install these dependencies with ``pip install scipy``.
+
     Example:
 
         .. testcode::

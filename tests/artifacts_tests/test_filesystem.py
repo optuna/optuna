@@ -39,3 +39,17 @@ def test_file_not_found(tmp_path: str) -> None:
 
     with pytest.raises(ArtifactNotFound):
         backend.remove("not-found-id")
+
+
+def test_path_traversal(tmp_path: Path) -> None:
+    backend = FileSystemArtifactStore(tmp_path)
+    invalid_ids = ["../test.txt", "/etc/passwd", ".."]
+    for invalid_id in invalid_ids:
+        with pytest.raises(ValueError, match="Invalid artifact_id"):
+            backend.open_reader(invalid_id)
+
+        with pytest.raises(ValueError, match="Invalid artifact_id"):
+            backend.write(invalid_id, io.BytesIO(b""))
+
+        with pytest.raises(ValueError, match="Invalid artifact_id"):
+            backend.remove(invalid_id)

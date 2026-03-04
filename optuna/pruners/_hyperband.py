@@ -1,10 +1,14 @@
 from __future__ import annotations
 
 import binascii
-from collections.abc import Container
 import math
+from typing import TYPE_CHECKING
 
 import optuna
+
+
+if TYPE_CHECKING:
+    from collections.abc import Container
 from optuna import logging
 from optuna.pruners._base import BasePruner
 from optuna.pruners._successive_halving import SuccessiveHalvingPruner

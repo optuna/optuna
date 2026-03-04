@@ -206,7 +206,7 @@ def _get_parallel_coordinate_info(
                 is_log=True,
                 is_cat=False,
                 tickvals=tickvals,
-                ticktext=["{:.3g}".format(math.pow(10, x)) for x in tickvals],
+                ticktext=[f"{math.pow(10, x):.3g}" for x in tickvals],
             )
         elif is_categorical:
             vocab: defaultdict[int | str, int] = defaultdict(lambda: len(vocab))
@@ -300,4 +300,4 @@ def _get_dims_from_info(info: _ParallelCoordinateInfo) -> list[dict[str, Any]]:
 
 
 def _truncate_label(label: str) -> str:
-    return label if len(label) < 20 else "{}...".format(label[:17])
+    return label if len(label) < 20 else f"{label[:17]}..."

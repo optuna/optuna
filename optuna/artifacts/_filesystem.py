@@ -51,8 +51,19 @@ class FileSystemArtifactStore:
         # TODO(Shinichi): Check if the base_path is valid directory.
         self._base_path = base_path
 
+    def _get_filepath(self, artifact_id: str) -> Path:
+        if os.path.isabs(artifact_id):
+            raise ValueError(f"Invalid artifact_id: {artifact_id}")
+
+        filepath = self._base_path / artifact_id
+        if os.path.commonpath(
+            [os.path.abspath(self._base_path), os.path.abspath(filepath)]
+        ) != os.path.abspath(self._base_path):
+            raise ValueError(f"Invalid artifact_id: {artifact_id}")
+        return filepath
+
     def open_reader(self, artifact_id: str) -> BinaryIO:
-        filepath = os.path.join(self._base_path, artifact_id)
+        filepath = self._get_filepath(artifact_id)
         try:
             f = open(filepath, "rb")
         except FileNotFoundError as e:
@@ -60,12 +71,12 @@ class FileSystemArtifactStore:
         return f
 
     def write(self, artifact_id: str, content_body: BinaryIO) -> None:
-        filepath = os.path.join(self._base_path, artifact_id)
+        filepath = self._get_filepath(artifact_id)
         with open(filepath, "wb") as f:
             shutil.copyfileobj(content_body, f)
 
     def remove(self, artifact_id: str) -> None:
-        filepath = os.path.join(self._base_path, artifact_id)
+        filepath = self._get_filepath(artifact_id)
         try:
             os.remove(filepath)
         except FileNotFoundError as e:
