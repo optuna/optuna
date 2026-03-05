@@ -193,10 +193,13 @@ class FrozenTrial(BaseTrial):
 
     def __repr__(self) -> str:
         cls = self.__class__.__name__
-        kwargs = ", ".join(
-            f"{field if not field.startswith('_') else field[1:]}={repr(getattr(self, field))}"
-            for field in self.__dict__
-        ) + ", value=None"
+        kwargs = (
+            ", ".join(
+                f"{field if not field.startswith('_') else field[1:]}={repr(getattr(self, field))}"
+                for field in self.__dict__
+            )
+            + ", value=None"
+        )
         return f"{cls}({kwargs})"
 
     def suggest_float(
@@ -214,12 +217,18 @@ class FrozenTrial(BaseTrial):
     def suggest_uniform(self, name: str, low: float, high: float) -> float:
         return self.suggest_float(name, low, high)
 
-    @deprecated_func("3.0.0", "6.0.0", text=_suggest_deprecated_msg.format(args="(..., log=True)"))
+    @deprecated_func(
+        "3.0.0", "6.0.0", text=_suggest_deprecated_msg.format(args="(..., log=True)")
+    )
     def suggest_loguniform(self, name: str, low: float, high: float) -> float:
         return self.suggest_float(name, low, high, log=True)
 
-    @deprecated_func("3.0.0", "6.0.0", text=_suggest_deprecated_msg.format(args="(..., step=...)"))
-    def suggest_discrete_uniform(self, name: str, low: float, high: float, q: float) -> float:
+    @deprecated_func(
+        "3.0.0", "6.0.0", text=_suggest_deprecated_msg.format(args="(..., step=...)")
+    )
+    def suggest_discrete_uniform(
+        self, name: str, low: float, high: float, q: float
+    ) -> float:
         return self.suggest_float(name, low, high, step=q)
 
     @convert_positional_args(
@@ -307,7 +316,9 @@ class FrozenTrial(BaseTrial):
 
         if self.state.is_finished():
             if self.datetime_complete is None:
-                raise ValueError("`datetime_complete` is supposed to be set for a finished trial.")
+                raise ValueError(
+                    "`datetime_complete` is supposed to be set for a finished trial."
+                )
         else:
             if self.datetime_complete is not None:
                 raise ValueError(
@@ -315,7 +326,9 @@ class FrozenTrial(BaseTrial):
                 )
 
         if self.state == TrialState.FAIL and self._values is not None:
-            raise ValueError(f"values should be None for a failed trial, but got {self._values}.")
+            raise ValueError(
+                f"values should be None for a failed trial, but got {self._values}."
+            )
         if self.state == TrialState.COMPLETE:
             if self._values is None:
                 raise ValueError("values should be set for a complete trial.")
@@ -354,7 +367,9 @@ class FrozenTrial(BaseTrial):
             )
 
         if name in self._distributions:
-            distributions.check_distribution_compatibility(self._distributions[name], distribution)
+            distributions.check_distribution_compatibility(
+                self._distributions[name], distribution
+            )
 
         self._distributions[name] = distribution
 
