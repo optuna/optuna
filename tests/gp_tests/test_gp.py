@@ -181,6 +181,10 @@ def test_append_running_data(n_running: int) -> None:
 
     gpr.append_running_data(X_running, y_running)
 
+    assert reference_gpr._cov_Y_Y_chol is not None
+    assert gpr._cov_Y_Y_chol is not None
+    assert reference_gpr._cov_Y_Y_inv_Y is not None
+    assert gpr._cov_Y_Y_inv_Y is not None
     assert torch.allclose(reference_gpr._cov_Y_Y_chol, gpr._cov_Y_Y_chol)
     assert torch.allclose(reference_gpr._cov_Y_Y_inv_Y, gpr._cov_Y_Y_inv_Y)
 
