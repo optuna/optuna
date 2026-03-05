@@ -324,7 +324,8 @@ class FrozenTrial(BaseTrial):
 
         if set(self.params.keys()) != set(self.distributions.keys()):
             raise ValueError(
-                f"Inconsistent parameters {set(self.params.keys())} and distributions {set(self.distributions.keys())}."
+                f"Inconsistent parameters {set(self.params.keys())} and "
+                f"distributions {set(self.distributions.keys())}."
             )
 
         for param_name, param_value in self.params.items():
@@ -333,20 +334,23 @@ class FrozenTrial(BaseTrial):
             param_value_in_internal_repr = distribution.to_internal_repr(param_value)
             if not distribution._contains(param_value_in_internal_repr):
                 raise ValueError(
-                    f"The value {param_value} of parameter '{param_name}' isn't contained in the distribution {distribution}."
+                    f"The value {param_value} of parameter '{param_name}' isn't contained in "
+                    f"the distribution {distribution}."
                 )
 
     def _suggest(self, name: str, distribution: BaseDistribution) -> Any:
         if name not in self._params:
             raise ValueError(
-                f"The value of the parameter '{name}' is not found. Please set it at the construction of the FrozenTrial object."
+                f"The value of the parameter '{name}' is not found. "
+                f"Please set it at the construction of the FrozenTrial object."
             )
 
         value = self._params[name]
         param_value_in_internal_repr = distribution.to_internal_repr(value)
         if not distribution._contains(param_value_in_internal_repr):
             optuna_warn(
-                f"The value {value} of the parameter '{name}' is out of the range of the distribution {distribution}."
+                f"The value {value} of the parameter '{name}' is out of "
+                f"the range of the distribution {distribution}."
             )
 
         if name in self._distributions:
