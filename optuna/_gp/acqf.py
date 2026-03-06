@@ -127,7 +127,7 @@ class LogEI(BaseAcquisitionFunc):
         self._threshold = threshold
 
         if normalized_params_of_running_trials is not None:
-            normalized_params_of_running_trials = torch.from_numpy(
+            normalized_params_of_running_trials_tensor = torch.from_numpy(
                 normalized_params_of_running_trials
             )
 
@@ -138,11 +138,11 @@ class LogEI(BaseAcquisitionFunc):
             # See https://github.com/optuna/optuna/pull/6430 for details.
             constant_liar_value = self._gpr._y_train.max()
             constant_liar_y = constant_liar_value.expand(
-                normalized_params_of_running_trials.shape[0]
+                normalized_params_of_running_trials_tensor.shape[0]
             )
 
             self._gpr.append_running_data(
-                normalized_params_of_running_trials,
+                normalized_params_of_running_trials_tensor,
                 constant_liar_y,
             )
 
