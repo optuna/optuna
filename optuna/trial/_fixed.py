@@ -18,9 +18,6 @@ from optuna.trial._base import _SUGGEST_INT_POSITIONAL_ARGS
 from optuna.trial._base import BaseTrial
 
 
-_suggest_deprecated_msg = "Use suggest_float{args} instead."
-
-
 class FixedTrial(BaseTrial):
     """A trial class which suggests a fixed value for each parameter.
 
@@ -79,15 +76,15 @@ class FixedTrial(BaseTrial):
     ) -> float:
         return self._suggest(name, FloatDistribution(low, high, log=log, step=step))
 
-    @deprecated_func("3.0.0", "6.0.0", text=_suggest_deprecated_msg.format(args=""))
+    @deprecated_func("3.0.0", "6.0.0", text="Use suggest_float instead.")
     def suggest_uniform(self, name: str, low: float, high: float) -> float:
         return self.suggest_float(name, low, high)
 
-    @deprecated_func("3.0.0", "6.0.0", text=_suggest_deprecated_msg.format(args="(..., log=True)"))
+    @deprecated_func("3.0.0", "6.0.0", text="Use suggest_float(..., log=True) instead.")
     def suggest_loguniform(self, name: str, low: float, high: float) -> float:
         return self.suggest_float(name, low, high, log=True)
 
-    @deprecated_func("3.0.0", "6.0.0", text=_suggest_deprecated_msg.format(args="(..., step=...)"))
+    @deprecated_func("3.0.0", "6.0.0", text="Use suggest_float(..., step=...) instead.")
     def suggest_discrete_uniform(self, name: str, low: float, high: float, q: float) -> float:
         return self.suggest_float(name, low, high, step=q)
 
