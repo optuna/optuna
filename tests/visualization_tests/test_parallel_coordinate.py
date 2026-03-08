@@ -379,7 +379,7 @@ def test_get_parallel_coordinate_info() -> None:
     )
 
     # Test with wrong params that do not exist in trials.
-    with pytest.raises(ValueError, match="Parameter optuna does not exist in your study."):
+    with pytest.raises(ValueError, match="Parameter 'optuna' does not exist in your study."):
         _get_parallel_coordinate_info(study, params=["optuna", "optuna"])
 
     # Ignore failed trials.
@@ -780,3 +780,47 @@ def test_nonfinite_multiobjective(objective: int, value: float) -> None:
         study, target=lambda t: t.values[objective], target_name="Target Name"
     )
     assert all(np.isfinite(info.dim_objective.values))
+
+
+def test_get_parallel_coordinate_info_user_attrs_numerical() -> None:
+    study = create_study()
+    study.add_trial(
+        create_trial(
+            value=0.3,
+            params={"x": 0.5},
+            distributions={"x": FloatDistribution(0, 1)},
+            user_attrs={"n_estimators": 100},
+        )
+    )
+    info = _get_parallel_coordinate_info(study, params=["x", "n_estimators"])
+    param_names = [d.label for d in info.dims_params]
+    assert "n_estimators" in param_names
+
+
+def test_get_parallel_coordinate_info_user_attrs_categorical() -> None:
+    study = create_study()
+    study.add_trial(
+        create_trial(
+            value=0.3,
+            params={"x": 0.5},
+            distributions={"x": FloatDistribution(0, 1)},
+            user_attrs={"model": "lgbm"},
+        )
+    )
+    info = _get_parallel_coordinate_info(study, params=["x", "model"])
+    model_dim = next(d for d in info.dims_params if d.label == "model")
+    assert model_dim.is_cat is True
+
+
+def test_get_parallel_coordinate_info_user_attrs_missing() -> None:
+    study = create_study()
+    study.add_trial(
+        create_trial(
+            value=0.3,
+            params={"x": 0.5},
+            distributions={"x": FloatDistribution(0, 1)},
+            user_attrs={"n_estimators": 100},
+        )
+    )
+    with pytest.raises(ValueError, match="does not exist in your study"):
+        _get_parallel_coordinate_info(study, params=["nonexistent_param"])
