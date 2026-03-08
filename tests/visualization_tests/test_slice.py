@@ -17,6 +17,7 @@ from optuna.testing.visualization import prepare_study_with_trials
 from optuna.trial import create_trial
 from optuna.visualization import plot_slice as plotly_plot_slice
 from optuna.visualization._plotly_imports import go
+from optuna.visualization._slice import _generate_slice_subplot
 from optuna.visualization._slice import _get_slice_plot_info
 from optuna.visualization._slice import _SlicePlotInfo
 from optuna.visualization._slice import _SliceSubplotInfo
@@ -448,3 +449,39 @@ def test_color_map(direction: str) -> None:
     marker = plotly_plot_slice(study).data[0]["marker"]
     assert COLOR_SCALE == [v[1] for v in marker["colorscale"]]
     assert "reversecale" not in marker
+
+
+def test_generate_slice_subplot_converts_none_to_string_for_categorical() -> None:
+    """None in categorical params should be converted to 'None' string, not filtered."""
+    subplot_info = _SliceSubplotInfo(
+        param_name="param_a",
+        x=[None, "a"],
+        y=[0.5, 0.6],
+        trial_numbers=[0, 1],
+        is_log=False,
+        is_numerical=False,
+        x_labels=(None, "a"),
+        constraints=[True, True],
+    )
+    traces = _generate_slice_subplot(subplot_info)
+    feasible_trace = traces[0]
+    assert list(feasible_trace.x) == ["None", "a"]
+    assert list(feasible_trace.y) == [0.5, 0.6]
+
+
+def test_generate_slice_subplot_numerical_none_kept_as_is() -> None:
+    """Numerical None values are not converted (no conversion for numerical params)."""
+    subplot_info = _SliceSubplotInfo(
+        param_name="param_a",
+        x=[None, 1.0],
+        y=[0.5, 0.6],
+        trial_numbers=[0, 1],
+        is_log=False,
+        is_numerical=True,
+        x_labels=None,
+        constraints=[True, True],
+    )
+    traces = _generate_slice_subplot(subplot_info)
+    feasible_trace = traces[0]
+    assert list(feasible_trace.x) == [None, 1.0]
+    assert list(feasible_trace.y) == [0.5, 0.6]

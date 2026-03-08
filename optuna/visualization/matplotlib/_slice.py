@@ -117,18 +117,24 @@ def _generate_slice_subplot(
 
     feasible = _PlotValues([], [], [])
     infeasible = _PlotValues([], [], [])
+
+    xs = (
+        [x if x is not None else "None" for x in subplot_info.x]
+        if not subplot_info.is_numerical
+        else subplot_info.x
+    )
+
     for x, y, num, c in zip(
-        subplot_info.x, subplot_info.y, subplot_info.trial_numbers, subplot_info.constraints
+        xs, subplot_info.y, subplot_info.trial_numbers, subplot_info.constraints
     ):
-        if x is not None or x != "None" or y is not None or y != "None":
-            if c:
-                feasible.x.append(x)
-                feasible.y.append(y)
-                feasible.trial_numbers.append(num)
-            else:
-                infeasible.x.append(x)
-                infeasible.y.append(y)
-                infeasible.trial_numbers.append(num)
+        if c:
+            feasible.x.append(x)
+            feasible.y.append(y)
+            feasible.trial_numbers.append(num)
+        else:
+            infeasible.x.append(x)
+            infeasible.y.append(y)
+            infeasible.trial_numbers.append(num)
     if subplot_info.is_log:
         ax.set_xscale("log")
         scale = "log"
