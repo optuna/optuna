@@ -227,7 +227,7 @@ def _get_pareto_front_info(
         non_best_trials = []
 
     if len(best_trials) == 0:
-        what_trial = "completed" if has_constraints else "completed and feasible"
+        what_trial = "completed and feasible" if has_constraints else "completed"
         _logger.warning(f"Your study does not have any {what_trial} trials. ")
 
     _targets = targets
