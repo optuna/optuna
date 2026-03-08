@@ -120,7 +120,7 @@ def _generate_slice_subplot(
     for x, y, num, c in zip(
         subplot_info.x, subplot_info.y, subplot_info.trial_numbers, subplot_info.constraints
     ):
-        if x is not None or x != "None" or y is not None or y != "None":
+        if x is not None and y is not None:
             if c:
                 feasible.x.append(x)
                 feasible.y.append(y)
