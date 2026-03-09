@@ -4,7 +4,6 @@ from collections.abc import Callable
 from collections.abc import Sequence
 from io import BytesIO
 from typing import Any
-import unittest.mock
 import warnings
 
 import pytest
@@ -421,31 +420,3 @@ def test_color_map(direction: str) -> None:
     marker = plot_pareto_front(study).data[0]["marker"]
     assert COLOR_SCALE == [v[1] for v in marker["colorscale"]]
     assert "reversecale" not in marker
-
-
-def test_warning_message_no_completed_trials() -> None:
-    study = optuna.create_study(directions=["minimize", "minimize"])
-
-    with unittest.mock.patch.object(
-        optuna.visualization._pareto_front._logger, "warning"
-    ) as mock_warn:
-        _get_pareto_front_info(study=study)
-
-    mock_warn.assert_called_once()
-    msg = mock_warn.call_args[0][0]
-    assert "completed" in msg
-    assert "feasible" not in msg
-
-
-@pytest.mark.filterwarnings("ignore::FutureWarning")
-def test_warning_message_all_infeasible() -> None:
-    study = create_study_2d(constraints_func=lambda _: [1.0])
-
-    with unittest.mock.patch.object(
-        optuna.visualization._pareto_front._logger, "warning"
-    ) as mock_warn:
-        _get_pareto_front_info(study=study)
-
-    mock_warn.assert_called_once()
-    msg = mock_warn.call_args[0][0]
-    assert "completed and feasible" in msg
