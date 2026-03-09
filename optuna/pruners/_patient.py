@@ -1,11 +1,15 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import numpy as np
 
-import optuna
 from optuna._experimental import experimental_class
 from optuna.pruners import BasePruner
 from optuna.study._study_direction import StudyDirection
+
+if TYPE_CHECKING:
+    import optuna
 
 
 @experimental_class("2.8.0")
@@ -87,7 +91,7 @@ class PatientPruner(BasePruner):
         self._patience = patience
         self._min_delta = min_delta
 
-    def prune(self, study: "optuna.study.Study", trial: "optuna.trial.FrozenTrial") -> bool:
+    def prune(self, study: optuna.study.Study, trial: optuna.trial.FrozenTrial) -> bool:
         step = trial.last_step
         if step is None:
             return False
