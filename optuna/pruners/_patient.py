@@ -8,6 +8,7 @@ from optuna._experimental import experimental_class
 from optuna.pruners import BasePruner
 from optuna.study._study_direction import StudyDirection
 
+
 if TYPE_CHECKING:
     import optuna
 
