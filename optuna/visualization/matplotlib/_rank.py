@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
+import numpy as np
+
 from optuna._experimental import experimental_func
 from optuna.study import Study
 from optuna.trial import FrozenTrial
@@ -25,7 +27,7 @@ def plot_rank(
     *,
     target: Callable[[FrozenTrial], float] | None = None,
     target_name: str = "Objective Value",
-) -> "Axes":
+) -> "Axes | np.ndarray":
     """Plot parameter relations as scatter plots with colors indicating ranks of target value.
 
     Note that trials missing the specified parameters will not be plotted.
@@ -48,7 +50,8 @@ def plot_rank(
             Target's name to display on the color bar.
 
     Returns:
-        A :class:`matplotlib.axes.Axes` object.
+        A :class:`matplotlib.axes.Axes` object or a :class:`numpy.ndarray` of
+        :class:`matplotlib.axes.Axes` objects.
     """
 
     _imports.check()
@@ -58,7 +61,7 @@ def plot_rank(
 
 def _get_rank_plot(
     info: _RankPlotInfo,
-) -> "Axes":
+) -> "Axes | np.ndarray":
     params = info.params
     sub_plot_infos = info.sub_plot_infos
 

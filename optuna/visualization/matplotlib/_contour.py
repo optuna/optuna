@@ -37,7 +37,7 @@ def plot_contour(
     *,
     target: Callable[[FrozenTrial], float] | None = None,
     target_name: str = "Objective Value",
-) -> "Axes":
+) -> "Axes | np.ndarray":
     """Plot the parameter relationship as contour plot in a study with Matplotlib.
 
     Note that, if a parameter contains missing values, a trial with missing values is not plotted.
@@ -60,7 +60,8 @@ def plot_contour(
             Target's name to display on the color bar.
 
     Returns:
-        A :class:`matplotlib.axes.Axes` object.
+        A :class:`matplotlib.axes.Axes` object or a :class:`numpy.ndarray` of
+        :class:`matplotlib.axes.Axes` objects.
 
     .. note::
         The colormap is reversed when the ``target`` argument isn't :obj:`None` or ``direction``
@@ -72,7 +73,7 @@ def plot_contour(
     return _get_contour_plot(info)
 
 
-def _get_contour_plot(info: _ContourInfo) -> "Axes":
+def _get_contour_plot(info: _ContourInfo) -> "Axes | np.ndarray":
     sorted_params = info.sorted_params
     sub_plot_infos = info.sub_plot_infos
     reverse_scale = info.reverse_scale
