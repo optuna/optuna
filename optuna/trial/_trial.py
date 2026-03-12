@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 from collections import UserDict
-from collections.abc import Sequence
 import copy
-import datetime
 from typing import Any
 from typing import overload
+from typing import TYPE_CHECKING
 
 import optuna
 from optuna import distributions
@@ -19,9 +18,16 @@ from optuna.distributions import CategoricalChoiceType
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
-from optuna.trial import FrozenTrial
 from optuna.trial._base import _SUGGEST_INT_POSITIONAL_ARGS
 from optuna.trial._base import BaseTrial
+
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+    import datetime
+
+    from optuna.study import Study
+    from optuna.trial import FrozenTrial
 
 
 _logger = logging.get_logger(__name__)
@@ -47,7 +53,7 @@ class Trial(BaseTrial):
 
     """
 
-    def __init__(self, study: "optuna.study.Study", trial_id: int) -> None:
+    def __init__(self, study: Study, trial_id: int) -> None:
         self.study = study
         self._trial_id = trial_id
 
