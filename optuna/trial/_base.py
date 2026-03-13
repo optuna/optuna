@@ -1,14 +1,19 @@
 from __future__ import annotations
 
 import abc
-from collections.abc import Sequence
-import datetime
 from typing import Any
 from typing import overload
+from typing import TYPE_CHECKING
 
 from optuna._deprecated import deprecated_func
-from optuna.distributions import BaseDistribution
-from optuna.distributions import CategoricalChoiceType
+
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+    import datetime
+
+    from optuna.distributions import BaseDistribution
+    from optuna.distributions import CategoricalChoiceType
 
 
 _SUGGEST_INT_POSITIONAL_ARGS = ["self", "name", "low", "high", "step", "log"]
