@@ -312,8 +312,6 @@ class GPSampler(BaseSampler):
             return {}
 
         states = (TrialState.COMPLETE, TrialState.RUNNING)
-        # At present, running trials are taken into account only in single-objective
-        # unconstrained optimization.
         trials = study._get_trials(deepcopy=False, states=states, use_cache=False)
         completed_trials = [t for t in trials if t.state == TrialState.COMPLETE]
         running_trials = [

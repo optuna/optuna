@@ -173,7 +173,7 @@ class LogPI(BaseAcquisitionFunc):
         self._threshold = threshold
 
         if normalized_params_of_running_trials is not None:
-            normalized_params_of_running_trials = torch.from_numpy(
+            normalized_params_of_running_trials_tensor = torch.from_numpy(
                 normalized_params_of_running_trials
             )
 
@@ -184,8 +184,8 @@ class LogPI(BaseAcquisitionFunc):
             # See https://github.com/optuna/optuna/pull/6481 for details.
 
             self._gpr.append_running_data(
-                normalized_params_of_running_trials,
-                gpr.posterior(normalized_params_of_running_trials)[0],
+                normalized_params_of_running_trials_tensor,
+                gpr.posterior(normalized_params_of_running_trials_tensor)[0],
             )
         super().__init__(gpr.length_scales, search_space)
 
@@ -292,7 +292,7 @@ class LogEHVI(BaseAcquisitionFunc):
         self._stabilizing_noise = stabilizing_noise
         self._gpr_list = gpr_list
         if normalized_params_of_running_trials is not None:
-            normalized_params_of_running_trials = torch.from_numpy(
+            normalized_params_of_running_trials_tensor = torch.from_numpy(
                 normalized_params_of_running_trials
             )
 
@@ -304,8 +304,8 @@ class LogEHVI(BaseAcquisitionFunc):
 
             for gpr in self._gpr_list:
                 gpr.append_running_data(
-                    normalized_params_of_running_trials,
-                    gpr.posterior(normalized_params_of_running_trials)[0],
+                    normalized_params_of_running_trials_tensor,
+                    gpr.posterior(normalized_params_of_running_trials_tensor)[0],
                 )
 
         self._fixed_samples = _sample_from_normal_sobol(
