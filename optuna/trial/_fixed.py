@@ -1,22 +1,26 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
 import datetime
 from typing import Any
 from typing import overload
+from typing import TYPE_CHECKING
 
 from optuna import distributions
 from optuna._convert_positional_args import convert_positional_args
 from optuna._deprecated import deprecated_func
 from optuna._warnings import optuna_warn
-from optuna.distributions import BaseDistribution
-from optuna.distributions import CategoricalChoiceType
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
 from optuna.trial._base import _SUGGEST_INT_POSITIONAL_ARGS
 from optuna.trial._base import BaseTrial
 
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from optuna.distributions import BaseDistribution
+    from optuna.distributions import CategoricalChoiceType
 
 _suggest_deprecated_msg = "Use suggest_float{args} instead."
 
