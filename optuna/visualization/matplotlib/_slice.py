@@ -5,6 +5,8 @@ import math
 from typing import Any
 from typing import TYPE_CHECKING
 
+import numpy as np
+
 from optuna._experimental import experimental_func
 from optuna.visualization._slice import _get_slice_plot_info
 from optuna.visualization._slice import _PlotValues
@@ -35,7 +37,7 @@ def plot_slice(
     *,
     target: Callable[[FrozenTrial], float] | None = None,
     target_name: str = "Objective Value",
-) -> "Axes":
+) -> "Axes | np.ndarray":
     """Plot the parameter relationship as slice plot in a study with Matplotlib.
 
     .. seealso::
@@ -57,14 +59,15 @@ def plot_slice(
 
 
     Returns:
-        A :class:`matplotlib.axes.Axes` object.
+        A :class:`matplotlib.axes.Axes` object or a :class:`numpy.ndarray` of
+        :class:`matplotlib.axes.Axes` objects.
     """
 
     _imports.check()
     return _get_slice_plot(_get_slice_plot_info(study, params, target, target_name))
 
 
-def _get_slice_plot(info: _SlicePlotInfo) -> "Axes":
+def _get_slice_plot(info: _SlicePlotInfo) -> "Axes | np.ndarray":
     if len(info.subplots) == 0:
         _, ax = plt.subplots()
         return ax
