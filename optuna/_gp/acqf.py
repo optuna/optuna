@@ -136,6 +136,8 @@ class LogEI(BaseAcquisitionFunc):
             # We plan to implement Monte-Carlo based approaches (e.g., BoTorch’s fantasize)
             # in the near future.
             # See https://github.com/optuna/optuna/pull/6430 for details.
+            # For background on the Constant Liar and Kriging Believer strategies, see
+            # Ginsbourger et al., "Kriging Is Well-Suited to Parallelize Optimization" (2010).
             constant_liar_value = self._gpr._y_train.max()
             constant_liar_y = constant_liar_value.expand(
                 normalized_params_of_running_trials_tensor.shape[0]
@@ -182,6 +184,8 @@ class LogPI(BaseAcquisitionFunc):
             # We plan to implement Monte-Carlo based approaches (e.g., BoTorch’s fantasize)
             # in the near future.
             # See https://github.com/optuna/optuna/pull/6481 for details.
+            # For background on the Constant Liar and Kriging Believer strategies, see
+            # Ginsbourger et al., "Kriging Is Well-Suited to Parallelize Optimization" (2010).
 
             self._gpr.append_running_data(
                 normalized_params_of_running_trials_tensor,
@@ -301,6 +305,8 @@ class LogEHVI(BaseAcquisitionFunc):
             # We plan to implement Monte-Carlo based approaches (e.g., BoTorch’s fantasize)
             # in the near future.
             # See https://github.com/optuna/optuna/pull/6481 for details.
+            # For background on the Constant Liar and Kriging Believer strategies, see
+            # Ginsbourger et al., "Kriging Is Well-Suited to Parallelize Optimization" (2010).
 
             for gpr in self._gpr_list:
                 gpr.append_running_data(
