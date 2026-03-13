@@ -136,6 +136,8 @@ class LogEI(BaseAcquisitionFunc):
             # We plan to implement Monte-Carlo based approaches (e.g., BoTorch’s fantasize)
             # in the near future.
             # See https://github.com/optuna/optuna/pull/6430 for details.
+            # For background on the Constant Liar and Kriging Believer strategies, see
+            # Ginsbourger et al., "Kriging Is Well-Suited to Parallelize Optimization" (2010).
             constant_liar_value = self._gpr._y_train.max()
             constant_liar_y = constant_liar_value.expand(
                 normalized_params_of_running_trials_tensor.shape[0]
@@ -165,11 +167,30 @@ class LogPI(BaseAcquisitionFunc):
         gpr: GPRegressor,
         search_space: SearchSpace,
         threshold: float,
+        normalized_params_of_running_trials: np.ndarray | None = None,
         stabilizing_noise: float = 1e-12,
     ) -> None:
         self._gpr = gpr
         self._stabilizing_noise = stabilizing_noise
         self._threshold = threshold
+
+        if normalized_params_of_running_trials is not None:
+            normalized_params_of_running_trials_tensor = torch.from_numpy(
+                normalized_params_of_running_trials
+            )
+
+            # NOTE(sawa3030): To handle running trials, the Kriging Believer strategy is
+            # currently implemented, as it is simple and performs well in our benchmarks.
+            # We plan to implement Monte-Carlo based approaches (e.g., BoTorch’s fantasize)
+            # in the near future.
+            # See https://github.com/optuna/optuna/pull/6481 for details.
+            # For background on the Constant Liar and Kriging Believer strategies, see
+            # Ginsbourger et al., "Kriging Is Well-Suited to Parallelize Optimization" (2010).
+
+            self._gpr.append_running_data(
+                normalized_params_of_running_trials_tensor,
+                gpr.posterior(normalized_params_of_running_trials_tensor)[0],
+            )
         super().__init__(gpr.length_scales, search_space)
 
     def eval_acqf(self, x: torch.Tensor) -> torch.Tensor:
@@ -222,14 +243,23 @@ class ConstrainedLogEI(BaseAcquisitionFunc):
         threshold: float,
         constraints_gpr_list: list[GPRegressor],
         constraints_threshold_list: list[float],
+        normalized_params_of_running_trials: np.ndarray | None = None,
         stabilizing_noise: float = 1e-12,
     ) -> None:
         assert (
             len(constraints_gpr_list) == len(constraints_threshold_list) and constraints_gpr_list
         )
-        self._acqf = LogEI(gpr, search_space, threshold, None, stabilizing_noise)
+        self._acqf = LogEI(
+            gpr, search_space, threshold, normalized_params_of_running_trials, stabilizing_noise
+        )
         self._constraints_acqf_list = [
-            LogPI(_gpr, search_space, _threshold, stabilizing_noise)
+            LogPI(
+                _gpr,
+                search_space,
+                _threshold,
+                normalized_params_of_running_trials,
+                stabilizing_noise,
+            )
             for _gpr, _threshold in zip(constraints_gpr_list, constraints_threshold_list)
         ]
         super().__init__(gpr.length_scales, search_space)
@@ -250,6 +280,7 @@ class LogEHVI(BaseAcquisitionFunc):
         Y_train: torch.Tensor,
         n_qmc_samples: int,
         qmc_seed: int | None,
+        normalized_params_of_running_trials: np.ndarray | None = None,
         stabilizing_noise: float = 1e-12,
     ) -> None:
         def _get_non_dominated_box_bounds() -> tuple[torch.Tensor, torch.Tensor]:
@@ -264,6 +295,25 @@ class LogEHVI(BaseAcquisitionFunc):
 
         self._stabilizing_noise = stabilizing_noise
         self._gpr_list = gpr_list
+        if normalized_params_of_running_trials is not None:
+            normalized_params_of_running_trials_tensor = torch.from_numpy(
+                normalized_params_of_running_trials
+            )
+
+            # NOTE(sawa3030): To handle running trials, the Kriging Believer strategy is
+            # currently implemented, as it is simple and performs well in our benchmarks.
+            # We plan to implement Monte-Carlo based approaches (e.g., BoTorch’s fantasize)
+            # in the near future.
+            # See https://github.com/optuna/optuna/pull/6481 for details.
+            # For background on the Constant Liar and Kriging Believer strategies, see
+            # Ginsbourger et al., "Kriging Is Well-Suited to Parallelize Optimization" (2010).
+
+            for gpr in self._gpr_list:
+                gpr.append_running_data(
+                    normalized_params_of_running_trials_tensor,
+                    gpr.posterior(normalized_params_of_running_trials_tensor)[0],
+                )
+
         self._fixed_samples = _sample_from_normal_sobol(
             dim=Y_train.shape[-1], n_samples=n_qmc_samples, seed=qmc_seed
         )
@@ -310,18 +360,33 @@ class ConstrainedLogEHVI(BaseAcquisitionFunc):
         qmc_seed: int | None,
         constraints_gpr_list: list[GPRegressor],
         constraints_threshold_list: list[float],
+        normalized_params_of_running_trials: np.ndarray | None = None,
         stabilizing_noise: float = 1e-12,
     ) -> None:
         assert (
             len(constraints_gpr_list) == len(constraints_threshold_list) and constraints_gpr_list
         )
         self._acqf = (
-            LogEHVI(gpr_list, search_space, Y_feasible, n_qmc_samples, qmc_seed, stabilizing_noise)
+            LogEHVI(
+                gpr_list,
+                search_space,
+                Y_feasible,
+                n_qmc_samples,
+                qmc_seed,
+                normalized_params_of_running_trials,
+                stabilizing_noise,
+            )
             if Y_feasible is not None
             else None
         )
         self._constraints_acqf_list = [
-            LogPI(_gpr, search_space, _threshold, stabilizing_noise)
+            LogPI(
+                _gpr,
+                search_space,
+                _threshold,
+                normalized_params_of_running_trials,
+                stabilizing_noise,
+            )
             for _gpr, _threshold in zip(constraints_gpr_list, constraints_threshold_list)
         ]
         # Since all the objectives are equally important, we simply use the mean of
