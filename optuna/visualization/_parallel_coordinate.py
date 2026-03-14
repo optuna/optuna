@@ -130,11 +130,17 @@ def _get_parallel_coordinate_info(
     )
 
     all_params = {p_name for t in trials for p_name in t.params.keys()}
+    all_user_attr_keys = {k for t in trials for k in t.user_attrs.keys()}
     if params is not None:
         for input_p_name in params:
-            if input_p_name not in all_params:
-                raise ValueError(f"Parameter {input_p_name} does not exist in your study.")
+            if input_p_name not in all_params and input_p_name not in all_user_attr_keys:
+                raise ValueError(
+                    f"Parameter {input_p_name!r} does not exist in your study. "
+                    f"It is neither a parameter nor a user attribute."
+                )
         all_params = set(params)
+    else:
+        all_params = all_params | all_user_attr_keys
     sorted_params = sorted(all_params)
 
     if target is None:
@@ -188,6 +194,9 @@ def _get_parallel_coordinate_info(
             if p_name in t.params:
                 values.append(t.params[p_name])
                 is_categorical |= isinstance(t.distributions[p_name], CategoricalDistribution)
+            elif p_name in t.user_attrs:
+                values.append(t.user_attrs[p_name])
+                is_categorical |= isinstance(t.user_attrs[p_name], (str, bool))
         if _is_log_scale(trials, p_name):
             values = [math.log10(v) for v in values]
             min_value = min(values)
