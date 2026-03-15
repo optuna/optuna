@@ -111,7 +111,7 @@ HTML files are generated under `build/html` directory. Open `index.html` with th
 if it is rendered as expected.
 
 Optuna's tutorial is built with [Sphinx-Gallery](https://sphinx-gallery.github.io/stable/index.html) and
-some other requirements like [LightGBM](https://github.com/microsoft/LightGBM) and [PyTorch](https://pytorch.org) meaning that
+some other requirements like [LightGBM](https://github.com/lightgbm-org/LightGBM) and [PyTorch](https://pytorch.org) meaning that
 all .py files in `tutorial` directory are run during the documentation build if there's no build cache.
 Whether you edit any tutorial or not doesn't matter.
 
