@@ -658,12 +658,12 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                 trial = models.TrialModel.find_or_raise_by_id(trial_id, session, for_update=True)
                 self.check_trial_is_updatable(trial_id, trial.state)
 
+                if state == TrialState.RUNNING and trial.state != TrialState.WAITING:
+                    return False
+
                 if values is not None:
                     for objective, v in enumerate(values):
                         self._set_trial_value_without_commit(session, trial, objective, v)
-
-                if state == TrialState.RUNNING and trial.state != TrialState.WAITING:
-                    return False
 
                 trial.state = state
 

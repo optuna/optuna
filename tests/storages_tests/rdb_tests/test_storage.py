@@ -376,3 +376,18 @@ def test_create_new_trial_with_retries() -> None:
         trials = storage.get_all_trials(study_id)
         assert len(trials) == 1
         assert trials[0].number == 0
+
+
+def test_set_trial_state_values_does_not_write_values_on_invalid_state_transition() -> None:
+    storage = RDBStorage("sqlite:///:memory:")
+    study_id = storage.create_new_study(directions=[StudyDirection.MINIMIZE])
+    trial_id = storage.create_new_trial(study_id)
+
+    # The new trial starts in RUNNING state (via create_new_trial).
+    # Attempting RUNNING -> RUNNING should fail because current state is not WAITING.
+    result = storage.set_trial_state_values(trial_id, state=TrialState.RUNNING, values=[1.0])
+    assert result is False
+
+    # Verify that trial values were NOT persisted despite the early return.
+    trial = storage.get_trial(trial_id)
+    assert trial.values is None
