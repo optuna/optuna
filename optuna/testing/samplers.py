@@ -1,9 +1,13 @@
 from __future__ import annotations
 
 from typing import Any
+from typing import TYPE_CHECKING
 
 import optuna
-from optuna.distributions import BaseDistribution
+
+
+if TYPE_CHECKING:
+    from optuna.distributions import BaseDistribution
 
 
 class DeterministicSampler(optuna.samplers.BaseSampler):
