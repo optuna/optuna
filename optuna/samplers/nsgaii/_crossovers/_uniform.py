@@ -2,12 +2,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-import numpy as np
-
 from optuna.samplers.nsgaii._crossovers._base import BaseCrossover
 
 
 if TYPE_CHECKING:
+    import numpy as np
     from optuna.study import Study
 
 
