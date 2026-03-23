@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 from optuna.samplers._base import BaseSampler
 from optuna.trial._state import TrialState
 
+
 if TYPE_CHECKING:
     import optuna
     from optuna.trial._frozen import FrozenTrial
