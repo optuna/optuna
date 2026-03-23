@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import abc
-from typing import TYPE_CHECKING
 from typing import Any
+from typing import TYPE_CHECKING
 
 from optuna.samplers._base import BaseSampler
 from optuna.trial._state import TrialState
