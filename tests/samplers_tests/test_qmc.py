@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Dict
 from unittest.mock import Mock
 from unittest.mock import patch
 import warnings
@@ -26,7 +26,7 @@ _SEARCH_SPACE = {
 
 # TODO(kstoneriv3): `QMCSampler` can be initialized without this wrapper
 # Remove this after the experimental warning is removed.
-def _init_QMCSampler_without_exp_warning(**kwargs: Any) -> optuna.samplers.QMCSampler:
+def _init_QMCSampler_without_exp_warning(**kwargs: Dict[str, Any]) -> optuna.samplers.QMCSampler:
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
         sampler = optuna.samplers.QMCSampler(**kwargs)
@@ -66,7 +66,7 @@ def test_infer_relative_search_space() -> None:
 
     sampler = _init_QMCSampler_without_exp_warning()
     study = optuna.create_study(sampler=sampler)
-    trial = Mock()
+    trial: Mock = Mock()
     # In case no past trials.
     assert sampler.infer_relative_search_space(study, trial) == {}
     # In case there is a past trial.
@@ -81,7 +81,7 @@ def test_infer_relative_search_space() -> None:
 
 
 def test_infer_initial_search_space() -> None:
-    trial = Mock()
+    trial: Mock = Mock()
     sampler = _init_QMCSampler_without_exp_warning()
     # Can it handle empty search space?
     trial.distributions = {}
@@ -171,7 +171,7 @@ def test_sample_relative() -> None:
     search_space.pop("x6")
     sampler = _init_QMCSampler_without_exp_warning()
     study = optuna.create_study(sampler=sampler)
-    trial = Mock()
+    trial: Mock = Mock()
     # Make sure that sample type, shape is OK.
     for _ in range(3):
         sample = sampler.sample_relative(study, trial, search_space)
@@ -226,7 +226,7 @@ def test_sample_relative_sobol() -> None:
     }
     sampler = _init_QMCSampler_without_exp_warning(scramble=False, qmc_type="sobol")
     study = optuna.create_study(sampler=sampler)
-    trial = Mock()
+    trial: Mock = Mock()
     # Make sure that sample type, shape is OK.
     samples = np.zeros((n, d))
     for i in range(n):
