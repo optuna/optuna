@@ -1,12 +1,16 @@
 from __future__ import annotations
 
 from typing import NamedTuple
+from typing import TYPE_CHECKING
 
 from optuna.logging import get_logger
 from optuna.samplers._base import _CONSTRAINTS_KEY
-from optuna.study import Study
-from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
+
+
+if TYPE_CHECKING:
+    from optuna.study import Study
+    from optuna.trial import FrozenTrial
 from optuna.visualization._plotly_imports import _imports
 
 

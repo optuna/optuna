@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-from collections.abc import Callable
-from collections.abc import Sequence
 from typing import cast
 from typing import NamedTuple
+from typing import TYPE_CHECKING
 
 import numpy as np
 
@@ -12,6 +11,11 @@ from optuna.study import Study
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 from optuna.visualization._plotly_imports import _imports
+
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+    from collections.abc import Sequence
 from optuna.visualization._utils import _check_plot_args
 from optuna.visualization._utils import _filter_nonfinite
 
@@ -117,7 +121,7 @@ def _get_edf_info(
     if target is None:
 
         def _target(t: FrozenTrial) -> float:
-            return cast(float, t.value)
+            return cast("float", t.value)
 
         target = _target
 

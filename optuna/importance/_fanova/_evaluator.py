@@ -100,7 +100,7 @@ class FanovaImportanceEvaluator(BaseImportanceEvaluator):
         }
 
         if len(non_single_distributions) == 0:
-            return {}
+            return {k: 0.0 for k in single_distributions}
 
         trials: list[FrozenTrial] = _get_filtered_trials(study, params=params, target=target)
 

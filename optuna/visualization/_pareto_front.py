@@ -4,17 +4,21 @@ from collections.abc import Callable
 from collections.abc import Sequence
 from typing import Any
 from typing import NamedTuple
+from typing import TYPE_CHECKING
 
 import optuna
 from optuna import _deprecated
 from optuna._warnings import optuna_warn
 from optuna.samplers._base import _CONSTRAINTS_KEY
-from optuna.study import Study
 from optuna.study._multi_objective import _get_pareto_front_trials_by_trials
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 from optuna.visualization._plotly_imports import _imports
 from optuna.visualization._utils import _make_hovertext
+
+
+if TYPE_CHECKING:
+    from optuna.study import Study
 
 
 if _imports.is_successful():

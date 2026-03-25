@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-from collections.abc import Callable
-from collections.abc import Sequence
 from enum import Enum
 import math
 from typing import cast
 from typing import NamedTuple
+from typing import TYPE_CHECKING
 
 import numpy as np
 
@@ -16,6 +15,11 @@ from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 from optuna.visualization._plotly_imports import _imports
+
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+    from collections.abc import Sequence
 from optuna.visualization._utils import _check_plot_args
 
 
@@ -75,7 +79,7 @@ def _get_optimization_history_info_list(
             if target is not None:
                 values.append(target(trial))
             else:
-                values.append(cast(float, trial.value))
+                values.append(cast("float", trial.value))
         if target is not None:
             # We don't calculate best for user-defined target function since we cannot tell
             # which direction is better.

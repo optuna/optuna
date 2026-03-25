@@ -118,13 +118,8 @@ def test_evaluator_with_infinite(
 
 @parametrize_evaluator
 def test_evaluator_with_only_single_dists(evaluator: BaseImportanceEvaluator) -> None:
-    if isinstance(evaluator, MeanDecreaseImpurityImportanceEvaluator):
-        # MeanDecreaseImpurityImportanceEvaluator does not handle as intended.
-        # TODO(nabenabe0928): Fix MeanDecreaseImpurityImportanceEvaluator so that it behaves
-        # identically to the other evaluators.
-        return
-
     study = create_study(sampler=RandomSampler(seed=0))
     study.optimize(lambda trial: trial.suggest_float("a", 0.0, 0.0), n_trials=3)
     param_importance = evaluator.evaluate(study)
-    assert param_importance == {}
+
+    assert param_importance == {"a": 0.0}
