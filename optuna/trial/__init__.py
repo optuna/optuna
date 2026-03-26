@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from optuna.trial._base import BaseTrial
 from optuna.trial._fixed import FixedTrial
 from optuna.trial._frozen import create_trial

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from optuna.pruners._percentile import PercentilePruner
 
 

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from optuna import TrialPruned
 from optuna.trial import Trial
 

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from optuna import Study
 from optuna.distributions import FloatDistribution
 from optuna.study import create_study

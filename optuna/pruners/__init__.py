@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 from optuna.pruners._base import BasePruner
@@ -29,7 +31,7 @@ __all__ = [
 ]
 
 
-def _filter_study(study: "Study", trial: "FrozenTrial") -> "Study":
+def _filter_study(study: Study, trial: FrozenTrial) -> Study:
     if isinstance(study.pruner, HyperbandPruner):
         # Create `_BracketStudy` to use trials that have the same bracket id.
         pruner: HyperbandPruner = study.pruner

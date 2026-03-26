@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from optuna._callbacks import MaxTrialsCallback
 from optuna.study._study_direction import StudyDirection
 from optuna.study._study_summary import StudySummary

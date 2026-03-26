@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from optuna.artifacts._backoff import Backoff
 from optuna.artifacts._boto3 import Boto3ArtifactStore
 from optuna.artifacts._download import download_artifact

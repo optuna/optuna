@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from optuna.terminator.callback import TerminatorCallback
 from optuna.terminator.erroreval import BaseErrorEvaluator
 from optuna.terminator.erroreval import CrossValidationErrorEvaluator
