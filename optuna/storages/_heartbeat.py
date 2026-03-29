@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 import abc
-from collections.abc import Callable
 import copy
 from threading import Event
 from threading import Thread
-from types import TracebackType
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+    from types import TracebackType
 
 import optuna
 from optuna._experimental import experimental_func
