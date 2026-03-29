@@ -1,12 +1,15 @@
 from __future__ import annotations
 
-from collections.abc import Container
-from collections.abc import Sequence
 import copy
 from datetime import datetime
 import threading
 from typing import Any
+from typing import TYPE_CHECKING
 import uuid
+
+if TYPE_CHECKING:
+    from collections.abc import Container
+    from collections.abc import Sequence
 
 import optuna
 from optuna import distributions  # NOQA
