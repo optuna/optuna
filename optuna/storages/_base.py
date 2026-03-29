@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import abc
-from collections.abc import Container
-from collections.abc import Sequence
 from typing import Any
 from typing import cast
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from collections.abc import Container
+    from collections.abc import Sequence
 
 from optuna._typing import JSONSerializable
 from optuna.distributions import BaseDistribution
