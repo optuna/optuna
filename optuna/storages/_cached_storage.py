@@ -1,11 +1,14 @@
 from __future__ import annotations
 
-from collections.abc import Callable
-from collections.abc import Container
-from collections.abc import Sequence
 import copy
 import threading
 from typing import Any
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+    from collections.abc import Container
+    from collections.abc import Sequence
 
 import optuna
 from optuna import distributions
