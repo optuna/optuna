@@ -1,18 +1,19 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
 from typing import cast
 from typing import TYPE_CHECKING
 
 import numpy as np
 
-import optuna
 from optuna.study._constrained_optimization import _get_feasible_trials
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import TrialState
 
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from optuna.study.study import Study
     from optuna.trial import FrozenTrial
 
 
@@ -41,7 +42,7 @@ def _get_pareto_front_trials_by_trials(
 
 
 def _get_pareto_front_trials(
-    study: "optuna.study.Study", consider_constraint: bool = False
+    study: Study, consider_constraint: bool = False
 ) -> list[FrozenTrial]:
     return _get_pareto_front_trials_by_trials(study.trials, study.directions, consider_constraint)
 
