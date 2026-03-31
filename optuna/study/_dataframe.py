@@ -2,10 +2,14 @@ from __future__ import annotations
 
 import collections
 from typing import Any
+from typing import TYPE_CHECKING
 
-import optuna
 from optuna._imports import try_import
 from optuna.trial._state import TrialState
+
+
+if TYPE_CHECKING:
+    from optuna.study.study import Study
 
 
 with try_import() as _imports:
@@ -20,7 +24,7 @@ __all__ = ["pd"]
 
 
 def _create_records_and_aggregate_column(
-    study: "optuna.Study", attrs: tuple[str, ...]
+    study: Study, attrs: tuple[str, ...]
 ) -> tuple[list[dict[tuple[str, str], Any]], list[tuple[str, str]]]:
     attrs_to_df_columns: dict[str, str] = {}
     for attr in attrs:
@@ -90,8 +94,8 @@ def _flatten_columns(columns: list[tuple[str, str]]) -> list[str]:
 
 
 def _trials_dataframe(
-    study: "optuna.Study", attrs: tuple[str, ...], multi_index: bool
-) -> "pd.DataFrame":
+    study: Study, attrs: tuple[str, ...], multi_index: bool
+) -> pd.DataFrame:
     _imports.check()
 
     # If no trials, return an empty dataframe.
