@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import numpy as np
 
+from optuna._numba_utils import HAS_NUMBA
+from optuna._numba_utils import njit
 from optuna.study._multi_objective import _is_pareto_front
 
 
@@ -36,6 +38,61 @@ def _compute_3d(sorted_pareto_sols: np.ndarray, reference_point: np.ndarray) -> 
     y_delta = np.concatenate([y_vals[1:], reference_point[1:2]]) - y_vals
     # NOTE(nabenabe): Below is the faster alternative of `np.sum(dx[:, None] * dy * dz)`.
     return np.dot(np.dot(z_delta, y_delta), x_delta)
+
+
+@njit(cache=True)
+def _compute_hv_numba(  # type: ignore[no-any-unimported]
+    sorted_loss_vals: np.ndarray, reference_point: np.ndarray
+) -> float:
+    """Numba-accelerated recursive WFG hypervolume for N dimensions."""
+    n = sorted_loss_vals.shape[0]
+    d = sorted_loss_vals.shape[1]
+
+    if n == 1:
+        hv = 1.0
+        for j in range(d):
+            hv *= reference_point[j] - sorted_loss_vals[0, j]
+        return hv
+
+    if n == 2:
+        hv1 = 1.0
+        hv2 = 1.0
+        intersec = 1.0
+        for j in range(d):
+            r = reference_point[j]
+            v1 = sorted_loss_vals[0, j]
+            v2 = sorted_loss_vals[1, j]
+            hv1 *= r - v1
+            hv2 *= r - v2
+            mx = v1 if v1 > v2 else v2
+            intersec *= r - mx
+        return hv1 + hv2 - intersec
+
+    # Compute inclusive hypervolumes.
+    inclusive_hvs = np.empty(n)
+    for i in range(n):
+        prod = 1.0
+        for j in range(d):
+            prod *= reference_point[j] - sorted_loss_vals[i, j]
+        inclusive_hvs[i] = prod
+
+    # limited_sols_array[i, k, j] = max(sorted_loss_vals[i, j], sorted_loss_vals[k, j])
+    # Then for each i, recurse on limited_sols_array[i, i+1:]
+    total = inclusive_hvs[n - 1]
+    for i in range(n - 1):
+        n_sub = n - 1 - i
+        limited = np.empty((n_sub, d))
+        for k in range(n_sub):
+            for j in range(d):
+                a = sorted_loss_vals[i, j]
+                b = sorted_loss_vals[i + 1 + k, j]
+                limited[k, j] = a if a > b else b
+        # Inline exclusive_hv = inclusive_hvs[i] - _compute_hv_numba(limited, reference_point)
+        # But we need Pareto filtering for larger sets. For numba, we skip Pareto filtering
+        # (which requires the full _is_pareto_front machinery) and just recurse.
+        total += inclusive_hvs[i] - _compute_hv_numba(limited, reference_point)
+
+    return total
 
 
 def _compute_hv(sorted_loss_vals: np.ndarray, reference_point: np.ndarray) -> float:
@@ -173,6 +230,8 @@ def compute_hypervolume(
         # - _compute_exclusive_hv calls _is_pareto_front, which is quadratic
         #   with the number of points
         hv = _compute_3d(sorted_pareto_sols, reference_point)
+    elif HAS_NUMBA:
+        hv = _compute_hv_numba(sorted_pareto_sols, reference_point)
     else:
         hv = _compute_hv(sorted_pareto_sols, reference_point)
 

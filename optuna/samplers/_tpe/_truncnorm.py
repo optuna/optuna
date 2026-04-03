@@ -39,6 +39,8 @@ import sys
 
 import numpy as np
 
+from optuna._numba_utils import HAS_NUMBA
+from optuna._numba_utils import njit
 from optuna.samplers._tpe._erf import erf
 
 
@@ -101,7 +103,111 @@ def _log_ndtr_single(a: float) -> float:
     return log_LHS + math.log(right_hand_side)
 
 
+# Numba-accelerated scalar _log_ndtr that avoids the Python-function-per-element overhead of
+# np.frompyfunc.  When numba is not installed the decorator is a no-op and we fall back to
+# the frompyfunc path below.
+@njit(cache=True)
+def _log_ndtr_single_numba(a: float) -> float:  # type: ignore[no-any-unimported]
+    _INV_SQRT2 = 0.7071067811865476  # 1 / math.sqrt(2)
+    _HALF_LOG_2PI = 0.9189385332046728  # 0.5 * math.log(2 * math.pi)
+    _EPS = 2.220446049250313e-16  # sys.float_info.epsilon
+
+    x = a * _INV_SQRT2
+    if x < -_INV_SQRT2:
+        ndtr_a = 0.5 * math.erfc(-x)
+    elif x < _INV_SQRT2:
+        ndtr_a = 0.5 + 0.5 * math.erf(x)
+    else:
+        ndtr_a = 1.0 - 0.5 * math.erfc(x)
+
+    if a > 6:
+        x_neg = -a * _INV_SQRT2
+        if x_neg < -_INV_SQRT2:
+            ndtr_neg = 0.5 * math.erfc(-x_neg)
+        elif x_neg < _INV_SQRT2:
+            ndtr_neg = 0.5 + 0.5 * math.erf(x_neg)
+        else:
+            ndtr_neg = 1.0 - 0.5 * math.erfc(x_neg)
+        return -ndtr_neg
+    if a > -20:
+        return math.log(ndtr_a)
+
+    log_LHS = -0.5 * a * a - math.log(-a) - _HALF_LOG_2PI
+    last_total = 0.0
+    right_hand_side = 1.0
+    numerator = 1.0
+    denom_factor = 1.0
+    denom_cons = 1.0 / (a * a)
+    sign = 1
+    for i in range(1, 1000):
+        last_total = right_hand_side
+        sign = -sign
+        denom_factor *= denom_cons
+        numerator *= 2 * i - 1
+        right_hand_side += sign * numerator * denom_factor
+        if abs(last_total - right_hand_side) <= _EPS:
+            break
+
+    return log_LHS + math.log(right_hand_side)
+
+
+@njit(cache=True)
+def _log_ndtr_array_numba(a: np.ndarray) -> np.ndarray:  # type: ignore[no-any-unimported]
+    out = np.empty(a.shape, dtype=np.float64)
+    for i in range(a.size):
+        out.flat[i] = _log_ndtr_single_numba(float(a.flat[i]))
+    return out
+
+
+@njit(cache=True)
+def _ndtri_exp_numba(  # type: ignore[no-any-unimported]
+    y: np.ndarray,
+) -> np.ndarray:
+    """Numba-accelerated version of _ndtri_exp (Newton solver for inverse log-CDF)."""
+    _NORM_PDF_LOGC = 0.9189385332046728  # math.log(math.sqrt(2 * math.pi))
+    _SQRT3_OVER_PI = 0.5513289009497314  # math.sqrt(3) / math.pi
+
+    n = y.size
+    flipped = np.empty(n, dtype=np.bool_)
+    z = np.empty(n, dtype=np.float64)
+    for i in range(n):
+        z[i] = float(y.flat[i])
+        if y.flat[i] > -1e-2:
+            flipped[i] = True
+            z[i] = math.log(-math.expm1(y.flat[i]))
+        else:
+            flipped[i] = False
+
+    x = np.empty(n, dtype=np.float64)
+    for i in range(n):
+        zi = z.flat[i]
+        if zi < -5.0:
+            x.flat[i] = -math.sqrt(-2.0 * (zi + _NORM_PDF_LOGC))
+        else:
+            x.flat[i] = -_SQRT3_OVER_PI * math.log(math.expm1(-zi))
+
+    for _ in range(100):
+        converged = True
+        for i in range(n):
+            xi = x.flat[i]
+            log_ndtr_xi = _log_ndtr_single_numba(xi)
+            log_norm_pdf_xi = -0.5 * xi * xi - _NORM_PDF_LOGC
+            dx = (log_ndtr_xi - z.flat[i]) * math.exp(log_ndtr_xi - log_norm_pdf_xi)
+            x.flat[i] = xi - dx
+            if abs(dx) >= 1e-8 * abs(xi):
+                converged = False
+        if converged:
+            break
+
+    for i in range(n):
+        if flipped[i]:
+            x.flat[i] = -x.flat[i]
+    return x
+
+
 def _log_ndtr(a: np.ndarray) -> np.ndarray:
+    if HAS_NUMBA:
+        return _log_ndtr_array_numba(np.asarray(a, dtype=np.float64))
     return np.frompyfunc(_log_ndtr_single, 1, 1)(a).astype(float)
 
 
@@ -194,6 +300,9 @@ def _ndtri_exp(y: np.ndarray) -> np.ndarray:
         --> log(exp(-y) - 1) \\simeq -pi * x / sqrt(3)
         --> x \\simeq -sqrt(3) / pi * log(exp(-y) - 1).
     """
+    if HAS_NUMBA:
+        return _ndtri_exp_numba(y)
+
     # Flip the sign of y close to zero for better numerical stability and flip back the sign later.
     flipped = y > -1e-2
     z = y.copy()

@@ -22,6 +22,9 @@ from typing import TYPE_CHECKING
 import numpy as np
 from numpy.polynomial import Polynomial
 
+from optuna._numba_utils import HAS_NUMBA
+from optuna._numba_utils import njit
+
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -130,7 +133,20 @@ def _erf_right_non_big(x: np.ndarray) -> np.ndarray:
     return out
 
 
+@njit(cache=True)
+def _erf_array_numba(x: np.ndarray) -> np.ndarray:  # type: ignore[no-any-unimported]
+    """Numba-accelerated erf that delegates to math.erf element-wise without Python overhead."""
+    flat = x.ravel()
+    out = np.empty(flat.shape[0], dtype=np.float64)
+    for i in range(flat.shape[0]):
+        out[i] = math.erf(flat[i])
+    return out.reshape(x.shape)
+
+
 def erf(x: np.ndarray) -> np.ndarray:
+    if HAS_NUMBA:
+        return _erf_array_numba(np.asarray(x, dtype=np.float64))
+
     if x.size < 2000:
         return np.asarray([math.erf(v) for v in x.ravel()]).reshape(x.shape)
 

@@ -7,6 +7,8 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 import optuna
+from optuna._numba_utils import HAS_NUMBA
+from optuna._numba_utils import njit
 from optuna.study._constrained_optimization import _get_feasible_trials
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import TrialState
@@ -124,7 +126,44 @@ def _fast_non_domination_rank(
     return ranks
 
 
+@njit(cache=True)
+def _is_pareto_front_nd_numba(  # type: ignore[no-any-unimported]
+    unique_lexsorted_loss_values: np.ndarray,
+) -> np.ndarray:
+    """Numba-accelerated O(N^2) Pareto front detection for N-D objectives."""
+    loss_values = unique_lexsorted_loss_values[:, 1:]
+    n_trials = loss_values.shape[0]
+    n_obj = loss_values.shape[1]
+    on_front = np.zeros(n_trials, dtype=np.bool_)
+
+    # Build remaining indices as a simple integer array.
+    remaining = np.arange(n_trials)
+    n_remaining = n_trials
+
+    while n_remaining > 0:
+        top = remaining[0]
+        on_front[top] = True
+        new_count = 0
+        for k in range(n_remaining):
+            idx = remaining[k]
+            # Check if any objective is strictly less than the top's value.
+            is_not_dominated = False
+            for j in range(n_obj):
+                if loss_values[idx, j] < loss_values[top, j]:
+                    is_not_dominated = True
+                    break
+            if is_not_dominated:
+                remaining[new_count] = idx
+                new_count += 1
+        n_remaining = new_count
+
+    return on_front
+
+
 def _is_pareto_front_nd(unique_lexsorted_loss_values: np.ndarray) -> np.ndarray:
+    if HAS_NUMBA:
+        return _is_pareto_front_nd_numba(unique_lexsorted_loss_values)
+
     # NOTE(nabenabe0928): I tried the Kung's algorithm below, but it was not really quick.
     # https://github.com/optuna/optuna/pull/5302#issuecomment-1988665532
     # As unique_lexsorted_loss_values[:, 0] is sorted, we do not need it to judge dominance.
