@@ -777,6 +777,35 @@ Yes, it's possible.
 
 For a more comprehensive guide, refer to the `Specify Hyperparameters Manually <https://optuna.readthedocs.io/en/stable/tutorial/20_recipes/008_specify_params.html>`_.
 
+How can I speed up Optuna's sampler?
+------------------------------------
+
+If your objective function is cheap to evaluate (e.g., a few milliseconds) and you are
+running many trials, the sampler's suggestion overhead can become significant. There are
+several ways to reduce this overhead:
+
+1. **Install numba for JIT acceleration**: Optuna can optionally use
+   `numba <https://numba.pydata.org/>`__ to JIT-compile hot paths in the TPE sampler,
+   hypervolume computation, and Pareto front detection. Individual functions see 5-67x
+   speedups, and end-to-end TPE suggestion time improves by up to 1.4x.
+
+   .. code-block:: bash
+
+       $ pip install optuna[numba]
+
+   No code changes are needed — Optuna automatically uses numba when it is available.
+
+2. **Pass NumPy arrays instead of Pandas DataFrames to your ML library**: When using
+   XGBoost, LightGBM, or similar libraries inside your objective function, passing a
+   Pandas DataFrame with many columns can incur significant conversion overhead on
+   every call. Pre-converting to NumPy arrays can yield dramatic speedups (10-20x)
+   in the objective function itself.
+
+3. **Reduce the number of parameters or trials**: Sampler overhead scales with both the
+   number of completed trials and the number of parameters. If possible, reduce the
+   search space dimensionality or use a more efficient sampler for your problem.
+
+
 How can I resolve case sensitivity issues with MySQL?
 -----------------------------------------------------
 
