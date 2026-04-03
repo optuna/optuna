@@ -5,6 +5,7 @@ Run: python3 benchmarks/bench_numba.py
 Each benchmark runs the function with numba enabled, then with HAS_NUMBA
 monkeypatched to False (forcing the fallback), and reports timings + speedup.
 """
+
 from __future__ import annotations
 
 import time
@@ -69,7 +70,10 @@ def _run_bench(name: str, fn_numba, fn_fallback, *args, warmup: int = 3, repeats
     t_numba = _time_fn(fn_numba, *args, warmup=warmup, repeats=repeats)
     t_fallback = _time_fn(fn_fallback, *args, warmup=warmup, repeats=repeats)
     speedup = t_fallback / t_numba if t_numba > 0 else float("inf")
-    print(f"  {name:<50s}  numba: {t_numba*1e3:8.3f} ms  fallback: {t_fallback*1e3:8.3f} ms  speedup: {speedup:6.2f}x")
+    print(
+        f"  {name:<50s}  numba: {t_numba * 1e3:8.3f} ms"
+        f"  fallback: {t_fallback * 1e3:8.3f} ms  speedup: {speedup:6.2f}x"
+    )
     return t_numba, t_fallback
 
 
@@ -78,8 +82,10 @@ def _run_bench(name: str, fn_numba, fn_fallback, *args, warmup: int = 3, repeats
 # =============================================================================
 def bench_erf():
     print("\n=== erf() ===")
-    from optuna.samplers._tpe._erf import _erf_array_numba, _erf_right_non_big
     import math
+
+    from optuna.samplers._tpe._erf import _erf_array_numba
+    from optuna.samplers._tpe._erf import _erf_right_non_big
 
     for size in [100, 2_000, 10_000]:
         x = np.linspace(-5, 5, size)
@@ -107,10 +113,8 @@ def bench_erf():
 # =============================================================================
 def bench_log_ndtr():
     print("\n=== _log_ndtr() ===")
-    from optuna.samplers._tpe._truncnorm import (
-        _log_ndtr_array_numba,
-        _log_ndtr_single,
-    )
+    from optuna.samplers._tpe._truncnorm import _log_ndtr_array_numba
+    from optuna.samplers._tpe._truncnorm import _log_ndtr_single
 
     for size in [100, 1_000, 5_000]:
         a = np.linspace(-30, 10, size)
@@ -129,10 +133,8 @@ def bench_log_ndtr():
 # =============================================================================
 def bench_ndtri_exp():
     print("\n=== _ndtri_exp() ===")
-    from optuna.samplers._tpe._truncnorm import (
-        _log_ndtr,
-        _ndtri_exp_numba,
-    )
+    from optuna.samplers._tpe._truncnorm import _log_ndtr
+    from optuna.samplers._tpe._truncnorm import _ndtri_exp_numba
 
     for size in [100, 1_000, 5_000]:
         x_orig = np.linspace(-5, 5, size)
@@ -143,11 +145,9 @@ def bench_ndtri_exp():
 
         def fn_fallback(y=y):
             # Force the pure-Python fallback path
-            from optuna.samplers._tpe._truncnorm import (
-                _log_ndtr,
-                _ndtri_exp_approx_C,
-                _norm_pdf_logC,
-            )
+            from optuna.samplers._tpe._truncnorm import _log_ndtr
+            from optuna.samplers._tpe._truncnorm import _ndtri_exp_approx_C
+            from optuna.samplers._tpe._truncnorm import _norm_pdf_logC
 
             z = y.copy()
             flipped = y > -1e-2
@@ -178,7 +178,8 @@ def bench_ndtri_exp():
 # =============================================================================
 def bench_pareto_front():
     print("\n=== _is_pareto_front_nd() ===")
-    from optuna.study._multi_objective import _is_pareto_front_nd, _is_pareto_front_nd_numba
+    from optuna.study._multi_objective import _is_pareto_front_nd
+    from optuna.study._multi_objective import _is_pareto_front_nd_numba
 
     for n_points in [50, 200, 500]:
         for n_obj in [3, 5]:
@@ -202,7 +203,8 @@ def bench_pareto_front():
 # =============================================================================
 def bench_hypervolume():
     print("\n=== WFG hypervolume (4D+) ===")
-    from optuna._hypervolume.wfg import _compute_hv, _compute_hv_numba
+    from optuna._hypervolume.wfg import _compute_hv
+    from optuna._hypervolume.wfg import _compute_hv_numba
     from optuna.study._multi_objective import _is_pareto_front
 
     for n_points, n_dim in [(5, 4), (10, 4), (8, 5), (10, 6)]:
@@ -221,8 +223,10 @@ def bench_hypervolume():
 
         _run_bench(
             f"hypervolume (n={len(pareto)}, d={n_dim})",
-            fn_numba, fn_fallback,
-            warmup=2, repeats=10,
+            fn_numba,
+            fn_fallback,
+            warmup=2,
+            repeats=10,
         )
 
 
@@ -269,8 +273,10 @@ def bench_tpe_sampling():
 
         _run_bench(
             f"TPE suggest (completed={n_completed}, 5 params)",
-            fn_with_numba, fn_without_numba,
-            warmup=3, repeats=15,
+            fn_with_numba,
+            fn_without_numba,
+            warmup=3,
+            repeats=15,
         )
 
 
@@ -313,8 +319,10 @@ def bench_tpe_multi_objective():
 
         _run_bench(
             f"Multi-obj TPE (completed={n_completed}, 3 params, 2 obj)",
-            fn_with_numba, fn_without_numba,
-            warmup=3, repeats=10,
+            fn_with_numba,
+            fn_without_numba,
+            warmup=3,
+            repeats=10,
         )
 
 
@@ -336,7 +344,8 @@ def bench_hssp_2d():
             return _solve_hssp_2d(v, idx, s, r)
 
         t = _time_fn(fn, warmup=3, repeats=20)
-        print(f"  {'hssp_2d (n=' + str(n_points) + ', k=' + str(subset) + ')':<50s}  time: {t*1e3:8.3f} ms  (no numba version yet)")
+        label = f"hssp_2d (n={n_points}, k={subset})"
+        print(f"  {label:<50s}  time: {t * 1e3:8.3f} ms  (no numba version yet)")
 
 
 # =============================================================================

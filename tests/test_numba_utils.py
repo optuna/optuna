@@ -3,6 +3,7 @@
 Both the numba-accelerated and pure-Python/NumPy fallback paths are tested by
 monkeypatching HAS_NUMBA to False, forcing the fallback even when numba is installed.
 """
+
 from __future__ import annotations
 
 import importlib
@@ -13,8 +14,6 @@ import numpy as np
 import pytest
 
 from optuna._numba_utils import HAS_NUMBA
-from optuna._numba_utils import njit
-from optuna._numba_utils import numba_vectorize
 
 
 # ---------------------------------------------------------------------------
