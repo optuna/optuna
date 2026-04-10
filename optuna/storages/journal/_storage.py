@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from collections.abc import Container
 from collections.abc import Iterable
 from collections.abc import Sequence
@@ -12,6 +13,7 @@ from typing import Any
 import uuid
 
 import optuna
+from optuna._experimental import warn_experimental_argument
 from optuna._typing import JSONSerializable
 from optuna.distributions import BaseDistribution
 from optuna.distributions import check_distribution_compatibility
@@ -21,6 +23,7 @@ from optuna.exceptions import DuplicatedStudyError
 from optuna.exceptions import UpdateFinishedTrialError
 from optuna.storages import BaseStorage
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
+from optuna.storages._heartbeat import BaseHeartbeat
 from optuna.storages.journal._base import BaseJournalBackend
 from optuna.storages.journal._base import BaseJournalSnapshot
 from optuna.study._frozen import FrozenStudy
@@ -48,9 +51,10 @@ class JournalOperation(enum.IntEnum):
     SET_TRIAL_INTERMEDIATE_VALUE = 7
     SET_TRIAL_USER_ATTR = 8
     SET_TRIAL_SYSTEM_ATTR = 9
+    RECORD_HEARTBEAT = 10
 
 
-class JournalStorage(BaseStorage):
+class JournalStorage(BaseStorage, BaseHeartbeat):
     """Storage class for Journal storage backend.
 
     Note that library users can instantiate this class, but the attributes
@@ -96,9 +100,63 @@ class JournalStorage(BaseStorage):
         storage = optuna.storages.JournalStorage(
             optuna.storages.journal.JournalFileBackend(file_path, lock_obj=lock_obj),
         )
+
+    Args:
+        log_storage:
+            The backend used to append and read journal logs.
+        heartbeat_interval:
+            Interval to record the heartbeat. It is recorded every ``interval`` seconds.
+            ``heartbeat_interval`` must be :obj:`None` or a positive integer.
+
+            .. note::
+                Heartbeat mechanism is experimental. API would change in the future.
+
+            .. note::
+                Since heartbeat timestamps are compared using worker-local clocks, the
+                ``grace_period`` should comfortably exceed clock drift between workers.
+
+        grace_period:
+            Grace period before a running trial is failed from the last heartbeat.
+            ``grace_period`` must be :obj:`None` or a positive integer.
+            If it is :obj:`None`, the grace period will be ``2 * heartbeat_interval``.
+        failed_trial_callback:
+            A callback function that is invoked after failing each stale trial.
+            The function must accept two parameters with the following types in this order:
+            :class:`~optuna.study.Study` and :class:`~optuna.trial.FrozenTrial`.
+
+            .. note::
+                The procedure to fail existing stale trials is called just before asking the
+                study for a new trial.
+
+    .. note::
+        If you want to detect failures of running trials, set ``heartbeat_interval``,
+        ``grace_period``, and optionally ``failed_trial_callback``. See the
+        :ref:`tutorial <heartbeat_monitoring>` and `Example page
+        <https://github.com/optuna/optuna-examples/tree/main/retry_failed_trial_callback>`_
+        for how the same mechanism works with :class:`~optuna.storages.RDBStorage`.
+        :class:`~optuna.storages.RetryFailedTrialCallback` can be passed as a
+        ``failed_trial_callback`` to retry failed trials detected by heartbeat.
     """
 
-    def __init__(self, log_storage: BaseJournalBackend) -> None:
+    def __init__(
+        self,
+        log_storage: BaseJournalBackend,
+        *,
+        heartbeat_interval: int | None = None,
+        grace_period: int | None = None,
+        failed_trial_callback: Callable[["optuna.study.Study", FrozenTrial], None] | None = None,
+    ) -> None:
+        if heartbeat_interval is not None:
+            if heartbeat_interval <= 0:
+                raise ValueError("The value of `heartbeat_interval` should be a positive integer.")
+            warn_experimental_argument("heartbeat_interval")
+        if grace_period is not None and grace_period <= 0:
+            raise ValueError("The value of `grace_period` should be a positive integer.")
+
+        self.heartbeat_interval = heartbeat_interval
+        self.grace_period = grace_period
+        self.failed_trial_callback = failed_trial_callback
+
         self._worker_id_prefix = str(uuid.uuid4()) + "-"
         self._backend = log_storage
         self._thread_lock = threading.Lock()
@@ -138,6 +196,10 @@ class JournalStorage(BaseStorage):
         r._worker_id_prefix = self._worker_id_prefix
         r._worker_id_to_owned_trial_id = {}
         r._last_created_trial_id_by_this_process = -1
+        # Backward compatibility: snapshots taken before heartbeat support for JournalStorage
+        # was introduced do not carry this field.
+        if not hasattr(r, "_trial_id_to_last_heartbeat"):
+            r._trial_id_to_last_heartbeat = {}
         self._replay_result = r
 
     def _write_log(self, op_code: int, extra_fields: dict[str, Any]) -> None:
@@ -398,6 +460,47 @@ class JournalStorage(BaseStorage):
                 return copy.deepcopy(frozen_trials)
             return frozen_trials
 
+    def record_heartbeat(self, trial_id: int) -> None:
+        log: dict[str, Any] = {
+            "trial_id": trial_id,
+            "heartbeat": datetime.datetime.now().isoformat(timespec="microseconds"),
+        }
+        with self._thread_lock:
+            self._write_log(JournalOperation.RECORD_HEARTBEAT, log)
+            self._sync_with_backend()
+
+    def _get_stale_trial_ids(self, study_id: int) -> list[int]:
+        assert self.heartbeat_interval is not None
+        if self.grace_period is None:
+            grace_period = 2 * self.heartbeat_interval
+        else:
+            grace_period = self.grace_period
+
+        stale_trial_ids: list[int] = []
+        with self._thread_lock:
+            self._sync_with_backend()
+            now = datetime.datetime.now()
+            running_trials = self._replay_result.get_all_trials(
+                study_id, states=(TrialState.RUNNING,)
+            )
+            for trial in running_trials:
+                last_heartbeat = self._replay_result._trial_id_to_last_heartbeat.get(
+                    trial._trial_id
+                )
+                if last_heartbeat is None:
+                    continue
+                if now - last_heartbeat > datetime.timedelta(seconds=grace_period):
+                    stale_trial_ids.append(trial._trial_id)
+        return stale_trial_ids
+
+    def get_heartbeat_interval(self) -> int | None:
+        return self.heartbeat_interval
+
+    def get_failed_trial_callback(
+        self,
+    ) -> Callable[["optuna.study.Study", FrozenTrial], None] | None:
+        return self.failed_trial_callback
+
 
 class JournalStorageReplayResult:
     def __init__(self, worker_id_prefix: str) -> None:
@@ -410,6 +513,7 @@ class JournalStorageReplayResult:
         self._trial_id_to_study_id: dict[int, int] = {}
         self._next_study_id: int = 0
         self._worker_id_to_owned_trial_id: dict[str, int] = {}
+        self._trial_id_to_last_heartbeat: dict[int, datetime.datetime] = {}
 
     def apply_logs(self, logs: Iterable[dict[str, Any]]) -> None:
         for log in logs:
@@ -435,6 +539,8 @@ class JournalStorageReplayResult:
                 self._apply_set_trial_user_attr(log)
             elif op == JournalOperation.SET_TRIAL_SYSTEM_ATTR:
                 self._apply_set_trial_system_attr(log)
+            elif op == JournalOperation.RECORD_HEARTBEAT:
+                self._apply_record_heartbeat(log)
             else:
                 assert False, "Should not reach."
 
@@ -663,6 +769,14 @@ class JournalStorageReplayResult:
                 **log["system_attr"],
             }
             self._trials[trial_id] = trial
+
+    def _apply_record_heartbeat(self, log: dict[str, Any]) -> None:
+        trial_id = log["trial_id"]
+        if trial_id not in self._trials:
+            return
+        self._trial_id_to_last_heartbeat[trial_id] = datetime.datetime.fromisoformat(
+            log["heartbeat"]
+        )
 
     def _trial_exists_and_updatable(self, trial_id: int, log: dict[str, Any]) -> bool:
         if trial_id not in self._trials:

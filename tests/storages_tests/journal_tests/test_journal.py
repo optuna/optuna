@@ -5,6 +5,7 @@ from concurrent.futures import ProcessPoolExecutor
 from concurrent.futures import ThreadPoolExecutor
 import pathlib
 import pickle
+import time
 from types import TracebackType
 from typing import Any
 from typing import IO
@@ -264,3 +265,69 @@ def test_invalid_grace_period(log_storage_type: str, grace_period: int) -> None:
     with pytest.raises(ValueError):
         with JournalLogStorageSupplier(log_storage_type, grace_period):
             pass
+
+
+def test_journal_record_heartbeat_returns_stale_trial_after_grace_period() -> None:
+    heartbeat_interval = 1
+    grace_period = 2
+
+    with NamedTemporaryFilePool() as file:
+        file_storage = optuna.storages.journal.JournalFileBackend(file.name)
+        with pytest.warns(optuna.exceptions.ExperimentalWarning):
+            storage = JournalStorage(
+                file_storage,
+                heartbeat_interval=heartbeat_interval,
+                grace_period=grace_period,
+            )
+        study = optuna.create_study(storage=storage)
+        with pytest.warns(UserWarning):
+            trial = study.ask()
+        storage.record_heartbeat(trial._trial_id)
+
+        # Within the grace period the trial is not stale.
+        assert storage._get_stale_trial_ids(study._study_id) == []
+
+        time.sleep(grace_period + 1)
+
+        stale_ids = storage._get_stale_trial_ids(study._study_id)
+        assert stale_ids == [trial._trial_id]
+
+
+def test_journal_record_heartbeat_ignores_trials_without_heartbeat() -> None:
+    heartbeat_interval = 1
+    grace_period = 2
+
+    with NamedTemporaryFilePool() as file:
+        file_storage = optuna.storages.journal.JournalFileBackend(file.name)
+        with pytest.warns(optuna.exceptions.ExperimentalWarning):
+            storage = JournalStorage(
+                file_storage,
+                heartbeat_interval=heartbeat_interval,
+                grace_period=grace_period,
+            )
+        study = optuna.create_study(storage=storage)
+        with pytest.warns(UserWarning):
+            study.ask()
+
+        # A running trial that has never recorded a heartbeat is not considered stale,
+        # mirroring the behavior of RDBStorage._get_stale_trial_ids.
+        assert storage._get_stale_trial_ids(study._study_id) == []
+
+
+def test_journal_heartbeat_snapshot_backward_compat() -> None:
+    # Snapshots taken with a version of Optuna before heartbeat support landed do not
+    # include _trial_id_to_last_heartbeat on JournalStorageReplayResult. The attribute
+    # must be re-initialized on restore to keep replay and _get_stale_trial_ids working.
+    with NamedTemporaryFilePool() as file:
+        file_storage = optuna.storages.journal.JournalFileBackend(file.name)
+        storage = JournalStorage(file_storage)
+        optuna.create_study(storage=storage)
+
+        # Build a replay result pickle that lacks the new heartbeat attribute.
+        legacy_replay = storage._replay_result
+        assert hasattr(legacy_replay, "_trial_id_to_last_heartbeat")
+        del legacy_replay._trial_id_to_last_heartbeat
+
+        storage.restore_replay_result(pickle.dumps(legacy_replay))
+        assert hasattr(storage._replay_result, "_trial_id_to_last_heartbeat")
+        assert storage._replay_result._trial_id_to_last_heartbeat == {}

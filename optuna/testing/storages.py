@@ -45,6 +45,7 @@ STORAGE_MODES: list[Any] = [
 STORAGE_MODES_HEARTBEAT = [
     "sqlite",
     "cached_sqlite",
+    "journal",
 ]
 
 SQLITE3_TIMEOUT = 300
@@ -137,7 +138,12 @@ class StorageSupplier(AbstractContextManager):
             self.tempfile = self.extra_args.get("file", NamedTemporaryFilePool().tempfile())
             assert self.tempfile is not None
             file_storage = JournalFileBackend(self.tempfile.name)
-            self.storage = optuna.storages.JournalStorage(file_storage)
+            journal_kwargs = {
+                k: v
+                for k, v in self.extra_args.items()
+                if k in ("heartbeat_interval", "grace_period", "failed_trial_callback")
+            }
+            self.storage = optuna.storages.JournalStorage(file_storage, **journal_kwargs)
         elif self.storage_specifier == "grpc_rdb":
             self.tempfile = NamedTemporaryFilePool().tempfile()
             url = f"sqlite:///{self.tempfile.name}"
