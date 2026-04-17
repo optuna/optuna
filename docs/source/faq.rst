@@ -513,6 +513,23 @@ Soft constraints do not have to be satisfied, but an objective function is penal
 
 Optuna is adopting the soft one and **DOES NOT** support the hard one. In other words, Optuna **DOES NOT** have built-in samplers for the hard constraints.
 
+How does Optuna handle constraint violations internally?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Optuna treats constraints as *soft constraints* and compares trials based on feasibility and degree of violation.
+
+The comparison follows these rules:
+
+- Feasible vs. infeasible: A trial that satisfies all constraints (i.e., all constraint values are less than or equal to zero) is always preferred over a trial that violates any constraint.
+- Infeasible vs. infeasible: If both trials violate constraints, the trial with the smaller total violation is preferred. The total violation is computed as the sum of positive constraint values.
+- Feasible vs. feasible: If both trials satisfy all constraints, they are compared using their objective values as usual.
+
+For example:
+
+- Trial A (feasible, objective = 0.8) and Trial B (infeasible, violation = 0.1) → Trial A is preferred.
+- Trial C (violation = 0.2) and Trial D (violation = 0.05) → Trial D is preferred.
+
+
 How can I parallelize optimization?
 -----------------------------------
 
