@@ -338,7 +338,8 @@ class JournalStorage(BaseStorage):
                 )
                 if existing_trial.state.is_finished():
                     raise UpdateFinishedTrialError(
-                        f"Trial#{existing_trial.number} has already finished and can not be updated."
+                        f"Trial#{existing_trial.number} has already finished "
+                        "and can not be updated."
                     )
                 if existing_trial.state != TrialState.WAITING:
                     # This line is equivalent to `existing_trial.state == TrialState.RUNNING`.
@@ -672,7 +673,8 @@ class JournalStorageReplayResult:
         elif self._trials[trial_id].state.is_finished():
             if self._is_issued_by_this_worker(log):
                 raise UpdateFinishedTrialError(
-                    f"Trial#{self._trials[trial_id].number} has already finished and can not be updated."
+                    f"Trial#{self._trials[trial_id].number} has already finished "
+                    "and can not be updated."
                 )
             return False
         else:
