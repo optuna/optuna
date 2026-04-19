@@ -506,7 +506,19 @@ class TPESampler(BaseSampler):
 
         if len(params_strs) == 0:
             return trial.params
-        params = json.loads("".join(params_strs))
+
+        try:
+            # NOTE:
+            # system_attrs are written in multiple chunks without atomicity.
+            # Concurrent workers may read partial data and fail JSON decoding.
+            params = json.loads("".join(params_strs))
+        except json.JSONDecodeError:
+            _logger.debug(
+                "Failed to decode relative params due to partial write. "
+                "Falling back to trial.params."
+            )
+            return trial.params
+
         params.update(trial.params)
         return params
 
