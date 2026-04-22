@@ -7,7 +7,6 @@ from optuna._experimental import experimental_class
 from optuna._warnings import optuna_warn
 from optuna.samplers import BaseSampler
 from optuna.search_space import intersection_search_space
-from optuna.trial import TrialState
 
 
 if TYPE_CHECKING:
@@ -16,6 +15,7 @@ if TYPE_CHECKING:
     from optuna.distributions import BaseDistribution
     from optuna.study import Study
     from optuna.trial import FrozenTrial
+    from optuna.trial import TrialState
 
 
 @experimental_class("2.4.0")
@@ -76,7 +76,7 @@ class PartialFixedSampler(BaseSampler):
         # fixed-param distributions from the intersection search space of completed
         # trials (same source the base samplers use internally).
         all_distributions = intersection_search_space(
-            study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,))
+            [t for t in study.get_trials(deepcopy=False) if t.state.is_finished()]
         )
         for param_name in self._fixed_params:
             if param_name in all_distributions and param_name not in search_space:
