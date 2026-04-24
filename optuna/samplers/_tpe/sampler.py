@@ -84,9 +84,7 @@ def _handle_deprecated_argument(
     is_deprecated: bool,
 ) -> _T:
     if is_deprecated:
-        msg = _deprecated._DEPRECATION_WARNING_TEMPLATE.format(
-            name=name, d_ver=d_ver, r_ver=r_ver
-        )
+        msg = _deprecated._DEPRECATION_WARNING_TEMPLATE.format(name=name, d_ver=d_ver, r_ver=r_ver)
         optuna_warn(
             f"{msg} From v{d_ver} onward, {name} automatically falls back to"
             f" {fallback_description}.",
@@ -400,27 +398,57 @@ class TPESampler(BaseSampler):
         ) = None,
     ) -> None:
         consider_prior = _handle_deprecated_argument(
-            "`consider_prior`", consider_prior, True, "4.3.0", "6.0.0", "`True`",
+            "`consider_prior`",
+            consider_prior,
+            True,
+            "4.3.0",
+            "6.0.0",
+            "`True`",
             is_deprecated=not consider_prior,
         )
         prior_weight = _handle_deprecated_argument(
-            "`prior_weight`", prior_weight, 1.0, "4.9.0", "6.0.0", "`1.0`",
+            "`prior_weight`",
+            prior_weight,
+            1.0,
+            "4.9.0",
+            "6.0.0",
+            "`1.0`",
             is_deprecated=prior_weight != 1.0,
         )
         consider_magic_clip = _handle_deprecated_argument(
-            "`consider_magic_clip`", consider_magic_clip, True, "4.9.0", "6.0.0", "`True`",
+            "`consider_magic_clip`",
+            consider_magic_clip,
+            True,
+            "4.9.0",
+            "6.0.0",
+            "`True`",
             is_deprecated=not consider_magic_clip,
         )
         consider_endpoints = _handle_deprecated_argument(
-            "`consider_endpoints`", consider_endpoints, False, "4.9.0", "6.0.0", "`False`",
+            "`consider_endpoints`",
+            consider_endpoints,
+            False,
+            "4.9.0",
+            "6.0.0",
+            "`False`",
             is_deprecated=consider_endpoints,
         )
         gamma = _handle_deprecated_argument(
-            "`gamma`", gamma, default_gamma, "4.9.0", "6.0.0", "the internal default",
+            "`gamma`",
+            gamma,
+            default_gamma,
+            "4.9.0",
+            "6.0.0",
+            "the internal default",
             is_deprecated=gamma is not default_gamma,
         )
         weights = _handle_deprecated_argument(
-            "`weights`", weights, default_weights, "4.9.0", "6.0.0", "the internal default",
+            "`weights`",
+            weights,
+            default_weights,
+            "4.9.0",
+            "6.0.0",
+            "the internal default",
             is_deprecated=weights is not default_weights,
         )
 
@@ -438,7 +466,11 @@ class TPESampler(BaseSampler):
         self._gamma = gamma
 
         warn_independent_sampling = _handle_deprecated_argument(
-            "`warn_independent_sampling`", warn_independent_sampling, False, "4.9.0", "6.0.0",
+            "`warn_independent_sampling`",
+            warn_independent_sampling,
+            False,
+            "4.9.0",
+            "6.0.0",
             "`False`",
             is_deprecated=warn_independent_sampling,
         )
