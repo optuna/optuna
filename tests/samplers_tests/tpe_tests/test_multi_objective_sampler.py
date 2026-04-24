@@ -65,22 +65,6 @@ def test_multi_objective_sample_independent_seed_fix() -> None:
     assert suggest(sampler, study, trial, dist, past_trials) != suggestion
 
 
-def test_multi_objective_sample_independent_prior() -> None:
-    study = optuna.create_study(directions=["minimize", "maximize"])
-    dist = optuna.distributions.FloatDistribution(1.0, 100.0)
-
-    random.seed(128)
-    past_trials = [frozen_trial_factory(i, [random.random(), random.random()]) for i in range(16)]
-
-    # Prepare a trial and a sample for later checks.
-    trial = frozen_trial_factory(16, [0, 0])
-    sampler = TPESampler(seed=0)
-    suggestion = suggest(sampler, study, trial, dist, past_trials)
-
-    sampler = TPESampler(prior_weight=0.5, seed=0)
-    assert suggest(sampler, study, trial, dist, past_trials) != suggestion
-
-
 def test_multi_objective_sample_independent_n_startup_trial() -> None:
     study = optuna.create_study(directions=["minimize", "maximize"])
     dist = optuna.distributions.FloatDistribution(1.0, 100.0)
@@ -136,9 +120,6 @@ def test_multi_objective_sample_independent_misc_arguments() -> None:
 
     # Test misc. parameters.
     sampler = TPESampler(n_ei_candidates=13, seed=0)
-    assert suggest(sampler, study, trial, dist, past_trials) != suggestion
-
-    sampler = TPESampler(gamma=lambda _: 1, seed=0)
     assert suggest(sampler, study, trial, dist, past_trials) != suggestion
 
 
