@@ -6,7 +6,6 @@ from unittest.mock import Mock
 from unittest.mock import patch
 import warnings
 
-import _pytest.capture
 import numpy as np
 import pytest
 
@@ -20,11 +19,18 @@ from optuna.trial import Trial
 
 @pytest.mark.parametrize("use_hyperband", [False, True])
 def test_hyperopt_parameters(use_hyperband: bool) -> None:
-    sampler = TPESampler(**TPESampler.hyperopt_parameters())
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", FutureWarning)
+        sampler = TPESampler(**TPESampler.hyperopt_parameters())
     study = optuna.create_study(
         sampler=sampler, pruner=optuna.pruners.HyperbandPruner() if use_hyperband else None
     )
     study.optimize(lambda t: t.suggest_float("x", 10, 20), n_trials=50)
+
+
+def test_hyperopt_parameters_deprecation_warning() -> None:
+    with pytest.warns(FutureWarning, match="hyperopt_parameters"):
+        TPESampler.hyperopt_parameters()
 
 
 def test_multivariate_experimental_warning() -> None:
@@ -37,48 +43,74 @@ def test_constraints_func_experimental_warning() -> None:
         optuna.samplers.TPESampler(constraints_func=lambda _: (0,))
 
 
-def test_warn_independent_sampling(capsys: _pytest.capture.CaptureFixture) -> None:
-    def objective(trial: Trial) -> float:
-        x = trial.suggest_categorical("x", ["a", "b"])
-        if x == "a":
-            return trial.suggest_float("y", 0, 1)
-        else:
-            return trial.suggest_float("z", 0, 1)
-
-    # We need to reconstruct our default handler to properly capture stderr.
-    optuna.logging._reset_library_root_logger()
-    optuna.logging.enable_default_handler()
-    optuna.logging.set_verbosity(optuna.logging.WARNING)
-
-    sampler = TPESampler(multivariate=True, warn_independent_sampling=True, n_startup_trials=0)
-    study = optuna.create_study(sampler=sampler)
-    study.optimize(objective, n_trials=10)
-
-    _, err = capsys.readouterr()
-    assert err
+def test_prior_weight_deprecation_warning() -> None:
+    with pytest.warns(FutureWarning, match="prior_weight"):
+        TPESampler(prior_weight=2.0)
 
 
-def test_warn_independent_sampling_group(capsys: _pytest.capture.CaptureFixture) -> None:
-    def objective(trial: Trial) -> float:
-        x = trial.suggest_categorical("x", ["a", "b"])
-        if x == "a":
-            return trial.suggest_float("y", 0, 1)
-        else:
-            return trial.suggest_float("z", 0, 1)
+def test_prior_weight_no_warning_for_default() -> None:
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", FutureWarning)
+        TPESampler(prior_weight=1.0)
 
-    # We need to reconstruct our default handler to properly capture stderr.
-    optuna.logging._reset_library_root_logger()
-    optuna.logging.enable_default_handler()
-    optuna.logging.set_verbosity(optuna.logging.WARNING)
 
-    sampler = TPESampler(
-        multivariate=True, warn_independent_sampling=True, group=True, n_startup_trials=0
-    )
-    study = optuna.create_study(sampler=sampler)
-    study.optimize(objective, n_trials=10)
+def test_consider_magic_clip_deprecation_warning() -> None:
+    with pytest.warns(FutureWarning, match="consider_magic_clip"):
+        TPESampler(consider_magic_clip=False)
 
-    _, err = capsys.readouterr()
-    assert err == ""
+
+def test_consider_magic_clip_no_warning_for_default() -> None:
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", FutureWarning)
+        TPESampler(consider_magic_clip=True)
+
+
+def test_consider_endpoints_deprecation_warning() -> None:
+    with pytest.warns(FutureWarning, match="consider_endpoints"):
+        TPESampler(consider_endpoints=True)
+
+
+def test_consider_endpoints_no_warning_for_default() -> None:
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", FutureWarning)
+        TPESampler(consider_endpoints=False)
+
+
+def test_gamma_deprecation_warning() -> None:
+    with pytest.warns(FutureWarning, match="gamma"):
+        TPESampler(gamma=lambda _: 5)
+
+
+def test_gamma_no_warning_for_default() -> None:
+    from optuna.samplers._tpe.sampler import default_gamma
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", FutureWarning)
+        TPESampler(gamma=default_gamma)
+
+
+def test_weights_deprecation_warning() -> None:
+    with pytest.warns(FutureWarning, match="weights"):
+        TPESampler(weights=lambda n: np.ones(n))
+
+
+def test_weights_no_warning_for_default() -> None:
+    from optuna.samplers._tpe.sampler import default_weights
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", FutureWarning)
+        TPESampler(weights=default_weights)
+
+
+def test_warn_independent_sampling_deprecation_warning() -> None:
+    with pytest.warns(FutureWarning, match="warn_independent_sampling"):
+        TPESampler(warn_independent_sampling=True)
+
+
+def test_warn_independent_sampling_no_warning_for_default() -> None:
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", FutureWarning)
+        TPESampler(warn_independent_sampling=False)
 
 
 def test_infer_relative_search_space() -> None:
@@ -131,26 +163,6 @@ def test_sample_relative_empty_input(multivariate: bool) -> None:
     assert sampler.sample_relative(study, frozen_trial, {}) == {}
 
 
-def test_sample_relative_prior() -> None:
-    study = optuna.create_study()
-    dist = optuna.distributions.FloatDistribution(1.0, 100.0)
-    past_trials = [frozen_trial_factory(i, dist=dist) for i in range(1, 8)]
-
-    # Prepare a trial and a sample for later checks.
-    trial = frozen_trial_factory(8)
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
-        sampler = TPESampler(n_startup_trials=5, seed=0, multivariate=True)
-    with patch.object(study._storage, "get_all_trials", return_value=past_trials):
-        suggestion = sampler.sample_relative(study, trial, {"param-a": dist})
-
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
-        sampler = TPESampler(prior_weight=0.2, n_startup_trials=5, seed=0, multivariate=True)
-    with patch.object(study._storage, "get_all_trials", return_value=past_trials):
-        assert sampler.sample_relative(study, trial, {"param-a": dist}) != suggestion
-
-
 def test_sample_relative_n_startup_trial() -> None:
     study = optuna.create_study()
     dist = optuna.distributions.FloatDistribution(1.0, 100.0)
@@ -186,23 +198,6 @@ def test_sample_relative_misc_arguments() -> None:
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
         sampler = TPESampler(n_ei_candidates=13, n_startup_trials=5, seed=0, multivariate=True)
-    with patch.object(study._storage, "get_all_trials", return_value=past_trials):
-        assert sampler.sample_relative(study, trial, {"param-a": dist}) != suggestion
-
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
-        sampler = TPESampler(gamma=lambda _: 5, n_startup_trials=5, seed=0, multivariate=True)
-    with patch.object(study._storage, "get_all_trials", return_value=past_trials):
-        assert sampler.sample_relative(study, trial, {"param-a": dist}) != suggestion
-
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
-        sampler = TPESampler(
-            weights=lambda n: np.asarray([i**2 + 1 for i in range(n)]),
-            n_startup_trials=5,
-            seed=0,
-            multivariate=True,
-        )
     with patch.object(study._storage, "get_all_trials", return_value=past_trials):
         assert sampler.sample_relative(study, trial, {"param-a": dist}) != suggestion
 
@@ -433,22 +428,6 @@ def test_sample_relative_pruned_state() -> None:
     assert len(set(suggestions)) == 3
 
 
-def test_sample_independent_prior() -> None:
-    study = optuna.create_study()
-    dist = optuna.distributions.FloatDistribution(1.0, 100.0)
-    past_trials = [frozen_trial_factory(i, dist=dist) for i in range(1, 8)]
-
-    # Prepare a trial and a sample for later checks.
-    trial = frozen_trial_factory(8)
-    sampler = TPESampler(n_startup_trials=5, seed=0, n_ei_candidates=100)
-    with patch.object(study._storage, "get_all_trials", return_value=past_trials):
-        suggestion = sampler.sample_independent(study, trial, "param-a", dist)
-
-    sampler = TPESampler(prior_weight=0.1, n_startup_trials=5, seed=0, n_ei_candidates=100)
-    with patch.object(study._storage, "get_all_trials", return_value=past_trials):
-        assert sampler.sample_independent(study, trial, "param-a", dist) != suggestion
-
-
 def test_sample_independent_n_startup_trial() -> None:
     study = optuna.create_study()
     dist = optuna.distributions.FloatDistribution(1.0, 100.0)
@@ -486,19 +465,6 @@ def test_sample_independent_misc_arguments() -> None:
     # Test misc. parameters.
     sampler = TPESampler(n_startup_trials=5, seed=0, n_ei_candidates=13)
     with patch.object(study._storage, "get_all_trials", return_value=past_trials):
-        assert sampler.sample_independent(study, trial, "param-a", dist) != suggestion
-
-    sampler = TPESampler(gamma=lambda _: 5, n_startup_trials=5, seed=0, n_ei_candidates=100)
-    with patch.object(study._storage, "get_all_trials", return_value=past_trials):
-        assert sampler.sample_independent(study, trial, "param-a", dist) != suggestion
-
-    sampler = TPESampler(
-        weights=lambda i: np.asarray([10 - j for j in range(i)]),
-        n_startup_trials=5,
-        seed=0,
-        n_ei_candidates=100,
-    )
-    with patch("optuna.Study._get_trials", return_value=past_trials):
         assert sampler.sample_independent(study, trial, "param-a", dist) != suggestion
 
 
@@ -1136,3 +1102,14 @@ def test_constant_liar_with_running_trial(multivariate: bool, multiobjective: bo
 def test_categorical_distance_func_experimental_warning() -> None:
     with pytest.warns(optuna.exceptions.ExperimentalWarning):
         _ = TPESampler(categorical_distance_func={"c": lambda x, y: 0.0})
+
+
+def test_categorical_distance_func_deprecation_warning() -> None:
+    with pytest.warns(FutureWarning, match="categorical_distance_func"):
+        _ = TPESampler(categorical_distance_func={"c": lambda x, y: 0.0})
+
+
+def test_categorical_distance_func_no_warning_for_default() -> None:
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", FutureWarning)
+        TPESampler(categorical_distance_func=None)
