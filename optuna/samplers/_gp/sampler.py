@@ -395,12 +395,20 @@ class GPSampler(BaseSampler):
         if self._constraints_func is None:
             if n_objectives == 1:
                 assert len(gprs_list) == 1
-                acqf = acqf_module.LogEI(
-                    gpr=gprs_list[0],
-                    search_space=internal_search_space,
-                    threshold=standardized_score_vals[:, 0].max(),
-                    normalized_params_of_running_trials=normalized_params_of_running_trials,
-                )
+                if normalized_params_of_running_trials is None:
+                    acqf = acqf_module.LogEI(
+                        gpr=gprs_list[0],
+                        search_space=internal_search_space,
+                        threshold=standardized_score_vals[:, 0].max(),
+                        # normalized_params_of_running_trials=normalized_params_of_running_trials,
+                    )
+                else:
+                    acqf = acqf_module.qLogEI(
+                        gpr=gprs_list[0],
+                        search_space=internal_search_space,
+                        threshold=standardized_score_vals[:, 0].max(),
+                        normalized_params_of_running_trials=normalized_params_of_running_trials,
+                    )
                 best_params = normalized_params[np.argmax(standardized_score_vals), np.newaxis]
             else:
                 acqf = acqf_module.LogEHVI(

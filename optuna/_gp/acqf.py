@@ -28,6 +28,10 @@ _INV_SQRT_2PI = 1 / math.sqrt(2 * math.pi)
 _SQRT_HALF_PI = math.sqrt(0.5 * math.pi)
 _LOG_SQRT_2PI = math.log(math.sqrt(2 * math.pi))
 _EPS = 1e-12  # NOTE(nabenabe): grad becomes nan when EPS=0.
+_QLOGEI_TAU_MAX = 1e-2
+_QLOGEI_TAU_RELU = 1e-6
+_QLOGEI_N_QMC_SAMPLES = 128
+_QLOGEI_QMC_SEED = 0
 
 
 def _sample_from_normal_sobol(dim: int, n_samples: int, seed: int | None) -> torch.Tensor:
@@ -40,6 +44,37 @@ def _sample_from_normal_sobol(dim: int, n_samples: int, seed: int | None) -> tor
     samples = 2.0 * (sobol_samples - 0.5)  # The Sobol sequence in [-1, 1].
     # Inverse transform to standard normal (values to close to -1 or 1 result in infinity).
     return torch.erfinv(samples) * float(np.sqrt(2))
+
+
+def _logmeanexp(x: torch.Tensor, dim: int | tuple[int, ...]) -> torch.Tensor:
+    n = x.shape[dim] if isinstance(dim, int) else math.prod(x.shape[i] for i in dim)
+    return torch.special.logsumexp(x, dim=dim) - math.log(n)
+
+
+def _fatplus(x: torch.Tensor, tau: float) -> torch.Tensor:
+    tau_tensor = torch.tensor(tau, dtype=x.dtype, device=x.device)
+    alpha = 1e-1
+    scaled_x = x / tau_tensor
+    return tau_tensor * (
+        torch.nn.functional.softplus(scaled_x, beta=1.0) + alpha / (1.0 + scaled_x.square())
+    )
+
+
+def _log_fatplus(x: torch.Tensor, tau: float) -> torch.Tensor:
+    return _fatplus(x, tau=tau).log()
+
+
+def _pareto(x: torch.Tensor, alpha: float = 2.0) -> torch.Tensor:
+    alpha_half = alpha / 2
+    beta_1 = 2 * alpha_half
+    beta_0 = alpha_half * beta_1
+    return (beta_0 / (beta_0 + beta_1 * x + x.square())).pow(alpha_half)
+
+
+def _fatmax(x: torch.Tensor, dim: int | tuple[int, ...], tau: float) -> torch.Tensor:
+    tau_tensor = torch.tensor(tau, dtype=x.dtype, device=x.device)
+    x_max = torch.amax(x, dim=dim, keepdim=True)
+    return x_max.squeeze(dim) + tau_tensor * _pareto((x - x_max) / tau_tensor).sum(dim=dim).log()
 
 
 def logehvi(
@@ -159,6 +194,56 @@ class LogEI(BaseAcquisitionFunc):
             if not np.isneginf(self._threshold)
             else torch.zeros(x.shape[:-1], dtype=torch.float64)
         )
+
+
+class qLogEI(BaseAcquisitionFunc):
+    def __init__(
+        self,
+        gpr: GPRegressor,
+        search_space: SearchSpace,
+        threshold: float,
+        normalized_params_of_running_trials: np.ndarray | None = None,
+        stabilizing_noise: float = 1e-12,
+    ) -> None:
+        self._gpr = gpr
+        self._stabilizing_noise = stabilizing_noise
+        self._threshold = threshold
+        self._x_running = normalized_params_of_running_trials
+        super().__init__(gpr.length_scales, search_space)
+
+    def eval_acqf(self, x: torch.Tensor) -> torch.Tensor:
+        if np.isneginf(self._threshold):
+            return torch.tensor(0.0, dtype=torch.float64)
+
+        if x.ndim == 1:
+            x = x.unsqueeze(0)
+
+        # concat X_pending and X
+        if self._x_running is not None:
+            x = torch.cat([torch.from_numpy(self._x_running).to(x), x], dim=0)
+
+        # get joint posterior over q points and draw MC samples from the joint posterior
+        mean, cov = self._gpr.posterior(x, joint=True)
+        fixed_samples = _sample_from_normal_sobol(
+            dim=x.shape[-2],
+            n_samples=_QLOGEI_N_QMC_SAMPLES,
+            seed=_QLOGEI_QMC_SEED,
+        ).to(mean)
+        cov = cov + self._stabilizing_noise * torch.eye(
+            cov.shape[-1], dtype=cov.dtype, device=cov.device
+        )
+        Y_post = mean.unsqueeze(0) + fixed_samples.matmul(
+            torch.linalg.cholesky(cov).transpose(-1, -2)
+        )
+
+        # get log improvement (log(max(y-f0, 0))) for each sampled objective value at each q point
+        log_improvement = _log_fatplus(Y_post - self._threshold, tau=_QLOGEI_TAU_RELU)
+
+        # take a smooth max over q points using fatmax
+        smooth_max_log_improvement = _fatmax(log_improvement, dim=-1, tau=_QLOGEI_TAU_MAX)
+
+        # take log-mean-exp over MC samples
+        return _logmeanexp(smooth_max_log_improvement, dim=0)
 
 
 class LogPI(BaseAcquisitionFunc):
