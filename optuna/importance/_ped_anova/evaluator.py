@@ -175,6 +175,8 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
         self._prior_weight = 1.0
         # How many `trials` must be included in `top_trials`.
         self._min_n_top_trials = 2
+        # How many `trials` must be included in each regime.
+        self._min_n_trials_in_regime = 2
 
     def _get_top_quantile_trials(
         self,
