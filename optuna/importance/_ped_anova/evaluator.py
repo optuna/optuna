@@ -235,21 +235,15 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
     ) -> dict[str, float]:
         dists = _get_distributions(study, params=params)
         if params is None:
-            params = list(dists.keys())
+            params = list({k for d in dists for k in d})
 
         assert params is not None
-        # PED-ANOVA does not support parameter distributions with a single value,
-        # because the importance of such params become zero.
-        non_single_dists = {name: dist for name, dist in dists.items() if not dist.single()}
-        single_dists = {name: dist for name, dist in dists.items() if dist.single()}
-        if len(non_single_dists) == 0:
-            return {k: 0.0 for k in single_dists}
 
-        trials = _get_filtered_trials(study, params=params, target=target)
+        trials = _get_filtered_trials(study, target=target)
         # The following should be tested at _get_filtered_trials.
         assert target is not None or max([len(t.values) for t in trials], default=1) == 1
         if len(trials) <= self._min_n_top_trials:
-            return {k: 0.0 for k in dists}
+            return {k: 0.0 for k in params}
 
         target_trials = self._get_top_quantile_trials(study, trials, self._target_quantile, target)
         region_trials = (
@@ -257,19 +251,31 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
             if self._region_quantile == 1.0
             else self._get_top_quantile_trials(study, trials, self._region_quantile, target)
         )
-        if len(target_trials) == len(region_trials):
-            optuna_warn(
-                "Target and region quantiles select the same set of trials. "
-                "Parameter importances will be equal."
-            )
-        quantile = len(target_trials) / len(region_trials)
-        param_importances = {}
-        for param_name, dist in non_single_dists.items():
-            param_importances[param_name] = quantile**2 * self._compute_pearson_divergence(
-                param_name, dist, target_trials=target_trials, region_trials=region_trials
-            )
-
-        param_importances.update({k: 0.0 for k in single_dists})
+        quantile = len(target_trials) / len(region_trials)  # gamma' / gamma
+        param_importances: dict[str, float] = defaultdict(float)
+        for param_name in params:
+            regime_trials = _partition_by_regime(param_name, region_trials, self._min_n_trials_in_regime)
+            for dist, region_trials_regime in regime_trials.items():
+                all_region_trials_regime = set(t._trial_id for t in region_trials_regime)
+                target_trials_regime = [
+                    t for t in target_trials if t._trial_id in all_region_trials_regime
+                ]
+                regime_prob_target = len(target_trials_regime) / len(target_trials)  # alpha_i
+                regime_prob_region = len(region_trials_regime) / len(region_trials)  # beta_i
+                if dist is not None and not dist.single() and len(target_trials_regime):
+                    param_importances[param_name] += (
+                        regime_prob_target**2
+                        / regime_prob_region
+                        * self._compute_pearson_divergence(
+                            param_name,
+                            dist,
+                            target_trials=target_trials_regime,
+                            region_trials=region_trials_regime,
+                        )
+                    )
+                else:
+                    param_importances[param_name] += 0.0
+        param_importances = {k: v * quantile**2 for k, v in param_importances.items()}
         return _sort_dict_by_importance(param_importances)
 
 
