@@ -93,7 +93,10 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
 
     .. note::
 
-        Please refer to `the original work <https://github.com/nabenabe0928/local-anova>`__.
+        Please also refer to the original works:
+
+        - `PED-ANOVA <https://github.com/nabenabe0928/local-anova>`__
+        - `condPED-ANOVA <https://github.com/kAIto47802/condPED-ANOVA>`__
 
     Args:
         target_quantile:
