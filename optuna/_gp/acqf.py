@@ -213,16 +213,14 @@ class qLogEI(BaseAcquisitionFunc):
 
     def eval_acqf(self, x: torch.Tensor) -> torch.Tensor:
         if np.isneginf(self._threshold):
-            return torch.tensor(0.0, dtype=torch.float64)
+            return torch.zeros(x.shape[:-1], dtype=torch.float64)
 
-        if x.ndim == 1:
-            x = x.unsqueeze(0)
+        x = x.unsqueeze(-2)
+        assert self._x_running is not None
+        x_running = torch.from_numpy(self._x_running).to(x).unsqueeze(0)
+        x_running = x_running.expand(*x.shape[:-2], -1, -1)
+        x = torch.cat([x_running, x], dim=-2)
 
-        # concat X_pending and X
-        if self._x_running is not None:
-            x = torch.cat([torch.from_numpy(self._x_running).to(x), x], dim=0)
-
-        # get joint posterior over q points and draw MC samples from the joint posterior
         mean, cov = self._gpr.posterior(x, joint=True)
         fixed_samples = _sample_from_normal_sobol(
             dim=x.shape[-2],
@@ -232,18 +230,13 @@ class qLogEI(BaseAcquisitionFunc):
         cov = cov + self._stabilizing_noise * torch.eye(
             cov.shape[-1], dtype=cov.dtype, device=cov.device
         )
-        Y_post = mean.unsqueeze(0) + fixed_samples.matmul(
-            torch.linalg.cholesky(cov).transpose(-1, -2)
+        Y_post = mean.unsqueeze(-2) + torch.einsum(
+            "sq,...qk->...sk", fixed_samples, torch.linalg.cholesky(cov).transpose(-1, -2)
         )
 
-        # get log improvement (log(max(y-f0, 0))) for each sampled objective value at each q point
         log_improvement = _log_fatplus(Y_post - self._threshold, tau=_QLOGEI_TAU_RELU)
-
-        # take a smooth max over q points using fatmax
         smooth_max_log_improvement = _fatmax(log_improvement, dim=-1, tau=_QLOGEI_TAU_MAX)
-
-        # take log-mean-exp over MC samples
-        return _logmeanexp(smooth_max_log_improvement, dim=0)
+        return _logmeanexp(smooth_max_log_improvement, dim=-1)
 
 
 class LogPI(BaseAcquisitionFunc):
