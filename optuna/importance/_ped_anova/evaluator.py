@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from collections import defaultdict
+from typing import cast
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -7,12 +9,11 @@ import numpy as np
 from optuna._deprecated import _DEPRECATION_WARNING_TEMPLATE
 from optuna._experimental import experimental_class
 from optuna._warnings import optuna_warn
-from optuna.importance._base import _get_distributions
-from optuna.importance._base import _get_filtered_trials
 from optuna.importance._base import _sort_dict_by_importance
 from optuna.importance._base import BaseImportanceEvaluator
 from optuna.importance._ped_anova.scott_parzen_estimator import _build_parzen_estimator
 from optuna.study import StudyDirection
+from optuna.trial import TrialState
 
 
 if TYPE_CHECKING:
@@ -263,7 +264,9 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
         quantile = len(target_trials) / len(region_trials)  # gamma' / gamma
         param_importances: dict[str, float] = defaultdict(float)
         for param_name in params:
-            regime_trials = _partition_by_regime(param_name, region_trials, self._min_n_trials_in_regime)
+            regime_trials = _partition_by_regime(
+                param_name, region_trials, self._min_n_trials_in_regime
+            )
             for dist, region_trials_regime in regime_trials.items():
                 all_region_trials_regime = set(t._trial_id for t in region_trials_regime)
                 target_trials_regime = [
@@ -286,7 +289,6 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
                     param_importances[param_name] += 0.0
         param_importances = {k: v * quantile**2 for k, v in param_importances.items()}
         return _sort_dict_by_importance(param_importances)
-
 
 
 def _partition_by_regime(
@@ -341,5 +343,3 @@ def _get_distributions(
             TrialState.RUNNING,
         )
     ]
-
-
