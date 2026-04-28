@@ -269,3 +269,24 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
 
         param_importances.update({k: 0.0 for k in single_dists})
         return _sort_dict_by_importance(param_importances)
+
+
+
+def _partition_by_regime(
+    param_name: str, trials: list[FrozenTrial], min_n_trials_in_regime: int
+) -> dict[BaseDistribution | None, list[FrozenTrial]]:
+    # None for the inactive regime
+    regime_trials: dict[BaseDistribution | None, list[FrozenTrial]] = defaultdict(list)
+    for trial in trials:
+        regime_trials[trial.distributions.get(param_name)].append(trial)
+
+    if any(len(v) < min_n_trials_in_regime for v in regime_trials.values()):
+        optuna_warn(
+            f"Some regimes for parameter `{param_name}` have less than "
+            f"{min_n_trials_in_regime} trials. "
+            "The importance of the parameter may be inaccurate."
+        )
+    regime_trials = {k: v for k, v in regime_trials.items() if len(v) >= min_n_trials_in_regime}
+
+    return regime_trials
+
