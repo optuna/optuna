@@ -290,3 +290,35 @@ def _partition_by_regime(
 
     return regime_trials
 
+
+def _get_filtered_trials(
+    study: Study, target: Callable[[FrozenTrial], float] | None
+) -> list[FrozenTrial]:
+    trials = study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,))
+    return [
+        trial
+        for trial in trials
+        if np.isfinite(
+            target(trial) if target is not None else cast("float", trial.value)
+        )  # TC006
+    ]
+
+
+def _get_distributions(
+    study: Study, params: list[str] | None
+) -> list[dict[str, BaseDistribution]]:
+    if params is not None:
+        raise NotImplementedError()
+    trials = study.get_trials(deepcopy=False)
+    return [
+        t.distributions
+        for t in trials
+        if t.state
+        in (
+            TrialState.COMPLETE,
+            TrialState.WAITING,
+            TrialState.RUNNING,
+        )
+    ]
+
+
