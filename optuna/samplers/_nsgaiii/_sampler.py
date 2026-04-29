@@ -44,7 +44,7 @@ class NSGAIIISampler(BaseGASampler):
         :class:`~optuna.samplers.NSGAIISampler`, :class:`~optuna.samplers.TPESampler`, and
         :class:`~optuna.samplers.GPSampler` also support constrained multi-objective optimization.
         Since Bayesian optimization is often sample efficient, it is worth considering
-        :class:`~optuna.samplers.TPESampler`, and :class:`~optuna.samplers.GPSampler` for
+        :class:`~optuna.samplers.TPESampler`, or :class:`~optuna.samplers.GPSampler` for
         ``n_trials < 1000``.
 
     For further information about NSGA-III, please refer to the following papers:
