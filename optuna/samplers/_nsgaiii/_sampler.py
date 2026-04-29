@@ -36,6 +36,17 @@ class NSGAIIISampler(BaseGASampler):
     NSGA-III stands for "Nondominated Sorting Genetic Algorithm III",
     which is a modified version of NSGA-II for many objective optimization problem.
 
+    .. note::
+        When optimizing many objectives, a large fraction of trials may become non-dominated
+        in general due to the curse of dimensionality in the objective space. If possible, consider
+        modeling some objectives as constraints. Constraints can be passed via the
+        `constraints_func` argument at the sampler initialization.
+        :class:`~optuna.samplers.NSGAIISampler`, :class:`~optuna.samplers.TPESampler`, and
+        :class:`~optuna.samplers.GPSampler` also support constrained multi-objective optimization.
+        Since Bayesian optimization is often sample efficient, it is worth considering
+        :class:`~optuna.samplers.TPESampler`, and :class:`~optuna.samplers.GPSampler` for
+        ``n_trials < 1000``.
+
     For further information about NSGA-III, please refer to the following papers:
 
     - `An Evolutionary Many-Objective Optimization Algorithm Using Reference-Point-Based
