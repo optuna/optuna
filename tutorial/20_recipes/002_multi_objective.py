@@ -8,6 +8,13 @@ This tutorial showcases Optuna's multi-objective optimization feature by
 optimizing the validation accuracy of Fashion MNIST dataset and the FLOPS of the model implemented in PyTorch.
 
 We use `fvcore <https://github.com/facebookresearch/fvcore>`__ to measure FLOPS.
+
+Note that when optimizing many objectives, a large fraction of trials may become non-dominated
+because the curse of dimensionality in the objective space.
+If possible, consider modeling some objectives as constraints.
+Constraints can be passed via the `constraints_func` argument at the sampler initialization.
+Currently, `NSGAIISampler`, `NSGAIIISampler`, `TPESampler`, and `GPSampler` support
+constrained multi-objective optimization.
 """
 
 import torch
