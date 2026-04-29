@@ -13,7 +13,9 @@ Note that when optimizing many objectives, a large fraction of trials may become
 due to the curse of dimensionality in the objective space. If possible, consider modeling some
 objectives as constraints. Constraints can be passed via the `constraints_func` argument at the
 sampler initialization. Currently, `NSGAIISampler`, `NSGAIIISampler`, `TPESampler`, and `GPSampler`
-support constrained multi-objective optimization.
+support constrained multi-objective optimization. Since Bayesian optimization is often sample
+efficient, use :class:`~optuna.samplers.TPESampler`, or :class:`~optuna.samplers.GPSampler` for
+``n_trials < 1000``.
 """
 
 import torch
