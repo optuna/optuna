@@ -73,21 +73,7 @@ def _pareto(x: torch.Tensor, alpha_half: float = 1.0) -> torch.Tensor:
 def _fatmax(x: torch.Tensor, dim: int | tuple[int, ...], tau: float) -> torch.Tensor:
     tau_tensor = torch.tensor(tau, dtype=x.dtype, device=x.device)
     x_max = torch.amax(x, dim=dim, keepdim=True)
-    has_inf_max = x_max.isinf()
-
-    x_max_no_inf = x_max.masked_fill(has_inf_max, 0.0)
-    x_safe = x.masked_fill(has_inf_max, 0.0)
-
-    fatmax_no_inf = (
-        x_max_no_inf.squeeze(dim)
-        + tau_tensor * _pareto((x_safe - x_max_no_inf) / tau_tensor).sum(dim=dim).log()
-    )
-
-    return torch.where(
-        has_inf_max.squeeze(dim),
-        x_max.squeeze(dim),
-        fatmax_no_inf,
-    )
+    return x_max.squeeze(dim) + tau_tensor * _pareto((x - x_max) / tau_tensor).sum(dim=dim).log()
 
 
 def logehvi(
