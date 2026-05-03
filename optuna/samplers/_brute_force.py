@@ -48,7 +48,7 @@ class _TreeNode:
     children: dict[float, "_TreeNode"] | None = None
     is_running: bool = False
 
-    def expand(self, param_name: str | None, choices: Iterable[float]) -> dict[float, "_TreeNode"]:
+    def expand(self, param_name: str | None, choices: list[float]) -> dict[float, "_TreeNode"]:
         # If the node is unexpanded, expand it.
         # Otherwise, check if the node is compatible with the given search space.
         if self.children is None:
@@ -72,7 +72,7 @@ class _TreeNode:
         self.expand(None, [])
 
     def add_path(
-        self, params_and_choices: Iterable[tuple[str, Iterable[float], float]]
+        self, params_and_choices: Iterable[tuple[str, list[float], float]]
     ) -> _TreeNode | None:
         # Add a path (i.e. a list of suggested parameters in one trial) to the tree.
         current_node = self
@@ -257,7 +257,7 @@ class BruteForceSampler(BaseSampler):
             study.stop()
 
 
-def _enumerate_candidates(param_distribution: BaseDistribution) -> Sequence[float]:
+def _enumerate_candidates(param_distribution: BaseDistribution) -> list[float]:
     if isinstance(param_distribution, FloatDistribution):
         if param_distribution.step is None:
             raise ValueError(
