@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import decimal
+import sys
 from typing import Any
 from typing import TYPE_CHECKING
 
@@ -29,14 +30,23 @@ if TYPE_CHECKING:
 _NaN = float("nan")  # NOTE: Define once to save runtime overhead of the variable definition.
 
 
-@dataclass
+# TODO(nabenabe): Simply use `slots=True` once Python 3.9 is dropped.
+@dataclass(**({"slots": True} if sys.version_info >= (3, 10) else {}))
 class _TreeNode:
-    # This is a class to represent the tree of search space.
+    """
+    This is a class to represent the tree of search space.
 
-    # A tree node has three states:
-    # 1. Unexpanded. This is represented by children=None.
-    # 2. Leaf. This is represented by children={} and param_name=None.
-    # 3. Normal node. It has a param_name and non-empty children.
+    A tree node has three states:
+        1. Unexpanded. This is represented by children=None.
+        2. Leaf. This is represented by children={} and param_name=None.
+        3. Normal node. It has a param_name and non-empty children.
+
+    NOTE(nabenabe): I tried representations by list and dict, but they did not really speed up.
+    """
+
+    if sys.version_info < (3, 10):
+        # TODO(nabenabe): Drop this section entirely once Python 3.9 is dropped.
+        __slots__ = ("param_name", "children", "is_running")
 
     param_name: str | None = None
     children: dict[float, "_TreeNode"] | None = None
