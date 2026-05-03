@@ -26,6 +26,9 @@ if TYPE_CHECKING:
     from optuna.trial import FrozenTrial
 
 
+_NaN = float("nan")  # NOTE: Define once to save runtime overhead of the variable definition.
+
+
 @dataclass
 class _TreeNode:
     # This is a class to represent the tree of search space.
@@ -191,7 +194,8 @@ class BruteForceSampler(BaseSampler):
     def _populate_tree(tree: _TreeNode, trials: list[FrozenTrial], params: dict[str, Any]) -> None:
         # Populate tree under given params from the given trials.
         for trial in trials:
-            if not all(p in trial.params and trial.params[p] == v for p, v in params.items()):
+            # NOTE(nabenabe): `nan` cannot be assigned as a param value.
+            if params and not all(trial.params.get(p, _NaN) == v for p, v in params.items()):
                 continue
             leaf = tree.add_path(
                 (
