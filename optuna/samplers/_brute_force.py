@@ -248,10 +248,9 @@ class BruteForceSampler(BaseSampler):
         exclude_running = not self._avoid_premature_stop
         trials, current_idx = _get_non_waiting_trials_and_current_trial_index(study, trial.number)
         # Set current trial as complete.
-        current_trial = create_trial(
+        trials[current_idx] = create_trial(
             state=state, values=values, params=trial.params, distributions=trial.distributions
         )
-        trials[current_idx] = current_trial
         tree = _TreeNode()
         self._populate_tree(tree, trials, {})
         if tree.count_unexpanded(exclude_running) == 0:
