@@ -85,16 +85,14 @@ class _TreeNode:
 
     def count_unexpanded(self, exclude_running: bool) -> int:
         # Count the number of unexpanded nodes in the subtree.
-        if self.children is None:
+        if (children := self.children) is None:
             return 0 if exclude_running and self.is_running else 1
-        return sum(child.count_unexpanded(exclude_running) for child in self.children.values())
+        return sum(child.count_unexpanded(exclude_running) for child in children.values())
 
     def sample_child(self, rng: np.random.RandomState, exclude_running: bool) -> float:
-        assert self.children is not None
-
+        assert (children := self.children) is not None
         unexpanded_counts = np.array(
-            [child.count_unexpanded(exclude_running) for child in self.children.values()],
-            dtype=np.float64,
+            [child.count_unexpanded(exclude_running) for child in children.values()], dtype=float,
         )
 
         # Blend exact uniform sampling with flat uniform sampling
@@ -107,14 +105,14 @@ class _TreeNode:
         weights = (1.0 - alpha) * weights_orig + alpha * weights_flat
         if any(
             not value.is_running and weights[i] > 0
-            for i, value in enumerate(self.children.values())
+            for i, value in enumerate(children.values())
         ):
             # Prioritize picking non-running and unexpanded nodes.
-            for i, child in enumerate(self.children.values()):
+            for i, child in enumerate(children.values()):
                 if child.is_running:
                     weights[i] = 0.0
         weights /= weights.sum()
-        return rng.choice(list(self.children.keys()), p=weights)
+        return rng.choice(list(children.keys()), p=weights)
 
 
 def _get_non_waiting_trials_and_current_trial_index(
