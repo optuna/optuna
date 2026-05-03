@@ -39,13 +39,16 @@ class _TreeNode:
     children: dict[float, "_TreeNode"] | None = None
     is_running: bool = False
 
-    def expand(self, param_name: str | None, search_space: Iterable[float]) -> None:
+    def expand(
+        self, param_name: str | None, search_space: Iterable[float]
+    ) -> dict[float, "_TreeNode"]:
         # If the node is unexpanded, expand it.
         # Otherwise, check if the node is compatible with the given search space.
         if self.children is None:
             # Expand the node
             self.param_name = param_name
             self.children = {value: _TreeNode() for value in search_space}
+            return self.children
         else:
             if self.param_name != param_name:
                 raise ValueError(f"param_name mismatch: {self.param_name} != {param_name}")
@@ -53,6 +56,7 @@ class _TreeNode:
                 raise ValueError(
                     f"search_space mismatch: {set(self.children.keys())} != {set(search_space)}"
                 )
+            return self.children
 
     def set_running(self) -> None:
         self.is_running = True
@@ -66,19 +70,17 @@ class _TreeNode:
         # Add a path (i.e. a list of suggested parameters in one trial) to the tree.
         current_node = self
         for param_name, search_space, value in params_and_search_spaces:
-            current_node.expand(param_name, search_space)
-            assert current_node.children is not None
-            if value not in current_node.children:
+            next_node = current_node.expand(param_name, search_space).get(value)
+            if next_node is None:
                 return None
-            current_node = current_node.children[value]
+            current_node = next_node
         return current_node
 
     def count_unexpanded(self, exclude_running: bool) -> int:
         # Count the number of unexpanded nodes in the subtree.
         if self.children is None:
             return 0 if exclude_running and self.is_running else 1
-        else:
-            return sum(child.count_unexpanded(exclude_running) for child in self.children.values())
+        return sum(child.count_unexpanded(exclude_running) for child in self.children.values())
 
     def sample_child(self, rng: np.random.RandomState, exclude_running: bool) -> float:
         assert self.children is not None
@@ -106,6 +108,22 @@ class _TreeNode:
                     weights[i] = 0.0
         weights /= weights.sum()
         return rng.choice(list(self.children.keys()), p=weights)
+
+
+def _get_non_waiting_trials_and_current_trial_index(
+    study: Study, current_trial_number: int
+) -> tuple[list[FrozenTrial], int]:
+    # We directly query the storage to get trials here instead of `study.get_trials`,
+    # since some pruners such as `HyperbandPruner` use the study transformed
+    # to filter trials. See https://github.com/optuna/optuna/issues/2327 for details.
+    states = (TrialState.COMPLETE, TrialState.PRUNED, TrialState.RUNNING, TrialState.FAIL)
+    trials = study._storage.get_all_trials(study._study_id, deepcopy=False, states=states)
+    for i in range(1, len(trials) + 1):
+        # The current trial can be found at the later part for almost all cases.
+        t = trials[-i]
+        if t.number == current_trial_number:
+            return trials, len(trials) - i
+    assert False, "Should not reach"
 
 
 @experimental_class("3.1.0")
@@ -205,27 +223,15 @@ class BruteForceSampler(BaseSampler):
         param_distribution: BaseDistribution,
     ) -> Any:
         exclude_running = not self._avoid_premature_stop
-
-        # We directly query the storage to get trials here instead of `study.get_trials`,
-        # since some pruners such as `HyperbandPruner` use the study transformed
-        # to filter trials. See https://github.com/optuna/optuna/issues/2327 for details.
-        trials = study._storage.get_all_trials(
-            study._study_id,
-            deepcopy=False,
-            states=(
-                TrialState.COMPLETE,
-                TrialState.PRUNED,
-                TrialState.RUNNING,
-                TrialState.FAIL,
-            ),
-        )
+        trials, current_idx = _get_non_waiting_trials_and_current_trial_index(study, trial.number)
+        trials.pop(current_idx)
         tree = _TreeNode()
         candidates = _enumerate_candidates(param_distribution)
         tree.expand(param_name, candidates)
         # Populating must happen after the initialization above to prevent `tree` from
         # being initialized as an empty graph, which is created with n_jobs > 1
         # where we get trials[i].params = {} for some i.
-        self._populate_tree(tree, (t for t in trials if t.number != trial.number), trial.params)
+        self._populate_tree(tree, trials, trial.params)
         if tree.count_unexpanded(exclude_running) == 0:
             return param_distribution.to_external_repr(self._rng.rng.choice(candidates))
         else:
@@ -234,46 +240,17 @@ class BruteForceSampler(BaseSampler):
             )
 
     def after_trial(
-        self,
-        study: Study,
-        trial: FrozenTrial,
-        state: TrialState,
-        values: Sequence[float] | None,
+        self, study: Study, trial: FrozenTrial, state: TrialState, values: Sequence[float] | None
     ) -> None:
         exclude_running = not self._avoid_premature_stop
-
-        # We directly query the storage to get trials here instead of `study.get_trials`,
-        # since some pruners such as `HyperbandPruner` use the study transformed
-        # to filter trials. See https://github.com/optuna/optuna/issues/2327 for details.
-        trials = study._storage.get_all_trials(
-            study._study_id,
-            deepcopy=False,
-            states=(
-                TrialState.COMPLETE,
-                TrialState.PRUNED,
-                TrialState.RUNNING,
-                TrialState.FAIL,
-            ),
+        trials, current_idx = _get_non_waiting_trials_and_current_trial_index(study, trial.number)
+        # Set current trial as complete.
+        current_trial = create_trial(
+            state=state, values=values, params=trial.params, distributions=trial.distributions
         )
+        trials[current_idx] = current_trial
         tree = _TreeNode()
-        self._populate_tree(
-            tree,
-            (
-                (
-                    t
-                    if t.number != trial.number
-                    else create_trial(
-                        state=state,  # Set current trial as complete.
-                        values=values,
-                        params=trial.params,
-                        distributions=trial.distributions,
-                    )
-                )
-                for t in trials
-            ),
-            {},
-        )
-
+        self._populate_tree(tree, trials, {})
         if tree.count_unexpanded(exclude_running) == 0:
             study.stop()
 
