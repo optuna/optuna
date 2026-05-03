@@ -92,7 +92,7 @@ class _TreeNode:
     def sample_child(self, rng: np.random.RandomState, exclude_running: bool) -> float:
         assert (children := self.children) is not None
         unexpanded_counts = np.array(
-            [child.count_unexpanded(exclude_running) for child in children.values()], dtype=float,
+            [child.count_unexpanded(exclude_running) for child in children.values()], dtype=float
         )
 
         # Blend exact uniform sampling with flat uniform sampling
@@ -104,8 +104,7 @@ class _TreeNode:
 
         weights = (1.0 - alpha) * weights_orig + alpha * weights_flat
         if any(
-            not value.is_running and weights[i] > 0
-            for i, value in enumerate(children.values())
+            not value.is_running and weights[i] > 0 for i, value in enumerate(children.values())
         ):
             # Prioritize picking non-running and unexpanded nodes.
             for i, child in enumerate(children.values()):
