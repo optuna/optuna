@@ -44,10 +44,6 @@ class _TreeNode:
     NOTE(nabenabe): I tried representations by list and dict, but they did not really speed up.
     """
 
-    if sys.version_info < (3, 10):
-        # TODO(nabenabe): Drop this section entirely once Python 3.9 is dropped.
-        __slots__ = ("param_name", "children", "is_running")
-
     param_name: str | None = None
     children: dict[float, "_TreeNode"] | None = None
     is_running: bool = False
