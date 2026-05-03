@@ -39,22 +39,20 @@ class _TreeNode:
     children: dict[float, "_TreeNode"] | None = None
     is_running: bool = False
 
-    def expand(
-        self, param_name: str | None, search_space: Iterable[float]
-    ) -> dict[float, "_TreeNode"]:
+    def expand(self, param_name: str | None, choices: Iterable[float]) -> dict[float, "_TreeNode"]:
         # If the node is unexpanded, expand it.
         # Otherwise, check if the node is compatible with the given search space.
         if self.children is None:
             # Expand the node
             self.param_name = param_name
-            self.children = {value: _TreeNode() for value in search_space}
+            self.children = {value: _TreeNode() for value in choices}
             return self.children
         else:
             if self.param_name != param_name:
                 raise ValueError(f"param_name mismatch: {self.param_name} != {param_name}")
-            if self.children.keys() != set(search_space):
+            if self.children.keys() != set(choices):
                 raise ValueError(
-                    f"search_space mismatch: {set(self.children.keys())} != {set(search_space)}"
+                    f"search_space mismatch: {set(self.children.keys())} != {set(choices)}"
                 )
             return self.children
 
@@ -65,12 +63,12 @@ class _TreeNode:
         self.expand(None, [])
 
     def add_path(
-        self, params_and_search_spaces: Iterable[tuple[str, Iterable[float], float]]
+        self, params_and_choices: Iterable[tuple[str, Iterable[float], float]]
     ) -> _TreeNode | None:
         # Add a path (i.e. a list of suggested parameters in one trial) to the tree.
         current_node = self
-        for param_name, search_space, value in params_and_search_spaces:
-            next_node = current_node.expand(param_name, search_space).get(value)
+        for param_name, choices, value in params_and_choices:
+            next_node = current_node.expand(param_name, choices).get(value)
             if next_node is None:
                 return None
             current_node = next_node
@@ -190,9 +188,7 @@ class BruteForceSampler(BaseSampler):
         return {}
 
     @staticmethod
-    def _populate_tree(
-        tree: _TreeNode, trials: Iterable[FrozenTrial], params: dict[str, Any]
-    ) -> None:
+    def _populate_tree(tree: _TreeNode, trials: list[FrozenTrial], params: dict[str, Any]) -> None:
         # Populate tree under given params from the given trials.
         for trial in trials:
             if not all(p in trial.params and trial.params[p] == v for p, v in params.items()):
