@@ -20,7 +20,7 @@ via the define-by-run API. Combined with :class:`~optuna.storages.JournalStorage
 (or alternatively :class:`~optuna.storages.RDBStorage` with SQLite), it works seamlessly on HPC
 clusters with shared filesystems, providing crash recovery and distributed execution out of the
 box. Note that we focus only on :class:`~optuna.storages.JournalStorage` in this tutorial
-for simplicity. Please, however, note that if your environment makes trials error-proning,
+for simplicity. Please, however, note that if your environment makes trials error-prone,
 :class:`~optuna.storages.RDBStorage` might be a better option as detailed in :ref:`retrying-failed-and-stale-trials`.
 
 This tutorial walks through four scenarios:
