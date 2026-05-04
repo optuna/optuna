@@ -39,7 +39,7 @@ class _TreeNode:
     children: dict[float, "_TreeNode"] | None = None
     is_running: bool = False
 
-    def expand(self, param_name: str | None, choices: list[float]) -> dict[float, "_TreeNode"]:
+    def expand(self, param_name: str | None, choices: Iterable[float]) -> dict[float, "_TreeNode"]:
         # If the node is unexpanded, expand it.
         # Otherwise, check if the node is compatible with the given search space.
         if self.children is None:
