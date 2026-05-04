@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import decimal
+import sys
 from typing import Any
 from typing import TYPE_CHECKING
 
@@ -26,7 +27,11 @@ if TYPE_CHECKING:
     from optuna.trial import FrozenTrial
 
 
-@dataclass
+_NaN = float("nan")  # NOTE: Define once to save runtime overhead of the variable definition.
+
+
+# TODO(nabenabe): Simply use `slots=True` once Python 3.9 is dropped.
+@dataclass(**({"slots": True} if sys.version_info >= (3, 10) else {}))
 class _TreeNode:
     # This is a class to represent the tree of search space.
 
@@ -177,7 +182,8 @@ class BruteForceSampler(BaseSampler):
     ) -> None:
         # Populate tree under given params from the given trials.
         for trial in trials:
-            if not all(p in trial.params and trial.params[p] == v for p, v in params.items()):
+            # NOTE(nabenabe): `nan` cannot be assigned as a param value.
+            if params and not all(trial.params.get(p, _NaN) == v for p, v in params.items()):
                 continue
             leaf = tree.add_path(
                 (
