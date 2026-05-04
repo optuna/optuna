@@ -83,7 +83,7 @@ The :mod:`~optuna.samplers` module defines a base class for parameter sampling a
 
     For constrained optimization, see an `example <https://github.com/optuna/optuna-examples/blob/main/multi_objective/botorch_simple.py>`__.
 
-    For exhaustive seearch, see :class:`~optuna.samplers.GridSampler` and :class:`~optuna.samplers.BruteForceSampler`.
+    For exhaustive search, see :class:`~optuna.samplers.GridSampler` and :class:`~optuna.samplers.BruteForceSampler`.
 
 .. autosummary::
     :toctree: generated/
