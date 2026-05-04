@@ -20,7 +20,8 @@ via the define-by-run API. Combined with :class:`~optuna.storages.JournalStorage
 (or alternatively :class:`~optuna.storages.RDBStorage` with SQLite), it works seamlessly on HPC
 clusters with shared filesystems, providing crash recovery and distributed execution out of the
 box. Note that we focus only on :class:`~optuna.storages.JournalStorage` in this tutorial
-for simplicity.
+for simplicity. Please, however, note that if your environment makes trials error-proning,
+:class:`~optuna.storages.RDBStorage` might be a better option as detailed in :ref:`retrying-failed-and-stale-trials`.
 
 This tutorial walks through four scenarios:
 
@@ -197,7 +198,7 @@ print(f"Total trials: {len(study_conditional.trials)}")
 # Retrying Failed and Stale Trials
 # -------------------------------------------
 #
-# :class:`~optuna.samplers.BruteForceSampler` treats ``FAILED`` trials as visited and will
+# :class:`~optuna.samplers.BruteForceSampler` treats ``FAIL`` trials as visited and will
 # **not** re-sample them. This means that if a trial raises an exception or returns an
 # infeasible value (e.g., ``NaN``), that parameter combination is permanently skipped.
 #
@@ -257,7 +258,7 @@ print(f"Total trials: {len(study_conditional.trials)}")
 #        for trial in study.trials:
 #            if trial.state == optuna.trial.TrialState.RUNNING:
 #                if (datetime.now() - trial.datetime_start).total_seconds() > grace_period:
-#                    study.tell(trial, state=optuna.trial.TrialState.FAILED)
+#                    study.tell(trial, state=optuna.trial.TrialState.FAIL)
 #                    study.enqueue_trial(trial.params)
 
 ###################################################################################################
