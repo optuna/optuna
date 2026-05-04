@@ -249,9 +249,16 @@ print(f"Total trials: {len(study_conditional.trials)}")
 #
 #    .. code-block:: python
 #
+#        from datetime import datetime
+#
+#        # If a trial is running longer than a day, we cut it.
+#        # Please adopt the duration depending on your application.
+#        grace_period = 3600*24
 #        for trial in study.trials:
 #            if trial.state == optuna.trial.TrialState.RUNNING:
-#                study.enqueue_trial(trial.params)
+#                if (datetime.now() - trial.datetime_start).total_seconds() > grace_period:
+#                    study.tell(trial, state=optuna.trial.TrialState.FAILED)
+#                    study.enqueue_trial(trial.params)
 
 ###################################################################################################
 # .. seealso::
