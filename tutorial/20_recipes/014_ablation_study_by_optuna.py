@@ -22,11 +22,12 @@ clusters with shared filesystems, providing crash recovery and distributed execu
 box. Note that we focus only on :class:`~optuna.storages.JournalStorage` in this tutorial
 for simplicity.
 
-This tutorial walks through three scenarios:
+This tutorial walks through four scenarios:
 
 - :ref:`basic-ablation-study`
 - :ref:`conditional-search-space-ablation`
 - :ref:`distributed-ablation-on-hpc`
+- :ref:`retrying-failed-and-stale-trials`
 """
 
 import optuna
@@ -190,6 +191,70 @@ print(f"Total trials: {len(study_conditional.trials)}")
 #    same study instead of raising an error when the study already exists.
 
 ###################################################################################################
+# .. _retrying-failed-and-stale-trials:
+#
+# -------------------------------------------
+# Retrying Failed and Stale Trials
+# -------------------------------------------
+#
+# :class:`~optuna.samplers.BruteForceSampler` treats ``FAILED`` trials as visited and will
+# **not** re-sample them. This means that if a trial raises an exception or returns an
+# infeasible value (e.g., ``NaN``), that parameter combination is permanently skipped.
+#
+# Similarly, if a worker process is killed or hangs, its trial remains in the ``RUNNING``
+# state and blocks that parameter combination from being picked up by other workers.
+#
+# :class:`~optuna.storages.JournalStorage` does not support heartbeats, so it cannot
+# detect stale trials automatically. If you need automatic retry of failed or stale trials
+# in a distributed setting, use :class:`~optuna.storages.RDBStorage` with the heartbeat
+# mechanism and :class:`~optuna.storages.RetryFailedTrialCallback`:
+#
+# .. code-block:: python
+#
+#     import optuna
+#     from optuna.storages import RetryFailedTrialCallback
+#
+#
+#     def objective(trial: optuna.Trial) -> float:
+#         optimizer = trial.suggest_categorical("optimizer", ["Adam", "SGD"])
+#         lr = trial.suggest_float("lr", 0.001, 0.01, step=0.001)
+#         # Train your model and return the metric.
+#         ...
+#
+#
+#     storage = optuna.storages.RDBStorage(
+#         url="sqlite:////shared/nfs/ablation.db",
+#         heartbeat_interval=60,  # Record heartbeat every 60 seconds.
+#         grace_period=120,  # Mark trials as FAIL if no heartbeat for 120 seconds.
+#         failed_trial_callback=RetryFailedTrialCallback(max_retry=3),
+#     )
+#
+#     study = optuna.create_study(
+#         study_name="my-ablation",
+#         storage=storage,
+#         direction="maximize",
+#         sampler=optuna.samplers.BruteForceSampler(),
+#         load_if_exists=True,
+#     )
+#     study.optimize(objective)
+#
+# With this setup, when a worker's heartbeat stops (e.g., the process is killed or hangs),
+# :class:`~optuna.storages.RDBStorage` automatically marks the stale trial as ``FAIL``
+# after ``grace_period`` seconds. :class:`~optuna.storages.RetryFailedTrialCallback` then
+# re-enqueues it so that another worker can retry the same parameter combination.
+#
+# .. note::
+#    If you are using :class:`~optuna.storages.JournalStorage` and a trial hangs, you need
+#    to manually re-enqueue the stuck trials after killing the hung process:
+#
+#    .. code-block:: python
+#
+#        for trial in study.trials:
+#            if trial.state == optuna.trial.TrialState.RUNNING:
+#                study.enqueue_trial(trial.params)
+
+###################################################################################################
 # .. seealso::
 #    - :class:`~optuna.samplers.BruteForceSampler` for API details.
 #    - :ref:`journal_storage` for more on :class:`~optuna.storages.JournalStorage`.
+#    - :class:`~optuna.storages.RetryFailedTrialCallback` for automatic retry of failed trials.
