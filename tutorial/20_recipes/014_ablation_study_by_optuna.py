@@ -44,6 +44,7 @@ import optuna
 # (with a finite ``step``), and let :class:`~optuna.samplers.BruteForceSampler` try every
 # combination.
 
+
 def objective(trial: optuna.Trial) -> float:
     optimizer = trial.suggest_categorical("optimizer", ["Adam", "SGD", "RMSprop"])
     # If you would like to work on the log scale, you could also do like:
