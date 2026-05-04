@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import decimal
-import sys
 from typing import Any
 from typing import TYPE_CHECKING
 
@@ -27,11 +26,7 @@ if TYPE_CHECKING:
     from optuna.trial import FrozenTrial
 
 
-_NaN = float("nan")  # NOTE: Define once to save runtime overhead of the variable definition.
-
-
-# TODO(nabenabe): Simply use `slots=True` once Python 3.9 is dropped.
-@dataclass(**({"slots": True} if sys.version_info >= (3, 10) else {}))
+@dataclass
 class _TreeNode:
     """
     This is a class to represent the tree of search space.
@@ -48,22 +43,20 @@ class _TreeNode:
     children: dict[float, "_TreeNode"] | None = None
     is_running: bool = False
 
-    def expand(self, param_name: str | None, choices: list[float]) -> dict[float, "_TreeNode"]:
+    def expand(self, param_name: str | None, search_space: Iterable[float]) -> None:
         # If the node is unexpanded, expand it.
         # Otherwise, check if the node is compatible with the given search space.
         if self.children is None:
             # Expand the node
             self.param_name = param_name
-            self.children = {value: _TreeNode() for value in choices}
-            return self.children
+            self.children = {value: _TreeNode() for value in search_space}
         else:
             if self.param_name != param_name:
                 raise ValueError(f"param_name mismatch: {self.param_name} != {param_name}")
-            if self.children.keys() != set(choices):
+            if self.children.keys() != set(search_space):
                 raise ValueError(
-                    f"search_space mismatch: {set(self.children.keys())} != {set(choices)}"
+                    f"search_space mismatch: {set(self.children.keys())} != {set(search_space)}"
                 )
-            return self.children
 
     def set_running(self) -> None:
         self.is_running = True
@@ -72,27 +65,31 @@ class _TreeNode:
         self.expand(None, [])
 
     def add_path(
-        self, params_and_choices: Iterable[tuple[str, list[float], float]]
+        self, params_and_search_spaces: Iterable[tuple[str, Iterable[float], float]]
     ) -> _TreeNode | None:
         # Add a path (i.e. a list of suggested parameters in one trial) to the tree.
         current_node = self
-        for param_name, choices, value in params_and_choices:
-            next_node = current_node.expand(param_name, choices).get(value)
-            if next_node is None:
+        for param_name, search_space, value in params_and_search_spaces:
+            current_node.expand(param_name, search_space)
+            assert current_node.children is not None
+            if value not in current_node.children:
                 return None
-            current_node = next_node
+            current_node = current_node.children[value]
         return current_node
 
     def count_unexpanded(self, exclude_running: bool) -> int:
         # Count the number of unexpanded nodes in the subtree.
-        if (children := self.children) is None:
+        if self.children is None:
             return 0 if exclude_running and self.is_running else 1
-        return sum(child.count_unexpanded(exclude_running) for child in children.values())
+        else:
+            return sum(child.count_unexpanded(exclude_running) for child in self.children.values())
 
     def sample_child(self, rng: np.random.RandomState, exclude_running: bool) -> float:
-        assert (children := self.children) is not None
+        assert self.children is not None
+
         unexpanded_counts = np.array(
-            [child.count_unexpanded(exclude_running) for child in children.values()], dtype=float
+            [child.count_unexpanded(exclude_running) for child in self.children.values()],
+            dtype=np.float64,
         )
 
         # Blend exact uniform sampling with flat uniform sampling
@@ -104,14 +101,15 @@ class _TreeNode:
 
         weights = (1.0 - alpha) * weights_orig + alpha * weights_flat
         if any(
-            not value.is_running and weights[i] > 0 for i, value in enumerate(children.values())
+            not value.is_running and weights[i] > 0
+            for i, value in enumerate(self.children.values())
         ):
             # Prioritize picking non-running and unexpanded nodes.
-            for i, child in enumerate(children.values()):
+            for i, child in enumerate(self.children.values()):
                 if child.is_running:
                     weights[i] = 0.0
         weights /= weights.sum()
-        return rng.choice(list(children.keys()), p=weights)
+        return rng.choice(list(self.children.keys()), p=weights)
 
 
 def _get_non_waiting_trials_and_current_trial_index(
@@ -197,8 +195,7 @@ class BruteForceSampler(BaseSampler):
     def _populate_tree(tree: _TreeNode, trials: list[FrozenTrial], params: dict[str, Any]) -> None:
         # Populate tree under given params from the given trials.
         for trial in trials:
-            # NOTE(nabenabe): `nan` cannot be assigned as a param value.
-            if params and not all(trial.params.get(p, _NaN) == v for p, v in params.items()):
+            if not all(p in trial.params and trial.params[p] == v for p, v in params.items()):
                 continue
             leaf = tree.add_path(
                 (
@@ -257,7 +254,7 @@ class BruteForceSampler(BaseSampler):
             study.stop()
 
 
-def _enumerate_candidates(param_distribution: BaseDistribution) -> list[float]:
+def _enumerate_candidates(param_distribution: BaseDistribution) -> Sequence[float]:
     if isinstance(param_distribution, FloatDistribution):
         if param_distribution.step is None:
             raise ValueError(
