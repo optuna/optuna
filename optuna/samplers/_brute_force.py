@@ -120,6 +120,7 @@ def _get_non_waiting_trials_and_current_trial_index(
     # to filter trials. See https://github.com/optuna/optuna/issues/2327 for details.
     states = (TrialState.COMPLETE, TrialState.PRUNED, TrialState.RUNNING, TrialState.FAIL)
     trials = study._storage.get_all_trials(study._study_id, deepcopy=False, states=states)
+    # `trials` is fetched by shallow copy, so pop() or element replacement are safe operations.
     for i in range(1, len(trials) + 1):
         # The current trial can be found at the later part for almost all cases.
         t = trials[-i]
