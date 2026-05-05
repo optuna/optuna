@@ -183,7 +183,7 @@ class BruteForceSampler(BaseSampler):
         # Populate tree under given params from the given trials.
         for trial in trials:
             # NOTE(nabenabe): `nan` cannot be assigned as a param value.
-            if params and not all(trial.params.get(p, _NaN) == v for p, v in params.items()):
+            if params and any(trial.params.get(p, _NaN) != v for p, v in params.items()):
                 continue
             leaf = tree.add_path(
                 (
