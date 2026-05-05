@@ -50,7 +50,9 @@ import optuna
 def objective(trial: optuna.Trial) -> float:
     optimizer = trial.suggest_categorical("optimizer", ["Adam", "SGD", "RMSprop"])
     # If you would like to work on the log scale, you could also do like:
-    # lr = 10**trial.suggest_float("lr_exponent", -6, -3, step=0.5)
+    # lr = trial.suggest_categorical("lr", [10**(x/2) for x in range(-12, -5)])
+    # or lr = 10**trial.suggest_float("lr_exponent", -6, -3, step=0.5)
+    # You can store additional information via `trial.set_user_attr`.
     lr = trial.suggest_float("lr", 0.001, 0.01, step=0.001)
     lr_schedule = trial.suggest_categorical("lr_schedule", ["constant", "cosine"])
 
