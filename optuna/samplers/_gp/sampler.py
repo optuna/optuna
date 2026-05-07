@@ -400,13 +400,14 @@ class GPSampler(BaseSampler):
                         gpr=gprs_list[0],
                         search_space=internal_search_space,
                         threshold=standardized_score_vals[:, 0].max(),
-                        # normalized_params_of_running_trials=normalized_params_of_running_trials,
                     )
                 else:
                     acqf = acqf_module.qLogEI(
                         gpr=gprs_list[0],
                         search_space=internal_search_space,
                         threshold=standardized_score_vals[:, 0].max(),
+                        n_qmc_samples=128,  # NOTE(nabenabe): The BoTorch default value.
+                        qmc_seed=self._rng.rng.randint(1 << 30),
                         normalized_params_of_running_trials=normalized_params_of_running_trials,
                     )
                 best_params = normalized_params[np.argmax(standardized_score_vals), np.newaxis]

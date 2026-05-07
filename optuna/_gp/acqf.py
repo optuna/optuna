@@ -28,10 +28,6 @@ _INV_SQRT_2PI = 1 / math.sqrt(2 * math.pi)
 _SQRT_HALF_PI = math.sqrt(0.5 * math.pi)
 _LOG_SQRT_2PI = math.log(math.sqrt(2 * math.pi))
 _EPS = 1e-12  # NOTE(nabenabe): grad becomes nan when EPS=0.
-_QLOGEI_TAU_MAX = 1e-2
-_QLOGEI_TAU_RELU = 1e-6
-_QLOGEI_N_QMC_SAMPLES = 128
-_QLOGEI_QMC_SEED = 0
 
 
 def _sample_from_normal_sobol(dim: int, n_samples: int, seed: int | None) -> torch.Tensor:
@@ -52,7 +48,7 @@ def _logmeanexp(x: torch.Tensor, dim: int | tuple[int, ...]) -> torch.Tensor:
 
 
 def _fatplus(x: torch.Tensor, tau: float) -> torch.Tensor:
-    tau_tensor = torch.tensor(tau, dtype=x.dtype, device=x.device)
+    tau_tensor = torch.tensor(tau, dtype=torch.float64)
     alpha = 1e-1
     scaled_x = x / tau_tensor
     return tau_tensor * (
@@ -71,7 +67,7 @@ def _pareto(x: torch.Tensor, alpha_half: float = 1.0) -> torch.Tensor:
 
 
 def _fatmax(x: torch.Tensor, dim: int | tuple[int, ...], tau: float) -> torch.Tensor:
-    tau_tensor = torch.tensor(tau, dtype=x.dtype, device=x.device)
+    tau_tensor = torch.tensor(tau, dtype=torch.float64)
     x_max = torch.amax(x, dim=dim, keepdim=True)
     return x_max.squeeze(dim) + tau_tensor * _pareto((x - x_max) / tau_tensor).sum(dim=dim).log()
 
@@ -153,7 +149,7 @@ class BaseLogMCAcquisitionFunc(BaseAcquisitionFunc):
         gpr: GPRegressor,
         search_space: SearchSpace,
         threshold: float,
-        normalized_params_of_running_trials: np.ndarray | None = None,
+        normalized_params_of_running_trials: np.ndarray,
         stabilizing_noise: float = 1e-12,
     ) -> None:
         self._x_running = normalized_params_of_running_trials
@@ -178,8 +174,8 @@ class BaseLogMCAcquisitionFunc(BaseAcquisitionFunc):
 
         Y_post = self.get_posterior_samples(x)
 
-        log_improvement = _log_fatplus(Y_post - self._threshold, tau=_QLOGEI_TAU_RELU)
-        smooth_max_log_improvement = _fatmax(log_improvement, dim=-1, tau=_QLOGEI_TAU_MAX)
+        log_improvement = _log_fatplus(Y_post - self._threshold, tau=1e-6)
+        smooth_max_log_improvement = _fatmax(log_improvement, dim=-1, tau=1e-2)
         acqf_value = _logmeanexp(smooth_max_log_improvement, dim=-1)
         return acqf_value.squeeze(0) if squeeze_batch_dim else acqf_value
 
@@ -238,27 +234,27 @@ class qLogEI(BaseLogMCAcquisitionFunc):
         gpr: GPRegressor,
         search_space: SearchSpace,
         threshold: float,
-        normalized_params_of_running_trials: np.ndarray | None = None,
+        n_qmc_samples: int,
+        qmc_seed: int | None,
+        normalized_params_of_running_trials: np.ndarray,
         stabilizing_noise: float = 1e-12,
     ) -> None:
         self._gpr = gpr
         self._stabilizing_noise = stabilizing_noise
+        self._fixed_samples = _sample_from_normal_sobol(
+            dim=1 + normalized_params_of_running_trials.shape[0],
+            n_samples=n_qmc_samples,
+            seed=qmc_seed,
+        )
         super().__init__(
             gpr, search_space, threshold, normalized_params_of_running_trials, stabilizing_noise
         )
 
     def get_posterior_samples(self, x: torch.Tensor) -> torch.Tensor:
         mean, cov = self._gpr.posterior(x, joint=True)
-        fixed_samples = _sample_from_normal_sobol(
-            dim=x.shape[-2],
-            n_samples=_QLOGEI_N_QMC_SAMPLES,
-            seed=_QLOGEI_QMC_SEED,
-        ).to(mean)
-        cov = cov + self._stabilizing_noise * torch.eye(
-            cov.shape[-1], dtype=cov.dtype, device=cov.device
-        )
+        cov.diagonal(dim1=-2, dim2=-1).add_(self._stabilizing_noise)
         return mean.unsqueeze(-2) + torch.einsum(
-            "sq,...qk->...sk", fixed_samples, torch.linalg.cholesky(cov).transpose(-1, -2)
+            "sq,...qk->...sk", self._fixed_samples, torch.linalg.cholesky(cov).transpose(-1, -2)
         )
 
 
