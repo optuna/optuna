@@ -186,6 +186,12 @@ class GPSampler(BaseSampler):
         constraints_func: Callable[[FrozenTrial], Sequence[float]] | None = None,
         warn_independent_sampling: bool = True,
     ) -> None:
+        # NOTE(nabenabe): These features are missing.
+        # - input constraints (use SLSQP),
+        # - constant noise insertion (replace minimum_noise directly and use deterministic=True),
+        # - q-batch (closed PR available),
+        # - input warping (cf. https://arxiv.org/pdf/2012.03826),
+        # - 5output warping (cf. https://arxiv.org/pdf/2012.03826).
         self._rng = LazyRandomState(seed)
         self._independent_sampler = independent_sampler or optuna.samplers.RandomSampler(seed=seed)
         self._intersection_search_space = optuna.search_space.IntersectionSearchSpace()
