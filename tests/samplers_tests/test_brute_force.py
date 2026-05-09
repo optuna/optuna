@@ -190,6 +190,35 @@ def test_study_optimize_with_nan() -> None:
     assert np.isnan(all_suggested_values[0]) or np.isnan(all_suggested_values[1])
 
 
+def test_study_optimize_with_nan_multiple_categorical() -> None:
+    # Regression test for https://github.com/optuna/optuna/issues/6662
+    # When more than one categorical parameter contains NaN among its choices,
+    # the per-prefix filter in `_populate_tree` previously used plain `==`
+    # which returned False for NaN==NaN, so prior trials starting with a NaN
+    # value were dropped and the search space was re-sampled indefinitely.
+    def objective(trial: Trial) -> float:
+        for i in range(3):
+            trial.suggest_categorical(f"a{i}", [float("nan"), float("inf")])
+        return 0.0
+
+    study = optuna.create_study(sampler=samplers.BruteForceSampler(seed=0))
+    study.optimize(objective)
+
+    # 2 choices x 3 params = 8 unique combinations; the sampler must finish
+    # in exactly that many trials.
+    assert len(study.trials) == 8
+    # Every (a0, a1, a2) tuple appears exactly once when compared with NaN-
+    # aware equality.
+    seen: list[tuple[float, ...]] = []
+    for trial in study.trials:
+        key = tuple(trial.params[f"a{i}"] for i in range(3))
+        for prev in seen:
+            assert not all((np.isnan(a) and np.isnan(b)) or a == b for a, b in zip(prev, key)), (
+                f"duplicate combination sampled: {key}"
+            )
+        seen.append(key)
+
+
 def test_study_optimize_with_single_search_space_user_added() -> None:
     def objective(trial: Trial) -> float:
         a = trial.suggest_int("a", 0, 2)

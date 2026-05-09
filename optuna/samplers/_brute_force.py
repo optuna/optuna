@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 from optuna._experimental import experimental_class
+from optuna.distributions import _categorical_choice_equal
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
@@ -177,7 +178,15 @@ class BruteForceSampler(BaseSampler):
     ) -> None:
         # Populate tree under given params from the given trials.
         for trial in trials:
-            if not all(p in trial.params and trial.params[p] == v for p, v in params.items()):
+            # NaN-aware equality is required because choices may contain NaN
+            # (e.g. ``trial.suggest_categorical("a", [float("nan"), 1.0])``).
+            # Plain ``==`` returns False for NaN pairs, which would make the
+            # filter drop matching prior trials and let the sampler resample
+            # the same combination indefinitely (#6662).
+            if not all(
+                p in trial.params and _categorical_choice_equal(trial.params[p], v)
+                for p, v in params.items()
+            ):
                 continue
             leaf = tree.add_path(
                 (
