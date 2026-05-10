@@ -55,12 +55,10 @@ class _TreeNode:
         else:
             if self.param_name != param_name:
                 raise ValueError(f"param_name mismatch: {self.param_name} != {param_name}")
-            if (
+            if choices_fingerprint != self.choices_fingerprint:
                 # NOTE(nabenabe): search space and children are sorted, and the step size is always
                 # fixed due to the Optuna constraint, so the first and last elements and length
                 # check are equivalent to ``children.keys() != set(search_space)``.
-                choices_fingerprint != self.choices_fingerprint
-            ):
                 raise ValueError(
                     f"search_space mismatch: {set(self.children.keys())} != {set(search_space)}"
                 )
