@@ -182,9 +182,10 @@ class BruteForceSampler(BaseSampler):
     ) -> None:
         # Populate tree under given params from the given trials.
         for trial in trials:
+            trial_params = trial.params
             # TODO(nabenabe): `nan` can appear as a param value for categorical,
             # so we need to fix this: https://github.com/optuna/optuna/issues/6662
-            if params and any(trial.params.get(p, _NaN) != v for p, v in params.items()):
+            if params and any(trial_params.get(p, _NaN) != v for p, v in params.items()):
                 continue
             leaf = tree.add_path(
                 (
