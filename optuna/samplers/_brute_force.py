@@ -31,9 +31,6 @@ if TYPE_CHECKING:
     from optuna.trial import FrozenTrial
 
 
-_NaN = float("nan")  # NOTE: Define once to save runtime overhead of the variable definition.
-
-
 # TODO(nabenabe): Simply use `slots=True` once Python 3.9 is dropped.
 @dataclass(**({"slots": True} if sys.version_info >= (3, 10) else {}))
 class _TreeNode:
