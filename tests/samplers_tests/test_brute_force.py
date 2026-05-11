@@ -392,3 +392,17 @@ def test_avoid_premature_stop() -> None:
         # All possible combinations of x and y have been exhausted.
         study.tell(trials[3], 0.0)
         mock_stop.assert_called_once()
+
+
+def test_objective_with_nan() -> None:
+    weird_choices = [float("inf"), -float("inf"), float("nan"), None]
+    n_params = 3
+
+    def _objective_with_nan(trial: optuna.Trial) -> float:
+        [trial.suggest_categorical(f"c{i}", weird_choices) for i in range(n_params)]
+        return 0.0
+
+    sampler = optuna.samplers.BruteForceSampler(seed=0)
+    study = optuna.create_study(sampler=sampler)
+    study.optimize(_objective_with_nan)
+    assert len(study.trials) == len(weird_choices) ** n_params
