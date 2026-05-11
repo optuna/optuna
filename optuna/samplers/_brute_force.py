@@ -31,13 +31,15 @@ class _TreeNode:
     # A tree representing the search space for brute force sampling.
     # Each internal node corresponds to a parameter, and its children are keyed by the parameter's
     # candidate values (in internal representation). A path from the root to a terminal node
-    # represents a complete parameter configuration.
+    # represents a complete ``params``.
     #
     # A node takes one of the following four states:
-    #   1. Unexpanded. ``children=None`` and ``is_running=False``.
+    #   1. Unexpanded (no trial tried the ``params``). ``children=None`` and ``is_running=False``.
     #   2. Running. ``children=None`` and ``is_running=True``.
     #   3. Leaf. ``children={}`` and ``param_name=None``.
     #   4. Internal. ``param_name`` is set and ``children`` is non-empty.
+    # Leaf represents the last parameter of a finished ``params``, and internal means the node
+    # does not represent a complete ``params``.
     # NOTE(nabenabe): I tried representations by list and dict, but they did not really speed up.
 
     param_name: str | None = None
