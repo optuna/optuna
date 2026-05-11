@@ -28,16 +28,17 @@ if TYPE_CHECKING:
 
 @dataclass
 class _TreeNode:
-    """
-    This is a class to represent the tree of search space.
-
-    A tree node has three states:
-        1. Unexpanded. This is represented by children=None.
-        2. Leaf. This is represented by children={} and param_name=None.
-        3. Normal node. It has a param_name and non-empty children.
-
-    NOTE(nabenabe): I tried representations by list and dict, but they did not really speed up.
-    """
+    # A tree representing the search space for brute force sampling.
+    # Each internal node corresponds to a parameter, and its children are keyed by the parameter's
+    # candidate values (in internal representation). A path from the root to a terminal node
+    # represents a complete parameter configuration.
+    #
+    # A node takes one of the following four states:
+    #   1. Unexpanded. ``children=None`` and ``is_running=False``.
+    #   2. Running. ``children=None`` and ``is_running=True``.
+    #   3. Leaf. ``children={}`` and ``param_name=None``.
+    #   4. Internal. ``param_name`` is set and ``children`` is non-empty.
+    # NOTE(nabenabe): I tried representations by list and dict, but they did not really speed up.
 
     param_name: str | None = None
     children: dict[float, "_TreeNode"] | None = None
