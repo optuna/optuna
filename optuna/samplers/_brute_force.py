@@ -2,6 +2,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import decimal
+from functools import lru_cache
+import math
+from numbers import Real
 import sys
 from typing import Any
 from typing import TYPE_CHECKING
@@ -9,6 +12,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 from optuna._experimental import experimental_class
+from optuna.distributions import CategoricalChoiceType
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
@@ -181,12 +185,20 @@ class BruteForceSampler(BaseSampler):
         tree: _TreeNode, trials: Iterable[FrozenTrial], params: dict[str, Any]
     ) -> None:
         # Populate tree under given params from the given trials.
+        params_items = params.items()
+        nan_param_names = {k for k, v in params_items if _is_nan(v)}
+        nonnan_param_names = set(params.keys() - nan_param_names)
         for trial in trials:
             trial_params = trial.params
-            # TODO(nabenabe): `nan` can appear as a param value for categorical,
-            # so we need to fix this: https://github.com/optuna/optuna/issues/6662
-            if params and any(trial_params.get(p, _NaN) != v for p, v in params.items()):
-                continue
+            if params:
+                if nan_param_names:
+                    # Slow strict check.
+                    is_not_eq1 = any(not _is_nan(trial_params[k]) for k in nan_param_names)
+                    is_not_eq2 = any(params[k] != trial_params[k] for k in nonnan_param_names)
+                    if is_not_eq1 or is_not_eq2:
+                        continue
+                elif not (params_items <= trial_params.items()):
+                    continue
             leaf = tree.add_path(
                 (
                     (
@@ -284,6 +296,11 @@ class BruteForceSampler(BaseSampler):
 
         if tree.count_unexpanded(exclude_running) == 0:
             study.stop()
+
+
+@lru_cache
+def _is_nan(v: CategoricalChoiceType) -> bool:
+    return isinstance(v, Real) and math.isnan(float(v))
 
 
 def _enumerate_candidates(param_distribution: BaseDistribution) -> Sequence[float]:
