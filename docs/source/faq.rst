@@ -627,10 +627,9 @@ from :obj:`~optuna.trial.TrialState.RUNNING`.
         # User needs to tweak here. For example, the case below assumes that if trial is running
         # for 1 day, this trial is probably a zombie.
         grace_period = 3600*24
-        for t in study.trials:
-            if t.state == optuna.trial.TrialState.RUNNING:
-                if (datetime.now() - t.datetime_start).total_seconds() > grace_period:
-                    study.tell(t, state=optuna.trial.TrialState.FAIL)
+        for t in study.get_trials(states=[optuna.trial.TrialState.RUNNING]):
+            if (datetime.now() - t.datetime_start).total_seconds() > grace_period:
+                study.tell(t, state=optuna.trial.TrialState.FAIL)
 
 You can also execute a callback function to process the failed trial.
 Optuna provides a callback to retry failed trials as :class:`~optuna.storages.RetryFailedTrialCallback`.
