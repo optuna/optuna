@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from optuna._deprecated import deprecated_class
 from optuna._experimental import experimental_class
 from optuna.logging import get_logger
 from optuna.terminator.terminator import Terminator
@@ -16,6 +17,7 @@ if TYPE_CHECKING:
 _logger = get_logger(__name__)
 
 
+@deprecated_class("4.9.0", "6.0.0", name="`optuna.terminator.TerminatorCallback`")
 @experimental_class("3.2.0")
 class TerminatorCallback:
     """A callback that terminates the optimization using Terminator.

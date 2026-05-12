@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
+from optuna._deprecated import deprecated_func
 from optuna._experimental import experimental_class
 from optuna.study import StudyDirection
 from optuna.trial._state import TrialState
@@ -89,6 +90,11 @@ class CrossValidationErrorEvaluator(BaseErrorEvaluator):
         return float(std)
 
 
+@deprecated_func(
+    "4.9.0",
+    "6.0.0",
+    name="`optuna.terminator.report_cross_validation_scores`",
+)
 @experimental_class("3.2.0")
 def report_cross_validation_scores(trial: Trial, scores: list[float]) -> None:
     """A function to report cross-validation scores of a trial.

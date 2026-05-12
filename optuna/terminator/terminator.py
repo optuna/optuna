@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import abc
 
+from optuna._deprecated import deprecated_class
 from optuna._experimental import experimental_class
 from optuna.study.study import Study
 from optuna.terminator.erroreval import BaseErrorEvaluator
@@ -22,6 +23,7 @@ class BaseTerminator(metaclass=abc.ABCMeta):
         pass
 
 
+@deprecated_class("4.9.0", "6.0.0", name="`optuna.terminator.Terminator`")
 @experimental_class("3.2.0")
 class Terminator(BaseTerminator):
     """Automatic stopping mechanism for Optuna studies.
