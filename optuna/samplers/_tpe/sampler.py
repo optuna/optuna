@@ -431,10 +431,9 @@ class TPESampler(BaseSampler):
 
         if categorical_distance_func is not None:
             warn_experimental_argument("categorical_distance_func")
-            msg = _deprecated._DEPRECATION_WARNING_TEMPLATE.format(
-                name="`categorical_distance_func`", d_ver="4.9.0", r_ver="5.0.0"
+            _warn_if_deprecated_argument(
+                "`categorical_distance_func`", "4.9.0", "5.0.0", is_deprecated=True
             )
-            optuna_warn(msg, FutureWarning)
 
     def reseed_rng(self) -> None:
         self._rng.rng.seed()
