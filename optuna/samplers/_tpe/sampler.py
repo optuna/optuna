@@ -6,7 +6,6 @@ import math
 from typing import Any
 from typing import cast
 from typing import TYPE_CHECKING
-from typing import TypeVar
 
 import numpy as np
 
@@ -71,20 +70,10 @@ def default_weights(x: int) -> np.ndarray:
         return np.concatenate([ramp, flat], axis=0)
 
 
-_T = TypeVar("_T")
-
-
-def _handle_deprecated_argument(
-    name: str,
-    value: _T,
-    d_ver: str,
-    r_ver: str,
-    is_deprecated: bool,
-) -> _T:
+def _warn_if_deprecated_argument(name: str, d_ver: str, r_ver: str, is_deprecated: bool) -> None:
     if is_deprecated:
         msg = _deprecated._DEPRECATION_WARNING_TEMPLATE.format(name=name, d_ver=d_ver, r_ver=r_ver)
         optuna_warn(msg, FutureWarning)
-    return value
 
 
 class TPESampler(BaseSampler):
@@ -383,48 +372,14 @@ class TPESampler(BaseSampler):
             dict[str, Callable[[CategoricalChoiceType, CategoricalChoiceType], float]] | None
         ) = None,
     ) -> None:
-        consider_prior = _handle_deprecated_argument(
-            "`consider_prior`",
-            consider_prior,
-            "4.3.0",
-            "6.0.0",
-            is_deprecated=not consider_prior,
+        _warn_if_deprecated_argument("`consider_prior`", "4.3.0", "6.0.0", not consider_prior)
+        _warn_if_deprecated_argument("`prior_weight`", "4.9.0", "6.0.0", prior_weight != 1.0)
+        _warn_if_deprecated_argument(
+            "`consider_magic_clip`", "4.9.0", "6.0.0", not consider_magic_clip
         )
-        prior_weight = _handle_deprecated_argument(
-            "`prior_weight`",
-            prior_weight,
-            "4.9.0",
-            "6.0.0",
-            is_deprecated=prior_weight != 1.0,
-        )
-        consider_magic_clip = _handle_deprecated_argument(
-            "`consider_magic_clip`",
-            consider_magic_clip,
-            "4.9.0",
-            "6.0.0",
-            is_deprecated=not consider_magic_clip,
-        )
-        consider_endpoints = _handle_deprecated_argument(
-            "`consider_endpoints`",
-            consider_endpoints,
-            "4.9.0",
-            "6.0.0",
-            is_deprecated=consider_endpoints,
-        )
-        gamma = _handle_deprecated_argument(
-            "`gamma`",
-            gamma,
-            "4.9.0",
-            "6.0.0",
-            is_deprecated=gamma is not default_gamma,
-        )
-        weights = _handle_deprecated_argument(
-            "`weights`",
-            weights,
-            "4.9.0",
-            "6.0.0",
-            is_deprecated=weights is not default_weights,
-        )
+        _warn_if_deprecated_argument("`consider_endpoints`", "4.9.0", "6.0.0", consider_endpoints)
+        _warn_if_deprecated_argument("`gamma`", "4.9.0", "6.0.0", gamma is not default_gamma)
+        _warn_if_deprecated_argument("`weights`", "4.9.0", "6.0.0", weights is not default_weights)
 
         self._parzen_estimator_parameters = _ParzenEstimatorParameters(
             prior_weight=prior_weight,
@@ -439,12 +394,8 @@ class TPESampler(BaseSampler):
         self._n_ei_candidates = n_ei_candidates
         self._gamma = gamma
 
-        warn_independent_sampling = _handle_deprecated_argument(
-            "`warn_independent_sampling`",
-            warn_independent_sampling,
-            "4.9.0",
-            "6.0.0",
-            is_deprecated=warn_independent_sampling,
+        _warn_if_deprecated_argument(
+            "`warn_independent_sampling`", "4.9.0", "6.0.0", warn_independent_sampling
         )
 
         self._warn_independent_sampling = warn_independent_sampling
