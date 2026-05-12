@@ -213,24 +213,6 @@ def test_sample_relative_empty_input(multivariate: bool) -> None:
     assert sampler.sample_relative(study, frozen_trial, {}) == {}
 
 
-def test_sample_relative_n_startup_trial() -> None:
-    study = optuna.create_study()
-    dist = optuna.distributions.FloatDistribution(1.0, 100.0)
-    past_trials = [frozen_trial_factory(i, dist=dist) for i in range(1, 8)]
-
-    trial = frozen_trial_factory(8)
-    # sample_relative returns {} for only 4 observations.
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
-        sampler = TPESampler(n_startup_trials=5, seed=0, multivariate=True)
-    with patch.object(study._storage, "get_all_trials", return_value=past_trials[:4]):
-        assert sampler.sample_relative(study, trial, {"param-a": dist}) == {}
-    # sample_relative returns some value for only 7 observations.
-    study._thread_local.cached_all_trials = None
-    with patch.object(study._storage, "get_all_trials", return_value=past_trials):
-        assert "param-a" in sampler.sample_relative(study, trial, {"param-a": dist}).keys()
-
-
 def test_sample_relative_prior() -> None:
     study = optuna.create_study()
     dist = optuna.distributions.FloatDistribution(1.0, 100.0)
@@ -250,6 +232,24 @@ def test_sample_relative_prior() -> None:
         sampler = TPESampler(prior_weight=0.2, n_startup_trials=5, seed=0, multivariate=True)
     with patch.object(study._storage, "get_all_trials", return_value=past_trials):
         assert sampler.sample_relative(study, trial, {"param-a": dist}) != suggestion
+
+
+def test_sample_relative_n_startup_trial() -> None:
+    study = optuna.create_study()
+    dist = optuna.distributions.FloatDistribution(1.0, 100.0)
+    past_trials = [frozen_trial_factory(i, dist=dist) for i in range(1, 8)]
+
+    trial = frozen_trial_factory(8)
+    # sample_relative returns {} for only 4 observations.
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
+        sampler = TPESampler(n_startup_trials=5, seed=0, multivariate=True)
+    with patch.object(study._storage, "get_all_trials", return_value=past_trials[:4]):
+        assert sampler.sample_relative(study, trial, {"param-a": dist}) == {}
+    # sample_relative returns some value for only 7 observations.
+    study._thread_local.cached_all_trials = None
+    with patch.object(study._storage, "get_all_trials", return_value=past_trials):
+        assert "param-a" in sampler.sample_relative(study, trial, {"param-a": dist}).keys()
 
 
 def test_sample_relative_misc_arguments() -> None:
@@ -518,6 +518,24 @@ def test_sample_relative_pruned_state() -> None:
     assert len(set(suggestions)) == 3
 
 
+def test_sample_independent_prior() -> None:
+    study = optuna.create_study()
+    dist = optuna.distributions.FloatDistribution(1.0, 100.0)
+    past_trials = [frozen_trial_factory(i, dist=dist) for i in range(1, 8)]
+
+    # Prepare a trial and a sample for later checks.
+    trial = frozen_trial_factory(8)
+    sampler = TPESampler(n_startup_trials=5, seed=0, n_ei_candidates=100)
+    with patch.object(study._storage, "get_all_trials", return_value=past_trials):
+        suggestion = sampler.sample_independent(study, trial, "param-a", dist)
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", FutureWarning)
+        sampler = TPESampler(prior_weight=0.1, n_startup_trials=5, seed=0, n_ei_candidates=100)
+    with patch.object(study._storage, "get_all_trials", return_value=past_trials):
+        assert sampler.sample_independent(study, trial, "param-a", dist) != suggestion
+
+
 def test_sample_independent_n_startup_trial() -> None:
     study = optuna.create_study()
     dist = optuna.distributions.FloatDistribution(1.0, 100.0)
@@ -539,24 +557,6 @@ def test_sample_independent_n_startup_trial() -> None:
         ) as sample_method:
             sampler.sample_independent(study, trial, "param-a", dist)
     assert sample_method.call_count == 0
-
-
-def test_sample_independent_prior() -> None:
-    study = optuna.create_study()
-    dist = optuna.distributions.FloatDistribution(1.0, 100.0)
-    past_trials = [frozen_trial_factory(i, dist=dist) for i in range(1, 8)]
-
-    # Prepare a trial and a sample for later checks.
-    trial = frozen_trial_factory(8)
-    sampler = TPESampler(n_startup_trials=5, seed=0, n_ei_candidates=100)
-    with patch.object(study._storage, "get_all_trials", return_value=past_trials):
-        suggestion = sampler.sample_independent(study, trial, "param-a", dist)
-
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", FutureWarning)
-        sampler = TPESampler(prior_weight=0.1, n_startup_trials=5, seed=0, n_ei_candidates=100)
-    with patch.object(study._storage, "get_all_trials", return_value=past_trials):
-        assert sampler.sample_independent(study, trial, "param-a", dist) != suggestion
 
 
 def test_sample_independent_misc_arguments() -> None:
