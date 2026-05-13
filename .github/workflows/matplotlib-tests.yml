@@ -22,42 +22,28 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
 
-    - name: Setup Python 3.12
-      uses: actions/setup-python@v5
+    - name: Install the latest version of uv
+      uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
       with:
         python-version: 3.12
-
-    - name: Setup cache
-      uses: actions/cache@v3
-      env:
-        cache-name: test-matplotlib
-      with:
-        path:  ~/.cache/pip
-        key: ${{ runner.os }}-3.12-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}-v1
-        restore-keys: |
-          ${{ runner.os }}-3.12-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}
+        enable-cache: true
 
     - name: Install
       run: |
-        python -m pip install --upgrade pip
-        pip install --progress-bar off -U setuptools
         # Install minimal dependencies and confirm that `import optuna` is successful.
-        pip install --progress-bar off .
-        python -c 'import optuna'
-        optuna --version
-        pip install --progress-bar off .[test] --extra-index-url https://download.pytorch.org/whl/cpu
-        pip install --progress-bar off .[optional] --extra-index-url https://download.pytorch.org/whl/cpu
+        uv sync --python 3.12
+        uv run python -c 'import optuna'
+        uv run optuna --version
+        uv sync --python 3.12 --group test --extra optional
 
     - name: Output installed packages
       run: |
-        pip freeze --all
+        uv pip freeze
     - name: Output dependency tree
       run: |
-        pip install pipdeptree
-        pipdeptree
+        uv tree --group test --extra optional
     - name: Tests without Plotly
       if:  ${{ github.event_name != 'schedule' && github.event_name != 'workflow_dispatch' }}
       run: |
-        pip uninstall -y plotly
-        pytest tests/visualization_tests/matplotlib_tests -n 8
-
+        uv pip uninstall plotly
+        uv run pytest tests/visualization_tests/matplotlib_tests -n 8

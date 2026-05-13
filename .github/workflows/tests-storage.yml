@@ -71,20 +71,11 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
 
-    - name: Setup Python${{ matrix.python-version }}
-      uses: actions/setup-python@v5
+    - name: Install the latest version of uv
+      uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
       with:
         python-version: ${{ matrix.python-version }}
-
-    - name: Setup cache
-      uses: actions/cache@v3
-      env:
-        cache-name: test-storage-with-server
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-${{ matrix.python-version }}-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}-v1
-        restore-keys: |
-          ${{ runner.os }}-${{ matrix.python-version }}-${{ env.cache-name }}-${{ hashFiles('**/pyproject.toml') }}
+        enable-cache: true
 
     - name: Setup environment
       run: |
@@ -93,32 +84,27 @@ jobs:
 
     - name: Install
       run: |
-        python -m pip install --upgrade pip
-        pip install --progress-bar off -U setuptools
-
         # Install minimal dependencies and confirm that `import optuna` is successful.
-        pip install --progress-bar off .
-        python -c 'import optuna'
-        optuna --version
+        uv sync --python ${{ matrix.python-version }}
+        uv run python -c 'import optuna'
+        uv run optuna --version
 
-        pip install --progress-bar off .[test] --extra-index-url https://download.pytorch.org/whl/cpu
-        pip install --progress-bar off .[optional] --extra-index-url https://download.pytorch.org/whl/cpu
+        uv sync --python ${{ matrix.python-version }} --group test --extra optional
 
     - name: Install DB bindings
       run: |
-        pip install --progress-bar off PyMySQL cryptography psycopg2-binary psycopg redis
+        uv pip install PyMySQL cryptography psycopg2-binary psycopg redis
 
     - name: Output installed packages
       run: |
-        pip freeze --all
+        uv pip freeze
     - name: Output dependency tree
       run: |
-        pip install pipdeptree
-        pipdeptree
+        uv tree --group test --extra optional
 
     - name: Tests MySQL
       run: |
-        pytest tests/storages_tests/test_with_server.py
+        uv run pytest tests/storages_tests/test_with_server.py
       env:
         SQLALCHEMY_WARN_20: 1
         OMP_NUM_THREADS: 1
@@ -126,21 +112,21 @@ jobs:
 
     - name: Tests PostgreSQL with psycopg2
       run: |
-        pytest tests/storages_tests/test_with_server.py
+        uv run pytest tests/storages_tests/test_with_server.py
       env:
         OMP_NUM_THREADS: 1
         TEST_DB_URL: postgresql+psycopg2://user:test@127.0.0.1/optunatest
 
     - name: Tests PostgreSQL with psycopg3
       run: |
-        pytest tests/storages_tests/test_with_server.py
+        uv run pytest tests/storages_tests/test_with_server.py
       env:
         OMP_NUM_THREADS: 1
         TEST_DB_URL: postgresql+psycopg://user:test@127.0.0.1/optunatest
 
     - name: Tests Journal Redis
       run: |
-        pytest tests/storages_tests/test_with_server.py
+        uv run pytest tests/storages_tests/test_with_server.py
       env:
         OMP_NUM_THREADS: 1
         TEST_DB_URL: redis://localhost:6379

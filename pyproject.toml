@@ -42,6 +42,23 @@ dependencies = [
 dynamic = ["version"]
 
 [project.optional-dependencies]
+optional = [
+  "boto3",  # optuna/artifacts/_boto3.py.
+  "cmaes>=0.12.0",  # optuna/samplers/_cmaes.py.
+  "google-cloud-storage",  # optuna/artifacts/_gcs.py.
+  "matplotlib!=3.6.0",  # optuna/visualization/matplotlib.
+  "pandas",  # optuna/study/_dataframe.py.
+  "plotly>=4.9.0",  # optuna/visualization.
+  "redis",  # optuna/storages/journal/_redis.py.
+  "scikit-learn>=0.24.2",  # optuna/importance.
+  "scipy",  # optuna/_gp.
+  "torch",  # optuna/_gp.
+  "greenlet",  # optuna/_gp. necessary for faster gp.
+  "grpcio",  # optuna/storages/_grpc.
+  "protobuf>=5.28.1",  # optuna/storages/_grpc.
+]
+
+[dependency-groups]
 checking = [
   "mypy",
   "mypy_boto3_s3",
@@ -72,21 +89,6 @@ document = [
   "torch",
   "torchvision",
 ]
-optional = [
-  "boto3",  # optuna/artifacts/_boto3.py.
-  "cmaes>=0.12.0",  # optuna/samplers/_cmaes.py.
-  "google-cloud-storage",  # optuna/artifacts/_gcs.py.
-  "matplotlib!=3.6.0",  # optuna/visualization/matplotlib.
-  "pandas",  # optuna/study/_dataframe.py.
-  "plotly>=4.9.0",  # optuna/visualization.
-  "redis",  # optuna/storages/journal/_redis.py.
-  "scikit-learn>=0.24.2",  # optuna/importance.
-  "scipy",  # optuna/_gp.
-  "torch",  # optuna/_gp.
-  "greenlet",  # optuna/_gp. necessary for faster gp.
-  "grpcio",  # optuna/storages/_grpc.
-  "protobuf>=5.28.1",  # optuna/storages/_grpc.
-]
 test = [
   "fakeredis[lua]",
   "kaleido<0.4",  # TODO(nzw0301): Remove the version constraint by installing browser separately.
@@ -99,6 +101,20 @@ test = [
   "grpcio",  # optuna/storages/_grpc.
   "protobuf>=5.28.1",  # optuna/storages/_grpc.
 ]
+
+[tool.uv]
+default-groups = []
+exclude-newer = "5 days"
+exclude-newer-package = { torch = false, optuna = false, optuna-integration = false }
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch-cpu" }
+torchvision = { index = "pytorch-cpu" }
 
 [project.urls]
 homepage = "https://optuna.org/"

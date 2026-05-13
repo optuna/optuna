@@ -13,26 +13,26 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - uses: actions/setup-python@v5
+    - name: Install the latest version of uv
+      uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
       with:
         python-version: 3.12
+        enable-cache: true
 
     - name: Install
       run: |
-        python -m pip install -U pip
-        pip install -U -e '.[checking, document, optional, test]' --extra-index-url https://download.pytorch.org/whl/cpu
+        uv sync --python 3.12 --group checking --group document --group test --extra optional
 
     - name: Output installed packages
       run: |
-        pip freeze --all
+        uv pip freeze
     - name: Output dependency tree
       run: |
-        pip install pipdeptree
-        pipdeptree
+        uv tree --group checking --group document --group test --extra optional
   
     - name: ruff
       run: |
-        ruff check .
-        ruff format . --check --diff
+        uv run ruff check .
+        uv run ruff format . --check --diff
     - name: mypy
-      run: mypy . --warn-unused-ignores
+      run: uv run mypy . --warn-unused-ignores

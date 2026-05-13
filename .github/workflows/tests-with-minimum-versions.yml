@@ -35,62 +35,45 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
 
-    - name: Setup Python${{ matrix.python-version }}
-      uses: actions/setup-python@v5
+    - name: Install the latest version of uv
+      uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
       with:
         python-version: ${{ matrix.python-version }}
-
-    - name: Setup cache
-      uses: actions/cache@v3
-      env:
-        cache-name: test-with-minimum-versions
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-${{ matrix.python-version }}-${{ env.cache-name }}-${{ hashFiles('**/setup.py') }}-v1
-        restore-keys: |
-          ${{ runner.os }}-${{ matrix.python-version }}-${{ env.cache-name }}-${{ hashFiles('**/setup.py') }}
-
-
-    - name: Setup pip
-      run: |
-        python -m pip install --upgrade pip
-        pip install --progress-bar off -U setuptools
+        enable-cache: true
 
     - name: Install
       run: |
         # Install minimal dependencies and confirm that `import optuna` is successful.
-        pip install --progress-bar off .
-        python -c 'import optuna'
-        optuna --version
+        uv sync --python ${{ matrix.python-version }}
+        uv run python -c 'import optuna'
+        uv run optuna --version
 
-        pip install --progress-bar off .[test] --extra-index-url https://download.pytorch.org/whl/cpu
-        pip install --progress-bar off .[optional] --extra-index-url https://download.pytorch.org/whl/cpu
+        uv sync --python ${{ matrix.python-version }} --group test --extra optional
 
     - name: Install dependencies with minimum versions
       run: |
         # Install dependencies with minimum versions.
-        pip uninstall -y alembic cmaes packaging sqlalchemy plotly scikit-learn pillow
-        pip install alembic==1.5.0 cmaes==0.12.0 packaging==20.0 sqlalchemy==1.4.2 tqdm==4.27.0 colorlog==3.0.0 PyYAML==5.1 'pillow<10.4.0'
-        pip uninstall -y matplotlib pandas scipy
+        uv pip uninstall alembic cmaes packaging sqlalchemy plotly scikit-learn pillow
+        uv pip install alembic==1.5.0 cmaes==0.12.0 packaging==20.0 sqlalchemy==1.4.2 tqdm==4.27.0 colorlog==3.0.0 PyYAML==5.1 'pillow<10.4.0'
+        uv pip uninstall matplotlib pandas scipy
         if [ "${{ matrix.python-version }}" = "3.9" ]; then
-          pip install matplotlib==3.8.4 pandas==2.2.2 scipy==1.13.0 numpy==1.26.4
+          uv pip install matplotlib==3.8.4 pandas==2.2.2 scipy==1.13.0 numpy==1.26.4
         fi
-        pip install plotly==5.0.0 scikit-learn==0.24.2  # optional extras
+        uv pip install plotly==5.0.0 scikit-learn==0.24.2  # optional extras
 
     - name: Output installed packages
       run: |
-        pip freeze --all
+        uv pip freeze
     - name: Output dependency tree
       run: |
-        pip install pipdeptree
-        pipdeptree
+        uv tree --group test --extra optional
 
     - name: Scheduled tests
       if:  ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
       run: |
-        pytest tests -n 8
+        uv run pytest tests -n 8
 
     - name: Tests
       if:  ${{ github.event_name != 'schedule' && github.event_name != 'workflow_dispatch' }}
       run: |
-        pytest tests -m "not slow" -n 8
+        uv run pytest tests -m "not slow" -n 8
