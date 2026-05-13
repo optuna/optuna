@@ -29,7 +29,7 @@ jobs:
 
     - name: Install
       run: |
-        uv sync --python 3.12 --group checking
+        uv sync --group checking
 
     - name: Output installed packages
       run: |

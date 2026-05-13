@@ -28,7 +28,7 @@ jobs:
         enable-cache: true
 
     - name: Install
-      run: uv sync --python 3.12
+      run: uv sync
 
     - name: Output installed packages
       run: |

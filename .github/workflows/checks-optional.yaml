@@ -21,7 +21,7 @@ jobs:
 
     - name: Install
       run: |
-        uv sync --python 3.12 --group checking --group test --extra document --extra optional
+        uv sync --group checking --group test --extra document --extra optional
 
     - name: Output installed packages
       run: |

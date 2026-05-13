@@ -41,7 +41,7 @@ jobs:
     - name: Install Dependencies
       run: |
         sudo apt-get install optipng graphviz
-        uv sync --python 3.12 --extra document
+        uv sync --extra document
 
     - name: Output installed packages
       run: |
@@ -95,7 +95,7 @@ jobs:
     - name: Install Dependencies
       run: |
         sudo apt-get install optipng graphviz
-        uv sync --python 3.12 --extra document
+        uv sync --extra document
 
     - name: Output installed packages
       run: |

@@ -53,11 +53,11 @@ jobs:
     - name: Install
       run: |
         # Install minimal dependencies and confirm that `import optuna` is successful.
-        uv sync --python ${{ matrix.python-version }}
+        uv sync
         uv run python -c 'import optuna'
         uv run optuna --version
 
-        uv sync --python ${{ matrix.python-version }} --group test --extra optional
+        uv sync --group test --extra optional
 
     - name: Output installed packages
       run: |

@@ -35,10 +35,10 @@ jobs:
     - name: Install
       run: |
         # Install minimal dependencies and confirm that `import optuna` is successful.
-        uv sync --python 3.12
+        uv sync
         uv run python -c 'import optuna'
         uv run optuna --version
-        uv sync --python 3.12 --group test --extra optional
+        uv sync --group test --extra optional
         uv pip install PyQt6 # Install PyQT for using QtAgg as matplotlib backend.
         # TODO(HideakiImamura): Remove this after fixing https://github.com/plotly/Kaleido/issues/110
         uv pip install "kaleido<=0.1.0post1"
