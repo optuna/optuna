@@ -169,7 +169,7 @@ class GPRegressor:
         L21 = scipy.linalg.solve_triangular(
             self._cov_Y_Y_chol.cpu().numpy(), kernel_running_train.T, lower=True
         ).T
-        # L_21 = K_21 @ inv(L_11.T), L_21.T = inv(L_11) @ K_21.T (b/c inv(L_11.T).T = inv(L_11))
+        # L_21 = K_21 @ inv(L_11.T) --> L_21.T = inv(L_11) @ K_21.T (b/c inv(L_11.T).T = inv(L_11))
         # inv(L_11.T) @ inv(L_11) = inv(K_11) --> K_21 @ inv(K_11) @ K_21.T = L_21 @ L_21.T
         cov_Y_Y_chol[n_train:, n_train:] = np.linalg.cholesky(kernel_running_running - L21 @ L21.T)
         cov_Y_Y_chol[n_train:, :n_train] = L21
