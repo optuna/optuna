@@ -21,11 +21,13 @@ from typing import TYPE_CHECKING
 import uuid
 
 import optuna
+from optuna import _deprecated
 from optuna import distributions
 from optuna import version
 from optuna._experimental import warn_experimental_argument
 from optuna._imports import _LazyImport
 from optuna._typing import JSONSerializable
+from optuna._warnings import optuna_warn
 from optuna.storages._base import BaseStorage
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.storages._heartbeat import BaseHeartbeat
@@ -156,14 +158,17 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
             Grace period before a running trial is failed from the last heartbeat.
             ``grace_period`` must be :obj:`None` or a positive integer.
             If it is :obj:`None`, the grace period will be `2 * heartbeat_interval`.
-        failed_trial_callback:
-            A callback function that is invoked after failing each stale trial.
+        heartbeat_stale_trial_callback:
+            A callback function that is invoked after failing each heartbeat-stale trial.
             The function must accept two parameters with the following types in this order:
             :class:`~optuna.study.Study` and :class:`~optuna.trial.FrozenTrial`.
 
             .. note::
                 The procedure to fail existing stale trials is called just before asking the
                 study for a new trial.
+        failed_trial_callback:
+            Deprecated in v4.9.0. This argument will be removed in v6.0.0.
+            Use ``heartbeat_stale_trial_callback`` instead.
 
         skip_table_creation:
             Flag to skip table creation if set to :obj:`True`.
@@ -188,14 +193,15 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
     .. note::
         Mainly in a cluster environment, running trials are often killed unexpectedly.
         If you want to detect a failure of trials, please use the heartbeat
-        mechanism. Set ``heartbeat_interval``, ``grace_period``, and ``failed_trial_callback``
-        appropriately according to your use case. For more details, please refer to the
-        :ref:`tutorial <heartbeat_monitoring>` and `Example page
+        mechanism. Set ``heartbeat_interval``, ``grace_period``, and
+        ``heartbeat_stale_trial_callback`` appropriately according to your use case.
+        For more details, please refer to the :ref:`tutorial <heartbeat_monitoring>` and
+        `Example page
         <https://github.com/optuna/optuna-examples/blob/main/pytorch/pytorch_checkpoint.py>`__.
 
     .. seealso::
-        You can use :class:`~optuna.storages.RetryFailedTrialCallback` to automatically retry
-        failed trials detected by heartbeat.
+        You can use :class:`~optuna.storages.RetryHeartbeatStaleTrialCallback` to automatically
+        retry heartbeat-stale trials.
 
     """
 
@@ -207,6 +213,9 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
         *,
         heartbeat_interval: int | None = None,
         grace_period: int | None = None,
+        heartbeat_stale_trial_callback: (
+            Callable[["optuna.study.Study", FrozenTrial], None] | None
+        ) = None,
         failed_trial_callback: Callable[["optuna.study.Study", FrozenTrial], None] | None = None,
         skip_table_creation: bool = False,
     ) -> None:
@@ -220,9 +229,28 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                 warn_experimental_argument("heartbeat_interval")
         if grace_period is not None and grace_period <= 0:
             raise ValueError("The value of `grace_period` should be a positive integer.")
+        if (
+            heartbeat_stale_trial_callback is not None
+            and failed_trial_callback is not None
+        ):
+            raise ValueError(
+                "Specify only one of `heartbeat_stale_trial_callback` and "
+                "`failed_trial_callback`."
+            )
+        if failed_trial_callback is not None:
+            msg = _deprecated._DEPRECATION_WARNING_TEMPLATE.format(
+                name="`failed_trial_callback`", d_ver="4.9.0", r_ver="6.0.0"
+            )
+            optuna_warn(
+                f"{msg} Use `heartbeat_stale_trial_callback` instead.",
+                FutureWarning,
+            )
         self.heartbeat_interval = heartbeat_interval
         self.grace_period = grace_period
-        self.failed_trial_callback = failed_trial_callback
+        self.heartbeat_stale_trial_callback = (
+            heartbeat_stale_trial_callback or failed_trial_callback
+        )
+        self.failed_trial_callback = self.heartbeat_stale_trial_callback
 
         self._set_default_engine_kwargs_for_mysql(url, self.engine_kwargs)
 
@@ -1070,10 +1098,10 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
     def get_heartbeat_interval(self) -> int | None:
         return self.heartbeat_interval
 
-    def get_failed_trial_callback(
+    def get_heartbeat_stale_trial_callback(
         self,
     ) -> Callable[["optuna.study.Study", FrozenTrial], None] | None:
-        return self.failed_trial_callback
+        return self.heartbeat_stale_trial_callback
 
 
 class _VersionManager:

@@ -11,7 +11,7 @@ import pytest
 import optuna
 from optuna import samplers
 from optuna.samplers._grid import GridValueType
-from optuna.storages import RetryFailedTrialCallback
+from optuna.storages import RetryHeartbeatStaleTrialCallback
 from optuna.testing.objectives import fail_objective
 from optuna.testing.objectives import pruned_objective
 from optuna.testing.storages import StorageSupplier
@@ -199,7 +199,7 @@ def test_retried_trial() -> None:
     trial = study.ask()
     trial.suggest_int("a", 0, 100)
 
-    callback = RetryFailedTrialCallback()
+    callback = RetryHeartbeatStaleTrialCallback()
     callback(study, study.trials[0])
 
     study.optimize(lambda trial: trial.suggest_int("a", 0, 100))
