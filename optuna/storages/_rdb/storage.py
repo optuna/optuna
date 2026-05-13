@@ -229,13 +229,9 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                 warn_experimental_argument("heartbeat_interval")
         if grace_period is not None and grace_period <= 0:
             raise ValueError("The value of `grace_period` should be a positive integer.")
-        if (
-            heartbeat_stale_trial_callback is not None
-            and failed_trial_callback is not None
-        ):
+        if heartbeat_stale_trial_callback is not None and failed_trial_callback is not None:
             raise ValueError(
-                "Specify only one of `heartbeat_stale_trial_callback` and "
-                "`failed_trial_callback`."
+                "Specify only one of `heartbeat_stale_trial_callback` and `failed_trial_callback`."
             )
         if failed_trial_callback is not None:
             msg = _deprecated._DEPRECATION_WARNING_TEMPLATE.format(

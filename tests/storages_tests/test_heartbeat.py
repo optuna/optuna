@@ -14,7 +14,6 @@ import optuna
 from optuna import Study
 from optuna.exceptions import ExperimentalWarning
 from optuna.storages import RDBStorage
-from optuna.storages import RetryFailedTrialCallback
 from optuna.storages._callbacks import RetryHeartbeatStaleTrialCallback
 from optuna.storages._heartbeat import BaseHeartbeat
 from optuna.storages._heartbeat import is_heartbeat_enabled
