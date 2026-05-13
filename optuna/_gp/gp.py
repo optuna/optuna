@@ -284,6 +284,7 @@ class GPRegressor:
         logdet_part = -L.diagonal().log().sum()
         inv_L_y = torch.linalg.solve_triangular(L, self._y_train[:, None], upper=False)[:, 0]
         quad_part = -0.5 * (inv_L_y @ inv_L_y)
+        # NOTE(nabe): Omitting the constant does not change the optimum.
         return logdet_part + quad_part
 
     def _fit_kernel_params(
