@@ -45,7 +45,7 @@ jobs:
         uv pip freeze
     - name: Output dependency tree
       run: |
-        uv tree --group test --extra optional
+        uv tree --group test
 
 
     - name: Scheduled tests

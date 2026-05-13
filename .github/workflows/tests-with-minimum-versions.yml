@@ -66,14 +66,14 @@ jobs:
         uv pip freeze
     - name: Output dependency tree
       run: |
-        uv tree --group test --extra optional
+        uv tree --group test
 
     - name: Scheduled tests
       if:  ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
       run: |
-        uv run pytest tests -n 8
+        uv run --no-sync pytest tests -n 8
 
     - name: Tests
       if:  ${{ github.event_name != 'schedule' && github.event_name != 'workflow_dispatch' }}
       run: |
-        uv run pytest tests -m "not slow" -n 8
+        uv run --no-sync pytest tests -m "not slow" -n 8

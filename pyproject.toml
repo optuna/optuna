@@ -42,6 +42,25 @@ dependencies = [
 dynamic = ["version"]
 
 [project.optional-dependencies]
+document = [
+  "ase",
+  "cmaes>=0.12.0",  # optuna/samplers/_cmaes.py.
+  "fvcore",
+  "kaleido<0.4,!=0.2.1.post1",  # TODO(nzw0301): Remove the version constraint by installing browser separately.
+  "lightgbm",
+  "matplotlib!=3.6.0",
+  "pandas",
+  "pillow",
+  "plotly>=4.9.0",  # optuna/visualization.
+  "scikit-learn",
+  "sphinx",
+  "sphinx-copybutton",
+  "sphinx-gallery",
+  "sphinx-notfound-page",
+  "sphinx_rtd_theme>=1.2.0",
+  "torch",
+  "torchvision",
+]
 optional = [
   "boto3",  # optuna/artifacts/_boto3.py.
   "cmaes>=0.12.0",  # optuna/samplers/_cmaes.py.
@@ -70,28 +89,9 @@ checking = [
   "types-tqdm",
   "typing_extensions>=3.10.0.0",
 ]
-document = [
-  "ase",
-  "cmaes>=0.12.0",  # optuna/samplers/_cmaes.py.
-  "fvcore",
-  "kaleido<0.4",  # TODO(nzw0301): Remove the version constraint by installing browser separately.
-  "lightgbm",
-  "matplotlib!=3.6.0",
-  "pandas",
-  "pillow",
-  "plotly>=4.9.0",  # optuna/visualization.
-  "scikit-learn",
-  "sphinx",
-  "sphinx-copybutton",
-  "sphinx-gallery",
-  "sphinx-notfound-page",
-  "sphinx_rtd_theme>=1.2.0",
-  "torch",
-  "torchvision",
-]
 test = [
   "fakeredis[lua]",
-  "kaleido<0.4",  # TODO(nzw0301): Remove the version constraint by installing browser separately.
+  "kaleido<0.4,!=0.2.1.post1",  # TODO(nzw0301): Remove the version constraint by installing browser separately.
   "moto",
   "pytest",
   "pytest-xdist",

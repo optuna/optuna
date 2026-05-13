@@ -21,14 +21,14 @@ jobs:
 
     - name: Install
       run: |
-        uv sync --python 3.12 --group checking --group document --group test --extra optional
+        uv sync --python 3.12 --group checking --group test --extra document --extra optional
 
     - name: Output installed packages
       run: |
         uv pip freeze
     - name: Output dependency tree
       run: |
-        uv tree --group checking --group document --group test --extra optional
+        uv tree --group checking --group test
   
     - name: ruff
       run: |

@@ -41,14 +41,14 @@ jobs:
     - name: Install Dependencies
       run: |
         sudo apt-get install optipng graphviz
-        uv sync --python 3.12 --group document
+        uv sync --python 3.12 --extra document
 
     - name: Output installed packages
       run: |
         uv pip freeze
     - name: Output dependency tree
       run: |
-        uv tree --group document
+        uv tree
 
     - name: Build Document
       run: |
@@ -95,14 +95,14 @@ jobs:
     - name: Install Dependencies
       run: |
         sudo apt-get install optipng graphviz
-        uv sync --python 3.12 --group document
+        uv sync --python 3.12 --extra document
 
     - name: Output installed packages
       run: |
         uv pip freeze
     - name: Output dependency tree
       run: |
-        uv tree --group document
+        uv tree
 
     - name: Run Doctest
       run: |

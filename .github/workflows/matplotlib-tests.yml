@@ -41,7 +41,7 @@ jobs:
         uv pip freeze
     - name: Output dependency tree
       run: |
-        uv tree --group test --extra optional
+        uv tree --group test
     - name: Tests without Plotly
       if:  ${{ github.event_name != 'schedule' && github.event_name != 'workflow_dispatch' }}
       run: |
