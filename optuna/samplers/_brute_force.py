@@ -183,18 +183,16 @@ class BruteForceSampler(BaseSampler):
     ) -> None:
         # Populate tree under given params from the given trials.
         params_items = params.items()
-        nan_param_names = {k for k, v in params_items if _is_nan(v)}
-        nonnan_param_names = set(params.keys() - nan_param_names)
+        nonnan_params_items = {k: v for k, v in params_items if not _is_nan(v)}.items()
+        nan_param_names = [k for k, v in params_items if _is_nan(v)]
         for trial in trials:
             trial_params = trial.params
             if params:
-                if nan_param_names:
-                    # Slow strict check.
-                    is_not_eq1 = any(not _is_nan(trial_params[k]) for k in nan_param_names)
-                    is_not_eq2 = any(params[k] != trial_params[k] for k in nonnan_param_names)
-                    if is_not_eq1 or is_not_eq2:
-                        continue
-                elif not (params_items <= trial_params.items()):
+                if not (nonnan_params_items <= trial_params.items()):
+                    continue
+                if nan_param_names and any(
+                    not _is_nan(trial_params.get(p)) for p in nan_param_names
+                ):
                     continue
             leaf = tree.add_path(
                 (
