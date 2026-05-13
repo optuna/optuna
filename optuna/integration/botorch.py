@@ -11,7 +11,7 @@ except ModuleNotFoundError:
 msg = _deprecated._DEPRECATION_WARNING_TEMPLATE.format(
     name="`optuna.integration.botorch`", d_ver="4.9.0", r_ver="6.0.0"
 )
-optuna_warn(f"{msg} Use `optuna_integration` instead.", FutureWarning)
+optuna_warn(f"{msg} Use `optuna_integration.botorch` instead.", FutureWarning)
 
 
 __all__ = ["BoTorchSampler"]
