@@ -46,7 +46,6 @@ if TYPE_CHECKING:
     import sqlalchemy.dialects.sqlite as sqlalchemy_dialects_sqlite
     import sqlalchemy.exc as sqlalchemy_exc
     import sqlalchemy.orm as sqlalchemy_orm
-    import sqlalchemy.sql.functions as sqlalchemy_sql_functions
 
     from optuna.storages._rdb import models
 else:
@@ -61,7 +60,6 @@ else:
     sqlalchemy_dialects_sqlite = _LazyImport("sqlalchemy.dialects.sqlite")
     sqlalchemy_exc = _LazyImport("sqlalchemy.exc")
     sqlalchemy_orm = _LazyImport("sqlalchemy.orm")
-    sqlalchemy_sql_functions = _LazyImport("sqlalchemy.sql.functions")
 
     models = _LazyImport("optuna.storages._rdb.models")
 
