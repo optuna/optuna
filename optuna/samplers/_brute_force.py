@@ -80,6 +80,11 @@ class _TreeNode:
             current_node = current_node.children[value]
         return current_node
 
+    def is_any_expandable(self, exclude_running: bool) -> bool:
+        if (children := self.children) is None:
+            return not exclude_running or not self.is_running
+        return any(child.is_any_expandable(exclude_running) for child in children.values())
+
     def count_unexpanded(self, exclude_running: bool) -> int:
         # Count the number of unexpanded nodes in the subtree.
         if self.children is None:
@@ -236,7 +241,7 @@ class BruteForceSampler(BaseSampler):
         # being initialized as an empty graph, which is created with n_jobs > 1
         # where we get trials[i].params = {} for some i.
         self._populate_tree(tree, trials, trial.params)
-        if tree.count_unexpanded(exclude_running) == 0:
+        if not tree.is_any_expandable(exclude_running):
             return param_distribution.to_external_repr(self._rng.rng.choice(candidates).item())
         else:
             return param_distribution.to_external_repr(
@@ -254,7 +259,7 @@ class BruteForceSampler(BaseSampler):
         )
         tree = _TreeNode()
         self._populate_tree(tree, trials, {})
-        if tree.count_unexpanded(exclude_running) == 0:
+        if not tree.is_any_expandable(exclude_running):
             study.stop()
 
 
