@@ -93,76 +93,6 @@ def test_warn_independent_sampling_group(capsys: pytest.CaptureFixture) -> None:
     assert err == ""
 
 
-def test_prior_weight_deprecation_warning() -> None:
-    with pytest.warns(FutureWarning, match="prior_weight"):
-        TPESampler(prior_weight=2.0)
-
-
-def test_prior_weight_no_warning_for_default() -> None:
-    with warnings.catch_warnings():
-        warnings.simplefilter("error", FutureWarning)
-        TPESampler(prior_weight=1.0)
-
-
-def test_consider_magic_clip_deprecation_warning() -> None:
-    with pytest.warns(FutureWarning, match="consider_magic_clip"):
-        TPESampler(consider_magic_clip=False)
-
-
-def test_consider_magic_clip_no_warning_for_default() -> None:
-    with warnings.catch_warnings():
-        warnings.simplefilter("error", FutureWarning)
-        TPESampler(consider_magic_clip=True)
-
-
-def test_consider_endpoints_deprecation_warning() -> None:
-    with pytest.warns(FutureWarning, match="consider_endpoints"):
-        TPESampler(consider_endpoints=True)
-
-
-def test_consider_endpoints_no_warning_for_default() -> None:
-    with warnings.catch_warnings():
-        warnings.simplefilter("error", FutureWarning)
-        TPESampler(consider_endpoints=False)
-
-
-def test_gamma_deprecation_warning() -> None:
-    with pytest.warns(FutureWarning, match="gamma"):
-        TPESampler(gamma=lambda _: 5)
-
-
-def test_gamma_no_warning_for_default() -> None:
-    from optuna.samplers._tpe.sampler import default_gamma
-
-    with warnings.catch_warnings():
-        warnings.simplefilter("error", FutureWarning)
-        TPESampler(gamma=default_gamma)
-
-
-def test_weights_deprecation_warning() -> None:
-    with pytest.warns(FutureWarning, match="weights"):
-        TPESampler(weights=lambda n: np.ones(n))
-
-
-def test_weights_no_warning_for_default() -> None:
-    from optuna.samplers._tpe.sampler import default_weights
-
-    with warnings.catch_warnings():
-        warnings.simplefilter("error", FutureWarning)
-        TPESampler(weights=default_weights)
-
-
-def test_warn_independent_sampling_deprecation_warning() -> None:
-    with pytest.warns(FutureWarning, match="warn_independent_sampling"):
-        TPESampler(warn_independent_sampling=True)
-
-
-def test_warn_independent_sampling_no_warning_for_default() -> None:
-    with warnings.catch_warnings():
-        warnings.simplefilter("error", FutureWarning)
-        TPESampler(warn_independent_sampling=False)
-
-
 def test_infer_relative_search_space() -> None:
     sampler = TPESampler()
     search_space = {
@@ -1227,14 +1157,3 @@ def test_constant_liar_with_running_trial(multivariate: bool, multiobjective: bo
 def test_categorical_distance_func_experimental_warning() -> None:
     with pytest.warns(optuna.exceptions.ExperimentalWarning):
         _ = TPESampler(categorical_distance_func={"c": lambda x, y: 0.0})
-
-
-def test_categorical_distance_func_deprecation_warning() -> None:
-    with pytest.warns(FutureWarning, match="categorical_distance_func"):
-        _ = TPESampler(categorical_distance_func={"c": lambda x, y: 0.0})
-
-
-def test_categorical_distance_func_no_warning_for_default() -> None:
-    with warnings.catch_warnings():
-        warnings.simplefilter("error", FutureWarning)
-        TPESampler(categorical_distance_func=None)
