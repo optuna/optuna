@@ -112,7 +112,7 @@ class _TreeNode:
                 if child.is_running:
                     weights[i] = 0.0
         weights /= weights.sum()
-        return rng.choice(list(self.children.keys()), p=weights)
+        return rng.choice(list(self.children.keys()), p=weights).item()
 
 
 def _get_non_waiting_trials_and_current_trial_index(
@@ -237,7 +237,7 @@ class BruteForceSampler(BaseSampler):
         # where we get trials[i].params = {} for some i.
         self._populate_tree(tree, trials, trial.params)
         if tree.count_unexpanded(exclude_running) == 0:
-            return param_distribution.to_external_repr(self._rng.rng.choice(candidates))
+            return param_distribution.to_external_repr(self._rng.rng.choice(candidates).item())
         else:
             return param_distribution.to_external_repr(
                 tree.sample_child(self._rng.rng, exclude_running)
