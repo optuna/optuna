@@ -55,6 +55,7 @@ __all__ = [
 
 
 if TYPE_CHECKING:
+    # NOTE(nabenabe): This allows LSP to jump to the original sources.
     from optuna import artifacts
     from optuna import importance
     from optuna import visualization
