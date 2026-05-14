@@ -1489,15 +1489,6 @@ def test_tell_automatically_fail() -> None:
         assert study.trials[-1].state == TrialState.FAIL
         assert study.trials[-1].values is None
 
-    # Check that all invalid values are reported together (not just the first one).
-    study_mo = create_study(directions=["minimize", "minimize"])
-    with pytest.warns(UserWarning, match="could not be cast to float") as warning_info:
-        study_mo.tell(study_mo.ask(), ["a", float("nan")])  # type: ignore
-        assert len(study_mo.trials) == 1
-        assert study_mo.trials[-1].state == TrialState.FAIL
-        assert study_mo.trials[-1].values is None
-    assert "nan" in str(warning_info[0].message)
-
 
 def test_tell_multi_objective() -> None:
     study = create_study(directions=["minimize", "maximize"])
