@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import decimal
-from functools import lru_cache
 import math
 from numbers import Real
 import sys
@@ -298,7 +297,6 @@ class BruteForceSampler(BaseSampler):
             study.stop()
 
 
-@lru_cache
 def _is_nan(v: CategoricalChoiceType) -> bool:
     return isinstance(v, Real) and math.isnan(float(v))
 
