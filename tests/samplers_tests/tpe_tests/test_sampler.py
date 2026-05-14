@@ -1152,8 +1152,3 @@ def test_constant_liar_with_running_trial(multivariate: bool, multiobjective: bo
     trial.suggest_float("y", 0, 10)
     trial.suggest_categorical("z", [0, 1, 2])
     study.tell(trial, [0, 0] if multiobjective else 0)
-
-
-def test_categorical_distance_func_experimental_warning() -> None:
-    with pytest.warns(optuna.exceptions.ExperimentalWarning):
-        _ = TPESampler(categorical_distance_func={"c": lambda x, y: 0.0})

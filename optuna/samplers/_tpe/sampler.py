@@ -6,6 +6,7 @@ import math
 from typing import Any
 from typing import cast
 from typing import TYPE_CHECKING
+from typing import TypeVar
 
 import numpy as np
 
@@ -70,10 +71,17 @@ def default_weights(x: int) -> np.ndarray:
         return np.concatenate([ramp, flat], axis=0)
 
 
-def _warn_if_deprecated_argument(name: str, d_ver: str, r_ver: str, is_deprecated: bool) -> None:
-    if is_deprecated:
+_T = TypeVar("_T")
+
+
+def _warn_if_deprecated_argument(
+    name: str, value: _T | None, default: _T, d_ver: str, r_ver: str
+) -> _T:
+    if value is not None:
         msg = _deprecated._DEPRECATION_WARNING_TEMPLATE.format(name=name, d_ver=d_ver, r_ver=r_ver)
         optuna_warn(msg, FutureWarning)
+        return value
+    return default
 
 
 class TPESampler(BaseSampler):
@@ -323,11 +331,6 @@ class TPESampler(BaseSampler):
             specify prior knowledge on the structure of categorical parameters. When specified,
             categorical choices closer to current best choices are more likely to be sampled.
 
-            .. note::
-                Added in v3.4.0 as an experimental feature. The interface may change in newer
-                versions without prior notice.
-                See https://github.com/optuna/optuna/releases/tag/v3.4.0.
-
             .. warning::
                 Deprecated in v4.9.0. ``categorical_distance_func`` argument will be removed in
                 the future. The removal of this feature is currently scheduled for v5.0.0,
@@ -354,32 +357,46 @@ class TPESampler(BaseSampler):
     def __init__(
         self,
         *,
-        consider_prior: bool = True,
-        prior_weight: float = 1.0,
-        consider_magic_clip: bool = True,
-        consider_endpoints: bool = False,
+        consider_prior: bool | None = None,
+        prior_weight: float | None = None,
+        consider_magic_clip: bool | None = None,
+        consider_endpoints: bool | None = None,
         n_startup_trials: int = 10,
         n_ei_candidates: int = 24,
-        gamma: Callable[[int], int] = default_gamma,
-        weights: Callable[[int], np.ndarray] = default_weights,
+        gamma: Callable[[int], int] | None = None,
+        weights: Callable[[int], np.ndarray] | None = None,
         seed: int | None = None,
         multivariate: bool = False,
         group: bool = False,
-        warn_independent_sampling: bool = False,
+        warn_independent_sampling: bool | None = None,
         constant_liar: bool = False,
         constraints_func: Callable[[FrozenTrial], Sequence[float]] | None = None,
         categorical_distance_func: (
             dict[str, Callable[[CategoricalChoiceType, CategoricalChoiceType], float]] | None
         ) = None,
     ) -> None:
-        _warn_if_deprecated_argument("`consider_prior`", "4.3.0", "6.0.0", not consider_prior)
-        _warn_if_deprecated_argument("`prior_weight`", "4.9.0", "6.0.0", prior_weight != 1.0)
-        _warn_if_deprecated_argument(
-            "`consider_magic_clip`", "4.9.0", "6.0.0", not consider_magic_clip
+        consider_prior = _warn_if_deprecated_argument(
+            "`consider_prior`", consider_prior, True, "4.3.0", "6.0.0"
         )
-        _warn_if_deprecated_argument("`consider_endpoints`", "4.9.0", "6.0.0", consider_endpoints)
-        _warn_if_deprecated_argument("`gamma`", "4.9.0", "6.0.0", gamma is not default_gamma)
-        _warn_if_deprecated_argument("`weights`", "4.9.0", "6.0.0", weights is not default_weights)
+        prior_weight = _warn_if_deprecated_argument(
+            "`prior_weight`", prior_weight, 1.0, "4.9.0", "6.0.0"
+        )
+        consider_magic_clip = _warn_if_deprecated_argument(
+            "`consider_magic_clip`", consider_magic_clip, True, "4.9.0", "6.0.0"
+        )
+        consider_endpoints = _warn_if_deprecated_argument(
+            "`consider_endpoints`", consider_endpoints, False, "4.9.0", "6.0.0"
+        )
+        gamma = _warn_if_deprecated_argument("`gamma`", gamma, default_gamma, "4.9.0", "6.0.0")
+        weights = _warn_if_deprecated_argument(
+            "`weights`", weights, default_weights, "4.9.0", "6.0.0"
+        )
+        warn_independent_sampling = _warn_if_deprecated_argument(
+            "`warn_independent_sampling`", warn_independent_sampling, False, "4.9.0", "6.0.0"
+        )
+        categorical_distance_func = _warn_if_deprecated_argument(
+            "`categorical_distance_func`", categorical_distance_func, None, "4.9.0", "5.0.0"
+        )
 
         self._parzen_estimator_parameters = _ParzenEstimatorParameters(
             prior_weight=prior_weight,
@@ -393,10 +410,6 @@ class TPESampler(BaseSampler):
         self._n_startup_trials = n_startup_trials
         self._n_ei_candidates = n_ei_candidates
         self._gamma = gamma
-
-        _warn_if_deprecated_argument(
-            "`warn_independent_sampling`", "4.9.0", "6.0.0", warn_independent_sampling
-        )
 
         self._warn_independent_sampling = warn_independent_sampling
         self._rng = LazyRandomState(seed)
@@ -428,12 +441,6 @@ class TPESampler(BaseSampler):
 
         if constraints_func is not None:
             warn_experimental_argument("constraints_func")
-
-        if categorical_distance_func is not None:
-            warn_experimental_argument("categorical_distance_func")
-            _warn_if_deprecated_argument(
-                "`categorical_distance_func`", "4.9.0", "5.0.0", is_deprecated=True
-            )
 
     def reseed_rng(self) -> None:
         self._rng.rng.seed()
