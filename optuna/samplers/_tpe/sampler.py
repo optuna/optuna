@@ -6,6 +6,7 @@ import math
 from typing import Any
 from typing import cast
 from typing import TYPE_CHECKING
+from typing import TypeVar
 
 import numpy as np
 
@@ -68,6 +69,19 @@ def default_weights(x: int) -> np.ndarray:
         ramp = np.linspace(1.0 / x, 1.0, num=x - 25)
         flat = np.ones(25)
         return np.concatenate([ramp, flat], axis=0)
+
+
+_T = TypeVar("_T")
+
+
+def _warn_if_deprecated_argument(
+    name: str, value: _T | None, default: _T, d_ver: str, r_ver: str
+) -> _T:
+    if value is not None:
+        msg = _deprecated._DEPRECATION_WARNING_TEMPLATE.format(name=name, d_ver=d_ver, r_ver=r_ver)
+        optuna_warn(msg, FutureWarning)
+        return value
+    return default
 
 
 class TPESampler(BaseSampler):
@@ -149,13 +163,31 @@ class TPESampler(BaseSampler):
             :class:`~optuna.distributions.FloatDistribution`,
             :class:`~optuna.distributions.IntDistribution`, and
             :class:`~optuna.distributions.CategoricalDistribution`.
+
+            .. warning::
+                Deprecated in v4.9.0. ``prior_weight`` argument will be removed in the future.
+                The removal of this feature is currently scheduled for v6.0.0,
+                but this schedule is subject to change.
+                See https://github.com/optuna/optuna/releases/tag/v4.9.0.
         consider_magic_clip:
             Enable a heuristic to limit the smallest variances of Gaussians used in
             the Parzen estimator.
+
+            .. warning::
+                Deprecated in v4.9.0. ``consider_magic_clip`` argument will be removed in the
+                future. The removal of this feature is currently scheduled for v6.0.0,
+                but this schedule is subject to change.
+                See https://github.com/optuna/optuna/releases/tag/v4.9.0.
         consider_endpoints:
             Take endpoints of domains into account when calculating variances of Gaussians
             in Parzen estimator. See the original paper for details on the heuristics
             to calculate the variances.
+
+            .. warning::
+                Deprecated in v4.9.0. ``consider_endpoints`` argument will be removed in the
+                future. The removal of this feature is currently scheduled for v6.0.0,
+                but this schedule is subject to change.
+                See https://github.com/optuna/optuna/releases/tag/v4.9.0.
         n_startup_trials:
             The random sampling is used instead of the TPE algorithm until the given number
             of trials finish in the same study.
@@ -165,6 +197,12 @@ class TPESampler(BaseSampler):
             A function that takes the number of finished trials and returns the number
             of trials to form a density function for samples with low grains.
             See the original paper for more details.
+
+            .. warning::
+                Deprecated in v4.9.0. ``gamma`` argument will be removed in the future.
+                The removal of this feature is currently scheduled for v6.0.0,
+                but this schedule is subject to change.
+                See https://github.com/optuna/optuna/releases/tag/v4.9.0.
         weights:
             A function that takes the number of finished trials and returns a weight for them.
             See `Making a Science of Model Search: Hyperparameter Optimization in Hundreds of
@@ -178,6 +216,12 @@ class TPESampler(BaseSampler):
                 ). The weights of good trials, i.e., trials to construct `l(x)`, are computed by a
                 rule based on the hypervolume contribution proposed in the `paper of MOTPE
                 <https://doi.org/10.1613/jair.1.13188>`__.
+
+            .. warning::
+                Deprecated in v4.9.0. ``weights`` argument will be removed in the future.
+                The removal of this feature is currently scheduled for v6.0.0,
+                but this schedule is subject to change.
+                See https://github.com/optuna/optuna/releases/tag/v4.9.0.
         seed:
             Seed for random number generator.
         multivariate:
@@ -231,6 +275,12 @@ class TPESampler(BaseSampler):
             If this is :obj:`True` and ``multivariate=True``, a warning message is emitted when
             the value of a parameter is sampled by using an independent sampler.
             If ``multivariate=False``, this flag has no effect.
+
+            .. warning::
+                Deprecated in v4.9.0. ``warn_independent_sampling`` argument will be removed in
+                the future. The removal of this feature is currently scheduled for v6.0.0,
+                but this schedule is subject to change.
+                See https://github.com/optuna/optuna/releases/tag/v4.9.0.
         constant_liar:
             If :obj:`True`, penalize running trials to avoid suggesting parameter configurations
             nearby.
@@ -281,10 +331,11 @@ class TPESampler(BaseSampler):
             specify prior knowledge on the structure of categorical parameters. When specified,
             categorical choices closer to current best choices are more likely to be sampled.
 
-            .. note::
-                Added in v3.4.0 as an experimental feature. The interface may change in newer
-                versions without prior notice.
-                See https://github.com/optuna/optuna/releases/tag/v3.4.0.
+            .. warning::
+                Deprecated in v4.9.0. ``categorical_distance_func`` argument will be removed in
+                the future. The removal of this feature is currently scheduled for v5.0.0,
+                but this schedule is subject to change.
+                See https://github.com/optuna/optuna/releases/tag/v4.9.0.
     """
 
     @convert_positional_args(
@@ -306,32 +357,46 @@ class TPESampler(BaseSampler):
     def __init__(
         self,
         *,
-        consider_prior: bool = True,
-        prior_weight: float = 1.0,
-        consider_magic_clip: bool = True,
-        consider_endpoints: bool = False,
+        consider_prior: bool | None = None,
+        prior_weight: float | None = None,
+        consider_magic_clip: bool | None = None,
+        consider_endpoints: bool | None = None,
         n_startup_trials: int = 10,
         n_ei_candidates: int = 24,
-        gamma: Callable[[int], int] = default_gamma,
-        weights: Callable[[int], np.ndarray] = default_weights,
+        gamma: Callable[[int], int] | None = None,
+        weights: Callable[[int], np.ndarray] | None = None,
         seed: int | None = None,
         multivariate: bool = False,
         group: bool = False,
-        warn_independent_sampling: bool = True,
+        warn_independent_sampling: bool | None = None,
         constant_liar: bool = False,
         constraints_func: Callable[[FrozenTrial], Sequence[float]] | None = None,
         categorical_distance_func: (
             dict[str, Callable[[CategoricalChoiceType, CategoricalChoiceType], float]] | None
         ) = None,
     ) -> None:
-        if not consider_prior:
-            msg = _deprecated._DEPRECATION_WARNING_TEMPLATE.format(
-                name="`consider_prior`", d_ver="4.3.0", r_ver="6.0.0"
-            )
-            optuna_warn(
-                f"{msg} From v4.3.0 onward, `consider_prior` automatically falls back to `True`.",
-                FutureWarning,
-            )
+        consider_prior = _warn_if_deprecated_argument(
+            "`consider_prior`", consider_prior, True, "4.3.0", "6.0.0"
+        )
+        prior_weight = _warn_if_deprecated_argument(
+            "`prior_weight`", prior_weight, 1.0, "4.9.0", "6.0.0"
+        )
+        consider_magic_clip = _warn_if_deprecated_argument(
+            "`consider_magic_clip`", consider_magic_clip, True, "4.9.0", "6.0.0"
+        )
+        consider_endpoints = _warn_if_deprecated_argument(
+            "`consider_endpoints`", consider_endpoints, False, "4.9.0", "6.0.0"
+        )
+        gamma = _warn_if_deprecated_argument("`gamma`", gamma, default_gamma, "4.9.0", "6.0.0")
+        weights = _warn_if_deprecated_argument(
+            "`weights`", weights, default_weights, "4.9.0", "6.0.0"
+        )
+        warn_independent_sampling = _warn_if_deprecated_argument(
+            "`warn_independent_sampling`", warn_independent_sampling, False, "4.9.0", "6.0.0"
+        )
+        categorical_distance_func = _warn_if_deprecated_argument(
+            "`categorical_distance_func`", categorical_distance_func, None, "4.9.0", "5.0.0"
+        )
 
         self._parzen_estimator_parameters = _ParzenEstimatorParameters(
             prior_weight=prior_weight,
@@ -341,6 +406,7 @@ class TPESampler(BaseSampler):
             multivariate=multivariate,
             categorical_distance_func=categorical_distance_func or {},
         )
+
         self._n_startup_trials = n_startup_trials
         self._n_ei_candidates = n_ei_candidates
         self._gamma = gamma
@@ -375,9 +441,6 @@ class TPESampler(BaseSampler):
 
         if constraints_func is not None:
             warn_experimental_argument("constraints_func")
-
-        if categorical_distance_func is not None:
-            warn_experimental_argument("categorical_distance_func")
 
     def reseed_rng(self) -> None:
         self._rng.rng.seed()
@@ -625,6 +688,7 @@ class TPESampler(BaseSampler):
         return {k: v[best_idx].item() for k, v in samples.items()}
 
     @staticmethod
+    @_deprecated.deprecated_func("4.9.0", "6.0.0")
     def hyperopt_parameters() -> dict[str, Any]:
         """Return the the default parameters of hyperopt (v0.1.2).
 
