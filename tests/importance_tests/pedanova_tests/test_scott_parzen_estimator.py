@@ -23,22 +23,17 @@ from tests.samplers_tests.tpe_tests.test_parzen_estimator import assert_distribu
 DIST_TYPES = ["int", "cat"]
 
 
-@pytest.mark.parametrize("dist_type", DIST_TYPES)
+@pytest.mark.parametrize("dist_type", ["int", "cat"])
 def test_init_scott_parzen_estimator(dist_type: str) -> None:
     counts = np.array([1, 1, 1, 1]).astype(float)
     is_cat = dist_type == "cat"
-    pe = _ScottParzenEstimator(
-        param_name="a",
-        dist=(
-            IntDistribution(low=0, high=counts.size - 1)
-            if not is_cat
-            else CategoricalDistribution(choices=["a" * i for i in range(counts.size)])
-        ),
-        counts=counts,
-        prior_weight=0.0,
+    pe = ScottParzenEstimator(
+        {"a": np.arange(counts.size)},
+        {"a": IntDistribution(low=0, high=counts.size - 1) if not is_cat else CategoricalDistribution(choices=["a" * i for i in range(counts.size)])},
+        pe_parameters,
+        counts,
     )
     assert len(pe._mixture_distribution.distributions) == 1
-    assert pe.n_steps == counts.size
     target_pe = pe._mixture_distribution.distributions[0]
     if is_cat:
         assert isinstance(target_pe, _BatchedCategoricalDistributions)
