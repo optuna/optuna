@@ -20,11 +20,11 @@ jobs:
     if: github.repository == 'optuna/optuna'
 
     steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python 3.12
-      uses: actions/setup-python@v5
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+    - name: Set up Python 3.13
+      uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
       with:
-        python-version: 3.12
+        python-version: 3.13
 
     - name: Install twine
       run: |
@@ -53,22 +53,9 @@ jobs:
     - name: Publish distribution to TestPyPI
       # The following upload action cannot be executed in the forked repository.
       if: (github.event_name == 'schedule') || (github.event_name == 'release')
-      uses: pypa/gh-action-pypi-publish@release/v1
-      with:
-        repository-url: https://test.pypi.org/legacy/
-        # Temporary workaround to bypass Twine's bug with attestation support
-        # See https://github.com/pypa/gh-action-pypi-publish/issues/283
-        # TODO(c-bata): Once a new version of twine is released, delete this line.
-        # https://github.com/pypa/twine/pull/1172 
-        attestations: false
+      uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b  # v1.14.0
 
     - name: Publish distribution to PyPI
       # The following upload action cannot be executed in the forked repository.
       if: github.event_name == 'release'
-      uses: pypa/gh-action-pypi-publish@release/v1
-      with:
-        # Temporary workaround to bypass Twine's bug with attestation support
-        # See https://github.com/pypa/gh-action-pypi-publish/issues/283
-        # TODO(c-bata): Once a new version of twine is released, delete this line.
-        # https://github.com/pypa/twine/pull/1172 
-        attestations: false
+      uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b  # v1.14.0

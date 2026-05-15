@@ -117,6 +117,8 @@ class _LazyImport(types.ModuleType):
     Within this project's usage, importlib override this module's attribute on the first
     access and the imported submodule is directly accessed from the second access.
 
+    TODO: Eliminate lazy import after Python 3.14 is dropped. https://peps.python.org/pep-0810/
+
     Args:
         name: Name of module to apply lazy import.
     """
