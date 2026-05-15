@@ -168,7 +168,7 @@ def test_build_parzen_estimator(
     params: list[int] | list[float] | list[str],
 ) -> None:
     trials = [create_trial(value=0.0, params={"a": p}, distributions={"a": dist}) for p in params]
-    pe = _build_parzen_estimator(
+    pe, _ = build_parzen_estimator_on_grid(
         param_name="a",
         dist=dist,
         trials=trials,
