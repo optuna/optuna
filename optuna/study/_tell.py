@@ -58,23 +58,22 @@ def _check_state_and_values(
 
 
 def _check_values_are_feasible(study: Study, values: Sequence[float]) -> str | None:
+    errors = []
     for v in values:
-        # TODO(Imamura): Construct error message taking into account all values and do not early
-        # return `value` is assumed to be ignored on failure so we can set it to any value.
         try:
             float(v)
         except (ValueError, TypeError):
-            return f"The value {repr(v)} could not be cast to float"
-
+            errors.append(f"The value {repr(v)} could not be cast to float")
+            continue
         if math.isnan(v):
-            return f"The value {v} is not acceptable"
-
+            errors.append(f"The value {v} is not acceptable")
+    if errors:
+        return "; ".join(errors)
     if len(study.directions) != len(values):
         return (
             f"The number of the values {len(values)} did not match the number of the objectives "
             f"{len(study.directions)}"
         )
-
     return None
 
 
