@@ -112,8 +112,7 @@ def _count_numerical_param_in_grid(
     param_values = (np.log if dist.log else np.asarray)([t.params[param_name] for t in trials])
     step_size = (high - low) / (n_steps - 1)
     indices = np.minimum(((param_values - low) / step_size).astype(int), n_steps - 1)
-    counts = np.bincount(indices, minlength=n_steps)
-    return counts
+    return np.bincount(indices, minlength=n_steps)
 
 
 def _count_categorical_param_in_grid(
