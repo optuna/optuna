@@ -88,6 +88,7 @@ def test_infer_relative_search_space() -> None:
     sampler._initial_search_space = new_search_space
     assert sampler.infer_relative_search_space(study, trial) == new_search_space
 
+
 def test_infer_relative_search_space_without_any() -> None:
     sampler = _init_QMCSampler_without_exp_warning()
     study = optuna.create_study(sampler=sampler)
@@ -118,7 +119,7 @@ def test_infer_relative_search_space_with_partially_suggested_running() -> None:
 def test_infer_relative_search_space_with_ask_fixed() -> None:
     sampler = _init_QMCSampler_without_exp_warning()
     study = optuna.create_study(sampler=sampler)
-    dists = {
+    dists: dict[str, BaseDistribution] = {
         "a": optuna.distributions.FloatDistribution(1, 10),
         "b": optuna.distributions.FloatDistribution(-10, 2),
     }
