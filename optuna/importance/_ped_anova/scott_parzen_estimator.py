@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import numpy as np
+import math
 
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
@@ -92,27 +93,6 @@ class _ScottParzenEstimator(_ParzenEstimator):
         return np.exp(self.log_pdf({self._param_name: samples}))
 
 
-def _get_grids_and_grid_indices_of_trials(
-    param_name: str,
-    dist: IntDistribution | FloatDistribution,
-    trials: list[FrozenTrial],
-    n_steps: int,
-) -> tuple[int, np.ndarray]:
-    assert isinstance(dist, (FloatDistribution, IntDistribution)), "Unexpected distribution."
-    if isinstance(dist, IntDistribution) and dist.log:
-        log2_domain_size = int(np.ceil(np.log(dist.high - dist.low + 1) / np.log(2))) + 1
-        n_steps = min(log2_domain_size, n_steps)
-    elif dist.step is not None:
-        assert not dist.log, "log must be False when step is not None."
-        n_steps = min(round((dist.high - dist.low) / dist.step) + 1, n_steps)
-
-    scaler = np.log if dist.log else np.asarray
-    grids = np.linspace(scaler(dist.low), scaler(dist.high), n_steps)
-    params = scaler([t.params[param_name] for t in trials])
-    step_size = grids[1] - grids[0]
-    # grids[indices[n] - 1] < param - step_size / 2 <= grids[indices[n]]
-    indices = np.searchsorted(grids, params - step_size / 2)
-    return grids.size, indices
 
 
 def _count_numerical_param_in_grid(
@@ -121,12 +101,18 @@ def _count_numerical_param_in_grid(
     trials: list[FrozenTrial],
     n_steps: int,
 ) -> np.ndarray:
-    n_grids, grid_indices_of_trials = _get_grids_and_grid_indices_of_trials(
-        param_name, dist, trials, n_steps
-    )
-    unique_vals, counts_in_unique = np.unique(grid_indices_of_trials, return_counts=True)
-    counts = np.zeros(n_grids, dtype=np.int32)
-    counts[unique_vals] += counts_in_unique
+    assert isinstance(dist, (FloatDistribution, IntDistribution)), "Unexpected distribution."
+    if isinstance(dist, IntDistribution) and dist.log:
+        log2_domain_size = int(np.ceil(np.log(dist.high - dist.low + 1) / np.log(2))) + 1
+        n_steps = min(log2_domain_size, n_steps)
+    elif dist.step is not None:
+        assert not dist.log, "log must be False when step is not None."
+        n_steps = min(round((dist.high - dist.low) / dist.step) + 1, n_steps)
+    low, high = (math.log(dist.low), math.log(dist.high)) if dist.log else (dist.low, dist.high)
+    param_values = (np.log if dist.log else np.asarray)([t.params[param_name] for t in trials])
+    step_size = (high - low) / (n_steps - 1)
+    indices = np.minimum(((param_values - low) / step_size).astype(int), n_steps - 1)
+    counts = np.bincount(indices, minlength=n_steps)
     return counts
 
 
