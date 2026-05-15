@@ -183,6 +183,8 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
         quantile: float,
         target: Callable[[FrozenTrial], float] | None,
     ) -> list[FrozenTrial]:
+        if quantile == 1.0:
+            return trials
         is_lower_better = study.directions[0] == StudyDirection.MINIMIZE
         if target is not None:
             optuna_warn(
