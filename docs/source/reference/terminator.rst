@@ -9,7 +9,7 @@ The :mod:`~optuna.terminator` module implements a mechanism for automatically te
 
    Deprecated in v4.9.0. The :mod:`~optuna.terminator` module will be removed
    in v6.0.0. Its functionality is planned to be published in
-   https://github.com/optuna/optunahub-registry.
+   https://hub.optuna.org.
 
 .. autosummary::
    :toctree: generated/
