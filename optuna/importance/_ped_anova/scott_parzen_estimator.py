@@ -99,7 +99,7 @@ def _build_parzen_estimator(
     trials: list[FrozenTrial],
     n_steps: int,
     prior_weight: float,
-) -> _ScottParzenEstimator:
+) -> ScottParzenEstimator:
     rounded_dist: IntDistribution | CategoricalDistribution
     if isinstance(dist, (IntDistribution, FloatDistribution)):
         counts = _count_numerical_param_in_grid(param_name, dist, trials, n_steps)
@@ -110,5 +110,21 @@ def _build_parzen_estimator(
     else:
         assert False, f"Got an unknown dist with the type {type(dist)}."
 
-    # counts.astype(float) is necessary for weight calculation in ParzenEstimator.
-    return _ScottParzenEstimator(param_name, rounded_dist, counts.astype(np.float64), prior_weight)
+    # # counts.astype(float) is necessary for weight calculation in ParzenEstimator.
+    # return _ScottParzenEstimator(param_name, rounded_dist, counts.astype(np.float64), prior_weight)
+    observations = np.flatnonzero(counts)
+    weights = counts[observations].astype(np.float64)
+    parameters = _ParzenEstimatorParameters(
+        prior_weight=prior_weight,
+        consider_magic_clip=False,
+        consider_endpoints=False,
+        weights=lambda x: np.empty(0),
+        multivariate=True,
+        categorical_distance_func={},
+    )
+    return ScottParzenEstimator(
+        {param_name: observations},
+        {param_name: dist},
+        parameters,
+        weights,
+    )
