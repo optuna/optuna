@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 class RetryHeartbeatStaleTrialCallback:
     """Retry a heartbeat-stale trial up to a maximum number of times.
 
-    When a running trial becomes stale due to the RDB heartbeat mechanism, this callback can be
+    When a running trial becomes stale due to the heartbeat mechanism, this callback can be
     used with a class in :mod:`optuna.storages` to recreate the trial in ``TrialState.WAITING``
     to queue up the trial to be run again.
 

@@ -254,7 +254,6 @@ def test_fail_stale_trials(grace_period: int | None) -> None:
         storage.heartbeat_interval = heartbeat_interval
         storage.grace_period = grace_period
         storage.heartbeat_stale_trial_callback = heartbeat_stale_trial_callback
-        storage.failed_trial_callback = heartbeat_stale_trial_callback
         study = optuna.create_study(storage=storage)
         study._storage.set_study_system_attr(study._study_id, "test", "A")
 
