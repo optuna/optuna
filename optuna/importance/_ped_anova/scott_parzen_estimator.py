@@ -93,7 +93,7 @@ def _count_categorical_param_in_grid(
     return np.bincount(indices, minlength=len(dist.choices))
 
 
-def _build_parzen_estimator(
+def build_parzen_estimator_on_grid(
     param_name: str,
     dist: BaseDistribution,
     trials: list[FrozenTrial],
@@ -124,7 +124,7 @@ def _build_parzen_estimator(
     )
     return ScottParzenEstimator(
         {param_name: observations},
-        {param_name: dist},
+        {param_name: rounded_dist},
         parameters,
         weights,
     )
