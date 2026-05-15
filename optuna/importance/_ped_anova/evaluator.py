@@ -252,11 +252,7 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
             return {k: 0.0 for k in dists}
 
         target_trials = self._get_top_quantile_trials(study, trials, self._target_quantile, target)
-        region_trials = (
-            trials
-            if self._region_quantile == 1.0
-            else self._get_top_quantile_trials(study, trials, self._region_quantile, target)
-        )
+        region_trials = self._get_top_quantile_trials(study, trials, self._region_quantile, target)
         if len(target_trials) == len(region_trials):
             optuna_warn(
                 "Target and region quantiles select the same set of trials. "
