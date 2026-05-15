@@ -55,6 +55,9 @@ jobs:
       if: (github.event_name == 'schedule') || (github.event_name == 'release')
       uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b  # v1.14.0
 
+      with:
+        repository-url: https://test.pypi.org/legacy/
+
     - name: Publish distribution to PyPI
       # The following upload action cannot be executed in the forked repository.
       if: github.event_name == 'release'
