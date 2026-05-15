@@ -71,6 +71,9 @@ class ScottParzenEstimator(_ParzenEstimator):
             mu=mus_with_prior, sigma=sigmas_with_prior, low=low, high=high, step=1
         )
 
+    def pdf(self, samples: dict[str, np.ndarray]) -> np.ndarray:
+        return np.exp(self.log_pdf(samples))
+
 
 def _count_numerical_param_in_grid(
     param_name: str,
