@@ -22,7 +22,7 @@ from tests.samplers_tests.tpe_tests.test_parzen_estimator import assert_distribu
 
 
 pe_parameters = _ParzenEstimatorParameters(
-    prior_weight=1.0,
+    prior_weight=0.0,
     consider_magic_clip=False,
     consider_endpoints=False,
     weights=lambda x: np.empty(0),
