@@ -117,10 +117,10 @@ def test_build_int_scott_parzen_estimator(
 )
 def test_build_cat_scott_parzen_estimator(counts: np.ndarray, weights: np.ndarray) -> None:
     pe = ScottParzenEstimator(
-        {"a": np.arange(counts.size)},
+        {"a": (obs := np.flatnonzero(counts))},
         {"a": CategoricalDistribution(choices=["a" * i for i in range(counts.size)])},
         pe_parameters,
-        counts.astype(float),
+        counts[obs].astype(float),
     )
     dist = _BatchedCategoricalDistributions(
         weights=np.concatenate(
