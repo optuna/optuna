@@ -1,9 +1,9 @@
 from __future__ import annotations
 
+import math
 from typing import TYPE_CHECKING
 
 import numpy as np
-import math
 
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
@@ -53,7 +53,9 @@ class ScottParzenEstimator(_ParzenEstimator):
             low, high = math.log(low), math.log(high)
 
         mean_est = (observations @ self._weights) / weights_sum
-        sigma_est = np.sqrt(((observations - mean_est) ** 2 @ self._weights) / max(1, weights_sum - 1))
+        sigma_est = np.sqrt(
+            ((observations - mean_est) ** 2 @ self._weights) / max(1, weights_sum - 1)
+        )
         if observations.size == 0:
             inter_quantile_range = 0.0
         else:
@@ -61,7 +63,7 @@ class ScottParzenEstimator(_ParzenEstimator):
             q1_idx = int(0.25 * (n_observations - 1))
             q3_idx = int(0.75 * (n_observations - 1))
             inter_quantile_range = sorted_obs[q3_idx] - sorted_obs[q1_idx]
-        sigma_est = 1.059 * min(inter_quantile_range / 1.34, sigma_est) * weights_sum ** -0.2
+        sigma_est = 1.059 * min(inter_quantile_range / 1.34, sigma_est) * weights_sum**-0.2
         # To avoid numerical errors. 0.5/1.64 means 1.64sigma (=90%) will fit in the target grid.
         sigma_min = 0.5 / 1.64
         mus_with_prior = np.r_[observations, 0.5 * (search_space.low + search_space.high)]
