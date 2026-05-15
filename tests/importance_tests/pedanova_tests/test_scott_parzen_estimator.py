@@ -10,17 +10,25 @@ from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
-from optuna.importance._ped_anova.scott_parzen_estimator import _build_parzen_estimator
 from optuna.importance._ped_anova.scott_parzen_estimator import _count_categorical_param_in_grid
 from optuna.importance._ped_anova.scott_parzen_estimator import _count_numerical_param_in_grid
-from optuna.importance._ped_anova.scott_parzen_estimator import _ScottParzenEstimator
+from optuna.importance._ped_anova.scott_parzen_estimator import build_parzen_estimator_on_grid
+from optuna.importance._ped_anova.scott_parzen_estimator import ScottParzenEstimator
+from optuna.samplers._tpe.parzen_estimator import _ParzenEstimatorParameters
 from optuna.samplers._tpe.probability_distributions import _BatchedCategoricalDistributions
 from optuna.samplers._tpe.probability_distributions import _BatchedDiscreteTruncNormDistributions
 from optuna.samplers._tpe.probability_distributions import _MixtureOfProductDistribution
 from tests.samplers_tests.tpe_tests.test_parzen_estimator import assert_distribution_almost_equal
 
 
-DIST_TYPES = ["int", "cat"]
+pe_parameters = _ParzenEstimatorParameters(
+    prior_weight=1.0,
+    consider_magic_clip=False,
+    consider_endpoints=False,
+    weights=lambda x: np.empty(0),
+    multivariate=True,
+    categorical_distance_func={},
+)
 
 
 @pytest.mark.parametrize("dist_type", ["int", "cat"])
@@ -29,7 +37,11 @@ def test_init_scott_parzen_estimator(dist_type: str) -> None:
     is_cat = dist_type == "cat"
     pe = ScottParzenEstimator(
         {"a": np.arange(counts.size)},
-        {"a": IntDistribution(low=0, high=counts.size - 1) if not is_cat else CategoricalDistribution(choices=["a" * i for i in range(counts.size)])},
+        {
+            "a": IntDistribution(low=0, high=counts.size - 1)
+            if not is_cat
+            else CategoricalDistribution(choices=["a" * i for i in range(counts.size)])
+        },
         pe_parameters,
         counts,
     )
