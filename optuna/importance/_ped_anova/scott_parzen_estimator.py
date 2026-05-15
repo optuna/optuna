@@ -29,9 +29,9 @@ class ScottParzenEstimator(_ParzenEstimator):
         parameters: _ParzenEstimatorParameters,
         predetermined_weights: np.ndarray | None = None,
     ) -> None:
-        super().__init__(observations, search_space, parameters, predetermined_weights)
         assert predetermined_weights is not None
         self._weights = predetermined_weights
+        super().__init__(observations, search_space, parameters, predetermined_weights)
 
     def _calculate_numerical_distributions(
         self,
