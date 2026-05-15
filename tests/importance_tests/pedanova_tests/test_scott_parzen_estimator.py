@@ -80,15 +80,14 @@ def test_init_scott_parzen_estimator(dist_type: str) -> None:
 def test_build_int_scott_parzen_estimator(
     counts: np.ndarray, mu: np.ndarray, sigma: np.ndarray, weights: np.ndarray
 ) -> None:
-    _counts = counts.astype(float)
-    pe = _ScottParzenEstimator(
-        param_name="a",
-        dist=IntDistribution(low=0, high=_counts.size - 1),
-        counts=_counts,
-        prior_weight=0.0,
+    pe = ScottParzenEstimator(
+        {"a": np.arange(counts.size)},
+        {"a": IntDistribution(low=0, high=counts.size - 1)},
+        pe_parameters,
+        counts.astype(float),
     )
     dist = _BatchedDiscreteTruncNormDistributions(
-        mu=mu, sigma=sigma, low=0, high=_counts.size - 1, step=1
+        mu=mu, sigma=sigma, low=0, high=counts.size - 1, step=1
     )
     expected_dist = _MixtureOfProductDistribution(weights=weights, distributions=[dist])
     assert_distribution_almost_equal(pe._mixture_distribution, expected_dist)
