@@ -199,7 +199,7 @@ def test_assert_in_build_parzen_estimator() -> None:
             raise NotImplementedError
 
     with pytest.raises(AssertionError):
-        _build_parzen_estimator(
+        build_parzen_estimator_on_grid(
             param_name="a",
             dist=UnknownDistribution(),
             trials=[],
