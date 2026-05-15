@@ -22,35 +22,6 @@ if TYPE_CHECKING:
 class ScottParzenEstimator(_ParzenEstimator):
     """1D ParzenEstimator using the bandwidth selection by Scott's rule."""
 
-    def __init__(
-        self,
-        param_name: str,
-        dist: IntDistribution | CategoricalDistribution,
-        counts: np.ndarray,
-        prior_weight: float,
-    ) -> None:
-        assert isinstance(dist, (CategoricalDistribution, IntDistribution))
-        assert not isinstance(dist, IntDistribution) or dist.low == 0
-        n_choices = dist.high + 1 if isinstance(dist, IntDistribution) else len(dist.choices)
-        assert len(counts) == n_choices, counts
-
-        self._n_steps = len(counts)
-        self._param_name = param_name
-        self._counts = counts.copy()
-        super().__init__(
-            observations={param_name: np.arange(self._n_steps)[counts > 0.0]},
-            search_space={param_name: dist},
-            parameters=_ParzenEstimatorParameters(
-                prior_weight=prior_weight,
-                consider_magic_clip=False,
-                consider_endpoints=False,
-                weights=lambda x: np.empty(0),
-                multivariate=True,
-                categorical_distance_func={},
-            ),
-            predetermined_weights=counts[counts > 0.0],
-        )
-
     def _calculate_numerical_distributions(
         self,
         observations: np.ndarray,
