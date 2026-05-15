@@ -88,7 +88,9 @@ def _count_numerical_param_in_grid(
     low, high = (math.log(dist.low), math.log(dist.high)) if dist.log else (dist.low, dist.high)
     param_values = (np.log if dist.log else np.asarray)([t.params[param_name] for t in trials])
     step_size = (high - low) / (n_steps - 1)
-    indices = np.minimum(((param_values - low) / step_size).astype(int), n_steps - 1)
+    # For backward compatibility, midpoint ties go to the lower grid.
+    indices = np.ceil((param_values - low) / step_size - 0.5).astype(int)
+    indices = np.clip(indices, 0, n_steps - 1)
     return np.bincount(indices, minlength=n_steps)
 
 
