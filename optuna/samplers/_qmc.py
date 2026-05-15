@@ -198,8 +198,24 @@ class QMCSampler(BaseSampler):
                 return {}
 
             union_search_space: dict[str, BaseDistribution] = {}
+            intersection_keys: set[str] | None = None
+
             for t in pending_trials:
-                union_search_space.update(self._infer_initial_search_space(t))
+                space = self._infer_initial_search_space(t)
+                union_search_space.update(space)
+
+                if intersection_keys is None:
+                    intersection_keys = set(space.keys())
+                else:
+                    intersection_keys &= space.keys()
+
+            if intersection_keys == set() and union_search_space:
+                _logger.warning(
+                    "The intersection search space of pending trials is empty but one of "
+                    "the trials has a non-empty search space. `QMCSampler` assumes that "
+                    "the search space is static and does not include any conditions. "
+                    "If such scenario happens, the provided search space is not intended."
+                )
             return union_search_space
 
         # If an initial trial was already made,
