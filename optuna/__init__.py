@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 from optuna import distributions
 from optuna import exceptions
 from optuna import integration
@@ -52,6 +54,12 @@ __all__ = [
 ]
 
 
-artifacts = _LazyImport("optuna.artifacts")
-importance = _LazyImport("optuna.importance")
-visualization = _LazyImport("optuna.visualization")
+if TYPE_CHECKING:
+    # NOTE(nabenabe): This allows LSP to jump to the original sources.
+    from optuna import artifacts
+    from optuna import importance
+    from optuna import visualization
+else:
+    artifacts = _LazyImport("optuna.artifacts")
+    importance = _LazyImport("optuna.importance")
+    visualization = _LazyImport("optuna.visualization")
