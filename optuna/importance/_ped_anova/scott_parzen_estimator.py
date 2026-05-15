@@ -45,36 +45,32 @@ class ScottParzenEstimator(_ParzenEstimator):
         step = search_space.step
         assert step is not None and np.isclose(step, 1.0), "MyPy redefinition."
 
-        n_trials = np.sum(self._counts)
-        counts_non_zero = self._counts[self._counts > 0]
-        weights = counts_non_zero / n_trials
-        mus = np.arange(self.n_steps)[self._counts > 0]
-        mean_est = mus @ weights
-        sigma_est = np.sqrt((mus - mean_est) ** 2 @ counts_non_zero / max(1, n_trials - 1))
+        low, high = search_space.low, search_space.high
+        weights_sum = np.sum(self._weights)
+        n_observations = len(observations)
+        if search_space.log:
+            observations = np.log(observations)
+            low, high = math.log(low), math.log(high)
 
-        count_cum = np.cumsum(counts_non_zero)
-        idx_q25 = np.searchsorted(count_cum, n_trials // 4, side="left")
-        idx_q75 = np.searchsorted(count_cum, n_trials * 3 // 4, side="right")
-        interquantile_range = mus[min(mus.size - 1, idx_q75)] - mus[idx_q25]
-        sigma_est = 1.059 * min(interquantile_range / 1.34, sigma_est) * n_trials ** (-0.2)
+        mean_est = (observations @ self._weights) / weights_sum
+        sigma_est = np.sqrt(((observations - mean_est) ** 2 @ self._weights) / max(1, weights_sum - 1))
+        if observations.size == 0:
+            inter_quantile_range = 0.0
+        else:
+            sorted_obs = np.sort(observations)
+            q1_idx = int(0.25 * (n_observations - 1))
+            q3_idx = int(0.75 * (n_observations - 1))
+            inter_quantile_range = sorted_obs[q3_idx] - sorted_obs[q1_idx]
+        sigma_est = 1.059 * min(inter_quantile_range / 1.34, sigma_est) * weights_sum ** -0.2
         # To avoid numerical errors. 0.5/1.64 means 1.64sigma (=90%) will fit in the target grid.
         sigma_min = 0.5 / 1.64
-        sigmas = np.full_like(mus, max(sigma_est, sigma_min), dtype=np.float64)
-        mus = np.append(mus, [0.5 * (search_space.low + search_space.high)])
-        sigmas = np.append(sigmas, [1.0 * (search_space.high - search_space.low + 1)])
+        mus_with_prior = np.r_[observations, 0.5 * (search_space.low + search_space.high)]
+        sigmas = np.full_like(observations, max(sigma_est, sigma_min), dtype=np.float64)
+        sigmas_with_prior = np.r_[sigmas, sigma_min]
 
         return _BatchedDiscreteTruncNormDistributions(
-            mu=mus, sigma=sigmas, low=0, high=self.n_steps - 1, step=1
+            mu=mus_with_prior, sigma=sigmas_with_prior, low=low, high=high, step=1
         )
-
-    @property
-    def n_steps(self) -> int:
-        return self._n_steps
-
-    def pdf(self, samples: np.ndarray) -> np.ndarray:
-        return np.exp(self.log_pdf({self._param_name: samples}))
-
-
 
 
 def _count_numerical_param_in_grid(
