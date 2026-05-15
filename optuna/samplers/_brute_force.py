@@ -56,9 +56,10 @@ class _TreeNode:
             if self.param_name != param_name:
                 raise ValueError(f"param_name mismatch: {self.param_name} != {param_name}")
             if choices_fingerprint != self.choices_fingerprint:
-                # NOTE(nabenabe): search space and children are sorted, and the step size is always
-                # fixed due to the Optuna constraint, so the first and last elements and length
-                # check are equivalent to ``children.keys() != set(search_space)``.
+                # NOTE(nabenabe): search space and children are sorted, and each distribution has
+                # a uniform interval (FloatDistribution raises error for log=True and finite step),
+                # so the first and last elements and length check are equivalent to
+                # ``children.keys() != set(search_space)``.
                 raise ValueError(
                     f"search_space mismatch: {set(self.children.keys())} != {set(search_space)}"
                 )
