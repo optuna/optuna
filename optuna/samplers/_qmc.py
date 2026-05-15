@@ -192,7 +192,7 @@ class QMCSampler(BaseSampler):
         # The initial trial is sampled by the independent sampler.
         if len(past_trials) == 0:
             pending_trials = study._get_trials(
-                deepcopy=False, states=(TrialState.RUNNING, TrialState.WAITING), use_cache=True
+                deepcopy=False, states=(TrialState.RUNNING,), use_cache=True
             )
             if len(pending_trials) == 0:
                 return {}

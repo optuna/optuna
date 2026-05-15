@@ -88,6 +88,45 @@ def test_infer_relative_search_space() -> None:
     sampler._initial_search_space = new_search_space
     assert sampler.infer_relative_search_space(study, trial) == new_search_space
 
+def test_infer_relative_search_space_without_any() -> None:
+    sampler = _init_QMCSampler_without_exp_warning()
+    study = optuna.create_study(sampler=sampler)
+    assert sampler.infer_relative_search_space(study, Mock()) == {}
+
+
+def test_infer_relative_search_space_with_suggested_running() -> None:
+    sampler = _init_QMCSampler_without_exp_warning()
+    study = optuna.create_study(sampler=sampler)
+    trial = study.ask()
+    trial.suggest_float("a", 1, 10)
+    trial.suggest_float("b", -10, 2)
+    search_space = sampler.infer_relative_search_space(study, Mock())
+    assert "a" in search_space
+    assert "b" in search_space
+
+
+def test_infer_relative_search_space_with_partially_suggested_running() -> None:
+    sampler = _init_QMCSampler_without_exp_warning()
+    study = optuna.create_study(sampler=sampler)
+    trial = study.ask()
+    trial.suggest_float("a", 1, 10)
+    search_space = sampler.infer_relative_search_space(study, Mock())
+    assert "a" in search_space
+    assert "b" not in search_space
+
+
+def test_infer_relative_search_space_with_ask_fixed() -> None:
+    sampler = _init_QMCSampler_without_exp_warning()
+    study = optuna.create_study(sampler=sampler)
+    dists = {
+        "a": optuna.distributions.FloatDistribution(1, 10),
+        "b": optuna.distributions.FloatDistribution(-10, 2),
+    }
+    study.ask(fixed_distributions=dists)
+    search_space = sampler.infer_relative_search_space(study, Mock())
+    assert "a" in search_space
+    assert "b" in search_space
+
 
 def test_infer_initial_search_space() -> None:
     trial = Mock()
