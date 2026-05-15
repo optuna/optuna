@@ -118,11 +118,8 @@ def _count_numerical_param_in_grid(
 def _count_categorical_param_in_grid(
     param_name: str, dist: CategoricalDistribution, trials: list[FrozenTrial]
 ) -> np.ndarray:
-    cat_indices = [int(dist.to_internal_repr(t.params[param_name])) for t in trials]
-    unique_vals, counts_in_unique = np.unique(cat_indices, return_counts=True)
-    counts = np.zeros(len(dist.choices), dtype=np.int32)
-    counts[unique_vals] += counts_in_unique
-    return counts
+    indices = [int(dist.to_internal_repr(t.params[param_name])) for t in trials]
+    return np.bincount(indices, minlength=len(dist.choices))
 
 
 def _build_parzen_estimator(
