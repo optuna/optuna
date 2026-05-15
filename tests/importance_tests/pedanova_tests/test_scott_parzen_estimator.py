@@ -93,10 +93,10 @@ def test_build_int_scott_parzen_estimator(
     counts: np.ndarray, mu: np.ndarray, sigma: np.ndarray, weights: np.ndarray
 ) -> None:
     pe = ScottParzenEstimator(
-        {"a": np.arange(counts.size)},
+        {"a": (obs := np.flatnonzero(counts))},
         {"a": IntDistribution(low=0, high=counts.size - 1)},
         pe_parameters,
-        counts.astype(float),
+        counts[obs].astype(float),
     )
     dist = _BatchedDiscreteTruncNormDistributions(
         mu=mu, sigma=sigma, low=0, high=counts.size - 1, step=1
