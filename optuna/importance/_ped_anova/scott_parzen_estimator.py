@@ -22,6 +22,17 @@ if TYPE_CHECKING:
 class ScottParzenEstimator(_ParzenEstimator):
     """1D ParzenEstimator using the bandwidth selection by Scott's rule."""
 
+    def __init__(
+        self,
+        observations: dict[str, np.ndarray],
+        search_space: dict[str, BaseDistribution],
+        parameters: _ParzenEstimatorParameters,
+        predetermined_weights: np.ndarray | None = None,
+    ) -> None:
+        super().__init__(observations, search_space, parameters, predetermined_weights)
+        assert predetermined_weights is not None
+        self._weights = predetermined_weights
+
     def _calculate_numerical_distributions(
         self,
         observations: np.ndarray,
