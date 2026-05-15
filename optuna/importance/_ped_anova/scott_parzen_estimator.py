@@ -108,7 +108,7 @@ def build_parzen_estimator_on_grid(
     trials: list[FrozenTrial],
     n_steps: int,
     prior_weight: float,
-) -> ScottParzenEstimator:
+) -> tuple[ScottParzenEstimator, int]:
     rounded_dist: IntDistribution | CategoricalDistribution
     if isinstance(dist, (IntDistribution, FloatDistribution)):
         counts = _count_numerical_param_in_grid(param_name, dist, trials, n_steps)
@@ -129,9 +129,10 @@ def build_parzen_estimator_on_grid(
         multivariate=True,
         categorical_distance_func={},
     )
-    return ScottParzenEstimator(
+    pe = ScottParzenEstimator(
         {param_name: observations},
         {param_name: rounded_dist},
         parameters,
         weights,
     )
+    return pe, counts.size
