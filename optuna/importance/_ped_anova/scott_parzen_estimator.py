@@ -111,7 +111,7 @@ def build_parzen_estimator_on_grid(
         assert False, f"Got an unknown dist with the type {type(dist)}."
 
     observations = np.flatnonzero(counts)
-    weights = counts[observations].astype(np.float64)
+    weights = counts[observations]
     parameters = _ParzenEstimatorParameters(
         prior_weight=prior_weight,
         consider_magic_clip=False,
