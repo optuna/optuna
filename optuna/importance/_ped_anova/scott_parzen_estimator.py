@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from optuna.trial import FrozenTrial
 
 
-class _ScottParzenEstimator(_ParzenEstimator):
+class ScottParzenEstimator(_ParzenEstimator):
     """1D ParzenEstimator using the bandwidth selection by Scott's rule."""
 
     def __init__(
@@ -28,7 +28,7 @@ class _ScottParzenEstimator(_ParzenEstimator):
         dist: IntDistribution | CategoricalDistribution,
         counts: np.ndarray,
         prior_weight: float,
-    ):
+    ) -> None:
         assert isinstance(dist, (CategoricalDistribution, IntDistribution))
         assert not isinstance(dist, IntDistribution) or dist.low == 0
         n_choices = dist.high + 1 if isinstance(dist, IntDistribution) else len(dist.choices)
