@@ -216,9 +216,7 @@ class BruteForceSampler(BaseSampler):
             if params:
                 if not (nonnan_params_items <= trial_params.items()):
                     continue
-                if nan_param_names and any(
-                    not _is_nan(trial_params.get(p)) for p in nan_param_names
-                ):
+                if not all(_is_nan(trial_params.get(p)) for p in nan_param_names):
                     continue
             leaf = tree.add_path(
                 (
