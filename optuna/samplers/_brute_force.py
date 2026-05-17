@@ -184,11 +184,21 @@ class BruteForceSampler(BaseSampler):
             When this option is not enabled (default), the sampler applies a looser criterion for
             determining when to stop the search, which may result in incomplete coverage of the
             search space. For more information, see https://github.com/optuna/optuna/issues/5780.
+        consider_failed_trials:
+            If :obj:`True`, failed trials are treated as already sampled points and are not
+            retried. When this option is not enabled (default), failed trials are ignored during
+            sampling.
     """
 
-    def __init__(self, seed: int | None = None, avoid_premature_stop: bool = False) -> None:
+    def __init__(
+        self,
+        seed: int | None = None,
+        avoid_premature_stop: bool = False,
+        consider_failed_trials: bool = False,
+    ) -> None:
         self._rng = LazyRandomState(seed)
         self._avoid_premature_stop = avoid_premature_stop
+        self._consider_failed_trials = consider_failed_trials
 
     def infer_relative_search_space(
         self, study: Study, trial: FrozenTrial
@@ -201,9 +211,16 @@ class BruteForceSampler(BaseSampler):
         return {}
 
     @staticmethod
-    def _populate_tree(tree: _TreeNode, trials: list[FrozenTrial], params: dict[str, Any]) -> None:
+    def _populate_tree(
+        tree: _TreeNode,
+        trials: list[FrozenTrial],
+        params: dict[str, Any],
+        consider_failed_trials: bool,
+    ) -> None:
         # Populate tree under given params from the given trials.
         for trial in trials:
+            if trial.state == TrialState.FAIL and not consider_failed_trials:
+                continue
             if not all(p in trial.params and trial.params[p] == v for p, v in params.items()):
                 continue
             leaf = tree.add_path(
@@ -240,7 +257,7 @@ class BruteForceSampler(BaseSampler):
         # Populating must happen after the initialization above to prevent `tree` from
         # being initialized as an empty graph, which is created with n_jobs > 1
         # where we get trials[i].params = {} for some i.
-        self._populate_tree(tree, trials, trial.params)
+        self._populate_tree(tree, trials, trial.params, self._consider_failed_trials)
         if not tree.is_any_expandable(exclude_running):
             return param_distribution.to_external_repr(self._rng.rng.choice(candidates).item())
         else:
@@ -258,7 +275,7 @@ class BruteForceSampler(BaseSampler):
             state=state, values=values, params=trial.params, distributions=trial.distributions
         )
         tree = _TreeNode()
-        self._populate_tree(tree, trials, {})
+        self._populate_tree(tree, trials, {}, self._consider_failed_trials)
         if not tree.is_any_expandable(exclude_running):
             study.stop()
 

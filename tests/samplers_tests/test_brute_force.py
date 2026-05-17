@@ -285,7 +285,7 @@ def test_study_optimize_with_failed_trials() -> None:
         trial.suggest_int("x", 0, 99)
         return np.nan
 
-    study = optuna.create_study(sampler=samplers.BruteForceSampler())
+    study = optuna.create_study(sampler=samplers.BruteForceSampler(consider_failed_trials=True))
     study.optimize(objective, n_trials=100)
 
     expected_suggested_values = [{"x": i} for i in range(100)]
@@ -293,6 +293,24 @@ def test_study_optimize_with_failed_trials() -> None:
     assert len(all_suggested_values) == len(expected_suggested_values)
     for a in expected_suggested_values:
         assert a in all_suggested_values
+
+
+@pytest.mark.parametrize("consider_failed_trials, expected", [(False, 0), (True, 1)])
+def test_study_optimize_failed_trial_handling(consider_failed_trials: bool, expected: int) -> None:
+    study = optuna.create_study(
+        sampler=samplers.BruteForceSampler(seed=42, consider_failed_trials=consider_failed_trials)
+    )
+    study.add_trial(
+        optuna.create_trial(
+            state=optuna.trial.TrialState.FAIL,
+            params={"x": 0},
+            distributions={"x": optuna.distributions.IntDistribution(0, 1)},
+        )
+    )
+
+    trial = study.ask()
+
+    assert trial.suggest_int("x", 0, 1) == expected
 
 
 def test_parallel_optimize() -> None:
