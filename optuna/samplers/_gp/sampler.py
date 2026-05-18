@@ -191,7 +191,10 @@ class GPSampler(BaseSampler):
         # - constant noise insertion (replace minimum_noise directly and use deterministic=True),
         # - q-batch (closed PR available),
         # - input warping (cf. https://arxiv.org/pdf/2012.03826),
-        # - 5output warping (cf. https://arxiv.org/pdf/2012.03826).
+        # - output warping (cf. https://arxiv.org/pdf/2012.03826).
+        # - output de-correlation (for multi-objective GP) (cf. https://arxiv.org/abs/1909.13595)
+        # - kernel hyperparameter prior enhancement
+        #     - cf. https://github.com/optuna/optuna/issues/6255#issuecomment-4357841010
         self._rng = LazyRandomState(seed)
         self._independent_sampler = independent_sampler or optuna.samplers.RandomSampler(seed=seed)
         self._intersection_search_space = optuna.search_space.IntersectionSearchSpace()
