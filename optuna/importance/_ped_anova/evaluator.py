@@ -195,6 +195,8 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
         quantile: float,
         target: Callable[[FrozenTrial], float] | None,
     ) -> list[FrozenTrial]:
+        if quantile == 1.0:
+            return trials
         is_lower_better = study.directions[0] == StudyDirection.MINIMIZE
         if target is not None:
             optuna_warn(
@@ -256,11 +258,7 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
             return {k: 0.0 for k in params}
 
         target_trials = self._get_top_quantile_trials(study, trials, self._target_quantile, target)
-        region_trials = (
-            trials
-            if self._region_quantile == 1.0
-            else self._get_top_quantile_trials(study, trials, self._region_quantile, target)
-        )
+        region_trials = self._get_top_quantile_trials(study, trials, self._region_quantile, target)
         quantile = len(target_trials) / len(region_trials)  # gamma' / gamma
         param_importances: dict[str, float] = defaultdict(float)
         for param_name in params:
