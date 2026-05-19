@@ -75,13 +75,13 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
     For further information about PED-ANOVA algorithm, please refer to the following paper:
 
     - `PED-ANOVA: Efficiently Quantifying Hyperparameter Importance in Arbitrary Subspaces
-      <https://arxiv.org/abs/2304.10255>`__
+      <https://arxiv.org/abs/2304.10255>`__ (IJCAI 2023)
 
     For further information on how conditional parameters are handled, please refer to the
     following paper:
 
     - `Conditional PED-ANOVA: Hyperparameter Importance in Hierarchical & Dynamic Search Spaces
-      <https://arxiv.org/abs/2601.20800>`__
+      <https://arxiv.org/abs/2601.20800>`__ (KDD 2026)
 
     `target_quantile` and `region_quantile` correspond to the parameters ``gamma'`` and ``gamma``
     in the original paper, respectively.
@@ -94,7 +94,7 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
 
     .. note::
 
-        Please also refer to the original works:
+        Please also refer to the original implementations:
 
         - `PED-ANOVA <https://github.com/nabenabe0928/local-anova>`__
         - `condPED-ANOVA <https://github.com/kAIto47802/condPED-ANOVA>`__
