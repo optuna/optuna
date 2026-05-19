@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import decimal
+from functools import lru_cache
 import math
 from numbers import Real
 import sys
-from functools import lru_cache
 from typing import Any
 from typing import cast
 from typing import TYPE_CHECKING
