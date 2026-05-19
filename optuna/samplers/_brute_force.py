@@ -2,6 +2,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import decimal
+import math
+from numbers import Real
+import sys
 from functools import lru_cache
 from typing import Any
 from typing import cast
@@ -29,7 +32,8 @@ if TYPE_CHECKING:
     from optuna.trial import FrozenTrial
 
 
-@dataclass
+# TODO(nabenabe): Simply use `slots=True` once Python 3.9 is dropped.
+@dataclass(**({"slots": True} if sys.version_info >= (3, 10) else {}))
 class _TreeNode:
     # A tree representing the search space for brute force sampling.
     # Each internal node corresponds to a parameter, and its children are keyed by the parameter's
@@ -207,10 +211,12 @@ class BruteForceSampler(BaseSampler):
     def _populate_tree(tree: _TreeNode, trials: list[FrozenTrial], params: dict[str, Any]) -> None:
         # Populate tree under given params from the given trials.
         internal_repr_cache: dict[str, dict[CategoricalChoiceType, float]] = {}
+        params_items = params.items()
+        nonnan_params_items = {k: v for k, v in params_items if not _is_nan(v)}.items()
+        nan_param_names = [k for k, v in params_items if _is_nan(v)]
 
-        def _get_trial_path(trial: FrozenTrial) -> list:
+        def _get_trial_path(trial: FrozenTrial, trial_params: dict[str, Any]) -> list:
             trial_path = []
-            trial_params = trial.params
             for name, dist in trial.distributions.items():
                 if name in params:
                     continue
@@ -230,9 +236,13 @@ class BruteForceSampler(BaseSampler):
             return trial_path
 
         for trial in trials:
-            if not all(p in trial.params and trial.params[p] == v for p, v in params.items()):
-                continue
-            if (leaf := tree.add_path(_get_trial_path(trial))) is not None:
+            trial_params = trial.params
+            if params:
+                if not (nonnan_params_items <= trial_params.items()):
+                    continue
+                if not all(_is_nan(trial_params.get(p)) for p in nan_param_names):
+                    continue
+            if (leaf := tree.add_path(_get_trial_path(trial, trial_params))) is not None:
                 # The parameters are on the defined grid.
                 if trial.state.is_finished():
                     leaf.set_leaf()
@@ -283,6 +293,10 @@ class BruteForceSampler(BaseSampler):
         self._populate_tree(tree, trials, {})
         if not tree.is_any_expandable(exclude_running):
             study.stop()
+
+
+def _is_nan(v: CategoricalChoiceType) -> bool:
+    return isinstance(v, Real) and math.isnan(float(v))
 
 
 @lru_cache
