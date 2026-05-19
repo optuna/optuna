@@ -84,7 +84,7 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
       <https://arxiv.org/abs/2601.20800>`__ (KDD 2026)
 
     ``target_quantile`` and ``region_quantile`` correspond to the parameters
-    ``gamma'`` and ``gamma`` in the original paper, respectively.
+    :math:`\\gamma'` and :math:`\\gamma` in the original paper, respectively.
 
     .. note::
 
