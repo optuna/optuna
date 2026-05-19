@@ -83,8 +83,8 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
     - `Conditional PED-ANOVA: Hyperparameter Importance in Hierarchical & Dynamic Search Spaces
       <https://arxiv.org/abs/2601.20800>`__ (KDD 2026)
 
-    `target_quantile` and `region_quantile` correspond to the parameters ``gamma'`` and ``gamma``
-    in the original paper, respectively.
+    ``target_quantile`` and ``region_quantile`` correspond to the parameters
+    ``gamma'`` and ``gamma`` in the original paper, respectively.
 
     .. note::
 
