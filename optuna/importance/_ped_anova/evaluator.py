@@ -121,8 +121,8 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
             .. warning::
                 Deprecated in v4.7.0. This feature will be removed in the future. The removal of
                 this feature is currently scheduled for v5.0.0, but this schedule is subject to
-                change. ``baseline_quantile`` is currently ignored. Use ``target_quantile`` instead.
-                See https://github.com/optuna/optuna/releases/tag/v4.7.0.
+                change. ``baseline_quantile`` is currently ignored. Use ``target_quantile``
+                instead. See https://github.com/optuna/optuna/releases/tag/v4.7.0.
 
         evaluate_on_local:
             Whether we measure the importance in the local or global space.
