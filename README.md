@@ -23,12 +23,6 @@ for machine learning. It features an imperative, *define-by-run* style user API.
 Optuna can dynamically construct the search spaces for the hyperparameters.
 
 ## :loudspeaker: News
-Help us create the next version of Optuna!
-
-Optuna 5.0 Roadmap published for review. Please take a look at [the planned improvements to Optuna](https://medium.com/optuna/optuna-v5-roadmap-ac7d6935a878), and share your feedback in [the github issues](https://github.com/optuna/optuna/labels/v5). PR contributions also welcome!
-
-Please take a few minutes to fill in [this survey](https://forms.gle/wVwLCQ9g6st6AXuq9), and let us know how you use Optuna now and what improvements you'd like.🤔
-All questions are optional. 🙇‍♂️
 
 <!-- TODO: when you add a new line, please delete the oldest line -->
 * **Mar 16, 2026**: Optuna 4.8.0 is out! Check out [the release note](https://github.com/optuna/optuna/releases/tag/v4.8.0) for details.
