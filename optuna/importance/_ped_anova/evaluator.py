@@ -68,9 +68,9 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
     Implements the PED-ANOVA hyperparameter importance evaluation algorithm.
 
     PED-ANOVA fits Parzen estimators of :class:`~optuna.trial.TrialState.COMPLETE` trials better
-    than a user-specified `target_quantile`.
+    than a user-specified ``target_quantile``.
     The importance can be interpreted as how important each hyperparameter is to get
-    the performance better than `target_quantile`.
+    the performance better than ``target_quantile``.
 
     For further information about PED-ANOVA algorithm, please refer to the following paper:
 
@@ -89,8 +89,8 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
     .. note::
 
         The performance of PED-ANOVA depends on how many trials to consider above
-        `target_quantile`. To stabilize the analysis, it is preferable to include at least
-        5 trials above `target_quantile`.
+        ``target_quantile``. To stabilize the analysis, it is preferable to include at least
+        5 trials above ``target_quantile``.
 
     .. note::
 
@@ -121,7 +121,7 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
             .. warning::
                 Deprecated in v4.7.0. This feature will be removed in the future. The removal of
                 this feature is currently scheduled for v5.0.0, but this schedule is subject to
-                change. `baseline_quantile` is currently ignored. Use `target_quantile` instead.
+                change. ``baseline_quantile`` is currently ignored. Use ``target_quantile`` instead.
                 See https://github.com/optuna/optuna/releases/tag/v4.7.0.
 
         evaluate_on_local:
