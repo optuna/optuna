@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import abc
 
-from optuna._experimental import experimental_class
+from optuna._deprecated import _DEPRECATION_WARNING_TEMPLATE
+from optuna._warnings import optuna_warn
 from optuna.study.study import Study
 from optuna.terminator.erroreval import BaseErrorEvaluator
 from optuna.terminator.erroreval import CrossValidationErrorEvaluator
@@ -14,6 +15,13 @@ from optuna.terminator.improvement.evaluator import RegretBoundEvaluator
 from optuna.trial import TrialState
 
 
+_DEPRECATION_WARNING_MESSAGE = _DEPRECATION_WARNING_TEMPLATE.format(
+    name="`optuna.terminator` module",
+    d_ver="4.9.0",
+    r_ver="6.0.0",
+)
+
+
 class BaseTerminator(metaclass=abc.ABCMeta):
     """Base class for terminators."""
 
@@ -22,7 +30,6 @@ class BaseTerminator(metaclass=abc.ABCMeta):
         pass
 
 
-@experimental_class("3.2.0")
 class Terminator(BaseTerminator):
     """Automatic stopping mechanism for Optuna studies.
 
@@ -104,6 +111,8 @@ class Terminator(BaseTerminator):
         error_evaluator: BaseErrorEvaluator | None = None,
         min_n_trials: int = DEFAULT_MIN_N_TRIALS,
     ) -> None:
+        optuna_warn(_DEPRECATION_WARNING_MESSAGE, FutureWarning)
+
         if min_n_trials <= 0:
             raise ValueError("`min_n_trials` is expected to be a positive integer.")
 

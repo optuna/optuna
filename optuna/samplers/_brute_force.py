@@ -2,12 +2,16 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import decimal
+import math
+from numbers import Real
+import sys
 from typing import Any
 from typing import TYPE_CHECKING
 
 import numpy as np
 
 from optuna._experimental import experimental_class
+from optuna.distributions import CategoricalChoiceType
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
@@ -29,7 +33,8 @@ if TYPE_CHECKING:
 _TREE_SIZE_KEY = "brute_force:tree_size"
 
 
-@dataclass
+# TODO(nabenabe): Simply use `slots=True` once Python 3.9 is dropped.
+@dataclass(**({"slots": True} if sys.version_info >= (3, 10) else {}))
 class _TreeNode:
     # A tree representing the search space for brute force sampling.
     # Each internal node corresponds to a parameter, and its children are keyed by the parameter's
@@ -212,9 +217,16 @@ class BruteForceSampler(BaseSampler):
     @staticmethod
     def _populate_tree(tree: _TreeNode, trials: list[FrozenTrial], params: dict[str, Any]) -> None:
         # Populate tree under given params from the given trials.
+        params_items = params.items()
+        nonnan_params_items = {k: v for k, v in params_items if not _is_nan(v)}.items()
+        nan_param_names = [k for k, v in params_items if _is_nan(v)]
         for trial in trials:
-            if not all(p in trial.params and trial.params[p] == v for p, v in params.items()):
-                continue
+            trial_params = trial.params
+            if params:
+                if not (nonnan_params_items <= trial_params.items()):
+                    continue
+                if not all(_is_nan(trial_params.get(p)) for p in nan_param_names):
+                    continue
             leaf = tree.add_path(
                 (
                     (
@@ -278,6 +290,10 @@ class BruteForceSampler(BaseSampler):
             # NOTE(nabenabe): The tree is full size only in `after_trial`.
             tree_size = int(max(tree_size, tree.count_total_combinations()))
             study._storage.set_study_system_attr(study._study_id, _TREE_SIZE_KEY, tree_size)
+
+
+def _is_nan(v: CategoricalChoiceType) -> bool:
+    return isinstance(v, Real) and math.isnan(float(v))
 
 
 def _enumerate_candidates(param_distribution: BaseDistribution) -> Sequence[float]:
