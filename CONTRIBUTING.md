@@ -98,7 +98,7 @@ The documentation source is stored under the [docs](./docs) directory and writte
 To build the documentation, you need to run:
 
 ```bash
-uv sync --group document
+uv sync --extra document
 ```
 
 Then you can build the documentation in HTML format locally:
