@@ -143,43 +143,6 @@ class BaseAcquisitionFunc(ABC):
         return val.item(), x_tensor.grad.detach().numpy()  # type: ignore
 
 
-class BaseLogMCAcquisitionFunc(BaseAcquisitionFunc):
-    def __init__(
-        self,
-        gpr: GPRegressor,
-        search_space: SearchSpace,
-        threshold: float,
-        normalized_params_of_running_trials: np.ndarray,
-        stabilizing_noise: float = 1e-12,
-    ) -> None:
-        self._x_running = normalized_params_of_running_trials
-        self._threshold = threshold
-        super().__init__(gpr.length_scales, search_space)
-
-    def get_posterior_samples(self, x: torch.Tensor) -> torch.Tensor:
-        raise NotImplementedError
-
-    def eval_acqf(self, x: torch.Tensor) -> torch.Tensor:
-        if np.isneginf(self._threshold):
-            return torch.zeros(x.shape[:-1], dtype=torch.float64)
-
-        squeeze_batch_dim = x.ndim == 1
-        if squeeze_batch_dim:
-            x = x.unsqueeze(0)
-        x = x.unsqueeze(-2)
-        assert self._x_running is not None
-        x_running = torch.from_numpy(self._x_running).to(x).unsqueeze(0)
-        x_running = x_running.expand(*x.shape[:-2], -1, -1)
-        x = torch.cat([x_running, x], dim=-2)
-
-        Y_post = self.get_posterior_samples(x)
-
-        log_improvement = _log_fatplus(Y_post - self._threshold, tau=1e-6)
-        smooth_max_log_improvement = _fatmax(log_improvement, dim=-1, tau=1e-2)
-        acqf_value = _logmeanexp(smooth_max_log_improvement, dim=-1)
-        return acqf_value.squeeze(0) if squeeze_batch_dim else acqf_value
-
-
 class LogEI(BaseAcquisitionFunc):
     def __init__(
         self,
@@ -228,7 +191,7 @@ class LogEI(BaseAcquisitionFunc):
         )
 
 
-class qLogEI(BaseLogMCAcquisitionFunc):
+class qLogEI(BaseAcquisitionFunc):
     def __init__(
         self,
         gpr: GPRegressor,
@@ -241,21 +204,44 @@ class qLogEI(BaseLogMCAcquisitionFunc):
     ) -> None:
         self._gpr = gpr
         self._stabilizing_noise = stabilizing_noise
+        self._threshold = threshold
+        self._x_running = normalized_params_of_running_trials
         self._fixed_samples = _sample_from_normal_sobol(
             dim=1 + normalized_params_of_running_trials.shape[0],
             n_samples=n_qmc_samples,
             seed=qmc_seed,
         )
-        super().__init__(
-            gpr, search_space, threshold, normalized_params_of_running_trials, stabilizing_noise
-        )
+        super().__init__(gpr.length_scales, search_space)
 
-    def get_posterior_samples(self, x: torch.Tensor) -> torch.Tensor:
+    def _get_posterior_samples(self, x: torch.Tensor) -> torch.Tensor:
         mean, cov = self._gpr.posterior(x, joint=True)
         cov.diagonal(dim1=-2, dim2=-1).add_(self._stabilizing_noise)
         return mean.unsqueeze(-2) + torch.einsum(
             "sq,...qk->...sk", self._fixed_samples, torch.linalg.cholesky(cov).transpose(-1, -2)
         )
+
+    def eval_acqf(self, x: torch.Tensor) -> torch.Tensor:
+        if np.isneginf(self._threshold):
+            return torch.zeros(x.shape[:-1], dtype=torch.float64)
+
+        squeeze_batch_dim = x.ndim == 1
+        if squeeze_batch_dim:
+            x = x.unsqueeze(0)
+        x = x.unsqueeze(-2)
+        x_running = torch.from_numpy(self._x_running).to(x).unsqueeze(0)
+        x_running = x_running.expand(*x.shape[:-2], -1, -1)
+        x = torch.cat([x_running, x], dim=-2)
+
+        mean, cov = self._gpr.posterior(x, joint=True)
+        cov.diagonal(dim1=-2, dim2=-1).add_(self._stabilizing_noise)
+        y_post = mean.unsqueeze(-2) + torch.einsum(
+            "sq,...qk->...sk", self._fixed_samples, torch.linalg.cholesky(cov).transpose(-1, -2)
+        )
+
+        log_improvement = _log_fatplus(y_post - self._threshold, tau=1e-6)
+        smooth_max_log_improvement = _fatmax(log_improvement, dim=-1, tau=1e-2)
+        acqf_value = _logmeanexp(smooth_max_log_improvement, dim=-1)
+        return acqf_value.squeeze(0) if squeeze_batch_dim else acqf_value
 
 
 class LogPI(BaseAcquisitionFunc):
