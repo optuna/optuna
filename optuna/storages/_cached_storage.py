@@ -289,5 +289,7 @@ class _CachedStorage(BaseStorage, BaseHeartbeat):
     def get_heartbeat_interval(self) -> int | None:
         return self._backend.get_heartbeat_interval()
 
-    def get_failed_trial_callback(self) -> Callable[["optuna.Study", FrozenTrial], None] | None:
-        return self._backend.get_failed_trial_callback()
+    def get_heartbeat_stale_trial_callback(
+        self,
+    ) -> Callable[["optuna.Study", FrozenTrial], None] | None:
+        return self._backend.get_heartbeat_stale_trial_callback()

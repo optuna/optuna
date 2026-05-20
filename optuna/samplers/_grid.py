@@ -139,8 +139,8 @@ class GridSampler(BaseSampler):
         # object is hard to get at the beginning of trial, while we need the access to the object
         # to validate the sampled value.
 
-        # When the trial is created by RetryFailedTrialCallback or enqueue_trial, we should not
-        # assign a new grid_id.
+        # When the trial is created by RetryHeartbeatStaleTrialCallback or enqueue_trial, we
+        # should not assign a new grid_id.
         if "grid_id" in trial.system_attrs or "fixed_params" in trial.system_attrs:
             return
 
