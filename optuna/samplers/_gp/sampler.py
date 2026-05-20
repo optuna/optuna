@@ -360,6 +360,10 @@ class GPSampler(BaseSampler):
     ) -> dict[str, Any]:
         internal_search_space = gp_search_space.SearchSpace(search_space)
         normalized_params = internal_search_space.get_normalized_params(completed_trials)
+
+        # We adopt a sequential greedy selection for batch candidates instead of joint
+        # optimization. For a detailed discussion of this sequential greedy approach, see:
+        # https://arxiv.org/pdf/2310.20708
         normalized_params_of_running_trials = (
             internal_search_space.get_normalized_params(
                 running_trials, [_get_params(t) for t in running_trials]
