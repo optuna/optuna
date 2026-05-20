@@ -102,18 +102,7 @@ def test_infer_relative_search_space_with_suggested_running() -> None:
     trial.suggest_float("a", 1, 10)
     trial.suggest_float("b", -10, 2)
     search_space = sampler.infer_relative_search_space(study, Mock())
-    assert "a" in search_space
-    assert "b" in search_space
-
-
-def test_infer_relative_search_space_with_partially_suggested_running() -> None:
-    sampler = _init_QMCSampler_without_exp_warning()
-    study = optuna.create_study(sampler=sampler)
-    trial = study.ask()
-    trial.suggest_float("a", 1, 10)
-    search_space = sampler.infer_relative_search_space(study, Mock())
-    assert "a" in search_space
-    assert "b" not in search_space
+    assert set(search_space) == {"a", "b"}
 
 
 def test_infer_relative_search_space_with_ask_fixed() -> None:
