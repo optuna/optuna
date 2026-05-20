@@ -134,8 +134,7 @@ class GridSampler(BaseSampler):
         # to validate the sampled value.
 
         # When the trial is created by RetryHeartbeatStaleTrialCallback or enqueue_trial, we
-        # should not
-        # assign a new grid_id.
+        # should not assign a new grid_id.
         if "grid_id" in trial.system_attrs or "fixed_params" in trial.system_attrs:
             return
 
