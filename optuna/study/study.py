@@ -181,6 +181,13 @@ class Study:
             satisfy all constraints. A trial is considered feasible when all of its
             constraint values are less than or equal to 0.0.
 
+        .. note::
+            When optimizing many objectives, a large fraction of trials may become non-dominated
+            in general due to the curse of dimensionality in the objective space. If this makes
+            post-hoc selection difficult, consider modeling some objectives as constraints.
+            Constraints can be passed via the `constraints_func` argument at the sampler
+            initialization.
+
         Returns:
             A list of :class:`~optuna.trial.FrozenTrial` objects. If no trials are
             completed or if no feasible trials exist in a constrained optimization,

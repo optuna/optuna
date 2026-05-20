@@ -4,6 +4,7 @@ from typing import Any
 from typing import TYPE_CHECKING
 
 import optuna
+from optuna._deprecated import deprecated_class
 from optuna._experimental import experimental_class
 from optuna._experimental import experimental_func
 
@@ -13,34 +14,35 @@ if TYPE_CHECKING:
 
 
 @experimental_class("2.8.0")
-class RetryFailedTrialCallback:
-    """Retry a failed trial up to a maximum number of times.
+class RetryHeartbeatStaleTrialCallback:
+    """Retry a heartbeat-stale trial up to a maximum number of times.
 
-    When a trial fails, this callback can be used with a class in :mod:`optuna.storages` to
-    recreate the trial in ``TrialState.WAITING`` to queue up the trial to be run again.
+    When a running trial becomes stale due to the heartbeat mechanism, this callback can be
+    used with a class in :mod:`optuna.storages` to recreate the trial in ``TrialState.WAITING``
+    to queue up the trial to be run again.
 
-    The failed trial can be identified by the
-    :func:`~optuna.storages.RetryFailedTrialCallback.retried_trial_number` function.
-    Even if repetitive failure occurs (a retried trial fails again),
-    this method returns the number of the original trial.
-    To get a full list including the numbers of the retried trials as well as their original trial,
-    call the :func:`~optuna.storages.RetryFailedTrialCallback.retry_history` function.
+    The original stale trial can be identified by the
+    :func:`~optuna.storages.RetryHeartbeatStaleTrialCallback.retried_trial_number` function.
+    Even if repetitive failure occurs (a retried trial becomes stale again), this method returns
+    the number of the original trial. To get a full list including the numbers of the retried
+    trials as well as their original trial, call the
+    :func:`~optuna.storages.RetryHeartbeatStaleTrialCallback.retry_history` function.
 
-    This callback is helpful in environments where trials may fail due to external conditions,
-    such as being preempted by other processes.
+    This callback is helpful in environments where running trials may become stale due to external
+    conditions, such as worker preemption or unexpected process termination.
 
     Usage:
 
         .. testcode::
 
             import optuna
-            from optuna.storages import RetryFailedTrialCallback
+            from optuna.storages import RetryHeartbeatStaleTrialCallback
 
             storage = optuna.storages.RDBStorage(
                 url="sqlite:///:memory:",
                 heartbeat_interval=60,
                 grace_period=120,
-                failed_trial_callback=RetryFailedTrialCallback(max_retry=3),
+                heartbeat_stale_trial_callback=RetryHeartbeatStaleTrialCallback(max_retry=3),
             )
 
             study = optuna.create_study(
@@ -118,8 +120,22 @@ class RetryFailedTrialCallback:
         Returns:
             A list of trial numbers in ascending order of the series of retried trials.
             The first item of the list indicates the original trial which is identical
-            to the :func:`~optuna.storages.RetryFailedTrialCallback.retried_trial_number`,
+            to the :func:`~optuna.storages.RetryHeartbeatStaleTrialCallback.retried_trial_number`,
             and the last item is the one right before the specified trial in the retry series.
             If the specified trial is not a retry of any trial, returns an empty list.
         """
         return trial.system_attrs.get("retry_history", [])
+
+
+@deprecated_class(
+    "4.9.0",
+    "6.0.0",
+    text="Use `RetryHeartbeatStaleTrialCallback` instead.",
+)
+class RetryFailedTrialCallback(RetryHeartbeatStaleTrialCallback):
+    """Deprecated alias of :class:`~optuna.storages.RetryHeartbeatStaleTrialCallback`.
+
+    Deprecated in v4.9.0. This class will be removed in v6.0.0.
+    """
+
+    pass

@@ -1,5 +1,5 @@
 import optuna
-from optuna.storages import RetryFailedTrialCallback
+from optuna.storages import RetryHeartbeatStaleTrialCallback
 from optuna.testing.storages import StorageSupplier
 from optuna.trial import TrialState
 
@@ -10,14 +10,14 @@ def test_retry_history_with_success() -> None:
         study = optuna.create_study(storage=storage)
         trial = study.ask()
         study.tell(trial, 1.0)  # Complete the trial to get FrozenTrial.
-        assert RetryFailedTrialCallback.retry_history(study.trials[0]) == []
+        assert RetryHeartbeatStaleTrialCallback.retry_history(study.trials[0]) == []
 
 
 def test_retry_history_with_failures() -> None:
     max_retry = 3
-    callback = RetryFailedTrialCallback(max_retry=max_retry)
+    callback = RetryHeartbeatStaleTrialCallback(max_retry=max_retry)
     with StorageSupplier(
-        "sqlite", heartbeat_interval=1, grace_period=2, failed_trial_callback=callback
+        "sqlite", heartbeat_interval=1, grace_period=2, heartbeat_stale_trial_callback=callback
     ) as storage:
         study = optuna.create_study(storage=storage)
         for n_retries in range(1, max_retry + 1):
@@ -33,16 +33,16 @@ def test_retry_history_with_failures() -> None:
             # The last trial before the retried trial must be failed.
             assert trials[trial.number].state == TrialState.FAIL
             # Retry should show the full history of the previous trials.
-            assert RetryFailedTrialCallback.retry_history(trials[trial.number + 1]) == list(
-                range(n_retries)
-            )
+            assert RetryHeartbeatStaleTrialCallback.retry_history(
+                trials[trial.number + 1]
+            ) == list(range(n_retries))
 
 
 def test_retry_history_with_more_than_max_retry() -> None:
     max_retry = 3
-    callback = RetryFailedTrialCallback(max_retry=max_retry)
+    callback = RetryHeartbeatStaleTrialCallback(max_retry=max_retry)
     with StorageSupplier(
-        "sqlite", heartbeat_interval=1, grace_period=2, failed_trial_callback=callback
+        "sqlite", heartbeat_interval=1, grace_period=2, heartbeat_stale_trial_callback=callback
     ) as storage:
         study = optuna.create_study(storage=storage)
         for n_retries in range(max_retry + 2):
