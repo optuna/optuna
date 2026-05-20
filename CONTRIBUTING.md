@@ -60,8 +60,10 @@ After forking, download and install Optuna on your computer.
 ```bash
 git clone git@github.com:YOUR_NAME/optuna.git
 cd optuna
-pip install -e .
+uv sync
 ```
+
+This command creates `.venv` and installs Optuna in editable mode.
 
 ### Checking the Format, Coding Style, and Type Hints
 
@@ -71,20 +73,18 @@ Type hints, [PEP484](https://www.python.org/dev/peps/pep-0484/), are checked wit
 You can check the format, coding style, and type hints by running the following commands:
 
 ```bash
-# Install auto-formatters.
-pip install ".[checking]"
+uv sync --group checking
 
-ruff check . --fix
-ruff format .
-mypy .
+uv run ruff check . --fix
+uv run ruff format .
+uv run mypy .
 ```
 
 You can use `pre-commit` to automatically check the format, coding style, and type hints before committing.
 The following commands automatically fix format errors by auto-formatters.
 
 ```bash
-# Install `pre-commit`.
-pip install pre-commit
+uv tool install pre-commit
 
 pre-commit install
 pre-commit run --all-files
@@ -98,15 +98,14 @@ The documentation source is stored under the [docs](./docs) directory and writte
 To build the documentation, you need to run:
 
 ```bash
-pip install -e ".[document]"
+uv sync --extra document
 ```
-Note that the above command might try to install PyTorch without CUDA to your environment even if your environment has CUDA version already.
 
 Then you can build the documentation in HTML format locally:
 
 ```bash
 cd docs
-make html
+uv run make html
 ```
 
 HTML files are generated under `build/html` directory. Open `index.html` with the browser and see
@@ -152,20 +151,20 @@ unit tests are stored under the [tests directory](./tests).
 Please install some required packages at first.
 ```bash
 # Install required packages to test all modules.
-pip install ".[test,optional]"
+uv sync --group test --extra optional
 ```
 
 You can run your tests as follows:
 
 ```bash
 # Run all the unit tests.
-pytest
+uv run pytest
 
 # Run all the unit tests defined in the specified test file.
-pytest tests/${TARGET_TEST_FILE_NAME}
+uv run pytest tests/${TARGET_TEST_FILE_NAME}
 
 # Run the unit test function with the specified name defined in the specified test file.
-pytest tests/${TARGET_TEST_FILE_NAME} -k ${TARGET_TEST_FUNCTION_NAME}
+uv run pytest tests/${TARGET_TEST_FILE_NAME} -k ${TARGET_TEST_FUNCTION_NAME}
 ```
 
 See also the [Optuna Test Policy](https://github.com/optuna/optuna/wiki/Test-Policy), which describes the principles to write and maintain Optuna tests to meet certain quality requirements.

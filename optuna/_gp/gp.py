@@ -19,7 +19,6 @@ is_categorical:
 
 from __future__ import annotations
 
-import math
 from typing import Any
 from typing import TYPE_CHECKING
 
@@ -128,6 +127,7 @@ class GPRegressor:
         with torch.no_grad():
             cov_Y_Y = self.kernel().detach().cpu().numpy()
 
+        # TODO(nabe): Replace numpy/scipy with torch.
         cov_Y_Y[np.diag_indices(self._X_train.shape[0])] += self.noise_var.item()
         cov_Y_Y_chol = np.linalg.cholesky(cov_Y_Y)
         # cov_Y_Y_inv @ y = v --> y = cov_Y_Y @ v --> y = cov_Y_Y_chol @ cov_Y_Y_chol.T @ v
@@ -138,7 +138,6 @@ class GPRegressor:
             scipy.linalg.solve_triangular(cov_Y_Y_chol, self._y_train.cpu().numpy(), lower=True),
             lower=False,
         )
-        # NOTE(nabenabe): Here we use NumPy to guarantee the reproducibility from the past.
         self._cov_Y_Y_chol = torch.from_numpy(cov_Y_Y_chol)
         self._cov_Y_Y_inv_Y = torch.from_numpy(cov_Y_Y_inv_Y)
         self.inverse_squared_lengthscales = self.inverse_squared_lengthscales.detach()
@@ -156,6 +155,7 @@ class GPRegressor:
         n_running = X_running.shape[0]
         n_total = n_train + n_running
 
+        # TODO(nabe): Replace numpy/scipy with torch.
         cov_Y_Y_chol = np.zeros((n_total, n_total), dtype=np.float64)
         cov_Y_Y_chol[:n_train, :n_train] = self._cov_Y_Y_chol.numpy()
         with torch.no_grad():
@@ -163,13 +163,16 @@ class GPRegressor:
             kernel_running_running = self.kernel(X_running, X_running).detach().cpu().numpy()
             kernel_running_running[np.diag_indices(n_running)] += self.noise_var.item()
 
-        cov_Y_Y_chol[n_train:, :n_train] = scipy.linalg.solve_triangular(
+        # NOTE(nabenabe): Given K=[[K_11,K_12],[K_21,K_22]] where K_21=K_12.T, and L_11=chol(K_11),
+        # chol(K) = [[L_11, 0], [K_21 @ inv(L_11).T, chol(K_22 - K_21 @ inv(K_11) @ K_21.T)]].
+        # For simplicity, denote L_21 = K_21 @ inv(L_11).T. Solve K_21 = L_21 @ L_11.T w.r.t. L_21.
+        L21 = scipy.linalg.solve_triangular(
             self._cov_Y_Y_chol.cpu().numpy(), kernel_running_train.T, lower=True
         ).T
-        cov_Y_Y_chol[n_train:, n_train:] = np.linalg.cholesky(
-            kernel_running_running
-            - cov_Y_Y_chol[n_train:, :n_train] @ cov_Y_Y_chol[n_train:, :n_train].T
-        )
+        # L_21 = K_21 @ inv(L_11.T) --> L_21.T = inv(L_11) @ K_21.T (b/c inv(L_11.T).T = inv(L_11))
+        # inv(L_11.T) @ inv(L_11) = inv(K_11) --> K_21 @ inv(K_11) @ K_21.T = L_21 @ L_21.T
+        cov_Y_Y_chol[n_train:, n_train:] = np.linalg.cholesky(kernel_running_running - L21 @ L21.T)
+        cov_Y_Y_chol[n_train:, :n_train] = L21
         self._y_all = torch.cat([self._y_train, y_running], dim=0)
         cov_Y_Y_inv_Y = scipy.linalg.solve_triangular(
             cov_Y_Y_chol.T,
@@ -177,7 +180,6 @@ class GPRegressor:
             lower=False,
         )
 
-        # NOTE(nabenabe): Here we use NumPy to guarantee the reproducibility from the past.
         self._cov_Y_Y_chol = torch.from_numpy(cov_Y_Y_chol)
         self._cov_Y_Y_inv_Y = torch.from_numpy(cov_Y_Y_inv_Y)
         self._X_all = torch.cat([self._X_train, X_running], dim=0)
@@ -275,14 +277,15 @@ class GPRegressor:
         2/3*N**3 flops, the overall cost for the former is 1/3*N**3+N**2+N flops and that for the
         latter is N**3+2*N**2-N flops.
         """
-        n_points = self._X_train.shape[0]
-        const = -0.5 * n_points * math.log(2 * math.pi)
-        cov_Y_Y = self.kernel() + self.noise_var * torch.eye(n_points, dtype=torch.float64)
+        cov_Y_Y = self.kernel()
+        # NOTE(nabenabe): If we extend it to batch optimization, use diagonal(dim1=-2, dim2=-1).
+        cov_Y_Y.diagonal().add_(self.noise_var)
         L = torch.linalg.cholesky(cov_Y_Y)
         logdet_part = -L.diagonal().log().sum()
         inv_L_y = torch.linalg.solve_triangular(L, self._y_train[:, None], upper=False)[:, 0]
         quad_part = -0.5 * (inv_L_y @ inv_L_y)
-        return logdet_part + const + quad_part
+        # NOTE(nabe): Omitting the constant does not change the optimum.
+        return logdet_part + quad_part
 
     def _fit_kernel_params(
         self,

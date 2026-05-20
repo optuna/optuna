@@ -631,21 +631,23 @@ from :obj:`~optuna.trial.TrialState.RUNNING`.
             if (datetime.now() - t.datetime_start).total_seconds() > grace_period:
                 study.tell(t, state=optuna.trial.TrialState.FAIL)
 
-You can also execute a callback function to process the failed trial.
-Optuna provides a callback to retry failed trials as :class:`~optuna.storages.RetryFailedTrialCallback`.
-Note that a callback is invoked at a beginning of each trial, which means :class:`~optuna.storages.RetryFailedTrialCallback`
-will retry failed trials when a new trial starts to evaluate.
+You can also execute a callback function to process heartbeat-stale trials.
+Optuna provides a callback to retry heartbeat-stale trials as
+:class:`~optuna.storages.RetryHeartbeatStaleTrialCallback`. Note that a callback is invoked at
+the beginning of each trial, which means
+:class:`~optuna.storages.RetryHeartbeatStaleTrialCallback` will retry heartbeat-stale trials when
+a new trial starts to evaluate.
 
 .. code-block:: python
 
     import optuna
-    from optuna.storages import RetryFailedTrialCallback
+    from optuna.storages import RetryHeartbeatStaleTrialCallback
 
     storage = optuna.storages.RDBStorage(
         url="sqlite:///:memory:",
         heartbeat_interval=60,
         grace_period=120,
-        failed_trial_callback=RetryFailedTrialCallback(max_retry=3),
+        heartbeat_stale_trial_callback=RetryHeartbeatStaleTrialCallback(max_retry=3),
     )
 
     study = optuna.create_study(storage=storage)

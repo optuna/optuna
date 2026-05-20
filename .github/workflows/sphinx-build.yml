@@ -20,9 +20,11 @@ jobs:
 
     - uses: actions/checkout@v4
 
-    - uses: actions/setup-python@v5
+    - name: Install the latest version of uv
+      uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
       with:
         python-version: 3.12
+        enable-cache: true
 
     # note (crcrpar): We've not updated tutorial frequently enough so far thus
     # it'd be okay to discard cache by any small changes including typo fix under tutorial directory.
@@ -39,21 +41,19 @@ jobs:
     - name: Install Dependencies
       run: |
         sudo apt-get install optipng graphviz
-        python -m pip install -U pip
-        pip install --progress-bar off -U .[document] --extra-index-url https://download.pytorch.org/whl/cpu
+        uv sync --extra document
 
     - name: Output installed packages
       run: |
-        pip freeze --all
+        uv pip freeze
     - name: Output dependency tree
       run: |
-        pip install pipdeptree
-        pipdeptree
+        uv tree
 
     - name: Build Document
       run: |
         cd docs
-        make html
+        uv run make html
         cd ../
 
     - uses: actions/upload-artifact@v4
@@ -76,9 +76,11 @@ jobs:
 
     - uses: actions/checkout@v4
 
-    - uses: actions/setup-python@v5
+    - name: Install the latest version of uv
+      uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
       with:
         python-version: 3.12
+        enable-cache: true
 
     - name: Sphinx Gallery Cache
       uses: actions/cache@v3
@@ -93,18 +95,16 @@ jobs:
     - name: Install Dependencies
       run: |
         sudo apt-get install optipng graphviz
-        python -m pip install -U pip
-        pip install --progress-bar off -U .[document] --extra-index-url https://download.pytorch.org/whl/cpu
+        uv sync --extra document
 
     - name: Output installed packages
       run: |
-        pip freeze --all
+        uv pip freeze
     - name: Output dependency tree
       run: |
-        pip install pipdeptree
-        pipdeptree
+        uv tree
 
     - name: Run Doctest
       run: |
         cd docs
-        make doctest
+        uv run make doctest
