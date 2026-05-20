@@ -8,6 +8,7 @@ from threading import Thread
 from types import TracebackType
 
 import optuna
+from optuna._deprecated import deprecated_func
 from optuna._experimental import experimental_func
 from optuna.storages import BaseStorage
 from optuna.trial import FrozenTrial
@@ -61,13 +62,24 @@ class BaseHeartbeat(metaclass=abc.ABCMeta):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def get_failed_trial_callback(self) -> Callable[["optuna.Study", FrozenTrial], None] | None:
-        """Get the failed trial callback function.
+    def get_heartbeat_stale_trial_callback(
+        self,
+    ) -> Callable[["optuna.Study", FrozenTrial], None] | None:
+        """Get the heartbeat-stale trial callback function.
 
         Returns:
-            The failed trial callback function if it is set, otherwise :obj:`None`.
+            The heartbeat-stale trial callback function if it is set, otherwise :obj:`None`.
         """
         raise NotImplementedError()
+
+    @deprecated_func(
+        "4.9.0",
+        "6.0.0",
+        text="Use `get_heartbeat_stale_trial_callback` instead.",
+    )
+    def get_failed_trial_callback(self) -> Callable[["optuna.Study", FrozenTrial], None] | None:
+        """Get the failed trial callback function."""
+        return self.get_heartbeat_stale_trial_callback()
 
 
 class BaseHeartbeatThread(metaclass=abc.ABCMeta):
@@ -173,11 +185,11 @@ def fail_stale_trials(study: "optuna.Study") -> None:
             # optuna.exceptions.UpdateFinishedTrialError.
             pass
 
-    failed_trial_callback = storage.get_failed_trial_callback()
-    if failed_trial_callback is not None:
+    heartbeat_stale_trial_callback = storage.get_heartbeat_stale_trial_callback()
+    if heartbeat_stale_trial_callback is not None:
         for trial_id in failed_trial_ids:
             failed_trial = copy.deepcopy(storage.get_trial(trial_id))
-            failed_trial_callback(study, failed_trial)
+            heartbeat_stale_trial_callback(study, failed_trial)
 
 
 def is_heartbeat_enabled(storage: BaseStorage) -> bool:
