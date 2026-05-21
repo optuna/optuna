@@ -33,6 +33,14 @@ if TYPE_CHECKING:
 _TREE_SIZE_KEY = "brute_force:tree_size"
 
 
+def _set_tree_size(study: Study, tree_size: int) -> None:
+    study._storage.set_study_system_attr(study._study_id, _TREE_SIZE_KEY, tree_size)
+
+
+def _get_tree_size(study: Study) -> int:
+    return study._storage.get_study_system_attrs(study._study_id).get(_TREE_SIZE_KEY, 0)
+
+
 # TODO(nabenabe): Simply use `slots=True` once Python 3.9 is dropped.
 @dataclass(**({"slots": True} if sys.version_info >= (3, 10) else {}))
 class _TreeNode:
@@ -262,17 +270,16 @@ class BruteForceSampler(BaseSampler):
         # being initialized as an empty graph, which is created with n_jobs > 1
         # where we get trials[i].params = {} for some i.
         self._populate_tree(tree, trials, trial.params)
-        if not tree.is_any_expandable(exclude_running):
-            return param_distribution.to_external_repr(self._rng.rng.choice(candidates).item())
+        if len(trials) < _get_tree_size(study) or tree.is_any_expandable(exclude_running):
+            param_val = tree.sample_child(self._rng.rng, exclude_running)
         else:
-            return param_distribution.to_external_repr(
-                tree.sample_child(self._rng.rng, exclude_running)
-            )
+            param_val = self._rng.rng.choice(candidates).item()
+        return param_distribution.to_external_repr(param_val)
 
     def after_trial(
         self, study: Study, trial: FrozenTrial, state: TrialState, values: Sequence[float] | None
     ) -> None:
-        tree_size = study._storage.get_study_system_attrs(study._study_id).get(_TREE_SIZE_KEY, 0)
+        tree_size = _get_tree_size(study)
         exclude_running = not self._avoid_premature_stop
         trials, current_idx = _get_non_waiting_trials_and_current_trial_index(study, trial.number)
         # Set current trial as complete.
@@ -288,8 +295,7 @@ class BruteForceSampler(BaseSampler):
             study.stop()
         if trial.number % self._tree_size_check_interval == 0:
             # NOTE(nabenabe): The tree is full size only in `after_trial`.
-            tree_size = int(max(tree_size, tree.count_total_combinations()))
-            study._storage.set_study_system_attr(study._study_id, _TREE_SIZE_KEY, tree_size)
+            _set_tree_size(study, tree_size=int(max(tree_size, tree.count_total_combinations())))
 
 
 def _is_nan(v: CategoricalChoiceType) -> bool:
