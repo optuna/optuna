@@ -222,8 +222,7 @@ class qLogEI(BaseAcquisitionFunc):
 
     def _get_joint_input(self, x: torch.Tensor) -> torch.Tensor:
         running = self._x_running.expand(*x.shape[:-1], -1, -1)
-        joint_x = torch.cat([running, x.unsqueeze(-2)], dim=-2)
-        return joint_x
+        return torch.cat([running, x.unsqueeze(-2)], dim=-2)
 
     def eval_acqf(self, x: torch.Tensor) -> torch.Tensor:
         if np.isneginf(self._threshold):
