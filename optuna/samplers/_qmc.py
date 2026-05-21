@@ -205,7 +205,9 @@ class QMCSampler(BaseSampler):
                 elif len(space.keys()):
                     intersection_keys &= space.keys()
 
-            if not intersection_keys and union_search_space:
+            if intersection_keys is not None and intersection_keys != set(
+                union_search_space.keys()
+            ):
                 _logger.warning(
                     "`QMCSampler` assumes that the search space does not include any conditions. "
                     "Please make sure the provided search space is non-conditional."

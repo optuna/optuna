@@ -376,20 +376,20 @@ def test_infer_relative_search_space_dynamic_warning() -> None:
     sampler = _init_QMCSampler_without_exp_warning()
     study = optuna.create_study(sampler=sampler)
 
-    # Simulating distributed setup with a dynamic search space (disjoint parameters).
+    # Simulating distributed setup with a dynamic search space (partial intersection).
     trial1 = study.ask()
     trial1.suggest_float("x", 0, 1)
+    trial1.suggest_float("y", 0, 1)
 
     trial2 = study.ask()
-    trial2.suggest_float("y", 0, 1)
+    trial2.suggest_float("x", 0, 1)
+    trial2.suggest_float("z", 0, 1)
 
     trial_mock = Mock()
 
     with patch("optuna.samplers._qmc._logger.warning") as mock_warning:
         sampler.infer_relative_search_space(study, trial_mock)
         assert mock_warning.call_count == 1
-        args, _ = mock_warning.call_args
-        assert "intersection search space of pending trials is empty" in args[0]
 
 
 def test_find_sample_id_partial_fix() -> None:
