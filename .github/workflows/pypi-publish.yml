@@ -14,6 +14,7 @@ jobs:
     name: Build and publish Python distributions to PyPI or TestPyPI
     runs-on: ubuntu-latest
     permissions:
+      contents: read
       id-token: write
 
     # Not intended for forks.
