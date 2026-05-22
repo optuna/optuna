@@ -19,6 +19,8 @@ Optuna provides the following sampling algorithms:
 
 - Grid Search implemented in :class:`~optuna.samplers.GridSampler`
 
+- Exhaustive Search implemented in :class:`~optuna.samplers.BruteForceSampler`
+
 - Random Search implemented in :class:`~optuna.samplers.RandomSampler`
 
 - Tree-structured Parzen Estimator algorithm implemented in :class:`~optuna.samplers.TPESampler`
