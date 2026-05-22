@@ -31,10 +31,16 @@ _logger = get_logger(__name__)
 
 
 class GridSampler(BaseSampler):
-    """Sampler using grid search.
+    """Sampler that performs exhaustive search over the define-and-run user-specified grids.
 
     With :class:`~optuna.samplers.GridSampler`, the trials suggest all combinations of parameters
     in the given search space during the study.
+
+    .. note::
+        :class:`~optuna.samplers.BruteForceSampler` also provides the exhaustive search feature.
+        Unlike :class:`~optuna.samplers.GridSampler`, :class:`~optuna.samplers.BruteForceSampler`
+        does not ask users to provide search space and it supports hierarchical, aka dynamic search
+        space, enabling users to seamlessly enjoy the exhaustive search.
 
     Example:
 
