@@ -259,6 +259,11 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
 
         target_trials = self._get_top_quantile_trials(study, trials, self._target_quantile, target)
         region_trials = self._get_top_quantile_trials(study, trials, self._region_quantile, target)
+        if len(target_trials) == len(region_trials):
+            optuna_warn(
+                "Target and region quantiles select the same set of trials. "
+                "Parameter importances will be equal."
+            )
         quantile = len(target_trials) / len(region_trials)  # gamma' / gamma
         param_importances = {k: 0.0 for k in params}
         for param_name in params:
