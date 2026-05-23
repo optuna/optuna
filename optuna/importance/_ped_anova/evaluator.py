@@ -265,6 +265,8 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
                 "Target and region quantiles select the same set of trials. "
                 "Parameter importances will be equal."
             )
+        if len(target_trials) == 0:
+            return {k: 0.0 for k in params}
         quantile = len(target_trials) / len(region_trials)  # gamma' / gamma
         param_importances = {k: 0.0 for k in params}
         for param_name in params:
