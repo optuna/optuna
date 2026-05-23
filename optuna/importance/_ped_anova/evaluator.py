@@ -212,7 +212,6 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
         pe_top, grid_size = build_parzen_estimator_on_grid(
             param_name, dist, target_trials, self._n_steps, prior_weight
         )
-        # NOTE: pe_top.n_steps could be different from self._n_steps.
         grids = np.arange(grid_size)
         pdf_top = pe_top.pdf({param_name: grids}) + 1e-12
 
