@@ -8,6 +8,8 @@ import numpy as np
 
 from optuna._deprecated import _DEPRECATION_WARNING_TEMPLATE
 from optuna._experimental import experimental_class
+from optuna.importance._base import _get_filtered_trials
+from optuna.importance._base import _check_evaluate_args
 from optuna._warnings import optuna_warn
 from optuna.importance._base import _sort_dict_by_importance
 from optuna.importance._base import BaseImportanceEvaluator
