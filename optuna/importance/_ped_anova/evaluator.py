@@ -315,11 +315,10 @@ def _partition_by_regime(
 def _get_distributions(
     study: Study, params: list[str] | None
 ) -> list[dict[str, BaseDistribution]]:
-    if params is not None:
-        raise NotImplementedError()
     trials = study.get_trials(deepcopy=False)
+    params_set = set(params) if params is not None else None
     return [
-        t.distributions
+        {k: v for k, v in t.distributions.items() if params_set is None or k in params_set}
         for t in trials
         if t.state
         in (
