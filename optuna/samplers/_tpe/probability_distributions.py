@@ -135,8 +135,6 @@ class _MixtureOfProductDistribution(NamedTuple):
                     low, high = math.log(low), math.log(high)
                 lows_numeric.append(low)
                 highs_numeric.append(high)
-            else:
-                assert False, "Should not reach."
 
         if len(numerical_dists):
             active_mus = np.asarray([d.mu[active_indices] for d in numerical_dists])
@@ -174,7 +172,12 @@ class _MixtureOfProductDistribution(NamedTuple):
                 ]
                 continue
             is_log = d.is_log
-            if (step := d.step) != 0.0:
+            if (step := d.step) == 0.0:
+                cont_dists.append(d)
+                x_cont.append(np.log(x[:, i]) if is_log else x[:, i])
+                lows_cont.append(math.log(d.low) if is_log else d.low)
+                highs_cont.append(math.log(d.high) if is_log else d.high)
+            else:
                 xi_uniq, xi_inv = np.unique(x[:, i], return_inverse=True)
                 mu_uniq, sigma_uniq, mu_sigma_inv = _unique_inverse_2d(d.mu, d.sigma)
                 left = np.log(xi_uniq - step / 2) if is_log else (xi_uniq - step / 2)
@@ -189,11 +192,6 @@ class _MixtureOfProductDistribution(NamedTuple):
                 weighted_log_pdf -= _truncnorm._log_gauss_mass(
                     (lb - mu_uniq) / sigma_uniq, (ub - mu_uniq) / sigma_uniq
                 )[mu_sigma_inv]
-            else:
-                cont_dists.append(d)
-                x_cont.append(np.log(x[:, i]) if is_log else x[:, i])
-                lows_cont.append(math.log(d.low) if is_log else d.low)
-                highs_cont.append(math.log(d.high) if is_log else d.high)
 
         if len(x_cont):
             mus_cont = np.asarray([d.mu for d in cont_dists]).T
