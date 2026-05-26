@@ -145,6 +145,7 @@ class _MixtureOfProductDistribution(NamedTuple):
         ret = np.empty((batch_size, len(self.distributions)), dtype=float)
         disc_inds, numerical_inds, log_inds = [], [], []
         numerical_dists = []
+        disc_dists = []
         for i, d in enumerate(self.distributions):
             if isinstance(d, _BatchedCategoricalDistributions):
                 active_weights = d.weights[active_indices, :]
@@ -158,6 +159,7 @@ class _MixtureOfProductDistribution(NamedTuple):
                 numerical_inds.append(i)
                 if d.step != 0.0:
                     disc_inds.append(i)
+                    disc_dists.append(d)
                 if d.is_log:
                     log_inds.append(i)
 
@@ -174,7 +176,6 @@ class _MixtureOfProductDistribution(NamedTuple):
                 random_state=rng,
             ).T
             ret[:, log_inds] = np.exp(ret[:, log_inds])
-            disc_dists = [d for d in numerical_dists if d.step != 0.0]
             step_d = np.asarray([d.step for d in disc_dists])
             low_d = np.asarray([d.low for d in disc_dists])
             high_d = np.asarray([d.high for d in disc_dists])
