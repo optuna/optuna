@@ -145,7 +145,6 @@ class _MixtureOfProductDistribution(NamedTuple):
         ret = np.empty((batch_size, len(self.distributions)), dtype=float)
         disc_inds, numerical_inds, log_inds = [], [], []
         numerical_dists = []
-        lows_numeric, highs_numeric = [], []
         for i, d in enumerate(self.distributions):
             if isinstance(d, _BatchedCategoricalDistributions):
                 active_weights = d.weights[active_indices, :]
@@ -165,9 +164,6 @@ class _MixtureOfProductDistribution(NamedTuple):
         if len(numerical_dists):
             active_mus = np.asarray([d.mu[active_indices] for d in numerical_dists])
             active_sigmas = np.asarray([d.sigma[active_indices] for d in numerical_dists])
-            lows = np.asarray([d.low for d in numerical_dists])
-            highs = np.asarray([d.high for d in numerical_dists])
-            steps = np.asarray([d.step for d in numerical_dists])
             adapted_lows = np.asarray([d.adapted_low for d in numerical_dists])
             adapted_highs = np.asarray([d.adapted_high for d in numerical_dists])
             ret[:, numerical_inds] = _truncnorm.rvs(
@@ -178,8 +174,10 @@ class _MixtureOfProductDistribution(NamedTuple):
                 random_state=rng,
             ).T
             ret[:, log_inds] = np.exp(ret[:, log_inds])
-            steps_not_0 = np.nonzero(steps != 0.0)[0]
-            low_d, step_d, high_d = lows[steps_not_0], steps[steps_not_0], highs[steps_not_0]
+            disc_dists = [d for d in numerical_dists if d.step != 0.0]
+            step_d = np.asarray([d.step for d in disc_dists])
+            low_d = np.asarray([d.low for d in disc_dists])
+            high_d = np.asarray([d.high for d in disc_dists])
             ret[:, disc_inds] = np.clip(
                 low_d + np.round((ret[:, disc_inds] - low_d) / step_d) * step_d, low_d, high_d
             )
