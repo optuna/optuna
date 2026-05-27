@@ -95,12 +95,16 @@ def test_infer_relative_search_space_without_any() -> None:
     assert sampler.infer_relative_search_space(study, Mock()) == {}
 
 
-def test_infer_relative_search_space_with_suggested_running() -> None:
+@pytest.mark.parametrize("n_trials", [1, 2])
+def test_infer_relative_search_space_with_suggested_running(n_trials: int) -> None:
     sampler = _init_QMCSampler_without_exp_warning()
     study = optuna.create_study(sampler=sampler)
-    trial = study.ask()
-    trial.suggest_float("a", 1, 10)
-    trial.suggest_float("b", -10, 2)
+
+    for _ in range(n_trials):
+        trial = study.ask()
+        trial.suggest_float("a", 1, 10)
+        trial.suggest_float("b", -10, 2)
+
     search_space = sampler.infer_relative_search_space(study, Mock())
     assert set(search_space) == {"a", "b"}
 
