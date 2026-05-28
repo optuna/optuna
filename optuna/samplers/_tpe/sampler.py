@@ -28,6 +28,7 @@ from optuna.samplers._tpe.parzen_estimator import _ParzenEstimatorParameters
 from optuna.search_space import IntersectionSearchSpace
 from optuna.search_space.group_decomposed import _GroupDecomposedSearchSpace
 from optuna.search_space.group_decomposed import _SearchSpaceGroup
+from optuna.search_space.union import UnionSearchSpace
 from optuna.study._multi_objective import _fast_non_domination_rank
 from optuna.study._multi_objective import _is_pareto_front
 from optuna.study._study_direction import StudyDirection
@@ -420,6 +421,25 @@ class TPESampler(BaseSampler):
         self._group_decomposed_search_space: _GroupDecomposedSearchSpace | None = None
         self._search_space_group: _SearchSpaceGroup | None = None
         self._search_space = IntersectionSearchSpace(include_pruned=True)
+        if multivariate and not group:
+            self._union_search_space = UnionSearchSpace(include_pruned=True)
+            self._independent_fallback_sampler = TPESampler(
+                consider_prior=consider_prior,
+                prior_weight=prior_weight,
+                consider_magic_clip=consider_magic_clip,
+                consider_endpoints=consider_endpoints,
+                n_startup_trials=n_startup_trials,
+                n_ei_candidates=n_ei_candidates,
+                gamma=gamma,
+                weights=weights,
+                seed=seed,
+                multivariate=False,
+                group=False,
+                warn_independent_sampling=False,
+                constant_liar=constant_liar,
+                constraints_func=constraints_func,
+                categorical_distance_func=categorical_distance_func,
+            )
         self._constant_liar = constant_liar
         self._constraints_func = constraints_func
         # NOTE(nabenabe0928): Users can overwrite _ParzenEstimator to customize the TPE behavior.
@@ -466,6 +486,12 @@ class TPESampler(BaseSampler):
                     if distribution.single():
                         continue
                     search_space[name] = distribution
+            return search_space
+        elif self._multivariate:
+            for name, distribution in self._union_search_space.calculate(study).items():
+                if distribution.single():
+                    continue
+                search_space[name] = distribution
             return search_space
 
         for name, distribution in self._search_space.calculate(study, use_trial_cache).items():
@@ -588,6 +614,13 @@ class TPESampler(BaseSampler):
                 for param_name, distribution in search_space.items():
                     param = params[param_name]
                     values[param_name].append(distribution.to_internal_repr(param))
+            elif self._multivariate and not self._group:
+                for param_name, distribution in search_space.items():
+                    if param_name in params:
+                        param = params[param_name]
+                        values[param_name].append(distribution.to_internal_repr(param))
+                    else:
+                        values[param_name].append(np.nan)
         return {k: np.asarray(v) for k, v in values.items()}
 
     def _sample(
@@ -625,7 +658,13 @@ class TPESampler(BaseSampler):
         ret = TPESampler._compare(samples_below, acq_func_vals)
 
         for param_name, dist in search_space.items():
-            ret[param_name] = dist.to_external_repr(ret[param_name])
+            if self._multivariate and not self._group and np.isnan(ret[param_name]):
+                fallback_val = self._independent_fallback_sampler.sample_independent(
+                    study, trial, param_name, dist
+                )
+                ret[param_name] = fallback_val
+            else:
+                ret[param_name] = dist.to_external_repr(ret[param_name])
 
         return ret
 
@@ -638,12 +677,17 @@ class TPESampler(BaseSampler):
     ) -> _ParzenEstimator:
         observations = self._get_internal_repr(trials, search_space)
         if handle_below and study._is_multi_objective():
-            param_mask_below = [
-                search_space.keys() <= self._get_params(trial).keys() for trial in trials
-            ]
-            weights_below = _calculate_weights_below_for_multi_objective(
-                study, trials, self._constraints_func
-            )[param_mask_below]
+            if self._multivariate and not self._group:
+                weights_below = _calculate_weights_below_for_multi_objective(
+                    study, trials, self._constraints_func
+                )
+            else:
+                param_mask_below = [
+                    search_space.keys() <= self._get_params(trial).keys() for trial in trials
+                ]
+                weights_below = _calculate_weights_below_for_multi_objective(
+                    study, trials, self._constraints_func
+                )[param_mask_below]
             assert np.isfinite(weights_below).all()
             mpe = self._parzen_estimator_cls(
                 observations, search_space, self._parzen_estimator_parameters, weights_below

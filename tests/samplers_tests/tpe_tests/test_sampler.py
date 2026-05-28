@@ -64,7 +64,8 @@ def test_warn_independent_sampling(capsys: pytest.CaptureFixture) -> None:
     study.optimize(objective, n_trials=10)
 
     _, err = capsys.readouterr()
-    assert err
+    # No warning because dynamic search spaces are now natively supported.
+    assert err == ""
 
 
 def test_warn_independent_sampling_group(capsys: pytest.CaptureFixture) -> None:

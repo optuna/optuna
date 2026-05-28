@@ -18,6 +18,7 @@ from optuna.samplers._tpe.probability_distributions import _BatchedDiscreteTrunc
 from optuna.samplers._tpe.probability_distributions import _BatchedDistributions
 from optuna.samplers._tpe.probability_distributions import _BatchedTruncLogNormDistributions
 from optuna.samplers._tpe.probability_distributions import _BatchedTruncNormDistributions
+from optuna.samplers._tpe.probability_distributions import _BatchedUnionCategoricalDistributions
 from optuna.samplers._tpe.probability_distributions import _MixtureOfProductDistribution
 
 
@@ -138,31 +139,59 @@ class _ParzenEstimator:
     ) -> _BatchedDistributions:
         choices = search_space.choices
         n_choices = len(choices)
+        has_nan = np.any(np.isnan(observations))
+
         if len(observations) == 0:
             return _BatchedCategoricalDistributions(
                 weights=np.full((1, n_choices), fill_value=1.0 / n_choices)
             )
 
+        actual_choices = n_choices + 1 if has_nan else n_choices
         n_kernels = len(observations) + 1  # NOTE(sawa3030): +1 for prior.
         weights = np.full(
-            shape=(n_kernels, n_choices),
+            shape=(n_kernels, actual_choices),
             fill_value=parameters.prior_weight / n_kernels,
         )
-        observed_indices = observations.astype(int)
+
+        observations_ = observations.copy()
+        if has_nan:
+            observations_[np.isnan(observations)] = n_choices
+
+        observed_indices = observations_.astype(int)
         if param_name in parameters.categorical_distance_func:
             # TODO(nabenabe0928): Think about how to handle combinatorial explosion.
             # The time complexity is O(n_choices * used_indices.size), so n_choices cannot be huge.
             used_indices, rev_indices = np.unique(observed_indices, return_inverse=True)
             dist_func = parameters.categorical_distance_func[param_name]
-            dists = np.array([[dist_func(choices[i], c) for c in choices] for i in used_indices])
+            dists = []
+            for i in used_indices:
+                if i < n_choices:
+                    dists.append([dist_func(choices[i], c) for c in choices])
+                else:
+                    dists.append([0.0] * n_choices)
+            dists_arr = np.array(dists)
             coef = np.log(n_kernels / parameters.prior_weight) * np.log(n_choices) / np.log(6)
-            cat_weights = np.exp(-((dists / np.max(dists, axis=1)[:, np.newaxis]) ** 2) * coef)
+
+            max_dists = np.max(dists_arr, axis=1)[:, np.newaxis]
+            max_dists = np.where(max_dists == 0, 1, max_dists)
+            cat_weights = np.exp(-((dists_arr / max_dists) ** 2) * coef)
+
+            if has_nan:
+                cat_weights = np.hstack([cat_weights, np.zeros((cat_weights.shape[0], 1))])
+                if n_choices in used_indices:
+                    nan_idx = np.where(used_indices == n_choices)[0][0]
+                    cat_weights[nan_idx, :] = 0.0
+                    cat_weights[nan_idx, n_choices] = 1.0
+
             weights[: len(observed_indices)] = cat_weights[rev_indices]
         else:
             weights[np.arange(len(observed_indices)), observed_indices] += 1
 
         row_sums = weights.sum(axis=1, keepdims=True)
         weights /= np.where(row_sums == 0, 1, row_sums)
+
+        if has_nan:
+            return _BatchedUnionCategoricalDistributions(weights)
         return _BatchedCategoricalDistributions(weights)
 
     def _calculate_numerical_distributions(

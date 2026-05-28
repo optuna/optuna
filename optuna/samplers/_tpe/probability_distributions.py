@@ -12,6 +12,10 @@ class _BatchedCategoricalDistributions(NamedTuple):
     weights: np.ndarray
 
 
+class _BatchedUnionCategoricalDistributions(NamedTuple):
+    weights: np.ndarray
+
+
 class _BatchedTruncNormDistributions(NamedTuple):
     mu: np.ndarray
     sigma: np.ndarray
@@ -44,6 +48,7 @@ class _BatchedDiscreteTruncLogNormDistributions(NamedTuple):
 
 _BatchedDistributions = Union[
     _BatchedCategoricalDistributions,
+    _BatchedUnionCategoricalDistributions,
     _BatchedTruncNormDistributions,
     _BatchedTruncLogNormDistributions,
     _BatchedDiscreteTruncNormDistributions,
@@ -102,6 +107,15 @@ class _MixtureOfProductDistribution(NamedTuple):
                 assert np.isclose(cum_probs[:, -1], 1).all()
                 cum_probs[:, -1] = 1  # Avoid numerical errors.
                 ret[:, i] = np.sum(cum_probs < rnd_quantile[:, np.newaxis], axis=-1)
+            elif isinstance(d, _BatchedUnionCategoricalDistributions):
+                active_weights = d.weights[active_indices, :]
+                rnd_quantile = rng.rand(batch_size)
+                cum_probs = np.cumsum(active_weights, axis=-1)
+                assert np.isclose(cum_probs[:, -1], 1).all()
+                cum_probs[:, -1] = 1  # Avoid numerical errors.
+                ret[:, i] = np.sum(cum_probs < rnd_quantile[:, np.newaxis], axis=-1)
+                # Convert the trailing dummy choice back to an explicit NaN flag
+                ret[ret[:, i].astype(np.int64) == d.weights.shape[1] - 1, i] = np.nan
             elif isinstance(d, _BatchedTruncNormDistributions):
                 numerical_dists.append(d)
                 numerical_inds.append(i)
@@ -135,6 +149,11 @@ class _MixtureOfProductDistribution(NamedTuple):
             lows = np.array([d.low for d in numerical_dists])
             highs = np.array([d.high for d in numerical_dists])
             steps = np.array([getattr(d, "step", 0.0) for d in numerical_dists])
+            nan_mask = np.isnan(active_mus)
+            if np.any(nan_mask):
+                active_mus = np.where(nan_mask, 0.0, active_mus)
+                active_sigmas = np.where(nan_mask, 1.0, active_sigmas)
+
             ret[:, numerical_inds] = _truncnorm.rvs(
                 a=(np.asarray(lows_numeric)[:, np.newaxis] - active_mus) / active_sigmas,
                 b=(np.asarray(highs_numeric)[:, np.newaxis] - active_mus) / active_sigmas,
@@ -142,6 +161,9 @@ class _MixtureOfProductDistribution(NamedTuple):
                 scale=active_sigmas,
                 random_state=rng,
             ).T
+
+            if np.any(nan_mask):
+                ret[:, numerical_inds] = np.where(nan_mask.T, np.nan, ret[:, numerical_inds])
             ret[:, log_inds] = np.exp(ret[:, log_inds])
             steps_not_0 = np.nonzero(steps != 0.0)[0]
             low_d, step_d, high_d = lows[steps_not_0], steps[steps_not_0], highs[steps_not_0]
@@ -167,6 +189,14 @@ class _MixtureOfProductDistribution(NamedTuple):
                 weighted_log_pdf += np.log(np.take_along_axis(d.weights[np.newaxis], xi, axis=-1))[
                     ..., 0
                 ]
+            elif isinstance(d, _BatchedUnionCategoricalDistributions):
+                xi = x[:, i].copy()
+                nan_mask = np.isnan(xi)
+                xi[nan_mask] = d.weights.shape[1] - 1
+                xi_transformed = xi[:, np.newaxis, np.newaxis].astype(np.int64)
+                weighted_log_pdf += np.log(
+                    np.take_along_axis(d.weights[np.newaxis], xi_transformed, axis=-1)
+                )[..., 0]
             elif isinstance(d, _BatchedTruncNormDistributions):
                 cont_dists.append(d)
                 x_cont.append(x[:, i])
@@ -207,13 +237,22 @@ class _MixtureOfProductDistribution(NamedTuple):
         if len(x_cont):
             mus_cont = np.asarray([d.mu for d in cont_dists]).T
             sigmas_cont = np.asarray([d.sigma for d in cont_dists]).T
-            weighted_log_pdf += _truncnorm.logpdf(
-                np.asarray(x_cont).T[:, np.newaxis, :],
+            x_arr = np.asarray(x_cont).T[:, np.newaxis, :]
+
+            cont_nan_mask = np.isnan(x_arr) | np.isnan(mus_cont)
+            if np.any(cont_nan_mask):
+                mus_cont = np.where(np.isnan(mus_cont), 0.0, mus_cont)
+                sigmas_cont = np.where(np.isnan(sigmas_cont), 1.0, sigmas_cont)
+
+            log_prob_raw = _truncnorm.logpdf(
+                x_arr,
                 a=(np.asarray(lows_cont) - mus_cont) / sigmas_cont,
                 b=(np.asarray(highs_cont) - mus_cont) / sigmas_cont,
                 loc=mus_cont,
                 scale=sigmas_cont,
-            ).sum(axis=-1)
+            )
+            log_prob_raw = np.where(cont_nan_mask, 0.0, log_prob_raw)
+            weighted_log_pdf += log_prob_raw.sum(axis=-1)
 
         weighted_log_pdf += np.log(self.weights[np.newaxis])
         max_ = weighted_log_pdf.max(axis=1)
