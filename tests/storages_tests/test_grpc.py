@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import pytest
 
+import optuna
 from optuna.storages import BaseStorage
 from optuna.study._study_direction import StudyDirection
 from optuna.testing.storages import STORAGE_MODES
@@ -27,3 +28,11 @@ def test_set_and_get_trial_state_values(storage_mode: str, values: list[float] |
         with StorageSupplier("grpc_proxy", base_storage=storage_direct) as storage_grpc_proxy:
             _test_set_and_get_compatibility(storage_grpc_proxy, storage_direct, values)
             _test_set_and_get_compatibility(storage_direct, storage_grpc_proxy, values)
+
+
+def test_create_grpc_proxy_server_controls_lifecycle() -> None:
+    storage = optuna.storages.InMemoryStorage()
+    server = optuna.storages.create_grpc_proxy_server(storage, port=0)
+
+    server.start()
+    server.stop(grace=0).wait()

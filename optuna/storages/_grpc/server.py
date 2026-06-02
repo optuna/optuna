@@ -35,6 +35,24 @@ def make_server(
     return server
 
 
+@experimental_func("4.6.0")
+def create_grpc_proxy_server(
+    storage: BaseStorage,
+    *,
+    host: str = "localhost",
+    port: int = 13000,
+    thread_pool: ThreadPoolExecutor | None = None,
+) -> grpc.Server:
+    """Create a gRPC server for the given storage without starting it.
+
+    Use this function when embedding the gRPC proxy in another process and
+    explicit control over ``start()``, ``stop()``, or ``wait_for_termination()``
+    is needed. For a standalone blocking server, use
+    :func:`~optuna.storages.run_grpc_proxy_server`.
+    """
+    return make_server(storage, host, port, thread_pool)
+
+
 @experimental_func("4.2.0")
 def run_grpc_proxy_server(
     storage: BaseStorage,
@@ -77,7 +95,9 @@ def run_grpc_proxy_server(
         https://github.com/optuna/optuna/issues/6084. Please use
         :class:`~optuna.storages.RDBStorage` instead.
     """
-    server = make_server(storage, host, port, thread_pool)
+    server = create_grpc_proxy_server(
+        storage, host=host, port=port, thread_pool=thread_pool
+    )
     server.start()
     _logger.info(f"Server started at {host}:{port}")
     _logger.info("Listening...")
