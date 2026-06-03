@@ -79,7 +79,8 @@ class _TreeNode:
         current_node = self
         for param_name, choices, value in trial_path:
             current_node.expand(param_name, choices)
-            next_node = current_node.children.get(value)
+            # TODO(nabenabe): This is a temporal fix until the lazy node is introduced.
+            next_node = (current_node.children or {}).get(value)
             if next_node is None:
                 return None
             current_node = next_node
