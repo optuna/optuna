@@ -275,7 +275,9 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
                 param_name, region_trials, self._min_n_trials_in_regime
             )
             for dist, region_trials_regime in regime_trials.items():
-                target_trials_regime = [t for t in region_trials_regime if t._trial_id in target_trial_ids]
+                target_trials_regime = [
+                    t for t in region_trials_regime if t._trial_id in target_trial_ids
+                ]
                 regime_prob_target = len(target_trials_regime) / len(target_trials)  # alpha_i
                 regime_prob_region = len(region_trials_regime) / len(region_trials)  # beta_i
                 if dist is not None and not dist.single() and len(target_trials_regime):
