@@ -55,9 +55,7 @@ class _TreeNode:
     def expand(self, param_name: str | None, choices: Iterable[float]) -> None:
         # If the node is unexpanded, expand it.
         # Otherwise, check if the node is compatible with the given search space.
-        choices_fingerprint = (
-            (len(choices), choices[0], choices[-1]) if choices else (0, 0, 0)
-        )
+        choices_fingerprint = (len(choices), choices[0], choices[-1]) if choices else (0, 0, 0)
         if self.children is None:
             # Expand the node
             self.param_name = param_name
