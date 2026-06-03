@@ -52,7 +52,7 @@ class _TreeNode:
     is_running: bool = False
     choices_fingerprint: tuple[int, float, float] | None = None
 
-    def expand(self, param_name: str | None, choices: Iterable[float]) -> None:
+    def expand(self, param_name: str | None, choices: list[float]) -> None:
         # If the node is unexpanded, expand it.
         # Otherwise, check if the node is compatible with the given search space.
         choices_fingerprint = (len(choices), choices[0], choices[-1]) if choices else (0, 0, 0)
@@ -81,7 +81,7 @@ class _TreeNode:
         self.expand(None, [])
 
     def add_path(
-        self, trial_path: Iterable[tuple[str, Iterable[float], float]]
+        self, trial_path: Iterable[tuple[str, list[float], float]]
     ) -> _TreeNode | None:
         # Add a path (i.e. a list of suggested parameters in one trial) to the tree.
         current_node = self
