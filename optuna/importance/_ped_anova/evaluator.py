@@ -269,15 +269,13 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
             return {k: 0.0 for k in params}
         quantile = len(target_trials) / len(region_trials)  # gamma' / gamma
         param_importances = {k: 0.0 for k in params}
+        target_trial_ids = set(t._trial_id for t in target_trials)
         for param_name in params:
             regime_trials = _partition_by_regime(
                 param_name, region_trials, self._min_n_trials_in_regime
             )
             for dist, region_trials_regime in regime_trials.items():
-                all_region_trials_regime = set(t._trial_id for t in region_trials_regime)
-                target_trials_regime = [
-                    t for t in target_trials if t._trial_id in all_region_trials_regime
-                ]
+                target_trials_regime = [t for t in region_trials_regime if t._trial_id in target_trial_ids]
                 regime_prob_target = len(target_trials_regime) / len(target_trials)  # alpha_i
                 regime_prob_region = len(region_trials_regime) / len(region_trials)  # beta_i
                 if dist is not None and not dist.single() and len(target_trials_regime):
