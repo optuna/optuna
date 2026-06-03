@@ -51,14 +51,13 @@ class _TreeNode:
     children: dict[float, "_TreeNode"] | None = None
     is_running: bool = False
 
-    def expand(self, param_name: str | None, choices: Iterable[float]) -> dict[float, "_TreeNode"]:
+    def expand(self, param_name: str | None, choices: Iterable[float]) -> None:
         # If the node is unexpanded, expand it.
         # Otherwise, check if the node is compatible with the given search space.
         if self.children is None:
             # Expand the node
             self.param_name = param_name
             self.children = {value: _TreeNode() for value in choices}
-            return self.children
         else:
             if self.param_name != param_name:
                 raise ValueError(f"param_name mismatch: {self.param_name} != {param_name}")
@@ -66,7 +65,6 @@ class _TreeNode:
                 raise ValueError(
                     f"search_space mismatch: {set(self.children.keys())} != {set(choices)}"
                 )
-            return self.children
 
     def set_running(self) -> None:
         self.is_running = True
