@@ -80,7 +80,8 @@ class _TreeNode:
         # Add a path (i.e. a list of suggested parameters in one trial) to the tree.
         current_node = self
         for param_name, choices, value in trial_path:
-            next_node = current_node.expand(param_name, choices).get(value)
+            current_node.expand(param_name, choices)
+            next_node = current_node.children.get(value)
             if next_node is None:
                 return None
             current_node = next_node
