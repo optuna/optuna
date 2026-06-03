@@ -283,6 +283,7 @@ def _is_nan(v: CategoricalChoiceType) -> bool:
 
 
 def _enumerate_candidates(param_distribution: BaseDistribution) -> list[float]:
+    # The consistency check in ``expand`` requires the result to be sorted with a uniform interval.
     if isinstance(param_distribution, FloatDistribution):
         if param_distribution.step is None:
             raise ValueError(

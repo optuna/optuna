@@ -5,6 +5,7 @@ import pytest
 
 import optuna
 from optuna import samplers
+from optuna.samplers._brute_force import _enumerate_candidates
 from optuna.samplers._brute_force import _TreeNode
 from optuna.trial import Trial
 
@@ -411,3 +412,22 @@ def test_objective_with_nan() -> None:
     study = optuna.create_study(sampler=sampler)
     study.optimize(_objective_with_nan)
     assert len(study.trials) == len(weird_choices) ** n_params
+
+
+@pytest.mark.parametrize(
+    "distribution",
+    [
+        optuna.distributions.FloatDistribution(1.0, 3.0, step=0.5),
+        optuna.distributions.IntDistribution(0, 10),
+        optuna.distributions.IntDistribution(0, 10, step=3),
+        optuna.distributions.CategoricalDistribution(["a", "b", "c"]),
+    ],
+)
+def test_enumerate_candidates_sorted_uniform(
+    distribution: optuna.distributions.BaseDistribution,
+) -> None:
+    candidates = list(_enumerate_candidates(distribution))
+    assert candidates == sorted(candidates), "candidates must be sorted"
+    if len(candidates) >= 2:
+        diffs = [candidates[i + 1] - candidates[i] for i in range(len(candidates) - 1)]
+        assert all(abs(d - diffs[0]) < 1e-12 for d in diffs), "candidates must be uniformly spaced"
