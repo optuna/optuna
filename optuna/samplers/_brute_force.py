@@ -61,8 +61,8 @@ class _TreeNode:
         if self.children is None:
             # Expand the node
             self.param_name = param_name
-            # TODO(nabenabe): We can lazily instantiate _TreeNode, and this is cleaner.
             self.choices_fingerprint = choices_fingerprint
+            # TODO(nabenabe): We can lazily instantiate _TreeNode, and this is cleaner.
             self.children = {value: _TreeNode() for value in choices}
         else:
             if self.param_name != param_name:
