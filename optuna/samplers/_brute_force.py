@@ -53,19 +53,19 @@ class _TreeNode:
     children: dict[float, "_TreeNode"] | None = None
     is_running: bool = False
 
-    def expand(self, param_name: str | None, search_space: Iterable[float]) -> None:
+    def expand(self, param_name: str | None, choices: Iterable[float]) -> None:
         # If the node is unexpanded, expand it.
         # Otherwise, check if the node is compatible with the given search space.
         if self.children is None:
             # Expand the node
             self.param_name = param_name
-            self.children = {value: _TreeNode() for value in search_space}
+            self.children = {value: _TreeNode() for value in choices}
         else:
             if self.param_name != param_name:
                 raise ValueError(f"param_name mismatch: {self.param_name} != {param_name}")
-            if self.children.keys() != set(search_space):
+            if self.children.keys() != set(choices):
                 raise ValueError(
-                    f"search_space mismatch: {set(self.children.keys())} != {set(search_space)}"
+                    f"search_space mismatch: {set(self.children.keys())} != {set(choices)}"
                 )
 
     def set_running(self) -> None:
@@ -75,16 +75,17 @@ class _TreeNode:
         self.expand(None, [])
 
     def add_path(
-        self, params_and_search_spaces: list[tuple[str, list[float], float]]
+        self, trial_path: Iterable[tuple[str, Iterable[float], float]]
     ) -> _TreeNode | None:
         # Add a path (i.e. a list of suggested parameters in one trial) to the tree.
         current_node = self
-        for param_name, search_space, value in params_and_search_spaces:
-            current_node.expand(param_name, search_space)
-            assert current_node.children is not None
-            if value not in current_node.children:
+        for param_name, choices, value in trial_path:
+            current_node.expand(param_name, choices)
+            # TODO(nabenabe): This is a temporal fix until the lazy node is introduced.
+            next_node = (current_node.children or {}).get(value)
+            if next_node is None:
                 return None
-            current_node = current_node.children[value]
+            current_node = next_node
         return current_node
 
     def is_any_expandable(self, exclude_running: bool) -> bool:
@@ -94,17 +95,14 @@ class _TreeNode:
 
     def count_unexpanded(self, exclude_running: bool) -> int:
         # Count the number of unexpanded nodes in the subtree.
-        if self.children is None:
+        if (children := self.children) is None:
             return 0 if exclude_running and self.is_running else 1
-        else:
-            return sum(child.count_unexpanded(exclude_running) for child in self.children.values())
+        return sum(child.count_unexpanded(exclude_running) for child in children.values())
 
     def sample_child(self, rng: np.random.RandomState, exclude_running: bool) -> float:
-        assert self.children is not None
-
+        assert (children := self.children) is not None
         unexpanded_counts = np.array(
-            [child.count_unexpanded(exclude_running) for child in self.children.values()],
-            dtype=np.float64,
+            [child.count_unexpanded(exclude_running) for child in children.values()], dtype=float
         )
 
         # Blend exact uniform sampling with flat uniform sampling
@@ -116,15 +114,14 @@ class _TreeNode:
 
         weights = (1.0 - alpha) * weights_orig + alpha * weights_flat
         if any(
-            not value.is_running and weights[i] > 0
-            for i, value in enumerate(self.children.values())
+            not value.is_running and weights[i] > 0 for i, value in enumerate(children.values())
         ):
             # Prioritize picking non-running and unexpanded nodes.
-            for i, child in enumerate(self.children.values()):
+            for i, child in enumerate(children.values()):
                 if child.is_running:
                     weights[i] = 0.0
         weights /= weights.sum()
-        return rng.choice(list(self.children.keys()), p=weights).item()
+        return rng.choice(list(children.keys()), p=weights).item()
 
 
 def _get_non_waiting_trials_and_current_trial_index(
