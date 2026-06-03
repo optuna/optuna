@@ -80,9 +80,7 @@ class _TreeNode:
     def set_leaf(self) -> None:
         self.expand(None, [])
 
-    def add_path(
-        self, trial_path: Iterable[tuple[str, list[float], float]]
-    ) -> _TreeNode | None:
+    def add_path(self, trial_path: Iterable[tuple[str, list[float], float]]) -> _TreeNode | None:
         # Add a path (i.e. a list of suggested parameters in one trial) to the tree.
         current_node = self
         for param_name, choices, value in trial_path:
