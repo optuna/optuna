@@ -267,7 +267,7 @@ class BruteForceSampler(BaseSampler):
         # being initialized as an empty graph, which is created with n_jobs > 1
         # where we get trials[i].params = {} for some i.
         self._populate_tree(tree, trials, trial.params)
-        if len(trials) < _get_tree_size(study) or tree.is_any_expandable(exclude_running):
+        if tree.is_any_expandable(exclude_running):
             param_val = tree.sample_child(self._rng.rng, exclude_running)
         else:
             param_val = self._rng.rng.choice(candidates).item()

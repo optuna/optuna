@@ -394,6 +394,18 @@ def test_avoid_premature_stop() -> None:
         mock_stop.assert_called_once()
 
 
+def test_sample_independent_does_not_crash_on_exhausted_subspace() -> None:
+    def objective(trial: optuna.Trial) -> float:
+        return trial.suggest_int("x", 0, 1) + trial.suggest_int("y", 0, 1)
+
+    study = optuna.create_study(sampler=samplers.BruteForceSampler(seed=0))
+    study.enqueue_trial({"x": 0, "y": 0})
+    study.enqueue_trial({"x": 0, "y": 1})
+    # subtree of `x=0` is exhausted, but no error should happen even if `x=0` shows up.
+    study.enqueue_trial({"x": 0})
+    study.optimize(objective)
+
+
 def test_objective_with_nan() -> None:
     weird_choices = [float("inf"), -float("inf"), float("nan"), None]
     n_params = 3
