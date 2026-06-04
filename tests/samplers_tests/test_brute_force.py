@@ -18,7 +18,10 @@ def test_tree_node_add_paths() -> None:
     }
     trials = []
     for params in [
-        {"a": 0, "b": 0.0}, {"a": 0, "b": 1.0}, {"a": 0, "b": 1.0}, {"a": 1, "b": 0.0, "c": 0}
+        {"a": 0, "b": 0.0},
+        {"a": 0, "b": 1.0},
+        {"a": 0, "b": 1.0},
+        {"a": 1, "b": 0.0, "c": 0},
     ]:
         ds = {k: dists[k] for k in params}
         s = optuna.trial.TrialState.COMPLETE
