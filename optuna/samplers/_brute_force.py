@@ -275,14 +275,13 @@ class BruteForceSampler(BaseSampler):
     def after_trial(
         self, study: Study, trial: FrozenTrial, state: TrialState, values: Sequence[float] | None
     ) -> None:
-        tree_size = _get_tree_size(study)
         exclude_running = not self._avoid_premature_stop
         trials, current_idx = _get_non_waiting_trials_and_current_trial_index(study, trial.number)
         # Set current trial as complete.
         trials[current_idx] = create_trial(
             state=state, values=values, params=trial.params, distributions=trial.distributions
         )
-        if len(trials) < tree_size:
+        if len(trials) < (tree_size := _get_tree_size(study)):
             # NOTE(nabenabe): No need to stop study. Early return to avoid tree build overhead.
             return
         tree = _TreeNode()
