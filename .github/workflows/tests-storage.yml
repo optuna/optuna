@@ -13,6 +13,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/master' && github.run_number || github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
   # TODO(masap): Modify job name to "tests-storage-with-server" because this test is not only for
   # RDB. Since current name "tests-rdbstorage" is required in the Branch protection rules, you
