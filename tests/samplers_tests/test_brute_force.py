@@ -5,50 +5,32 @@ import pytest
 
 import optuna
 from optuna import samplers
+from optuna.samplers._brute_force import _LAZY_NODE
 from optuna.samplers._brute_force import _TreeNode
 from optuna.trial import Trial
 
 
 def test_tree_node_add_paths() -> None:
-    tree = _TreeNode()
-    leafs = [
-        tree.add_path([("a", [0, 1, 2], 0), ("b", [0.0, 1.0], 0.0)]),
-        tree.add_path([("a", [0, 1, 2], 0), ("b", [0.0, 1.0], 1.0)]),
-        tree.add_path([("a", [0, 1, 2], 0), ("b", [0.0, 1.0], 1.0)]),
-        tree.add_path([("a", [0, 1, 2], 1), ("b", [0.0, 1.0], 0.0), ("c", [0, 1], 0)]),
-        tree.add_path([("a", [0, 1, 2], 1), ("b", [0.0, 1.0], 0.0)]),
-    ]
-    for leaf in leafs:
-        assert leaf is not None
-        if leaf.children is None:
-            leaf.set_leaf()
+    dists = {
+        "a": optuna.distributions.IntDistribution(0, 2),
+        "b": optuna.distributions.FloatDistribution(0.0, 1.0, step=1.0),
+        "c": optuna.distributions.IntDistribution(0, 1),
+    }
+    trials = []
+    for params in [
+        {"a": 0, "b": 0.0}, {"a": 0, "b": 1.0}, {"a": 0, "b": 1.0}, {"a": 1, "b": 0.0, "c": 0}
+    ]:
+        ds = {k: dists[k] for k in params}
+        s = optuna.trial.TrialState.COMPLETE
+        trials.append(optuna.create_trial(state=s, value=0.0, params=params, distributions=ds))
 
-    assert tree == _TreeNode(
-        param_name="a",
-        children={
-            0: _TreeNode(
-                param_name="b",
-                children={
-                    0.0: _TreeNode(param_name=None, children={}),
-                    1.0: _TreeNode(param_name=None, children={}),
-                },
-            ),
-            1: _TreeNode(
-                param_name="b",
-                children={
-                    0.0: _TreeNode(
-                        param_name="c",
-                        children={
-                            0: _TreeNode(param_name=None, children={}),
-                            1: _TreeNode(),
-                        },
-                    ),
-                    1.0: _TreeNode(),
-                },
-            ),
-            2: _TreeNode(),
-        },
-    )
+    tree = _TreeNode()
+    samplers.BruteForceSampler._populate_tree(tree, trials, {})
+    leaf_node = _TreeNode(param_name=None, children={})
+    a0_node = _TreeNode(param_name="b", children={0.0: leaf_node, 1.0: leaf_node})
+    a1_b0_node = _TreeNode(param_name="c", children={0: leaf_node, 1: _LAZY_NODE})
+    a1_node = _TreeNode(param_name="b", children={0.0: a1_b0_node, 1.0: _LAZY_NODE})
+    assert tree == _TreeNode(param_name="a", children={0: a0_node, 1: a1_node, 2: _LAZY_NODE})
 
 
 def test_tree_node_add_paths_error() -> None:

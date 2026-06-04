@@ -6,6 +6,7 @@ import math
 from numbers import Real
 import sys
 from typing import Any
+from typing import cast
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -30,6 +31,23 @@ if TYPE_CHECKING:
     from optuna.trial import FrozenTrial
 
 
+@dataclass(frozen=True)
+class _LazyTreeNode:
+    is_running: bool = False
+
+    def is_any_expandable(self, exclude_running: bool) -> bool:
+        return True
+
+    def count_unexpanded(self, exclude_running: bool) -> int:
+        return 1
+
+    def count_total_combinations(self) -> int:
+        return 1
+
+
+_LAZY_NODE = _LazyTreeNode()
+
+
 # TODO(nabenabe): Simply use `slots=True` once Python 3.9 is dropped.
 @dataclass(**({"slots": True} if sys.version_info >= (3, 10) else {}))
 class _TreeNode:
@@ -48,7 +66,7 @@ class _TreeNode:
     # NOTE(nabenabe): I tried representations by list and dict, but they did not really speed up.
 
     param_name: str | None = None
-    children: dict[float, "_TreeNode"] | None = None
+    children: dict[float, _TreeNode | _LazyTreeNode] | None = None
     is_running: bool = False
 
     def expand(self, param_name: str | None, choices: Iterable[float]) -> None:
@@ -57,7 +75,7 @@ class _TreeNode:
         if self.children is None:
             # Expand the node
             self.param_name = param_name
-            self.children = {value: _TreeNode() for value in choices}
+            self.children = {value: _LAZY_NODE for value in choices}
         else:
             if self.param_name != param_name:
                 raise ValueError(f"param_name mismatch: {self.param_name} != {param_name}")
@@ -79,11 +97,14 @@ class _TreeNode:
         current_node = self
         for param_name, choices, value in trial_path:
             current_node.expand(param_name, choices)
-            # TODO(nabenabe): This is a temporal fix until the lazy node is introduced.
-            next_node = (current_node.children or {}).get(value)
-            if next_node is None:
+            if not (children := current_node.children):  # children is empty or None.
                 return None
-            current_node = next_node
+            elif (next_node := children.get(value)) is None:
+                return None
+            elif next_node is _LAZY_NODE:
+                next_node = _TreeNode()
+                children[value] = next_node
+            current_node = cast(_TreeNode, next_node)
         return current_node
 
     def is_any_expandable(self, exclude_running: bool) -> bool:
