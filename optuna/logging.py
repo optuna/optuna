@@ -280,7 +280,7 @@ def disable_propagation() -> None:
             logger.info("Logs from first optimize call")  # The logs are saved in the logs file.
             study.optimize(objective, n_trials=10)
 
-            optuna.logging.disable_propagation()  # Stop propogating logs to the root logger.
+            optuna.logging.disable_propagation()  # Stop propagating logs to the root logger.
 
             logger.info("Logs from second optimize call")
             # The new logs for second optimize call are not saved.
