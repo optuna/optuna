@@ -207,7 +207,6 @@ class BruteForceSampler(BaseSampler):
     def __init__(self, seed: int | None = None, avoid_premature_stop: bool = False) -> None:
         self._rng = LazyRandomState(seed)
         self._avoid_premature_stop = avoid_premature_stop
-        self._tree_size_check_interval = 500
 
     def infer_relative_search_space(
         self, study: Study, trial: FrozenTrial
@@ -290,9 +289,8 @@ class BruteForceSampler(BaseSampler):
         self._populate_tree(tree, trials, {})
         if not tree.is_any_expandable(exclude_running):
             study.stop()
-        if trial.number % self._tree_size_check_interval == 0:
-            # NOTE(nabenabe): The tree is full size only in `after_trial`.
-            _set_tree_size(study, tree_size=int(max(tree_size, tree.count_total_combinations())))
+        if tree_size < (new_tree_size := tree.count_total_combinations()):
+            _set_tree_size(study, tree_size=new_tree_size)
 
 
 def _is_nan(v: CategoricalChoiceType) -> bool:
