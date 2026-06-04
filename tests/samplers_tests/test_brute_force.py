@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+from copy import deepcopy
 from unittest.mock import patch
 
 import numpy as np
@@ -10,25 +13,25 @@ from optuna.samplers._brute_force import _TreeNode
 from optuna.trial import Trial
 
 
-def test_tree_node_add_paths() -> None:
+@pytest.fixture
+def template_trials() -> list[optuna.trial.FrozenTrial]:
     dists = {
         "a": optuna.distributions.IntDistribution(0, 2),
         "b": optuna.distributions.FloatDistribution(0.0, 1.0, step=1.0),
         "c": optuna.distributions.IntDistribution(0, 1),
     }
     trials = []
-    for params in [
-        {"a": 0, "b": 0.0},
-        {"a": 0, "b": 1.0},
-        {"a": 0, "b": 1.0},
-        {"a": 1, "b": 0.0, "c": 0},
-    ]:
+    for params in [{"a": 0, "b": 0.0}, {"a": 0, "b": 1.0}, {"a": 1, "b": 0.0, "c": 0}]:
         ds = {k: dists[k] for k in params}
         s = optuna.trial.TrialState.COMPLETE
         trials.append(optuna.create_trial(state=s, value=0.0, params=params, distributions=ds))
+    return trials
 
+
+def test_tree_node_add_paths(template_trials: list[optuna.trial.FrozenTrial]) -> None:
+    template_trials.append(deepcopy(template_trials[0]))  # Duplicate a trial for robustness check.
     tree = _TreeNode()
-    samplers.BruteForceSampler._populate_tree(tree, trials, {})
+    samplers.BruteForceSampler._populate_tree(tree, template_trials, {})
     leaf_node = _TreeNode(param_name=None, children={})
     a0_node = _TreeNode(param_name="b", children={0.0: leaf_node, 1.0: leaf_node})
     a1_b0_node = _TreeNode(param_name="c", children={0: leaf_node, 1: _LAZY_NODE})
@@ -48,33 +51,14 @@ def test_tree_node_add_paths_error() -> None:
         tree.add_path([("b", [0, 1, 2], 0)])
 
 
-def test_tree_node_count_unexpanded() -> None:
-    tree = _TreeNode(
-        param_name="a",
-        children={
-            0: _TreeNode(
-                param_name="b",
-                children={
-                    0.0: _TreeNode(param_name=None, children={}),
-                    1.0: _TreeNode(param_name=None, children={}),
-                },
-            ),
-            1: _TreeNode(
-                param_name="b",
-                children={
-                    0.0: _TreeNode(
-                        param_name="c",
-                        children={
-                            0: _TreeNode(param_name=None, children={}),
-                            1: _TreeNode(),
-                        },
-                    ),
-                    1.0: _TreeNode(),
-                },
-            ),
-            2: _TreeNode(is_running=True),
-        },
+def test_tree_node_count_unexpanded(template_trials: list[optuna.trial.FrozenTrial]) -> None:
+    only_a = {"a": template_trials[0].distributions["a"]}
+    running_trial = optuna.create_trial(
+        state=optuna.trial.TrialState.RUNNING, params={"a": 2}, distributions=only_a
     )
+    template_trials.append(running_trial)
+    tree = _TreeNode()
+    samplers.BruteForceSampler._populate_tree(tree, template_trials, {})
     assert tree.count_unexpanded(exclude_running=False) == 3
     assert tree.count_unexpanded(exclude_running=True) == 2
 
