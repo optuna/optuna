@@ -97,3 +97,15 @@ def test_evaluate_on_local() -> None:
     default_evaluator = PedAnovaImportanceEvaluator(evaluate_on_local=True)
     global_evaluator = PedAnovaImportanceEvaluator(evaluate_on_local=False)
     assert global_evaluator.evaluate(study) != default_evaluator.evaluate(study)
+
+def test_conditional() -> None:
+    study =  optuna.study.create_study()
+    study.add_trial(optuna.create_trial(params={"c": 1.0, "x": 1.0}, distributions={"c": FloatDistribution(0.0, 1.0), "x": FloatDistribution(0.0, 2.0)}, value=1.0))
+    study.add_trial(optuna.create_trial(params={"c": 0.0, "y": -1.0}, distributions={"c": FloatDistribution(0.0, 1.0), "y": FloatDistribution(-2.0, 0.0)}, value=-1.0))
+    study.add_trial(optuna.create_trial(params={"c": 0.8, "x": 0.8}, distributions={"c": FloatDistribution(0.0, 1.0), "x": FloatDistribution(0.0, 2.0)}, value=0.8))
+    study.add_trial(optuna.create_trial(params={"c": 0.2, "y": -0.2}, distributions={"c": FloatDistribution(0.0, 1.0), "y": FloatDistribution(-2.0, 0.0)}, value=-0.2))
+
+    evaluator = PedAnovaImportanceEvaluator()
+    importance = evaluator.evaluate(study)
+    assert set(importance.keys()) == {"c", "x", "y"}
+
