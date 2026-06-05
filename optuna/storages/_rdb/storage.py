@@ -10,6 +10,7 @@ from contextlib import contextmanager
 import copy
 from datetime import datetime
 from datetime import timedelta
+from datetime import timezone
 import json
 import logging
 import os
@@ -67,6 +68,10 @@ else:
 
 
 _logger = optuna.logging.get_logger(__name__)
+
+
+def _get_current_datetime() -> datetime:
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
 @contextmanager
@@ -514,7 +519,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                 study_id=study_id,
                 number=None,
                 state=TrialState.RUNNING,
-                datetime_start=datetime.now(),
+                datetime_start=_get_current_datetime(),
             )
         else:
             # Because only `RUNNING` trials can be updated,
@@ -668,10 +673,10 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                 trial.state = state
 
                 if state == TrialState.RUNNING:
-                    trial.datetime_start = datetime.now()
+                    trial.datetime_start = _get_current_datetime()
 
                 if state.is_finished():
-                    trial.datetime_complete = datetime.now()
+                    trial.datetime_complete = _get_current_datetime()
         except sqlalchemy_exc.IntegrityError:
             return False
         return True

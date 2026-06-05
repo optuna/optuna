@@ -3,11 +3,13 @@ from __future__ import annotations
 from collections.abc import Generator
 from contextlib import contextmanager
 from datetime import datetime
+from datetime import timezone
 import os
 import platform
 import shutil
 import sys
 import tempfile
+import time
 from typing import Any
 from unittest.mock import Mock
 from unittest.mock import patch
@@ -335,6 +337,35 @@ def test_upgrade_distributions(optuna_version: str) -> None:
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", category=UserWarning)
                 new_study.optimize(objective_test_upgrade_distributions, n_trials=1)
+
+
+@pytest.mark.skipif(not hasattr(time, "tzset"), reason="requires time.tzset")
+def test_trial_timestamps_are_recorded_as_utc_naive() -> None:
+    original_tz = os.environ.get("TZ")
+    os.environ["TZ"] = "Asia/Tokyo"
+    time.tzset()
+
+    try:
+        with create_test_storage("sqlite:///:memory:") as storage:
+            study_id = storage.create_new_study(directions=[StudyDirection.MINIMIZE])
+
+            before_utc = datetime.now(timezone.utc).replace(tzinfo=None)
+            trial_id = storage.create_new_trial(study_id)
+            storage.set_trial_state_values(trial_id, TrialState.COMPLETE, [1.0])
+            after_utc = datetime.now(timezone.utc).replace(tzinfo=None)
+
+            trial = storage.get_trial(trial_id)
+
+        assert trial.datetime_start is not None
+        assert trial.datetime_complete is not None
+        assert before_utc <= trial.datetime_start <= after_utc
+        assert before_utc <= trial.datetime_complete <= after_utc
+    finally:
+        if original_tz is None:
+            os.environ.pop("TZ", None)
+        else:
+            os.environ["TZ"] = original_tz
+        time.tzset()
 
 
 def test_create_new_trial_with_retries() -> None:
