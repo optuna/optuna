@@ -7,6 +7,7 @@ import numpy as np
 import pytest
 
 import optuna
+from optuna.distributions import FloatDistribution
 from optuna.importance import PedAnovaImportanceEvaluator
 from optuna.importance._ped_anova.evaluator import _QuantileFilter
 from optuna.trial import FrozenTrial
