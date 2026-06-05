@@ -14,6 +14,7 @@ jobs:
     name: Build and publish Python distributions to PyPI or TestPyPI
     runs-on: ubuntu-latest
     permissions:
+      contents: read
       id-token: write
 
     # Not intended for forks.
@@ -59,3 +60,7 @@ jobs:
       # The following upload action cannot be executed in the forked repository.
       if: github.event_name == 'release'
       uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b  # v1.14.0
+      with:
+        # See https://github.com/pypa/gh-action-pypi-publish/issues/283
+        attestations: false
+
