@@ -192,11 +192,11 @@ class GPRegressor:
         assert self._cov_Y_Y_chol is not None and self._cov_Y_Y_inv_Y is not None, (
             "Call _cache_matrix before append_running_data"
         )
-        self._X_all = torch.cat([self._X_train, X_running], dim=0)
-        self._y_all = torch.cat([self._y_train, y_running.unsqueeze(-1)], dim=0)
         with torch.no_grad():
             kernel_running_train = self.kernel(X_running)
             kernel_running_running = self.kernel(X_running, X_running)
+        self._X_all = torch.cat([self._X_train, X_running], dim=0)
+        self._y_all = torch.cat([self._y_train, y_running.unsqueeze(-1)], dim=0)
         kernel_running_running.diagonal().add_(self.noise_var)
         self._cov_Y_Y_chol = _extend_cholesky(
             L11=self._cov_Y_Y_chol, K21=kernel_running_train, K22=kernel_running_running
