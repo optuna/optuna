@@ -174,8 +174,7 @@ class GPRegressor:
         with torch.no_grad():
             kernel_running_train = self.kernel(X_running)
             kernel_running_running = self.kernel(X_running, X_running)
-            kernel_running_running.diagonal().add_(self.noise_var)
-
+        kernel_running_running.diagonal().add_(self.noise_var)
         # NOTE(nabenabe): Given K=[[K_11,K_12],[K_21,K_22]] where K_21=K_12.T, and L_11=chol(K_11),
         # chol(K) = [[L_11, 0], [K_21 @ inv(L_11).T, chol(K_22 - K_21 @ inv(K_11) @ K_21.T)]].
         # For simplicity, denote L_21 = K_21 @ inv(L_11).T. Solve K_21 = L_21 @ L_11.T w.r.t. L_21.
