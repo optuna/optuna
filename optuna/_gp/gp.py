@@ -85,6 +85,34 @@ def _solve_cholesky(L: torch.Tensor, B: torch.Tensor, *, left: bool = True) -> t
         )
 
 
+def _extend_cholesky(L11: torch.Tensor, K21: torch.Tensor, K22: torch.Tensor) -> torch.Tensor:
+    """
+    This function calculates the Cholesky decompsition L of K=[[K11,K12],[K21,K22]] by
+    extending L11 where K11 = L11 @ L11.T. Note that K12 = K21.T.
+
+    The solution L = chol(K) is calculated as:
+        chol(K) = [[L11, 0], [K21 @ inv(L11).T, chol(K22 - K21 @ inv(K11) @ K21.T)]].
+
+    Denote L21 := K21 @ inv(L11).T.
+    Since inv(L11.T).T = inv(L11), L21 = K21 @ inv(L11.T) --> L21.T = inv(L11) @ K21.T
+    --> Solving L11 @ L21.T = K21.T yields L21.T.
+    Note that L21 = K21 @ inv(L11).T = K21 @ inv(L11.T).
+
+    Since inv(K11) = inv(L11 @ L11.T) = inv(L11.T) @ inv(L11),
+    K21 @ inv(K11) @ K21.T = K21 @ inv(L11.T) @ inv(L11) @ K21.T = L21 @ L21.T.
+    """
+    n1 = L11.shape[-1]
+    n2 = K22.shape[-1]
+    batch_shape = L11.shapep[:-2]
+    L = torch.zeros(batch_shape + (n1 + n2, n1 + n2), dtype=torch.float64)
+    L21_T = torch.linalg.solve_triangular(L11, K21.transpose(-1, -2), upper=False)
+    L21 = L21_T.transpose(-1, -2)
+    L[..., :n1, :n1] = L11
+    L[..., n1:, n1:] = torch.linalg.cholesky(K22 - L21 @ L21_T)
+    L[..., n1:, :n1] = L21
+    return L
+
+
 class Matern52Kernel(torch.autograd.Function):
     @staticmethod
     def forward(ctx: Any, squared_distance: torch.Tensor) -> torch.Tensor:
@@ -156,7 +184,6 @@ class GPRegressor:
         self.noise_var = self.noise_var.detach()
         with torch.no_grad():
             cov_Y_Y = self.kernel()
-
         cov_Y_Y.diagonal().add_(self.noise_var)
         self._cov_Y_Y_chol = torch.linalg.cholesky(cov_Y_Y)
         self._cov_Y_Y_inv_Y = _solve_cholesky(self._cov_Y_Y_chol, self._y_train).squeeze(-1)
@@ -165,32 +192,16 @@ class GPRegressor:
         assert self._cov_Y_Y_chol is not None and self._cov_Y_Y_inv_Y is not None, (
             "Call _cache_matrix before append_running_data"
         )
-        n_train = self._X_train.shape[0]
-        n_running = X_running.shape[0]
-        n_total = n_train + n_running
-
-        cov_Y_Y_chol = torch.zeros((n_total, n_total), dtype=torch.float64)
-        cov_Y_Y_chol[:n_train, :n_train] = self._cov_Y_Y_chol
+        self._X_all = torch.cat([self._X_train, X_running], dim=0)
+        self._y_all = torch.cat([self._y_train, y_running.unsqueeze(-1)], dim=0)
         with torch.no_grad():
             kernel_running_train = self.kernel(X_running)
             kernel_running_running = self.kernel(X_running, X_running)
         kernel_running_running.diagonal().add_(self.noise_var)
-        # NOTE(nabenabe): Given K=[[K_11,K_12],[K_21,K_22]] where K_21=K_12.T, and L_11=chol(K_11),
-        # chol(K) = [[L_11, 0], [K_21 @ inv(L_11).T, chol(K_22 - K_21 @ inv(K_11) @ K_21.T)]].
-        # For simplicity, denote L_21 = K_21 @ inv(L_11).T. Solve K_21 = L_21 @ L_11.T w.r.t. L_21.
-        L21 = torch.linalg.solve_triangular(
-            self._cov_Y_Y_chol, kernel_running_train.T, upper=False
-        ).T
-        # L_21 = K_21 @ inv(L_11.T) --> L_21.T = inv(L_11) @ K_21.T (b/c inv(L_11.T).T = inv(L_11))
-        # inv(L_11.T) @ inv(L_11) = inv(K_11) --> K_21 @ inv(K_11) @ K_21.T = L_21 @ L_21.T
-        cov_Y_Y_chol[n_train:, n_train:] = torch.linalg.cholesky(
-            kernel_running_running - L21 @ L21.T
+        self._cov_Y_Y_chol = _extend_cholesky(
+            L11=self._cov_Y_Y_chol, K21=kernel_running_train, K22=kernel_running_running
         )
-        cov_Y_Y_chol[n_train:, :n_train] = L21
-        self._y_all = torch.cat([self._y_train, y_running.unsqueeze(-1)], dim=0)
-        self._cov_Y_Y_inv_Y = _solve_cholesky(cov_Y_Y_chol, self._y_all).squeeze(-1)
-        self._cov_Y_Y_chol = cov_Y_Y_chol
-        self._X_all = torch.cat([self._X_train, X_running], dim=0)
+        self._cov_Y_Y_inv_Y = _solve_cholesky(self._cov_Y_Y_chol, self._y_all).squeeze(-1)
 
     def kernel(
         self, X1: torch.Tensor | None = None, X2: torch.Tensor | None = None
