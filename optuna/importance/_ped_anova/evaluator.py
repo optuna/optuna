@@ -246,7 +246,7 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
         *,
         target: Callable[[FrozenTrial], float] | None = None,
     ) -> dict[str, float]:
-        dists = _get_distributions(study, params=params)
+        dists = _get_distributions_list(study, params=params)
         if params is None:
             params = list({k for d in dists for k in d})
 
@@ -318,7 +318,7 @@ def _partition_by_regime(
     return regime_trials
 
 
-def _get_distributions(
+def _get_distributions_list(
     study: Study, params: list[str] | None
 ) -> list[dict[str, BaseDistribution]]:
     trials = study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,))
