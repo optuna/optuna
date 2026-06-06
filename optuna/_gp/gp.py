@@ -1,7 +1,7 @@
 """Notations in this Gaussian process implementation
 
 X_train: Observed parameter values with the shape of (len(trials), len(params)).
-y_train: Observed objective values with the shape of (len(trials), ).
+y_train: Observed objective values with the shape of (len(trials), 1).
 x: (Possibly batched) parameter value(s) to evaluate with the shape of (..., len(params)).
 cov_fX_fX: Kernel matrix X = V[f(X)] with the shape of (len(trials), len(trials)).
 cov_fx_fX: Kernel matrix Cov[f(x), f(X)] with the shape of (..., len(trials)).
@@ -152,11 +152,8 @@ class GPRegressor:
             "Cannot call cache_matrix more than once."
         )
         self.inverse_squared_lengthscales = self.inverse_squared_lengthscales.detach()
-        self.inverse_squared_lengthscales.grad = None
         self.kernel_scale = self.kernel_scale.detach()
-        self.kernel_scale.grad = None
         self.noise_var = self.noise_var.detach()
-        self.noise_var.grad = None
         with torch.no_grad():
             cov_Y_Y = self.kernel()
 
