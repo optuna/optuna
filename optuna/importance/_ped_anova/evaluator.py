@@ -323,8 +323,5 @@ def _get_distributions_list(
 ) -> list[dict[str, BaseDistribution]]:
     trials = study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,))
     _check_evaluate_args(trials, params)
-    params_set = set(params) if params is not None else None
-    return [
-        {k: v for k, v in t.distributions.items() if params_set is None or k in params_set}
-        for t in trials
-    ]
+    params_set = set(params) if params is not None else set([])
+    return [{k: v for k, v in t.distributions.items() if k in params_set} for t in trials]
