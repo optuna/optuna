@@ -59,6 +59,32 @@ def warn_and_convert_inf(values: np.ndarray) -> np.ndarray:
     )
 
 
+def _solve_cholesky(L: torch.Tensor, B: torch.Tensor, *, left: bool = True) -> torch.Tensor:
+    """
+    This function returns the tensor `X` by solving the linear system `A @ X = B`,
+    where `A = L @ L.T`.
+
+    if ``left=False``, solve `X @ A = B` instead.
+
+    NOTE(nabenabe): torch.cholesky_solve is legacy and slower based on my benchmarking.
+    NOTE(nabenabe): Don't use np.linalg.inv because it is too slow und unstable.
+    cf. https://github.com/optuna/optuna/issues/6230
+    """
+    if left:
+        # L @ L.T @ X = B --> L.T @ X = inv(L) @ B --> X = inv(L.T) @ inv(L) @ B
+        return torch.linalg.solve_triangular(
+            L.T, torch.linalg.solve_triangular(L, B, upper=False), upper=True
+        )
+    else:
+        # X @ L @ L.T = B --> X @ L = B @ inv(L.T) --> X = B @ inv(L.T) @ inv(L)
+        return torch.linalg.solve_triangular(
+            L,
+            torch.linalg.solve_triangular(L.T, B, upper=True, left=False),
+            upper=False,
+            left=False,
+        )
+
+
 class Matern52Kernel(torch.autograd.Function):
     @staticmethod
     def forward(ctx: Any, squared_distance: torch.Tensor) -> torch.Tensor:
@@ -99,11 +125,12 @@ class GPRegressor:
         kernel_scale: torch.Tensor,  # Scalar
         noise_var: torch.Tensor,  # Scalar
     ) -> None:
+        assert len(X_train.shape) == 2 and len(y_train.shape) == 1
         self._is_categorical = is_categorical
         self._X_train = X_train
-        self._y_train = y_train
+        self._y_train = y_train.unsqueeze(-1)
         self._X_all = X_train
-        self._y_all = y_train
+        self._y_all = y_train.unsqueeze(-1)
         self._squared_X_diff = (X_train.unsqueeze(-2) - X_train.unsqueeze(-3)).square_()
         if self._is_categorical.any():
             self._squared_X_diff[..., self._is_categorical] = (
@@ -124,28 +151,18 @@ class GPRegressor:
         assert self._cov_Y_Y_chol is None and self._cov_Y_Y_inv_Y is None, (
             "Cannot call cache_matrix more than once."
         )
-        with torch.no_grad():
-            cov_Y_Y = self.kernel().detach().cpu().numpy()
-
-        # TODO(nabe): Replace numpy/scipy with torch.
-        cov_Y_Y[np.diag_indices(self._X_train.shape[0])] += self.noise_var.item()
-        cov_Y_Y_chol = np.linalg.cholesky(cov_Y_Y)
-        # cov_Y_Y_inv @ y = v --> y = cov_Y_Y @ v --> y = cov_Y_Y_chol @ cov_Y_Y_chol.T @ v
-        # NOTE(nabenabe): Don't use np.linalg.inv because it is too slow und unstable.
-        # cf. https://github.com/optuna/optuna/issues/6230
-        cov_Y_Y_inv_Y = scipy.linalg.solve_triangular(
-            cov_Y_Y_chol.T,
-            scipy.linalg.solve_triangular(cov_Y_Y_chol, self._y_train.cpu().numpy(), lower=True),
-            lower=False,
-        )
-        self._cov_Y_Y_chol = torch.from_numpy(cov_Y_Y_chol)
-        self._cov_Y_Y_inv_Y = torch.from_numpy(cov_Y_Y_inv_Y)
         self.inverse_squared_lengthscales = self.inverse_squared_lengthscales.detach()
         self.inverse_squared_lengthscales.grad = None
         self.kernel_scale = self.kernel_scale.detach()
         self.kernel_scale.grad = None
         self.noise_var = self.noise_var.detach()
         self.noise_var.grad = None
+        with torch.no_grad():
+            cov_Y_Y = self.kernel()
+
+        cov_Y_Y.diagonal().add_(self.noise_var)
+        self._cov_Y_Y_chol = torch.linalg.cholesky(cov_Y_Y)
+        self._cov_Y_Y_inv_Y = _solve_cholesky(self._cov_Y_Y_chol, self._y_train).squeeze(-1)
 
     def append_running_data(self, X_running: torch.Tensor, y_running: torch.Tensor) -> None:
         assert self._cov_Y_Y_chol is not None and self._cov_Y_Y_inv_Y is not None, (
@@ -155,33 +172,28 @@ class GPRegressor:
         n_running = X_running.shape[0]
         n_total = n_train + n_running
 
-        # TODO(nabe): Replace numpy/scipy with torch.
-        cov_Y_Y_chol = np.zeros((n_total, n_total), dtype=np.float64)
-        cov_Y_Y_chol[:n_train, :n_train] = self._cov_Y_Y_chol.numpy()
+        cov_Y_Y_chol = torch.zeros((n_total, n_total), dtype=torch.float64)
+        cov_Y_Y_chol[:n_train, :n_train] = self._cov_Y_Y_chol
         with torch.no_grad():
-            kernel_running_train = self.kernel(X_running).detach().cpu().numpy()
-            kernel_running_running = self.kernel(X_running, X_running).detach().cpu().numpy()
-            kernel_running_running[np.diag_indices(n_running)] += self.noise_var.item()
+            kernel_running_train = self.kernel(X_running)
+            kernel_running_running = self.kernel(X_running, X_running)
+            kernel_running_running.diagonal().add_(self.noise_var)
 
         # NOTE(nabenabe): Given K=[[K_11,K_12],[K_21,K_22]] where K_21=K_12.T, and L_11=chol(K_11),
         # chol(K) = [[L_11, 0], [K_21 @ inv(L_11).T, chol(K_22 - K_21 @ inv(K_11) @ K_21.T)]].
         # For simplicity, denote L_21 = K_21 @ inv(L_11).T. Solve K_21 = L_21 @ L_11.T w.r.t. L_21.
-        L21 = scipy.linalg.solve_triangular(
-            self._cov_Y_Y_chol.cpu().numpy(), kernel_running_train.T, lower=True
+        L21 = torch.linalg.solve_triangular(
+            self._cov_Y_Y_chol, kernel_running_train.T, upper=False
         ).T
         # L_21 = K_21 @ inv(L_11.T) --> L_21.T = inv(L_11) @ K_21.T (b/c inv(L_11.T).T = inv(L_11))
         # inv(L_11.T) @ inv(L_11) = inv(K_11) --> K_21 @ inv(K_11) @ K_21.T = L_21 @ L_21.T
-        cov_Y_Y_chol[n_train:, n_train:] = np.linalg.cholesky(kernel_running_running - L21 @ L21.T)
-        cov_Y_Y_chol[n_train:, :n_train] = L21
-        self._y_all = torch.cat([self._y_train, y_running], dim=0)
-        cov_Y_Y_inv_Y = scipy.linalg.solve_triangular(
-            cov_Y_Y_chol.T,
-            scipy.linalg.solve_triangular(cov_Y_Y_chol, self._y_all.cpu().numpy(), lower=True),
-            lower=False,
+        cov_Y_Y_chol[n_train:, n_train:] = torch.linalg.cholesky(
+            kernel_running_running - L21 @ L21.T
         )
-
-        self._cov_Y_Y_chol = torch.from_numpy(cov_Y_Y_chol)
-        self._cov_Y_Y_inv_Y = torch.from_numpy(cov_Y_Y_inv_Y)
+        cov_Y_Y_chol[n_train:, :n_train] = L21
+        self._y_all = torch.cat([self._y_train, y_running.unsqueeze(-1)], dim=0)
+        self._cov_Y_Y_inv_Y = _solve_cholesky(cov_Y_Y_chol, self._y_all).squeeze(-1)
+        self._cov_Y_Y_chol = cov_Y_Y_chol
         self._X_all = torch.cat([self._X_train, X_running], dim=0)
 
     def kernel(
@@ -233,12 +245,7 @@ class GPRegressor:
         x_ = x if not is_single_point else x.unsqueeze(0)
         mean = torch.linalg.vecdot(cov_fx_fX := self.kernel(x_, self._X_all), self._cov_Y_Y_inv_Y)
         # K @ inv(C) = V --> K = V @ C --> K = V @ L @ L.T
-        V = torch.linalg.solve_triangular(
-            self._cov_Y_Y_chol,
-            torch.linalg.solve_triangular(self._cov_Y_Y_chol.T, cov_fx_fX, upper=True, left=False),
-            upper=False,
-            left=False,
-        )
+        V = _solve_cholesky(self._cov_Y_Y_chol, cov_fx_fX, left=False)
         if joint:
             assert not is_single_point, "Call posterior with joint=False for a single point."
             cov_fx_fx = self.kernel(x_, x_)
@@ -282,7 +289,7 @@ class GPRegressor:
         cov_Y_Y.diagonal().add_(self.noise_var)
         L = torch.linalg.cholesky(cov_Y_Y)
         logdet_part = -L.diagonal().log().sum()
-        inv_L_y = torch.linalg.solve_triangular(L, self._y_train[:, None], upper=False)[:, 0]
+        inv_L_y = torch.linalg.solve_triangular(L, self._y_train, upper=False).squeeze(-1)
         quad_part = -0.5 * (inv_L_y @ inv_L_y)
         # NOTE(nabe): Omitting the constant does not change the optimum.
         return logdet_part + quad_part
