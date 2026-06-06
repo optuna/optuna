@@ -103,7 +103,7 @@ def _extend_cholesky(L11: torch.Tensor, K21: torch.Tensor, K22: torch.Tensor) ->
     """
     n1 = L11.shape[-1]
     n2 = K22.shape[-1]
-    batch_shape = L11.shapep[:-2]
+    batch_shape = L11.shape[:-2]
     L = torch.zeros(batch_shape + (n1 + n2, n1 + n2), dtype=torch.float64)
     L21_T = torch.linalg.solve_triangular(L11, K21.transpose(-1, -2), upper=False)
     L21 = L21_T.transpose(-1, -2)
