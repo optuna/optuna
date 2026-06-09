@@ -299,14 +299,14 @@ def _is_nan(v: CategoricalChoiceType) -> bool:
 @lru_cache
 def _enumerate_candidates(
     low: int | float, high: int | float, step: int | float | None
-) -> list[float]:
+) -> tuple[float, ...]:
     if step is None:
         raise ValueError(
             "FloatDistribution.step must be given for BruteForceSampler"
             " (otherwise, the search space will be infinite)."
         )
     if isinstance(low, int) and isinstance(high, int) and isinstance(step, int):
-        return list(range(low, high + 1, step))
+        return tuple(range(low, high + 1, step))
     else:
         low_ = decimal.Decimal(str(low))
         high_ = decimal.Decimal(str(high))
@@ -315,4 +315,4 @@ def _enumerate_candidates(
         while low_ <= high_:
             ret.append(float(low_))
             low_ += step_
-        return ret
+        return tuple(ret)
