@@ -207,7 +207,7 @@ class BruteForceSampler(BaseSampler):
     @staticmethod
     def _populate_tree(tree: _TreeNode, trials: list[FrozenTrial], params: dict[str, Any]) -> None:
         # Populate tree under given params from the given trials.
-        internal_repr_cache: dict[str, dict[CategoricalChoiceType, float]] = {}
+        cat_internal_repr_cache: dict[str, dict[CategoricalChoiceType, float]] = {}
         params_items = params.items()
         nonnan_params_items = {k: v for k, v in params_items if not _is_nan(v)}.items()
         nan_param_names = [k for k, v in params_items if _is_nan(v)]
@@ -218,11 +218,13 @@ class BruteForceSampler(BaseSampler):
             for name, dist in trial.distributions.items():
                 if name in params:
                     continue
-                if name not in internal_repr_cache:
-                    internal_repr_cache[name] = {}  # Numerical dist does not need cache.
+                if name not in cat_internal_repr_cache:
+                    # NOTE(nabenabe): isinstance is too slow here, and the easiest hack to avoid it
+                    # is to set an empty dict. cf. https://github.com/optuna/optuna/pull/6705
+                    cat_internal_repr_cache[name] = {}
                     if isinstance(dist, CategoricalDistribution):
-                        internal_repr_cache[name] = {c: i for i, c in enumerate(dist.choices)}
-                if cat_repr := internal_repr_cache[name]:
+                        cat_internal_repr_cache[name] = {c: i for i, c in enumerate(dist.choices)}
+                if cat_repr := cat_internal_repr_cache[name]:
                     cands = _enumerate_candidates(0, len(cat_repr) - 1, 1)
                     if (value := cat_repr.get(param_val := trial_params[name])) is None:
                         value = dist.to_internal_repr(param_val)  # most likely param_val is nan.
