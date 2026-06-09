@@ -212,8 +212,9 @@ class BruteForceSampler(BaseSampler):
         nonnan_params_items = {k: v for k, v in params_items if not _is_nan(v)}.items()
         nan_param_names = [k for k, v in params_items if _is_nan(v)]
 
-        def _get_trial_path(trial: FrozenTrial, trial_params: dict[str, Any]) -> list:
+        def _get_trial_path(trial: FrozenTrial) -> list:
             trial_path = []
+            trial_params = trial.params
             for name, dist in trial.distributions.items():
                 if name in params:
                     continue
@@ -233,13 +234,13 @@ class BruteForceSampler(BaseSampler):
             return trial_path
 
         for trial in trials:
-            trial_params = trial.params
             if params:
+                trial_params = trial.params
                 if not (nonnan_params_items <= trial_params.items()):
                     continue
                 if not all(_is_nan(trial_params.get(p)) for p in nan_param_names):
                     continue
-            if (leaf := tree.add_path(_get_trial_path(trial, trial_params))) is not None:
+            if (leaf := tree.add_path(_get_trial_path(trial))) is not None:
                 # The parameters are on the defined grid.
                 if trial.state.is_finished():
                     leaf.set_leaf()
