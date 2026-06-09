@@ -4,6 +4,10 @@ on:
   pull_request:
     types: [opened, review_requested]
 
+permissions:
+  contents: read
+  pull-requests: write
+
 jobs:
   reviewdog:
     runs-on: ubuntu-latest

@@ -26,7 +26,7 @@ evaluated them yet and decided to use Optuna to find better sets of hyperparamet
 Optuna has :func:`optuna.study.Study.enqueue_trial` which lets you pass those sets of
 hyperparameters to Optuna and Optuna will evaluate them.
 
-This section walks you through how to use this lit API with `LightGBM <https://lightgbm.readthedocs.io/en/stable/>`__.
+This section walks you through how to use this API with `LightGBM <https://lightgbm.readthedocs.io/en/stable/>`__.
 """
 
 import lightgbm as lgb
@@ -70,7 +70,7 @@ def objective(trial):
 study = optuna.create_study(direction="maximize", pruner=optuna.pruners.MedianPruner())
 
 ###################################################################################################
-# Here, we get Optuna evaluate some sets with larger ``"bagging_fraq"`` value and
+# Here, we get Optuna evaluate some sets with larger ``"bagging_freq"`` value and
 # the default values.
 
 study.enqueue_trial(
@@ -92,7 +92,7 @@ study.enqueue_trial(
 import logging
 import sys
 
-# Add stream handler of stdout to show the messages to see Optuna works expectedly.
+# Add a stream handler of stdout to show log messages to confirm that Optuna works as expected.
 optuna.logging.get_logger("optuna").addHandler(logging.StreamHandler(sys.stdout))
 study.optimize(objective, n_trials=100, timeout=600)
 
