@@ -222,6 +222,7 @@ class GPSampler(BaseSampler):
         # NOTE(nabenabe): ehvi in BoTorchSampler uses 20.
         self._n_local_search = 10
         self._tol = 1e-4
+        self._ehvi_n_qmc_samples = 128  # NOTE(nabenabe): The BoTorch default value.
         self._q_acqf_n_qmc_samples = 512  # NOTE(nabenabe): The BoTorch default value.
 
     def _log_independent_sampling(self, trial: FrozenTrial, param_name: str) -> None:
@@ -431,7 +432,7 @@ class GPSampler(BaseSampler):
                     gpr_list=gprs_list,
                     search_space=internal_search_space,
                     Y_train=torch.from_numpy(standardized_score_vals),
-                    n_qmc_samples=128,  # NOTE(nabenabe): The BoTorch default value.
+                    n_qmc_samples=self._ehvi_n_qmc_samples,
                     qmc_seed=self._rng.rng.randint(1 << 30),
                     normalized_params_of_running_trials=normalized_params_of_running_trials,
                 )
