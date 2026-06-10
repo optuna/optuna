@@ -297,7 +297,7 @@ class GPRegressor:
         n_params = self._X_train.shape[1]
 
         # We apply log transform to enforce the positivity of the kernel parameters.
-        # Note that we cannot just use the constraint because of the numerical unstability
+        # Note that we cannot just use the constraint because of the numerical instability
         # of the marginal log likelihood.
         # We also enforce the noise parameter to be greater than `minimum_noise` to avoid
         # pathological behavior of maximum likelihood estimation.
