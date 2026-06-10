@@ -414,20 +414,20 @@ def test_objective_with_nan() -> None:
     assert len(study.trials) == len(weird_choices) ** n_params
 
 
-@pytest.mark.parametrize(
-    "distribution",
-    [
-        optuna.distributions.FloatDistribution(1.0, 3.0, step=0.5),
-        optuna.distributions.IntDistribution(0, 10),
-        optuna.distributions.IntDistribution(0, 10, step=3),
-        optuna.distributions.CategoricalDistribution(["a", "b", "c"]),
-    ],
-)
+@pytest.mark.parametrize("low,high,step", [(1.0, 3.0, 0.5), (0, 10, 1), (0, 10, 3)])
 def test_enumerate_candidates_sorted_uniform(
-    distribution: optuna.distributions.BaseDistribution,
+    low: int | float, high: int | float, step: int | float | None
 ) -> None:
-    candidates = list(_enumerate_candidates(distribution))
+    candidates = list(_enumerate_candidates(low, high, step))
     assert candidates == sorted(candidates), "candidates must be sorted"
     if len(candidates) >= 2:
         diffs = [candidates[i + 1] - candidates[i] for i in range(len(candidates) - 1)]
         assert all(abs(d - diffs[0]) < 1e-12 for d in diffs), "candidates must be uniformly spaced"
+
+
+@pytest.mark.parametrize("low,high,step", [(1.0, 3.0, None), (0, 10, None)])
+def test_enumerate_candidates_step_is_none(
+    low: int | float, high: int | float, step: int | float | None
+) -> None:
+    with pytest.raises(ValueError):
+        _enumerate_candidates(low, high, step)
