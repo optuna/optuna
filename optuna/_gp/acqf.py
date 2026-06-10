@@ -207,6 +207,7 @@ class qLogEI(BaseAcquisitionFunc):
         self._threshold = threshold
         self._x_running = torch.from_numpy(normalized_params_of_running_trials)
         self._fixed_samples = _sample_from_normal_sobol(
+            # NOTE(nabe): The number of pending points + the new point, so +1.
             dim=1 + normalized_params_of_running_trials.shape[0],
             n_samples=n_qmc_samples,
             seed=qmc_seed,
@@ -228,6 +229,7 @@ class qLogEI(BaseAcquisitionFunc):
         if np.isneginf(self._threshold):
             return torch.zeros(x.shape[:-1], dtype=torch.float64)
 
+        # NOTE(nabenabe): See Eq. (10) of https://arxiv.org/pdf/2310.20708
         joint_x = self._get_joint_input(x)
         y_post = self._get_posterior_samples(joint_x)
         log_improvement = _log_fatplus(y_post - self._threshold, tau=1e-6)
