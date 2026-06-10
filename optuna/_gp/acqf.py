@@ -226,6 +226,7 @@ class qLogEI(BaseAcquisitionFunc):
         if x.ndim == 1:
             return torch.cat([self._x_running, x.unsqueeze(0)], dim=0)
         if x.ndim == 2:
+            # Expand from (Q, D) to (..., Q, D), and then concat to (..., Q+1, D).
             running = self._x_running.unsqueeze(0).expand(x.shape[0], -1, -1)
             return torch.cat([running, x.unsqueeze(-2)], dim=-2)
         raise ValueError(f"Does not expect x.ndim = {x.ndim}.")
