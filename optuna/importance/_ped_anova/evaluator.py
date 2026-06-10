@@ -248,9 +248,7 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
     ) -> dict[str, float]:
         dists = _get_distributions_list(study, params=params)
         if params is None:
-            params = list(dict.fromkeys(
-                k for d in dists for k in d
-            ))
+            params = list(dict.fromkeys(k for d in dists for k in d))
 
         assert params is not None
 
