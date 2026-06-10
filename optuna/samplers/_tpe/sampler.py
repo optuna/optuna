@@ -110,13 +110,14 @@ class TPESampler(BaseSampler):
     For constrained TPE (c-TPE), please refer to the following papers:
 
     - `Optuna Constrained Tree-Structured Parzen Estimator Is a Joint Density Generalization of
-      c-TPE <https://arxiv.org/abs/2606.05167>`__
+      c-TPE <https://arxiv.org/abs/2606.09889>`__
     - `c-TPE: Tree-structured Parzen Estimator with Inequality Constraints for Expensive
       Hyperparameter Optimization <https://arxiv.org/abs/2211.14411>`__
 
     The first paper explains how Optuna handles constraints, while the second provides the
     background of constrained optimization for TPE in general. Notably, the Optuna algorithm
-    differs from the one proposed in the second paper.
+    differs from the one proposed in the second paper. OptunaHub provides
+    `c-TPE proposed by the second paper <https://hub.optuna.org/samplers/ctpe/>`__.
 
     For the `categorical_distance_func`, please refer to the following paper:
 
