@@ -228,6 +228,7 @@ class qLogEI(BaseAcquisitionFunc):
         if np.isneginf(self._threshold):
             return torch.zeros(x.shape[:-1], dtype=torch.float64)
 
+        # NOTE(nabenabe): See Eq. (10) of https://arxiv.org/pdf/2310.20708
         joint_x = self._get_joint_input(x)
         y_post = self._get_posterior_samples(joint_x)
         log_improvement = _log_fatplus(y_post - self._threshold, tau=1e-6)
