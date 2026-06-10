@@ -13,11 +13,11 @@ from optuna.trial import Trial
 def test_tree_node_add_paths() -> None:
     tree = _TreeNode()
     leafs = [
-        tree.add_path([("a", [0, 1, 2], 0), ("b", [0.0, 1.0], 0.0)]),
-        tree.add_path([("a", [0, 1, 2], 0), ("b", [0.0, 1.0], 1.0)]),
-        tree.add_path([("a", [0, 1, 2], 0), ("b", [0.0, 1.0], 1.0)]),
-        tree.add_path([("a", [0, 1, 2], 1), ("b", [0.0, 1.0], 0.0), ("c", [0, 1], 0)]),
-        tree.add_path([("a", [0, 1, 2], 1), ("b", [0.0, 1.0], 0.0)]),
+        tree.add_path([("a", (0, 1, 2), 0), ("b", (0.0, 1.0), 0.0)]),
+        tree.add_path([("a", (0, 1, 2), 0), ("b", (0.0, 1.0), 1.0)]),
+        tree.add_path([("a", (0, 1, 2), 0), ("b", (0.0, 1.0), 1.0)]),
+        tree.add_path([("a", (0, 1, 2), 1), ("b", (0.0, 1.0), 0.0), ("c", (0, 1), 0)]),
+        tree.add_path([("a", (0, 1, 2), 1), ("b", (0.0, 1.0), 0.0)]),
     ]
     for leaf in leafs:
         assert leaf is not None
@@ -60,13 +60,13 @@ def test_tree_node_add_paths() -> None:
 def test_tree_node_add_paths_error() -> None:
     with pytest.raises(ValueError):
         tree = _TreeNode()
-        tree.add_path([("a", [0, 1, 2], 0)])
-        tree.add_path([("a", [0, 1], 0)])
+        tree.add_path([("a", (0, 1, 2), 0)])
+        tree.add_path([("a", (0, 1), 0)])
 
     with pytest.raises(ValueError):
         tree = _TreeNode()
-        tree.add_path([("a", [0, 1, 2], 0)])
-        tree.add_path([("b", [0, 1, 2], 0)])
+        tree.add_path([("a", (0, 1, 2), 0)])
+        tree.add_path([("b", (0, 1, 2), 0)])
 
 
 def test_tree_node_count_unexpanded() -> None:
