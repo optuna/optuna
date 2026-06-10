@@ -5,6 +5,9 @@ on:
     - cron: '0 23 * * SUN-THU'
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   checks:
     if: (github.event_name == 'schedule' && github.repository == 'optuna/optuna') || (github.event_name != 'schedule')
