@@ -24,7 +24,6 @@ from optuna.trial import TrialState
 
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
     from collections.abc import Sequence
 
     from optuna.distributions import BaseDistribution
@@ -54,7 +53,7 @@ class _TreeNode:
     is_running: bool = False
     choices_fingerprint: tuple[int, float, float] | None = None
 
-    def expand(self, param_name: str | None, choices: list[float]) -> None:
+    def expand(self, param_name: str | None, choices: tuple[float, ...]) -> None:
         # If the node is unexpanded, expand it.
         # Otherwise, check if the node is compatible with the given search space.
         choices_fingerprint = (len(choices), choices[0], choices[-1]) if choices else (0, 0, 0)
@@ -80,9 +79,9 @@ class _TreeNode:
         self.is_running = True
 
     def set_leaf(self) -> None:
-        self.expand(None, [])
+        self.expand(None, tuple())
 
-    def add_path(self, trial_path: Iterable[tuple[str, list[float], float]]) -> _TreeNode | None:
+    def add_path(self, trial_path: list[tuple[str, tuple[float, ...], float]]) -> _TreeNode | None:
         # Add a path (i.e. a list of suggested parameters in one trial) to the tree.
         current_node = self
         for param_name, choices, value in trial_path:
@@ -218,7 +217,7 @@ class BruteForceSampler(BaseSampler):
         nonnan_params_items = {k: v for k, v in params_items if not _is_nan(v)}.items()
         nan_param_names = [k for k, v in params_items if _is_nan(v)]
 
-        def _get_trial_path(trial: FrozenTrial) -> list:
+        def _get_trial_path(trial: FrozenTrial) -> list[tuple[str, tuple[float, ...], float]]:
             trial_path = []
             trial_params = trial.params
             for name, dist in trial.distributions.items():
