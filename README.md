@@ -208,7 +208,6 @@ $ pip install optunahub
 $ pip install cmaes scipy torch --extra-index-url https://download.pytorch.org/whl/cpu
 ```
 
-Please cite the OptunaHub paper following [the `Reference` section](#reference).
 You can load registered module with `optunahub.load_module`.
 
 ```python
@@ -231,6 +230,7 @@ print(study.best_trial.value, study.best_trial.params)
 ```
 
 For more details, please refer to [the optunahub documentation](https://optuna.github.io/optunahub/).
+Please cite the OptunaHub paper following [the `Reference` section](#reference) when you use it in your project.
 
 ### Publish your packages
 
