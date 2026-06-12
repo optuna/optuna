@@ -231,6 +231,12 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
         *,
         target: Callable[[FrozenTrial], float] | None = None,
     ) -> dict[str, float]:
+        if target is None and study._is_multi_objective():
+            raise ValueError(
+                "If the `study` is being used for multi-objective optimization, "
+                "please specify the `target`. For example, use "
+                "`target=lambda t: t.values[0]` for the first objective value."
+            )
         dists = _get_distributions(study, params=params)
         if params is None:
             params = list(dists.keys())
