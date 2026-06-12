@@ -63,7 +63,6 @@ def _standardize_values(values: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.
     return standardized_values, means, stds
 
 
-@experimental_class("3.6.0")
 class GPSampler(BaseSampler):
     """Sampler using Gaussian process-based Bayesian optimization.
 
