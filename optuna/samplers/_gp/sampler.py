@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 import optuna
-from optuna._experimental import experimental_class
 from optuna._experimental import warn_experimental_argument
 from optuna.samplers._base import _CONSTRAINTS_KEY
 from optuna.samplers._base import _INDEPENDENT_SAMPLING_WARNING_TEMPLATE
