@@ -222,7 +222,7 @@ def objective(trial: optuna.Trial) -> float:
 
 
 module = optunahub.load_module(package="samplers/auto_sampler")
-# Please cite the OptunaHub paper for AutoSampler; read the Reference section for more details.
+# See https://hub.optuna.org/samplers/auto_sampler/ to know the ``AutoSampler`` API.
 study = optuna.create_study(sampler=module.AutoSampler())
 study.optimize(objective, n_trials=10)
 
@@ -230,7 +230,6 @@ print(study.best_trial.value, study.best_trial.params)
 ```
 
 For more details, please refer to [the optunahub documentation](https://optuna.github.io/optunahub/).
-Please cite the OptunaHub paper following [the `Reference` section](#reference) when you use it in your project.
 
 ### Publish your packages
 
@@ -260,10 +259,10 @@ For general guidelines on how to contribute to the project, take a look at [CONT
 
 ## Reference
 
-If you use Optuna in one of your research projects, please cite [our KDD paper](https://doi.org/10.1145/3292500.3330701) `Optuna: A Next-generation Hyperparameter Optimization Framework`:
+If you use Optuna in one of your research projects, please cite [our KDD paper](https://doi.org/10.1145/3292500.3330701) "Optuna: A Next-generation Hyperparameter Optimization Framework":
 
 <details open>
-<summary>Optuna Paper BibTeX</summary>
+<summary>BibTeX</summary>
 
 ```bibtex
 @inproceedings{akiba2019optuna,
@@ -272,21 +271,6 @@ If you use Optuna in one of your research projects, please cite [our KDD paper](
   booktitle={The 25th ACM SIGKDD International Conference on Knowledge Discovery \& Data Mining},
   pages={2623--2631},
   year={2019}
-}
-```
-</details>
-
-If you use OptunaHub sucn as `AutoSampler` in one of your research projects, please cite [our paper](https://arxiv.org/abs/2510.02798) `OptunaHub: A Platform for Black-Box Optimization`:
-
-<details open>
-<summary>OptunaHub Paper BibTeX</summary>
-
-```bibtex
-@article{ozaki2025optunahub,
-  title={{OptunaHub}: A Platform for Black-Box Optimization},
-  author={Ozaki, Yoshihiko and Watanabe, Shuhei and Yanase, Toshihiko},
-  journal={arXiv preprint arXiv:2510.02798},
-  year={2025}
 }
 ```
 </details>
