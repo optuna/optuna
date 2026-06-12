@@ -208,6 +208,7 @@ $ pip install optunahub
 $ pip install cmaes scipy torch --extra-index-url https://download.pytorch.org/whl/cpu
 ```
 
+Please cite the OptunaHub paper following [the `Reference` section](#reference).
 You can load registered module with `optunahub.load_module`.
 
 ```python
@@ -222,6 +223,7 @@ def objective(trial: optuna.Trial) -> float:
 
 
 module = optunahub.load_module(package="samplers/auto_sampler")
+# Please cite the OptunaHub paper for AutoSampler; read the Reference section for more details.
 study = optuna.create_study(sampler=module.AutoSampler())
 study.optimize(objective, n_trials=10)
 
@@ -261,7 +263,7 @@ For general guidelines on how to contribute to the project, take a look at [CONT
 If you use Optuna in one of your research projects, please cite [our KDD paper](https://doi.org/10.1145/3292500.3330701) "Optuna: A Next-generation Hyperparameter Optimization Framework":
 
 <details open>
-<summary>BibTeX</summary>
+<summary>Optuna Paper BibTeX</summary>
 
 ```bibtex
 @inproceedings{akiba2019optuna,
@@ -274,6 +276,20 @@ If you use Optuna in one of your research projects, please cite [our KDD paper](
 ```
 </details>
 
+If you use OptunaHub or `AutoSampler` in one of your research projects, please cite [our paper](https://arxiv.org/abs/2510.02798) "OptunaHub: A Platform for Black-Box Optimization":
+
+<details open>
+<summary>OptunaHub Paper BibTeX</summary>
+
+```bibtex
+@article{ozaki2025optunahub,
+  title={{OptunaHub}: A Platform for Black-Box Optimization},
+  author={Ozaki, Yoshihiko and Watanabe, Shuhei and Yanase, Toshihiko},
+  journal={arXiv preprint arXiv:2510.02798},
+  year={2025}
+}
+```
+</details>
 
 ## License
 
