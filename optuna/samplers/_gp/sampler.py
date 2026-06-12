@@ -210,6 +210,8 @@ class GPSampler(BaseSampler):
 
         if constraints_func is not None:
             warn_experimental_argument("constraints_func")
+        if deterministic_objective:
+            warn_experimental_argument("deterministic_objective")
 
         # Control parameters of the acquisition function optimization.
         self._n_preliminary_samples: int = 2048
