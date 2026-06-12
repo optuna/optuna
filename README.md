@@ -260,7 +260,7 @@ For general guidelines on how to contribute to the project, take a look at [CONT
 
 ## Reference
 
-If you use Optuna in one of your research projects, please cite [our KDD paper](https://doi.org/10.1145/3292500.3330701) "Optuna: A Next-generation Hyperparameter Optimization Framework":
+If you use Optuna in one of your research projects, please cite [our KDD paper](https://doi.org/10.1145/3292500.3330701) `Optuna: A Next-generation Hyperparameter Optimization Framework`:
 
 <details open>
 <summary>Optuna Paper BibTeX</summary>
@@ -276,7 +276,7 @@ If you use Optuna in one of your research projects, please cite [our KDD paper](
 ```
 </details>
 
-If you use OptunaHub or `AutoSampler` in one of your research projects, please cite [our paper](https://arxiv.org/abs/2510.02798) "OptunaHub: A Platform for Black-Box Optimization":
+If you use OptunaHub sucn as `AutoSampler` in one of your research projects, please cite [our paper](https://arxiv.org/abs/2510.02798) `OptunaHub: A Platform for Black-Box Optimization`:
 
 <details open>
 <summary>OptunaHub Paper BibTeX</summary>
