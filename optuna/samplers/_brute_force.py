@@ -320,6 +320,14 @@ def _enumerate_candidates(
         high_ = decimal.Decimal(str(high))
         step_ = decimal.Decimal(str(step))
         ret = []
+        if (high_ - low_) % step_ != decimal.Decimal("0"):
+            # NOTE(nabenabe): The high falls back to the closest divisible high at the lower side
+            # in `FloatDistribution` but if something like low=0.0, high=0.3, step=0.1-1e-17 is
+            # given, `BruteForceSampler` may encounter an infinite loop. This part prevents it.
+            raise ValueError(
+                f"The distribution is specified by [{low_}, {high_}] and {step=}, "
+                f"but the range is not divisible by `step`, failing exhaustive search."
+            )
         while low_ <= high_:
             ret.append(float(low_))
             low_ += step_

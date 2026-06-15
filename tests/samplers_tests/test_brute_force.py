@@ -433,3 +433,14 @@ def test_enumerate_candidates_step_is_none(
 ) -> None:
     with pytest.raises(ValueError):
         _enumerate_candidates(low, high, step)
+
+
+def test_non_divisible_step_with_high_that_fails_to_fallback_to_divisible_range() -> None:
+    study = optuna.create_study(sampler=optuna.samplers.BruteForceSampler())
+    with pytest.raises(ValueError):
+        study.ask({"x": optuna.distributions.FloatDistribution(0.0, 0.3, step=0.1 - 1e-17)})
+
+
+def test_non_divisible_step_with_successful_fallback() -> None:
+    study = optuna.create_study(sampler=optuna.samplers.BruteForceSampler())
+    study.ask({"x": optuna.distributions.FloatDistribution(0.0, 0.5, step=0.2)})
