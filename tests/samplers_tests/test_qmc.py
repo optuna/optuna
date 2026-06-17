@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import Any
+from typing import TYPE_CHECKING
 from unittest.mock import Mock
 from unittest.mock import patch
 import warnings
@@ -9,9 +10,12 @@ import numpy as np
 import pytest
 
 import optuna
-from optuna.distributions import BaseDistribution
 from optuna.trial import Trial
 from optuna.trial import TrialState
+
+
+if TYPE_CHECKING:
+    from optuna.distributions import BaseDistribution
 
 
 _SEARCH_SPACE = {
@@ -67,17 +71,55 @@ def test_infer_relative_search_space() -> None:
     sampler = _init_QMCSampler_without_exp_warning()
     study = optuna.create_study(sampler=sampler)
     trial = Mock()
-    # In case no past trials.
+    # In case no past trials and no pending trials.
     assert sampler.infer_relative_search_space(study, trial) == {}
+
+    # In case there are pending trials but no past trials.
+    running_trial = study.ask()
+    running_trial.suggest_int("x1", 0, 10)
+    running_trial.suggest_categorical("x6", [1, 4, 7, 10])
+
+    speculative_space = sampler.infer_relative_search_space(study, trial)
+    assert set(speculative_space.keys()) == {"x1"}
+
     # In case there is a past trial.
     study.optimize(objective, n_trials=1)
     relative_search_space = sampler.infer_relative_search_space(study, trial)
     assert len(relative_search_space.keys()) == 5
     assert set(relative_search_space.keys()) == {"x1", "x2", "x3", "x4", "x5"}
-    # In case self._initial_trial already exists.
-    new_search_space: dict[str, BaseDistribution] = {"x": Mock()}
-    sampler._initial_search_space = new_search_space
-    assert sampler.infer_relative_search_space(study, trial) == new_search_space
+
+
+def test_infer_relative_search_space_without_any() -> None:
+    sampler = _init_QMCSampler_without_exp_warning()
+    study = optuna.create_study(sampler=sampler)
+    assert sampler.infer_relative_search_space(study, Mock()) == {}
+
+
+@pytest.mark.parametrize("n_trials", [1, 2])
+def test_infer_relative_search_space_with_suggested_running(n_trials: int) -> None:
+    sampler = _init_QMCSampler_without_exp_warning()
+    study = optuna.create_study(sampler=sampler)
+
+    for _ in range(n_trials):
+        trial = study.ask()
+        trial.suggest_float("a", 1, 10)
+        trial.suggest_float("b", -10, 2)
+
+    search_space = sampler.infer_relative_search_space(study, Mock())
+    assert set(search_space) == {"a", "b"}
+
+
+def test_infer_relative_search_space_with_ask_fixed() -> None:
+    sampler = _init_QMCSampler_without_exp_warning()
+    study = optuna.create_study(sampler=sampler)
+    dists: dict[str, BaseDistribution] = {
+        "a": optuna.distributions.FloatDistribution(1, 10),
+        "b": optuna.distributions.FloatDistribution(-10, 2),
+    }
+    study.ask(fixed_distributions=dists)
+    search_space = sampler.infer_relative_search_space(study, Mock())
+    assert "a" in search_space
+    assert "b" in search_space
 
 
 def test_infer_initial_search_space() -> None:
@@ -319,16 +361,56 @@ def test_find_sample_id() -> None:
     sampler = _init_QMCSampler_without_exp_warning(qmc_type="halton", seed=0)
     study = optuna.create_study()
     for i in range(5):
-        assert sampler._find_sample_id(study) == i
+        assert sampler._find_sample_id(study, {}) == i
 
     # Change seed but without scramble. The hash should remain the same.
     with patch.object(sampler, "_seed", 1) as _:
-        assert sampler._find_sample_id(study) == 5
+        assert sampler._find_sample_id(study, {}) == 5
 
         # Seed is considered only when scrambling is enabled.
         with patch.object(sampler, "_scramble", True) as _:
-            assert sampler._find_sample_id(study) == 0
+            assert sampler._find_sample_id(study, {}) == 0
 
     # Change qmc_type.
     with patch.object(sampler, "_qmc_type", "sobol") as _:
-        assert sampler._find_sample_id(study) == 0
+        assert sampler._find_sample_id(study, {}) == 0
+
+
+def test_infer_relative_search_space_dynamic_warning() -> None:
+    sampler = _init_QMCSampler_without_exp_warning()
+    study = optuna.create_study(sampler=sampler)
+
+    # Simulating distributed setup with a dynamic search space (partial intersection).
+    trial1 = study.ask()
+    trial1.suggest_float("x", 0, 1)
+    trial1.suggest_float("y", 0, 1)
+
+    trial2 = study.ask()
+    trial2.suggest_float("x", 0, 1)
+    trial2.suggest_float("z", 0, 1)
+
+    trial_mock = Mock()
+
+    with patch("optuna.samplers._qmc._logger.warning") as mock_warning:
+        sampler.infer_relative_search_space(study, trial_mock)
+        assert mock_warning.call_count == 1
+
+
+def test_find_sample_id_partial_fix() -> None:
+    def _objective(trial: optuna.Trial) -> float:
+        x = trial.suggest_float("x", -5, 5)
+        y = trial.suggest_float("y", -5, 5)
+        return (x - 2) ** 2 + (y - 2) ** 2
+
+    study = optuna.create_study()
+    base_sampler = optuna.samplers.QMCSampler()
+    study.sampler = base_sampler
+    study.optimize(_objective, n_trials=8)
+    # The first trial is used to identify the search space, so it's not counted for QMC.
+    assert base_sampler._find_sample_id(study, search_space=study.trials[-1].distributions) == 7
+    study.sampler = optuna.samplers.PartialFixedSampler(
+        fixed_params={"x": study.best_params["x"]}, base_sampler=base_sampler
+    )
+    study.optimize(_objective, n_trials=8)
+    partial_search_space = {"y": study.trials[-1].distributions["y"]}
+    assert base_sampler._find_sample_id(study, search_space=partial_search_space) == 8

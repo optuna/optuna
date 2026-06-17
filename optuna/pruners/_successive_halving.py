@@ -24,9 +24,7 @@ class SuccessiveHalvingPruner(BasePruner):
     Note that, this class does not take care of the parameter for the maximum
     resource, referred to as :math:`R` in the paper. The maximum resource allocated to a trial is
     typically limited inside the objective function (e.g., ``step`` number in `simple_pruning.py
-    <https://github.com/optuna/optuna-examples/blob/main/basic/pruning.py>`__,
-    ``EPOCH`` number in `chainer_integration.py
-    <https://github.com/optuna/optuna-examples/tree/main/chainer/chainer_integration.py#L73>`__).
+    <https://github.com/optuna/optuna-examples/blob/main/basic/pruning.py>`__).
 
     .. seealso::
         Please refer to :meth:`~optuna.trial.Trial.report`.

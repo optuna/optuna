@@ -57,7 +57,7 @@ def test_filter(
 
 
 def test_error_in_ped_anova() -> None:
-    with pytest.raises(RuntimeError):
+    with pytest.raises(ValueError):
         evaluator = PedAnovaImportanceEvaluator()
         study = get_study(seed=0, n_trials=5, is_multi_obj=True)
         evaluator.evaluate(study)

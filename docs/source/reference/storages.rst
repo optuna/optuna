@@ -10,7 +10,7 @@ The :mod:`~optuna.storages` module defines a :class:`~optuna.storages.BaseStorag
    :nosignatures:
 
    RDBStorage
-   RetryFailedTrialCallback
+   RetryHeartbeatStaleTrialCallback
    fail_stale_trials
    JournalStorage
    InMemoryStorage

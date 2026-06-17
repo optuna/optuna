@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 from typing import NamedTuple
 from typing import Union
 
@@ -18,12 +19,44 @@ class _BatchedTruncNormDistributions(NamedTuple):
     low: float  # Currently, low and high do not change per trial.
     high: float
 
+    @property
+    def adapted_low(self) -> float:
+        return self.low
+
+    @property
+    def adapted_high(self) -> float:
+        return self.high
+
+    @property
+    def is_log(self) -> bool:
+        return False
+
+    @property
+    def step(self) -> float:
+        return 0.0
+
 
 class _BatchedTruncLogNormDistributions(NamedTuple):
     mu: np.ndarray
     sigma: np.ndarray
     low: float  # Currently, low and high do not change per trial.
     high: float
+
+    @property
+    def adapted_low(self) -> float:
+        return math.log(self.low)
+
+    @property
+    def adapted_high(self) -> float:
+        return math.log(self.high)
+
+    @property
+    def is_log(self) -> bool:
+        return True
+
+    @property
+    def step(self) -> float:
+        return 0.0
 
 
 class _BatchedDiscreteTruncNormDistributions(NamedTuple):
@@ -33,6 +66,18 @@ class _BatchedDiscreteTruncNormDistributions(NamedTuple):
     high: float
     step: float
 
+    @property
+    def adapted_low(self) -> float:
+        return self.low - self.step / 2
+
+    @property
+    def adapted_high(self) -> float:
+        return self.high + self.step / 2
+
+    @property
+    def is_log(self) -> bool:
+        return False
+
 
 class _BatchedDiscreteTruncLogNormDistributions(NamedTuple):
     mu: np.ndarray
@@ -40,6 +85,18 @@ class _BatchedDiscreteTruncLogNormDistributions(NamedTuple):
     low: float  # Currently, low, high and step do not change per trial.
     high: float
     step: float
+
+    @property
+    def adapted_low(self) -> float:
+        return math.log(self.low - self.step / 2)
+
+    @property
+    def adapted_high(self) -> float:
+        return math.log(self.high + self.step / 2)
+
+    @property
+    def is_log(self) -> bool:
+        return True
 
 
 _BatchedDistributions = Union[
@@ -87,13 +144,8 @@ class _MixtureOfProductDistribution(NamedTuple):
         active_indices = rng.choice(len(self.weights), p=self.weights, size=batch_size)
         ret = np.empty((batch_size, len(self.distributions)), dtype=float)
         disc_inds, numerical_inds, log_inds = [], [], []
-        numerical_dists: list[
-            _BatchedTruncNormDistributions
-            | _BatchedTruncLogNormDistributions
-            | _BatchedDiscreteTruncNormDistributions
-            | _BatchedDiscreteTruncLogNormDistributions
-        ] = []
-        lows_numeric, highs_numeric = [], []
+        numerical_dists = []
+        disc_dists = []
         for i, d in enumerate(self.distributions):
             if isinstance(d, _BatchedCategoricalDistributions):
                 active_weights = d.weights[active_indices, :]
@@ -102,49 +154,31 @@ class _MixtureOfProductDistribution(NamedTuple):
                 assert np.isclose(cum_probs[:, -1], 1).all()
                 cum_probs[:, -1] = 1  # Avoid numerical errors.
                 ret[:, i] = np.sum(cum_probs < rnd_quantile[:, np.newaxis], axis=-1)
-            elif isinstance(d, _BatchedTruncNormDistributions):
-                numerical_dists.append(d)
-                numerical_inds.append(i)
-                lows_numeric.append(d.low)
-                highs_numeric.append(d.high)
-            elif isinstance(d, _BatchedTruncLogNormDistributions):
-                numerical_dists.append(d)
-                numerical_inds.append(i)
-                log_inds.append(i)
-                lows_numeric.append(np.log(d.low))
-                highs_numeric.append(np.log(d.high))
-            elif isinstance(d, _BatchedDiscreteTruncNormDistributions):
-                disc_inds.append(i)
-                numerical_dists.append(d)
-                numerical_inds.append(i)
-                lows_numeric.append(d.low - d.step / 2)
-                highs_numeric.append(d.high + d.step / 2)
-            elif isinstance(d, _BatchedDiscreteTruncLogNormDistributions):
-                disc_inds.append(i)
-                numerical_dists.append(d)
-                numerical_inds.append(i)
-                log_inds.append(i)
-                lows_numeric.append(np.log(d.low - d.step / 2))
-                highs_numeric.append(np.log(d.high + d.step / 2))
             else:
-                assert False
+                numerical_dists.append(d)
+                numerical_inds.append(i)
+                if d.step != 0.0:
+                    disc_inds.append(i)
+                    disc_dists.append(d)
+                if d.is_log:
+                    log_inds.append(i)
 
         if len(numerical_dists):
             active_mus = np.asarray([d.mu[active_indices] for d in numerical_dists])
             active_sigmas = np.asarray([d.sigma[active_indices] for d in numerical_dists])
-            lows = np.array([d.low for d in numerical_dists])
-            highs = np.array([d.high for d in numerical_dists])
-            steps = np.array([getattr(d, "step", 0.0) for d in numerical_dists])
+            adapted_lows = np.asarray([d.adapted_low for d in numerical_dists])
+            adapted_highs = np.asarray([d.adapted_high for d in numerical_dists])
             ret[:, numerical_inds] = _truncnorm.rvs(
-                a=(np.asarray(lows_numeric)[:, np.newaxis] - active_mus) / active_sigmas,
-                b=(np.asarray(highs_numeric)[:, np.newaxis] - active_mus) / active_sigmas,
+                a=(adapted_lows[:, np.newaxis] - active_mus) / active_sigmas,
+                b=(adapted_highs[:, np.newaxis] - active_mus) / active_sigmas,
                 loc=active_mus,
                 scale=active_sigmas,
                 random_state=rng,
             ).T
             ret[:, log_inds] = np.exp(ret[:, log_inds])
-            steps_not_0 = np.nonzero(steps != 0.0)[0]
-            low_d, step_d, high_d = lows[steps_not_0], steps[steps_not_0], highs[steps_not_0]
+            step_d = np.asarray([d.step for d in disc_dists])
+            low_d = np.asarray([d.low for d in disc_dists])
+            high_d = np.asarray([d.high for d in disc_dists])
             ret[:, disc_inds] = np.clip(
                 low_d + np.round((ret[:, disc_inds] - low_d) / step_d) * step_d, low_d, high_d
             )
@@ -153,11 +187,7 @@ class _MixtureOfProductDistribution(NamedTuple):
 
     def log_pdf(self, x: np.ndarray) -> np.ndarray:
         weighted_log_pdf = np.zeros((len(x), len(self.weights)), dtype=np.float64)
-        cont_dists: list[
-            _BatchedTruncNormDistributions
-            | _BatchedTruncLogNormDistributions
-            | _BatchedDiscreteTruncLogNormDistributions
-        ] = []
+        cont_dists = []
         x_cont = []
         lows_cont = []
         highs_cont = []
@@ -167,42 +197,26 @@ class _MixtureOfProductDistribution(NamedTuple):
                 weighted_log_pdf += np.log(np.take_along_axis(d.weights[np.newaxis], xi, axis=-1))[
                     ..., 0
                 ]
-            elif isinstance(d, _BatchedTruncNormDistributions):
+                continue
+            is_log = d.is_log
+            if (step := d.step) == 0.0:
                 cont_dists.append(d)
-                x_cont.append(x[:, i])
-                lows_cont.append(d.low)
-                highs_cont.append(d.high)
-            elif isinstance(d, _BatchedTruncLogNormDistributions):
-                cont_dists.append(d)
-                x_cont.append(np.log(x[:, i]))
-                lows_cont.append(np.log(d.low))
-                highs_cont.append(np.log(d.high))
-            elif isinstance(d, _BatchedDiscreteTruncNormDistributions):
-                xi_uniq, xi_inv = np.unique(x[:, i], return_inverse=True)
-                mu_uniq, sigma_uniq, mu_sigma_inv = _unique_inverse_2d(d.mu, d.sigma)
-                weighted_log_pdf += _log_gauss_mass_unique(
-                    ((xi_uniq - d.step / 2)[:, np.newaxis] - mu_uniq) / sigma_uniq,
-                    ((xi_uniq + d.step / 2)[:, np.newaxis] - mu_uniq) / sigma_uniq,
-                )[np.ix_(xi_inv, mu_sigma_inv)]
-                # Very unlikely to observe duplications below, so we skip the unique operation.
-                weighted_log_pdf -= _truncnorm._log_gauss_mass(
-                    (d.low - d.step / 2 - mu_uniq) / sigma_uniq,
-                    (d.high + d.step / 2 - mu_uniq) / sigma_uniq,
-                )[mu_sigma_inv]
-            elif isinstance(d, _BatchedDiscreteTruncLogNormDistributions):
-                xi_uniq, xi_inv = np.unique(x[:, i], return_inverse=True)
-                mu_uniq, sigma_uniq, mu_sigma_inv = _unique_inverse_2d(d.mu, d.sigma)
-                weighted_log_pdf += _log_gauss_mass_unique(
-                    (np.log(xi_uniq - d.step / 2)[:, np.newaxis] - mu_uniq) / sigma_uniq,
-                    (np.log(xi_uniq + d.step / 2)[:, np.newaxis] - mu_uniq) / sigma_uniq,
-                )[np.ix_(xi_inv, mu_sigma_inv)]
-                # Very unlikely to observe duplications below, so we skip the unique operation.
-                weighted_log_pdf -= _truncnorm._log_gauss_mass(
-                    (np.log(d.low - d.step / 2) - mu_uniq) / sigma_uniq,
-                    (np.log(d.high + d.step / 2) - mu_uniq) / sigma_uniq,
-                )[mu_sigma_inv]
+                x_cont.append(np.log(x[:, i]) if is_log else x[:, i])
+                lows_cont.append(d.adapted_low)
+                highs_cont.append(d.adapted_high)
             else:
-                assert False
+                xi_uniq, xi_inv = np.unique(x[:, i], return_inverse=True)
+                mu_uniq, sigma_uniq, mu_sigma_inv = _unique_inverse_2d(d.mu, d.sigma)
+                left = np.log(xi_uniq - step / 2) if is_log else (xi_uniq - step / 2)
+                right = np.log(xi_uniq + step / 2) if is_log else (xi_uniq + step / 2)
+                weighted_log_pdf += _log_gauss_mass_unique(
+                    (left[:, np.newaxis] - mu_uniq) / sigma_uniq,
+                    (right[:, np.newaxis] - mu_uniq) / sigma_uniq,
+                )[np.ix_(xi_inv, mu_sigma_inv)]
+                # Very unlikely to observe duplications below, so we skip the unique operation.
+                weighted_log_pdf -= _truncnorm._log_gauss_mass(
+                    (d.adapted_low - mu_uniq) / sigma_uniq, (d.adapted_high - mu_uniq) / sigma_uniq
+                )[mu_sigma_inv]
 
         if len(x_cont):
             mus_cont = np.asarray([d.mu for d in cont_dists]).T

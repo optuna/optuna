@@ -452,7 +452,8 @@ You can verify the transformation by calculating the elements of the Jacobian.
 How can I optimize a model with some constraints?
 -------------------------------------------------
 
-When you want to optimize a model with constraints, you can use the following classes: :class:`~optuna.samplers.TPESampler`, :class:`~optuna.samplers.NSGAIISampler`,  :class:`~optuna.samplers.GPSampler` or `BoTorchSampler <https://optuna-integration.readthedocs.io/en/stable/reference/generated/optuna_integration.BoTorchSampler.html>`__.
+When you want to optimize a model with constraints, you can use the following classes: :class:`~optuna.samplers.TPESampler`, :class:`~optuna.samplers.NSGAIISampler`, :class:`~optuna.samplers.NSGAIIISampler`,  :class:`~optuna.samplers.GPSampler` or `BoTorchSampler <https://optuna-integration.readthedocs.io/en/stable/reference/generated/optuna_integration.BoTorchSampler.html>`__.
+Note that `AutoSampler <https://hub.optuna.org/samplers/auto_sampler/>`__ can also handle constraints.
 The following example is a benchmark of Binh and Korn function, a multi-objective optimization, with constraints using :class:`~optuna.samplers.NSGAIISampler`. This one has two constraints :math:`c_0 = (x-5)^2 + y^2 - 25 \le 0` and :math:`c_1 = -(x - 8)^2 - (y + 3)^2 + 7.7 \le 0` and finds the optimal solution satisfying these constraints.
 
 
@@ -612,25 +613,41 @@ from :obj:`~optuna.trial.TrialState.RUNNING`.
 
 .. note::
 
-  The heartbeat is supposed to be used with :meth:`~optuna.study.Study.optimize`. If you use :meth:`~optuna.study.Study.ask` and
-  :meth:`~optuna.study.Study.tell`, please change the state of the killed trials by calling :meth:`~optuna.study.Study.tell`
-  explicitly.
+    The heartbeat is supposed to be used with :meth:`~optuna.study.Study.optimize`. If you use :meth:`~optuna.study.Study.ask` and
+    :meth:`~optuna.study.Study.tell`, please change the state of the killed trials by calling :meth:`~optuna.study.Study.tell`
+    explicitly.
 
-You can also execute a callback function to process the failed trial.
-Optuna provides a callback to retry failed trials as :class:`~optuna.storages.RetryFailedTrialCallback`.
-Note that a callback is invoked at a beginning of each trial, which means :class:`~optuna.storages.RetryFailedTrialCallback`
-will retry failed trials when a new trial starts to evaluate.
+    .. code-block:: python
+        
+        from datetime import datetime
+
+        import optuna
+
+        study = optuna.create_study(storage=...)
+        # User needs to tweak here. For example, the case below assumes that if trial is running
+        # for 1 day, this trial is probably a zombie.
+        grace_period = 3600*24
+        for t in study.get_trials(states=[optuna.trial.TrialState.RUNNING]):
+            if (datetime.now() - t.datetime_start).total_seconds() > grace_period:
+                study.tell(t, state=optuna.trial.TrialState.FAIL)
+
+You can also execute a callback function to process heartbeat-stale trials.
+Optuna provides a callback to retry heartbeat-stale trials as
+:class:`~optuna.storages.RetryHeartbeatStaleTrialCallback`. Note that a callback is invoked at
+the beginning of each trial, which means
+:class:`~optuna.storages.RetryHeartbeatStaleTrialCallback` will retry heartbeat-stale trials when
+a new trial starts to evaluate.
 
 .. code-block:: python
 
     import optuna
-    from optuna.storages import RetryFailedTrialCallback
+    from optuna.storages import RetryHeartbeatStaleTrialCallback
 
     storage = optuna.storages.RDBStorage(
         url="sqlite:///:memory:",
         heartbeat_interval=60,
         grace_period=120,
-        failed_trial_callback=RetryFailedTrialCallback(max_retry=3),
+        heartbeat_stale_trial_callback=RetryHeartbeatStaleTrialCallback(max_retry=3),
     )
 
     study = optuna.create_study(storage=storage)

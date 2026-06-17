@@ -36,15 +36,8 @@ var/
 .installed.cfg
 *.egg
 
-# PyInstaller
-#  Usually these files are written by a python script from a template
-#  before PyInstaller builds the exe, so as to inject date/other infos into it.
-*.manifest
-*.spec
-
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
+# uv
+uv.lock
 
 # Unit test / coverage reports
 htmlcov/
@@ -121,7 +114,6 @@ tutorial/20_recipes/best_atoms.png
 tutorial/20_recipes/tmp/
 docs/_build/
 docs/source/reference/generated/
-docs/source/reference/multi_objective/generated/
 docs/source/reference/visualization/generated/
 docs/source/reference/visualization/matplotlib/generated/
 docs/source/reference/samplers/generated
