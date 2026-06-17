@@ -102,35 +102,15 @@ def test_evaluate_on_local() -> None:
 
 def test_conditional() -> None:
     study = optuna.study.create_study()
-    study.add_trial(
-        optuna.create_trial(
-            params={"c": 1.0, "x": 1.0},
-            distributions={"c": FloatDistribution(0.0, 1.0), "x": FloatDistribution(0.0, 2.0)},
-            value=1.0,
-        )
-    )
-    study.add_trial(
-        optuna.create_trial(
-            params={"c": 0.0, "y": -1.0},
-            distributions={"c": FloatDistribution(0.0, 1.0), "y": FloatDistribution(-2.0, 0.0)},
-            value=-1.0,
-        )
-    )
-    study.add_trial(
-        optuna.create_trial(
-            params={"c": 0.8, "x": 0.8},
-            distributions={"c": FloatDistribution(0.0, 1.0), "x": FloatDistribution(0.0, 2.0)},
-            value=0.8,
-        )
-    )
-    study.add_trial(
-        optuna.create_trial(
-            params={"c": 0.2, "y": -0.2},
-            distributions={"c": FloatDistribution(0.0, 1.0), "y": FloatDistribution(-2.0, 0.0)},
-            value=-0.2,
-        )
-    )
-
+    dists_cx = {"c": FloatDistribution(0.0, 1.0), "x": FloatDistribution(0.0, 2.0)}
+    dists_cy = {"c": FloatDistribution(0.0, 1.0), "y": FloatDistribution(-2.0, 0.0)}
+    trials = [
+        optuna.create_trial(params={"c": 1.0, "x": 1.0}, distributions=dists_cx, value=1.0),
+        optuna.create_trial(params={"c": 0.0, "y": -1.0}, distributions=dists_cy, value=-1.0),
+        optuna.create_trial(params={"c": 0.8, "x": 0.8}, distributions=dists_cx, value=0.8),
+        optuna.create_trial(params={"c": 0.2, "y": -0.2}, distributions=dists_cy, value=-0.2),
+    ]
+    study.add_trials(trials)
     evaluator = PedAnovaImportanceEvaluator()
     importance = evaluator.evaluate(study)
     assert set(importance.keys()) == {"c", "x", "y"}
