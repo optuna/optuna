@@ -1,4 +1,4 @@
-# On Windows, temporary file shold delete "after" storage was deleted
+# On Windows, temporary file should delete "after" storage was deleted
 # NamedTemporaryFilePool ensures tempfile delete after tests.
 
 from __future__ import annotations

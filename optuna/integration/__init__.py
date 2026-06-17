@@ -10,11 +10,8 @@ from optuna._imports import _INTEGRATION_IMPORT_ERROR_TEMPLATE
 
 
 _import_structure = {
-    "allennlp": ["AllenNLPExecutor", "AllenNLPPruningCallback"],
     "botorch": ["BoTorchSampler"],
     "catboost": ["CatBoostPruningCallback"],
-    "chainer": ["ChainerPruningExtension"],
-    "chainermn": ["ChainerMNStudy"],
     "cma": ["PyCmaSampler"],
     "dask": ["DaskStorage"],
     "mlflow": ["MLflowCallback"],
@@ -27,7 +24,6 @@ _import_structure = {
     "sklearn": ["OptunaSearchCV"],
     "shap": ["ShapleyImportanceEvaluator"],
     "skorch": ["SkorchPruningCallback"],
-    "mxnet": ["MXNetPruningCallback"],
     "tensorboard": ["TensorBoardCallback"],
     "tensorflow": ["TensorFlowPruningHook"],
     "tfkeras": ["TFKerasPruningCallback"],
@@ -37,12 +33,8 @@ _import_structure = {
 
 
 __all__ = [
-    "AllenNLPExecutor",
-    "AllenNLPPruningCallback",
     "BoTorchSampler",
     "CatBoostPruningCallback",
-    "ChainerPruningExtension",
-    "ChainerMNStudy",
     "PyCmaSampler",
     "DaskStorage",
     "MLflowCallback",
@@ -57,7 +49,6 @@ __all__ = [
     "OptunaSearchCV",
     "ShapleyImportanceEvaluator",
     "SkorchPruningCallback",
-    "MXNetPruningCallback",
     "TensorBoardCallback",
     "TensorFlowPruningHook",
     "TFKerasPruningCallback",
@@ -68,12 +59,8 @@ __all__ = [
 
 
 if TYPE_CHECKING:
-    from optuna.integration.allennlp import AllenNLPExecutor
-    from optuna.integration.allennlp import AllenNLPPruningCallback
     from optuna.integration.botorch import BoTorchSampler
     from optuna.integration.catboost import CatBoostPruningCallback
-    from optuna.integration.chainer import ChainerPruningExtension
-    from optuna.integration.chainermn import ChainerMNStudy
     from optuna.integration.cma import PyCmaSampler
     from optuna.integration.dask import DaskStorage
     from optuna.integration.fastaiv2 import FastAIPruningCallback
@@ -83,7 +70,6 @@ if TYPE_CHECKING:
     from optuna.integration.lightgbm import LightGBMTuner
     from optuna.integration.lightgbm import LightGBMTunerCV
     from optuna.integration.mlflow import MLflowCallback
-    from optuna.integration.mxnet import MXNetPruningCallback
     from optuna.integration.pytorch_distributed import TorchDistributedTrial
     from optuna.integration.pytorch_ignite import PyTorchIgnitePruningHandler
     from optuna.integration.pytorch_lightning import PyTorchLightningPruningCallback
@@ -102,7 +88,7 @@ else:
 
         This class applies lazy import under `optuna.integration`, where submodules are imported
         when they are actually accessed. Otherwise, `import optuna` becomes much slower because it
-        imports all submodules and their dependencies (e.g., chainer, keras, lightgbm) all at once.
+        imports all submodules and their dependencies (e.g., keras, lightgbm) all at once.
         """
 
         __all__ = __all__
