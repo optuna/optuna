@@ -121,3 +121,4 @@ def test_conditional() -> None:
     evaluator = PedAnovaImportanceEvaluator()
     importance = evaluator.evaluate(study)
     assert set(importance.keys()) == {"c", "x", "y"}
+    assert importance != {"c": 0.0, "x": 0.0, "y": 0.0}
