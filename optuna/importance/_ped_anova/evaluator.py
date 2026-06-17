@@ -235,7 +235,10 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
             raise ValueError(
                 "If the `study` is being used for multi-objective optimization, "
                 "please specify the `target`. For example, use "
-                "`target=lambda t: t.values[0]` for the first objective value."
+                "`target=lambda t: t.values[0]` for the first objective value. "
+                f"{self.__class__.__name__} computes the importances of params to achieve "
+                "low `target` values. If this is not what you want, "
+                "please modify target, e.g., by multiplying the output by -1."
             )
         dists = _get_distributions(study, params=params)
         if params is None:
