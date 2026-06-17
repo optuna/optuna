@@ -280,12 +280,12 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
                 target_trials_regime = [
                     t for t in region_trials_regime if t._trial_id in target_trial_ids
                 ]
-                regime_prob_target = len(target_trials_regime) / len(target_trials)  # alpha_i
-                regime_prob_region = len(region_trials_regime) / len(region_trials)  # beta_i
+                target_prob_regime = len(target_trials_regime) / len(target_trials)  # alpha_i
+                region_prob_regime = len(region_trials_regime) / len(region_trials)  # beta_i
                 if dist is not None and not dist.single() and len(target_trials_regime):
                     param_importances[param_name] += (
-                        regime_prob_target**2
-                        / regime_prob_region
+                        target_prob_regime**2
+                        / region_prob_regime
                         * self._compute_pearson_divergence(
                             param_name,
                             dist,
