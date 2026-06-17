@@ -7,6 +7,7 @@ import numpy as np
 import pytest
 
 import optuna
+from optuna.distributions import BaseDistribution
 from optuna.distributions import FloatDistribution
 from optuna.importance import PedAnovaImportanceEvaluator
 from optuna.importance._ped_anova.evaluator import _QuantileFilter
@@ -102,8 +103,14 @@ def test_evaluate_on_local() -> None:
 
 def test_conditional() -> None:
     study = optuna.study.create_study()
-    dists_cx = {"c": FloatDistribution(0.0, 1.0), "x": FloatDistribution(0.0, 2.0)}
-    dists_cy = {"c": FloatDistribution(0.0, 1.0), "y": FloatDistribution(-2.0, 0.0)}
+    dists_cx: dict[str, BaseDistribution] = {
+        "c": FloatDistribution(0.0, 1.0),
+        "x": FloatDistribution(0.0, 2.0),
+    }
+    dists_cy: dict[str, BaseDistribution] = {
+        "c": FloatDistribution(0.0, 1.0),
+        "y": FloatDistribution(-2.0, 0.0),
+    }
     trials = [
         optuna.create_trial(params={"c": 1.0, "x": 1.0}, distributions=dists_cx, value=1.0),
         optuna.create_trial(params={"c": 0.0, "y": -1.0}, distributions=dists_cy, value=-1.0),
