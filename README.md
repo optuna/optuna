@@ -222,6 +222,7 @@ def objective(trial: optuna.Trial) -> float:
 
 
 module = optunahub.load_module(package="samplers/auto_sampler")
+# See https://hub.optuna.org/samplers/auto_sampler/ to know the ``AutoSampler`` API.
 study = optuna.create_study(sampler=module.AutoSampler())
 study.optimize(objective, n_trials=10)
 
