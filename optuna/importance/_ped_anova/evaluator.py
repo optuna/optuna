@@ -252,7 +252,7 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
 
         assert params is not None
 
-        trials = _get_filtered_trials(study, params, target=target)
+        trials = _get_filtered_trials(study, target=target)
         # The following should be tested at _get_filtered_trials.
         assert target is not None or max([len(t.values) for t in trials], default=1) == 1
         if len(trials) <= self._min_n_top_trials:
@@ -318,6 +318,18 @@ def _partition_by_regime(
     regime_trials = {k: v for k, v in regime_trials.items() if len(v) >= min_n_trials_in_regime}
 
     return regime_trials
+
+def _get_filtered_trials(
+    study: Study, target: Callable[[FrozenTrial], float] | None
+) -> list[FrozenTrial]:
+    trials = study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,))
+    return [
+        trial
+        for trial in trials
+        if np.isfinite(
+            target(trial) if target is not None else cast(float, trial.value)
+        )  # TC006
+    ]
 
 
 def _get_distributions_list(
