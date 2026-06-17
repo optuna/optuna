@@ -27,11 +27,12 @@ def _compare_with_expected_suggested_values(study: optuna.Study) -> None:
         assert a in expected_suggested_values
 
 
-def conditional_objective(trial: Trial) -> float:
+def conditional_objective(trial: Trial, prune: bool = False) -> float:
     a = trial.suggest_int("a", 0, 2)
-
     if a == 0:
         b = trial.suggest_float("b", -1.0, 1.0, step=0.5)
+        if prune:
+            raise optuna.TrialPruned
         return a + b
     elif a == 1:
         c = trial.suggest_categorical("c", ["x", "y", None])
@@ -135,14 +136,8 @@ def test_study_optimize_with_single_search_space() -> None:
 
 
 def test_study_optimize_with_pruned_trials() -> None:
-    def objective(trial: Trial) -> float:
-        value = conditional_objective(trial)
-        if "b" in trial.params:
-            raise optuna.TrialPruned
-        return value
-
     study = optuna.create_study(sampler=samplers.BruteForceSampler())
-    study.optimize(objective)
+    study.optimize(lambda trial: conditional_objective(trial, prune=True))
     _compare_with_expected_suggested_values(study)
 
 
