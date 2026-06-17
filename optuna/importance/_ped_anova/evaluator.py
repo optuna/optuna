@@ -305,9 +305,9 @@ def _partition_by_regime(
     for trial in trials:
         regime_trials[trial.distributions.get(param_name)].append(trial)
 
-    # NOTE(kAIto47802): Cases where the domain takes one of several discrete values depending on
-    # the condition are supported. However, when the domain changes smoothly, some ranges need
-    # to be merged into the same regime to stabilize the KDE within each regime.
+    # NOTE(kAIto47802): We support the domain that takes one of several discrete values depending
+    # on the condition. However, when the domain changes smoothly, some ranges need to be merged
+    # into the same regime to stabilize the KDE within each regime.
     # TODO(kAIto47802): Implement this.
     if any(len(v) < min_n_trials_in_regime for v in regime_trials.values()):
         optuna_warn(
