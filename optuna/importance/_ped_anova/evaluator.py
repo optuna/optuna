@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import TYPE_CHECKING, cast
+from typing import cast
+from typing import TYPE_CHECKING
 
 import numpy as np
 
@@ -17,7 +18,7 @@ from optuna.trial import TrialState
 
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Collection
+    from collections.abc import Callable
 
     from optuna.distributions import BaseDistribution
     from optuna.study import Study
@@ -318,6 +319,7 @@ def _partition_by_regime(
 
     return regime_trials
 
+
 def _get_filtered_trials(
     study: Study, target: Callable[[FrozenTrial], float] | None
 ) -> list[FrozenTrial]:
@@ -325,9 +327,7 @@ def _get_filtered_trials(
     return [
         trial
         for trial in trials
-        if np.isfinite(
-            target(trial) if target is not None else cast(float, trial.value)
-        )  # TC006
+        if np.isfinite(target(trial) if target is not None else cast(float, trial.value))  # TC006
     ]
 
 
