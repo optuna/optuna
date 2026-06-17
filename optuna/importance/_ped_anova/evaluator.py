@@ -255,7 +255,7 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
                 "low `target` values. If this is not what you want, "
                 "please modify target, e.g., by multiplying the output by -1."
             )
-        dists = _get_distributions(study, params=params)
+        dists = _get_distributions_list(study, params=params)
         if params is None:
             params = list(dict.fromkeys(k for d in dists for k in d))
 
