@@ -215,10 +215,10 @@ class qLogEI(BaseAcquisitionFunc):
         y_post = self._get_posterior_samples(joint_x)
         log_improvement = y_post.clamp_(min=torch.tensor(_EPS, dtype=torch.float64)).log()
         # Take the max operation along the running candidates direction (the Q-axis).
+        # TODO(sawa3030): Consider using fatmax instead of max.
         smooth_max_log_improvement = torch.max(log_improvement, dim=-1).values
         # Take the mean over the fixed sample direction (the s-axis).
-        acqf_value = _logmeanexp(smooth_max_log_improvement, dim=-1)
-        return acqf_value
+        return _logmeanexp(smooth_max_log_improvement, dim=-1)
 
 
 class LogPI(BaseAcquisitionFunc):
