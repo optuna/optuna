@@ -14,12 +14,14 @@ from optuna.trial import Trial
 
 def test_tree_node_add_paths() -> None:
     tree = _TreeNode()
+    a_choices = (0, 1, 2)
+    b_choices = (0.0, 1.0)
     leafs = [
-        tree.add_path([("a", (0, 1, 2), 0), ("b", (0.0, 1.0), 0.0)]),
-        tree.add_path([("a", (0, 1, 2), 0), ("b", (0.0, 1.0), 1.0)]),
-        tree.add_path([("a", (0, 1, 2), 0), ("b", (0.0, 1.0), 1.0)]),
-        tree.add_path([("a", (0, 1, 2), 1), ("b", (0.0, 1.0), 0.0), ("c", (0, 1), 0)]),
-        tree.add_path([("a", (0, 1, 2), 1), ("b", (0.0, 1.0), 0.0)]),
+        tree.add_path([("a", a_choices, 0, 1), ("b", b_choices, 0.0, 1)]),
+        tree.add_path([("a", a_choices, 0, 1), ("b", b_choices, 1.0, 1)]),
+        tree.add_path([("a", a_choices, 0, 1), ("b", b_choices, 1.0, 1)]),
+        tree.add_path([("a", a_choices, 1, 1), ("b", b_choices, 0.0, 1), ("c", (0, 1), 0, 1)]),
+        tree.add_path([("a", a_choices, 1, 1), ("b", b_choices, 0.0, 1)]),
     ]
     for leaf in leafs:
         assert leaf is not None
@@ -36,7 +38,7 @@ def test_tree_node_add_paths() -> None:
                     0.0: _TreeNode(param_name=None, children={}, choices_fingerprint=_zs),
                     1.0: _TreeNode(param_name=None, children={}, choices_fingerprint=_zs),
                 },
-                choices_fingerprint=(2, 0.0, 1.0),
+                choices_fingerprint=(0.0, 1.0, 1.0),
             ),
             1: _TreeNode(
                 param_name="b",
@@ -47,28 +49,28 @@ def test_tree_node_add_paths() -> None:
                             0: _TreeNode(param_name=None, children={}, choices_fingerprint=_zs),
                             1: _TreeNode(),
                         },
-                        choices_fingerprint=(2, 0, 1),
+                        choices_fingerprint=(0, 1, 1),
                     ),
                     1.0: _TreeNode(),
                 },
-                choices_fingerprint=(2, 0.0, 1.0),
+                choices_fingerprint=(0.0, 1.0, 1),
             ),
             2: _TreeNode(),
         },
-        choices_fingerprint=(3, 0, 2),
+        choices_fingerprint=(0, 2, 1),
     )
 
 
 def test_tree_node_add_paths_error() -> None:
+    tree = _TreeNode()
+    tree.add_path([("a", (0, 1, 2), 0, 1)])
     with pytest.raises(ValueError):
-        tree = _TreeNode()
-        tree.add_path([("a", (0, 1, 2), 0)])
-        tree.add_path([("a", (0, 1), 0)])
+        tree.add_path([("a", (0, 1), 0, 1)])
 
+    tree = _TreeNode()
+    tree.add_path([("a", (0, 1, 2), 0, 1)])
     with pytest.raises(ValueError):
-        tree = _TreeNode()
-        tree.add_path([("a", (0, 1, 2), 0)])
-        tree.add_path([("b", (0, 1, 2), 0)])
+        tree.add_path([("b", (0, 1, 2), 0, 1)])
 
 
 def test_tree_node_count_unexpanded() -> None:
@@ -437,6 +439,7 @@ def test_enumerate_candidates_step_is_none(
 
 def test_non_divisible_step_with_high_that_fails_to_fallback_to_divisible_range() -> None:
     study = optuna.create_study(sampler=optuna.samplers.BruteForceSampler())
+    study.ask({"x": optuna.distributions.FloatDistribution(0.0, 0.3, step=0.1)})
     with pytest.raises(ValueError):
         study.ask({"x": optuna.distributions.FloatDistribution(0.0, 0.3, step=0.1 - 1e-17)})
 

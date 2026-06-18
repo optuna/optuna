@@ -51,12 +51,14 @@ class _TreeNode:
     param_name: str | None = None
     children: dict[float, "_TreeNode"] | None = None
     is_running: bool = False
-    choices_fingerprint: tuple[int, float, float] | None = None
+    choices_fingerprint: tuple[float, float, float] | None = None
 
-    def expand(self, param_name: str | None, choices: tuple[float, ...]) -> None:
+    def expand(
+        self, param_name: str | None, choices: tuple[float, ...], step: float = 1.0
+    ) -> None:
         # If the node is unexpanded, expand it.
         # Otherwise, check if the node is compatible with the given search space.
-        choices_fingerprint = (len(choices), choices[0], choices[-1]) if choices else (0, 0, 0)
+        choices_fingerprint = (choices[0], choices[-1], step) if choices else (0, 0, 0)
         if self.children is None:
             # Expand the node
             self.param_name = param_name
@@ -81,11 +83,13 @@ class _TreeNode:
     def set_leaf(self) -> None:
         self.expand(None, tuple())
 
-    def add_path(self, trial_path: list[tuple[str, tuple[float, ...], float]]) -> _TreeNode | None:
+    def add_path(
+        self, trial_path: list[tuple[str, tuple[float, ...], float, float]]
+    ) -> _TreeNode | None:
         # Add a path (i.e. a list of suggested parameters in one trial) to the tree.
         current_node = self
-        for param_name, choices, value in trial_path:
-            current_node.expand(param_name, choices)
+        for param_name, choices, value, step in trial_path:
+            current_node.expand(param_name, choices, step)
             # TODO(nabenabe): This is a temporal fix until the lazy node is introduced.
             next_node = (current_node.children or {}).get(value)
             if next_node is None:
@@ -217,7 +221,9 @@ class BruteForceSampler(BaseSampler):
         nonnan_params_items = {k: v for k, v in params_items if not _is_nan(v)}.items()
         nan_param_names = [k for k, v in params_items if _is_nan(v)]
 
-        def _get_trial_path(trial: FrozenTrial) -> list[tuple[str, tuple[float, ...], float]]:
+        def _get_trial_path(
+            trial: FrozenTrial,
+        ) -> list[tuple[str, tuple[float, ...], float, float]]:
             trial_path = []
             trial_params = trial.params
             for name, dist in trial.distributions.items():
@@ -229,6 +235,7 @@ class BruteForceSampler(BaseSampler):
                     cat_internal_repr_cache[name] = {}
                     if isinstance(dist, CategoricalDistribution):
                         cat_internal_repr_cache[name] = {c: i for i, c in enumerate(dist.choices)}
+                step = 1.0
                 if cat_repr := cat_internal_repr_cache[name]:
                     cands = _enumerate_candidates(0, len(cat_repr) - 1, 1)
                     if (value := cat_repr.get(param_val := trial_params[name])) is None:
@@ -237,7 +244,8 @@ class BruteForceSampler(BaseSampler):
                     dist = cast("IntDistribution | FloatDistribution", dist)  # mypy redefinition.
                     cands = _enumerate_candidates(dist.low, dist.high, dist.step)
                     value = trial_params[name]
-                trial_path.append((name, cands, value))
+                    step = cast(float, dist.step)
+                trial_path.append((name, cands, value, step))
             return trial_path
 
         for trial in trials:
@@ -267,13 +275,14 @@ class BruteForceSampler(BaseSampler):
         tree = _TreeNode()
         if isinstance(param_distribution, CategoricalDistribution):
             candidates = _enumerate_candidates(0, len(param_distribution.choices) - 1, 1)
+            tree.expand(param_name, candidates)
         elif isinstance(param_distribution, (IntDistribution, FloatDistribution)):
             candidates = _enumerate_candidates(
                 param_distribution.low, param_distribution.high, param_distribution.step
             )
+            tree.expand(param_name, candidates, step=cast(float, param_distribution.step))
         else:
             assert False, "Should not reach."
-        tree.expand(param_name, candidates)
         # Populating must happen after the initialization above to prevent `tree` from
         # being initialized as an empty graph, which is created with n_jobs > 1
         # where we get trials[i].params = {} for some i.
@@ -320,14 +329,6 @@ def _enumerate_candidates(
         high_ = decimal.Decimal(str(high))
         step_ = decimal.Decimal(str(step))
         ret = []
-        if (high_ - low_) % step_ != decimal.Decimal("0"):
-            # NOTE(nabenabe): The high falls back to the closest divisible high at the lower side
-            # in `FloatDistribution` but if something like low=0.0, high=0.3, step=0.1-1e-17 is
-            # given, `BruteForceSampler` may encounter an infinite loop. This part prevents it.
-            raise ValueError(
-                f"The distribution is specified by [{low_}, {high_}] and {step=}, "
-                f"but the range is not divisible by `step`, failing exhaustive search."
-            )
         while low_ <= high_:
             ret.append(float(low_))
             low_ += step_
