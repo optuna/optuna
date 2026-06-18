@@ -47,18 +47,6 @@ def _logmeanexp(x: torch.Tensor, dim: int | tuple[int, ...]) -> torch.Tensor:
     return torch.special.logsumexp(x, dim=dim) - math.log(n)
 
 
-def _pareto(x: torch.Tensor, alpha_half: float = 1.0) -> torch.Tensor:
-    beta_1 = 2 * alpha_half
-    beta_0 = alpha_half * beta_1
-    return (beta_0 / (beta_0 + beta_1 * x + x.square())).pow(alpha_half)
-
-
-def _fatmax(x: torch.Tensor, dim: int | tuple[int, ...], tau: float) -> torch.Tensor:
-    tau_tensor = torch.tensor(tau, dtype=torch.float64)
-    x_max = torch.amax(x, dim=dim, keepdim=True)
-    return x_max.squeeze(dim) + tau_tensor * _pareto((x - x_max) / tau_tensor).sum(dim=dim).log()
-
-
 def logehvi(
     Y_post: torch.Tensor,  # (..., n_qmc_samples, n_objectives)
     non_dominated_box_lower_bounds: torch.Tensor,  # (n_boxes, n_objectives)
@@ -226,8 +214,8 @@ class qLogEI(BaseAcquisitionFunc):
         joint_x = self._get_joint_input(x)
         y_post = self._get_posterior_samples(joint_x)
         log_improvement = y_post.clamp_(min=torch.tensor(_EPS, dtype=torch.float64)).log()
-        # Take the fat max operation along the running candidates direction (the Q-axis).
-        smooth_max_log_improvement = _fatmax(log_improvement, dim=-1, tau=1e-2)
+        # Take the max operation along the running candidates direction (the Q-axis).
+        smooth_max_log_improvement = torch.max(log_improvement, dim=-1).values
         # Take the mean over the fixed sample direction (the s-axis).
         acqf_value = _logmeanexp(smooth_max_log_improvement, dim=-1)
         return acqf_value
