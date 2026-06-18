@@ -223,6 +223,7 @@ class GPSampler(BaseSampler):
         self._n_local_search = 10
         self._tol = 1e-4
         self._ehvi_n_qmc_samples = 128  # NOTE(nabenabe): The BoTorch default value.
+        # NOTE(sawa3030): Benchmark results are available at https://github.com/optuna/optuna/pull/6640#issuecomment-4645179073
         self._q_acqf_n_qmc_samples = 128
 
     def _log_independent_sampling(self, trial: FrozenTrial, param_name: str) -> None:
