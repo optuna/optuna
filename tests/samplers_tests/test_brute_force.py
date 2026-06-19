@@ -9,6 +9,41 @@ from optuna.samplers._brute_force import _TreeNode
 from optuna.trial import Trial
 
 
+def _compare_with_expected_suggested_values(study: optuna.Study) -> None:
+    expected_suggested_values = [
+        {"a": 0, "b": -1.0},
+        {"a": 0, "b": -0.5},
+        {"a": 0, "b": 0.0},
+        {"a": 0, "b": 0.5},
+        {"a": 0, "b": 1.0},
+        {"a": 1, "c": "x"},
+        {"a": 1, "c": "y"},
+        {"a": 1, "c": None},
+        {"a": 2},
+    ]
+    all_suggested_values = [t.params for t in study.trials]
+    assert len(all_suggested_values) == len(expected_suggested_values)
+    for a in all_suggested_values:
+        assert a in expected_suggested_values
+
+
+def conditional_objective(trial: Trial, prune: bool = False) -> float:
+    a = trial.suggest_int("a", 0, 2)
+    if a == 0:
+        b = trial.suggest_float("b", -1.0, 1.0, step=0.5)
+        if prune:
+            raise optuna.TrialPruned
+        return a + b
+    elif a == 1:
+        c = trial.suggest_categorical("c", ["x", "y", None])
+        if c == "x":
+            return a + 1
+        else:
+            return a - 1
+    else:
+        return a * 2
+
+
 def test_tree_node_add_paths() -> None:
     tree = _TreeNode()
     leafs = [
@@ -95,75 +130,15 @@ def test_tree_node_count_unexpanded() -> None:
 
 
 def test_study_optimize_with_single_search_space() -> None:
-    def objective(trial: Trial) -> float:
-        a = trial.suggest_int("a", 0, 2)
-
-        if a == 0:
-            b = trial.suggest_float("b", -1.0, 1.0, step=0.5)
-            return a + b
-        elif a == 1:
-            c = trial.suggest_categorical("c", ["x", "y", None])
-            if c == "x":
-                return a + 1
-            else:
-                return a - 1
-        else:
-            return a * 2
-
     study = optuna.create_study(sampler=samplers.BruteForceSampler())
-    study.optimize(objective)
-
-    expected_suggested_values = [
-        {"a": 0, "b": -1.0},
-        {"a": 0, "b": -0.5},
-        {"a": 0, "b": 0.0},
-        {"a": 0, "b": 0.5},
-        {"a": 0, "b": 1.0},
-        {"a": 1, "c": "x"},
-        {"a": 1, "c": "y"},
-        {"a": 1, "c": None},
-        {"a": 2},
-    ]
-    all_suggested_values = [t.params for t in study.trials]
-    assert len(all_suggested_values) == len(expected_suggested_values)
-    for a in all_suggested_values:
-        assert a in expected_suggested_values
+    study.optimize(conditional_objective)
+    _compare_with_expected_suggested_values(study)
 
 
 def test_study_optimize_with_pruned_trials() -> None:
-    def objective(trial: Trial) -> float:
-        a = trial.suggest_int("a", 0, 2)
-
-        if a == 0:
-            trial.suggest_float("b", -1.0, 1.0, step=0.5)
-            raise optuna.TrialPruned
-        elif a == 1:
-            c = trial.suggest_categorical("c", ["x", "y", None])
-            if c == "x":
-                return a + 1
-            else:
-                return a - 1
-        else:
-            return a * 2
-
     study = optuna.create_study(sampler=samplers.BruteForceSampler())
-    study.optimize(objective)
-
-    expected_suggested_values = [
-        {"a": 0, "b": -1.0},
-        {"a": 0, "b": -0.5},
-        {"a": 0, "b": 0.0},
-        {"a": 0, "b": 0.5},
-        {"a": 0, "b": 1.0},
-        {"a": 1, "c": "x"},
-        {"a": 1, "c": "y"},
-        {"a": 1, "c": None},
-        {"a": 2},
-    ]
-    all_suggested_values = [t.params for t in study.trials]
-    assert len(all_suggested_values) == len(expected_suggested_values)
-    for a in all_suggested_values:
-        assert a in expected_suggested_values
+    study.optimize(lambda trial: conditional_objective(trial, prune=True))
+    _compare_with_expected_suggested_values(study)
 
 
 def test_study_optimize_with_infinite_search_space() -> None:
@@ -191,21 +166,6 @@ def test_study_optimize_with_nan() -> None:
 
 
 def test_study_optimize_with_single_search_space_user_added() -> None:
-    def objective(trial: Trial) -> float:
-        a = trial.suggest_int("a", 0, 2)
-
-        if a == 0:
-            b = trial.suggest_float("b", -1.0, 1.0, step=0.5)
-            return a + b
-        elif a == 1:
-            c = trial.suggest_categorical("c", ["x", "y", None])
-            if c == "x":
-                return a + 1
-            else:
-                return a - 1
-        else:
-            return a * 2
-
     study = optuna.create_study(sampler=samplers.BruteForceSampler())
 
     # Manually add a trial. This should not be tried again.
@@ -220,26 +180,11 @@ def test_study_optimize_with_single_search_space_user_added() -> None:
         )
     )
 
-    study.optimize(objective)
-
-    expected_suggested_values = [
-        {"a": 0, "b": -1.0},
-        {"a": 0, "b": -0.5},
-        {"a": 0, "b": 0.0},
-        {"a": 0, "b": 0.5},
-        {"a": 0, "b": 1.0},
-        {"a": 1, "c": "x"},
-        {"a": 1, "c": "y"},
-        {"a": 1, "c": None},
-        {"a": 2},
-    ]
-    all_suggested_values = [t.params for t in study.trials]
-    assert len(all_suggested_values) == len(expected_suggested_values)
-    for a in all_suggested_values:
-        assert a in expected_suggested_values
+    study.optimize(conditional_objective)
+    _compare_with_expected_suggested_values(study)
 
 
-def test_study_optimize_with_nonconstant_search_space() -> None:
+def test_study_optimize_with_dynamic_range_search_space() -> None:
     def objective_nonconstant_range(trial: Trial) -> float:
         x = trial.suggest_int("x", -1, trial.number)
         return x
@@ -248,6 +193,8 @@ def test_study_optimize_with_nonconstant_search_space() -> None:
     with pytest.raises(ValueError):
         study.optimize(objective_nonconstant_range, n_trials=10)
 
+
+def test_study_optimize_with_increasing_search_space() -> None:
     def objective_increasing_variable(trial: Trial) -> float:
         return sum(trial.suggest_int(f"x{i}", 0, 0) for i in range(2))
 
@@ -262,6 +209,8 @@ def test_study_optimize_with_nonconstant_search_space() -> None:
     with pytest.raises(ValueError):
         study.optimize(objective_increasing_variable, n_trials=10)
 
+
+def test_study_optimize_with_decreasing_search_space() -> None:
     def objective_decreasing_variable(trial: Trial) -> float:
         return trial.suggest_int("x0", 0, 0)
 
