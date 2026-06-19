@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from unittest.mock import patch
 
 import numpy as np
@@ -5,6 +7,7 @@ import pytest
 
 import optuna
 from optuna import samplers
+from optuna.samplers._brute_force import _enumerate_candidates
 from optuna.samplers._brute_force import _TreeNode
 from optuna.trial import Trial
 
@@ -46,56 +49,55 @@ def conditional_objective(trial: Trial, prune: bool = False) -> float:
 
 def test_tree_node_add_paths() -> None:
     tree = _TreeNode()
+    a_cargs = (0, 2, 1)
+    b_cargs = (0.0, 1.0, 1.0)
+    c_cargs = (0, 1, 1)
     leafs = [
-        tree.add_path([("a", [0, 1, 2], 0), ("b", [0.0, 1.0], 0.0)]),
-        tree.add_path([("a", [0, 1, 2], 0), ("b", [0.0, 1.0], 1.0)]),
-        tree.add_path([("a", [0, 1, 2], 0), ("b", [0.0, 1.0], 1.0)]),
-        tree.add_path([("a", [0, 1, 2], 1), ("b", [0.0, 1.0], 0.0), ("c", [0, 1], 0)]),
-        tree.add_path([("a", [0, 1, 2], 1), ("b", [0.0, 1.0], 0.0)]),
+        tree.add_path([("a", a_cargs, 0), ("b", b_cargs, 0.0)]),
+        tree.add_path([("a", a_cargs, 0), ("b", b_cargs, 1.0)]),
+        tree.add_path([("a", a_cargs, 0), ("b", b_cargs, 1.0)]),
+        tree.add_path([("a", a_cargs, 1), ("b", b_cargs, 0.0), ("c", c_cargs, 0)]),
+        tree.add_path([("a", a_cargs, 1), ("b", b_cargs, 0.0)]),
     ]
     for leaf in leafs:
         assert leaf is not None
         if leaf.children is None:
             leaf.set_leaf()
 
+    leaf_node = _TreeNode(children={})
+    init_node = _TreeNode()
     assert tree == _TreeNode(
         param_name="a",
         children={
             0: _TreeNode(
-                param_name="b",
-                children={
-                    0.0: _TreeNode(param_name=None, children={}),
-                    1.0: _TreeNode(param_name=None, children={}),
-                },
+                param_name="b", children={0.0: leaf_node, 1.0: leaf_node}, choices_args=b_cargs
             ),
             1: _TreeNode(
                 param_name="b",
                 children={
                     0.0: _TreeNode(
-                        param_name="c",
-                        children={
-                            0: _TreeNode(param_name=None, children={}),
-                            1: _TreeNode(),
-                        },
+                        param_name="c", children={0: leaf_node, 1: init_node}, choices_args=c_cargs
                     ),
-                    1.0: _TreeNode(),
+                    1.0: init_node,
                 },
+                choices_args=b_cargs,
             ),
-            2: _TreeNode(),
+            2: init_node,
         },
+        choices_args=a_cargs,
     )
 
 
 def test_tree_node_add_paths_error() -> None:
+    tree = _TreeNode()
+    tree.add_path([("a", (0, 2, 1), 0)])
     with pytest.raises(ValueError):
-        tree = _TreeNode()
-        tree.add_path([("a", [0, 1, 2], 0)])
-        tree.add_path([("a", [0, 1], 0)])
+        tree.add_path([("a", (0, 1, 1), 0)])
 
+    tree = _TreeNode()
+    tree.add_path([("a", (0, 2, 1), 0)])
     with pytest.raises(ValueError):
-        tree = _TreeNode()
-        tree.add_path([("a", [0, 1, 2], 0)])
-        tree.add_path([("b", [0, 1, 2], 0)])
+        tree.add_path([("b", (0, 2, 1), 0)])
 
 
 def test_tree_node_count_unexpanded() -> None:
@@ -355,3 +357,34 @@ def test_objective_with_nan() -> None:
     study = optuna.create_study(sampler=sampler)
     study.optimize(_objective_with_nan)
     assert len(study.trials) == len(weird_choices) ** n_params
+
+
+@pytest.mark.parametrize("low,high,step", [(1.0, 3.0, 0.5), (0, 10, 1), (0, 10, 3)])
+def test_enumerate_candidates_sorted_uniform(
+    low: int | float, high: int | float, step: int | float | None
+) -> None:
+    candidates = list(_enumerate_candidates(low, high, step))
+    assert candidates == sorted(candidates), "candidates must be sorted"
+    if len(candidates) >= 2:
+        diffs = [candidates[i + 1] - candidates[i] for i in range(len(candidates) - 1)]
+        assert all(abs(d - diffs[0]) < 1e-12 for d in diffs), "candidates must be uniformly spaced"
+
+
+@pytest.mark.parametrize("low,high,step", [(1.0, 3.0, None), (0, 10, None)])
+def test_enumerate_candidates_step_is_none(
+    low: int | float, high: int | float, step: int | float | None
+) -> None:
+    with pytest.raises(ValueError):
+        _enumerate_candidates(low, high, step)
+
+
+def test_non_divisible_step_with_high_that_fails_to_fallback_to_divisible_range() -> None:
+    study = optuna.create_study(sampler=optuna.samplers.BruteForceSampler())
+    study.ask({"x": optuna.distributions.FloatDistribution(0.0, 0.3, step=0.1)})
+    with pytest.raises(ValueError):
+        study.ask({"x": optuna.distributions.FloatDistribution(0.0, 0.3, step=0.1 - 1e-17)})
+
+
+def test_non_divisible_step_with_successful_fallback() -> None:
+    study = optuna.create_study(sampler=optuna.samplers.BruteForceSampler())
+    study.ask({"x": optuna.distributions.FloatDistribution(0.0, 0.5, step=0.2)})
