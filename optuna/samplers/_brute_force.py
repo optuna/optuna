@@ -58,6 +58,7 @@ class _TreeNode:
     def expand(self, param_name: str | None, choices_args: ChoicesArgsType) -> None:
         # If the node is unexpanded, expand it.
         # Otherwise, check if the node is compatible with the given search space.
+        print(choices_args)
         if self.children is None:
             # Expand the node
             self.param_name = param_name
