@@ -268,7 +268,6 @@ def test_study_optimize_with_increasing_variable() -> None:
 
 
 def test_study_optimize_with_decreasing_variable() -> None:
-    return  # Temporal skip.
     def objective_decreasing_variable(trial: Trial) -> float:
         return trial.suggest_int("x0", 0, 0)
 

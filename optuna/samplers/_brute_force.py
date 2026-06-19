@@ -55,10 +55,22 @@ class _TreeNode:
     is_running: bool = False
     choices_args: ChoicesArgsType | None = None
 
+    def _validate_search_space_consistency(
+        self, param_name: str | None, choices_args: ChoicesArgsType | None
+    ) -> None:
+        if self.param_name != param_name:
+            raise ValueError(f"param_name mismatch: {self.param_name} != {param_name}")
+        if choices_args != self.choices_args:
+            assert self.children is not None and choices_args is not None
+            choices_old = list(self.children)
+            choices_new = _enumerate_candidates(*choices_args)
+            raise ValueError(
+                f"search_space mismatch in {param_name}: {choices_old} != {choices_new}"
+            )
+
     def expand(self, param_name: str | None, choices_args: ChoicesArgsType) -> None:
         # If the node is unexpanded, expand it.
         # Otherwise, check if the node is compatible with the given search space.
-        print(choices_args)
         if self.children is None:
             # Expand the node
             self.param_name = param_name
@@ -67,19 +79,14 @@ class _TreeNode:
             self.children = {value: _TreeNode() for value in choices}
             self.choices_args = choices_args
         else:
-            if self.param_name != param_name:
-                raise ValueError(f"param_name mismatch: {self.param_name} != {param_name}")
-            if choices_args != self.choices_args:
-                choices_old = list(self.children)
-                choices_new = _enumerate_candidates(*choices_args)
-                raise ValueError(
-                    f"search_space mismatch in {param_name}: {choices_old} != {choices_new}"
-                )
+            self._validate_search_space_consistency(param_name, choices_args)
 
     def set_running(self) -> None:
         self.is_running = True
 
     def set_leaf(self) -> None:
+        if self.children is not None:
+            self._validate_search_space_consistency(None, None)
         self.children = {}
 
     def add_path(self, trial_path: list[tuple[str, ChoicesArgsType, float]]) -> _TreeNode | None:
