@@ -103,7 +103,7 @@ class FanovaImportanceEvaluator(BaseImportanceEvaluator):
             return {k: 0.0 for k in single_distributions}
 
         trials: list[FrozenTrial] = _get_filtered_trials(study, params=params, target=target)
-        if len(trials) <= 2:
+        if len(trials) <= 1:
             return {k: 0.0 for k in params}
 
         trans = _SearchSpaceTransform(
