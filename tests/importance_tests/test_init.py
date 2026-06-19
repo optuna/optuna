@@ -200,13 +200,15 @@ def test_get_param_importances_invalid_empty_study(
 ) -> None:
     study = create_study()
 
-    with pytest.raises(ValueError):
-        get_param_importances(study, evaluator=evaluator_init_func())
+    importance = get_param_importances(study, evaluator=evaluator_init_func())
+    assert isinstance(importance, dict)
+    assert not importance
 
     study.optimize(pruned_objective, n_trials=3)
 
-    with pytest.raises(ValueError):
-        get_param_importances(study, evaluator=evaluator_init_func())
+    importance = get_param_importances(study, evaluator=evaluator_init_func())
+    assert isinstance(importance, dict)
+    assert not importance
 
 
 @parametrize_evaluator
