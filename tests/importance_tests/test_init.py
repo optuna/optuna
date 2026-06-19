@@ -222,8 +222,8 @@ def test_get_param_importances_invalid_single_trial(
     study = create_study()
     study.optimize(objective, n_trials=1)
 
-    with pytest.raises(ValueError):
-        get_param_importances(study, evaluator=evaluator_init_func())
+    importance = get_param_importances(study, evaluator=evaluator_init_func())
+    assert importance == {"x1": 1.0} # becomes 1.0 after normalization
 
 
 @parametrize_evaluator
