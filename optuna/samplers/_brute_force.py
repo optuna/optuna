@@ -30,7 +30,7 @@ if TYPE_CHECKING:
     from optuna.study import Study
     from optuna.trial import FrozenTrial
 
-    ChoicesArgsType = tuple[int | float, int | float, int | float | None]
+    ChoicesArgsType = tuple[int | float, int | float, int | float | None]  # low, high, step
 
 
 # TODO(nabenabe): Simply use `slots=True` once Python 3.9 is dropped.
@@ -74,8 +74,7 @@ class _TreeNode:
         if self.children is None:
             # Expand the node
             self.param_name = param_name
-            low, high, step = choices_args
-            choices = _enumerate_candidates(low, high, step)
+            choices = _enumerate_candidates(*choices_args)
             self.children = {value: _TreeNode() for value in choices}
             self.choices_args = choices_args
         else:
@@ -220,8 +219,8 @@ class BruteForceSampler(BaseSampler):
     @staticmethod
     def _populate_tree(tree: _TreeNode, trials: list[FrozenTrial], params: dict[str, Any]) -> None:
         # Populate tree under given params from the given trials.
-        params_items = params.items()
         cat_internal_repr_cache: dict[str, dict[CategoricalChoiceType, float]] = {}
+        params_items = params.items()
         nonnan_params_items = {k: v for k, v in params_items if not _is_nan(v)}.items()
         nan_param_names = [k for k, v in params_items if _is_nan(v)]
 
