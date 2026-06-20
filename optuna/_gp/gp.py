@@ -393,19 +393,17 @@ class ConditionalGPRegressor:
         self._gpr = gpr
         self._X_running = X_running
         self._stabilizing_noise = stabilizing_noise
-        Q = X_running.shape[0]
-        self._z_x = fixed_samples[:, Q:]  # (S, 1)
+        n_runnings = X_running.shape[0]
+        self._z_x = fixed_samples[:, n_runnings:]  # (S, 1)
 
         with torch.no_grad():
-            mu_r, Sigma_rr = gpr.posterior(X_running, joint=True)
-            Sigma_rr.diagonal().add_(stabilizing_noise)
-            L_r = torch.linalg.cholesky(Sigma_rr)
-
-            self._fantasy_samples = mu_r + fixed_samples[:, :Q] @ L_r.mT  # (S, Q)
-
-            Sigma_rr_inv = torch.cholesky_inverse(L_r)
-            self._Sigma_rr_inv = Sigma_rr_inv  # (Q, Q)
-            self._Sigma_rr_inv_delta_r = Sigma_rr_inv @ (self._fantasy_samples - mu_r).T  # (Q, S)
+            mean_r, cov_rr_post = gpr.posterior(X_running, joint=True)
+            cov_rr_post.diagonal(dim1=-2, dim2=-1).add_(stabilizing_noise)
+            L_r = torch.linalg.cholesky(cov_rr_post)
+            self._fantasy_samples = mean_r + fixed_samples[:, :n_runnings] @ L_r.transpose(-2, -1)
+            cov_rr_post_inv = torch.cholesky_inverse(L_r)
+            self._cov_rr_post_inv = cov_rr_post_inv  # (Q, Q)
+            self._cov_rr_post_inv_delta_r = cov_rr_post_inv @ (self._fantasy_samples - mean_r).T
 
             cov_fr_fX = gpr.kernel(X_running)  # (Q, N)
             V_r = _solve_cholesky(gpr._cov_Y_Y_chol, cov_fr_fX, left=False)
@@ -418,13 +416,13 @@ class ConditionalGPRegressor:
         mu_x, var_x = self._gpr.posterior(x_)
         cov_fx_fX = self._gpr.kernel(x_)  # (..., N)
         cov_fx_fr = self._gpr.kernel(x_, self._X_running)  # (..., Q)
-        Sigma_xr = cov_fx_fr - cov_fx_fX @ self._V_r_T  # (..., Q)
+        cov_xr_post = cov_fx_fr - cov_fx_fX @ self._V_r_T  # (..., Q)
 
         # p(f_x | f_r, data): conditional mean and variance.
-        cond_mean = mu_x.unsqueeze(-1) + Sigma_xr @ self._Sigma_rr_inv_delta_r  # (..., S)
+        cond_mean = mu_x.unsqueeze(-1) + cov_xr_post @ self._cov_rr_post_inv_delta_r  # (..., S)
         cond_var = (
             var_x + self._stabilizing_noise
-            - (Sigma_xr @ self._Sigma_rr_inv * Sigma_xr).sum(-1)
+            - (cov_xr_post @ self._cov_rr_post_inv * cov_xr_post).sum(-1)
         ).clamp_min_(0.0)  # (...,)
 
         f_x = cond_mean + cond_var.sqrt().unsqueeze(-1) * self._z_x.T  # (..., S)
