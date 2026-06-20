@@ -128,12 +128,12 @@ def test_tree_node_count_unexpanded(
     template_trials.append(running_trial)
     tree = _TreeNode()
     samplers.BruteForceSampler._populate_tree(tree, template_trials, {})
-    n_expanded = template_tree.count_unexpanded(exclude_running=True)
-    assert template_tree.count_unexpanded(exclude_running=False) == n_expanded, (
+    n_unexpanded = template_tree.count_unexpanded(exclude_running=True)
+    assert template_tree.count_unexpanded(exclude_running=False) == n_unexpanded, (
         "No Running in template"
     )
-    assert tree.count_unexpanded(exclude_running=False) == n_expanded
-    assert tree.count_unexpanded(exclude_running=True) == n_expanded - 1
+    assert tree.count_unexpanded(exclude_running=False) == n_unexpanded
+    assert tree.count_unexpanded(exclude_running=True) == n_unexpanded - 1
 
 
 def test_study_optimize_with_single_search_space() -> None:
