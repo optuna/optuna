@@ -369,8 +369,19 @@ class GPRegressor:
 
 
 class ConditionalGPRegressor:
-    """Pre-samples fantasy values at x_running from p(f_r | data) and draws
-    conditional samples at new points from p(f_x | f_r, data)."""
+    """Gaussian process regressor conditioned on a fixed set of samples.
+
+    We first pre-sample fantasy values at X_running from p(f_R | complete trials) and draw
+    conditional samples at new points from p(f_X | f_R, complete trials).
+
+    Considering p(y_a | y_b), the posterior of this distribution has:
+        mean: mu_a + cov_aa @ inv(cov_bb) @ (y_b - mu_b),
+        cov: cov_aa - cov_ab @ inv(cov_bb) @ cov_ba,
+    where mu_a and mu_b are the posterior means of y_a and y_b, cov_aa and cov_bb are the
+    posterior covariance of y_a and y_b, cov_ab (= cov_ba.T) is the cross-covariance matrix
+    between y_a and y_b.
+    We use this formulation to compute the conditional posterior.
+    """
 
     def __init__(
         self,
