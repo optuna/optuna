@@ -399,14 +399,13 @@ class ConditionalGPRegressor:
         with torch.no_grad():
             mean_r, cov_rr_post = gpr.posterior(X_running, joint=True)
             cov_rr_post.diagonal(dim1=-2, dim2=-1).add_(stabilizing_noise)
-            L_rr = torch.linalg.cholesky(cov_rr_post)
-            self._fantasy_samples = mean_r + fixed_samples[:, :n_runnings] @ L_rr.transpose(-2, -1)
-            self._L_rr = L_rr  # (Q, Q)
-            delta_r = (self._fantasy_samples - mean_r).transpose(-2, -1)  # (Q, S)
-            self._cov_rr_post_inv_delta_r = _solve_cholesky(L_rr, delta_r)  # (Q, S)
-
-            cov_fr_fX = gpr.kernel(X_running)  # (Q, N)
-            V_r = _solve_cholesky(gpr._cov_Y_Y_chol, cov_fr_fX, left=False)
+            self._L_rr = torch.linalg.cholesky(cov_rr_post)
+            self._fantasy_samples = mean_r + torch.matmul(
+                fixed_samples[:, :n_runnings], self._L_rr.transpose(-2, -1)
+            )
+            delta_r = (self._fantasy_samples - mean_r).transpose(-2, -1)
+            self._cov_rr_post_inv_delta_r = _solve_cholesky(self._L_rr, delta_r)
+            V_r = _solve_cholesky(gpr._cov_Y_Y_chol, gpr.kernel(X_running), left=False)
             self._V_r_T = V_r.T  # (N, Q)
 
     def posterior_samples(self, x: torch.Tensor) -> torch.Tensor:
