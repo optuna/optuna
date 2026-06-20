@@ -10,15 +10,15 @@ import pytest
 import optuna
 from optuna import samplers
 from optuna.samplers._brute_force import _enumerate_candidates
-from optuna.samplers._brute_force import _LAZY_NODE
 from optuna.samplers._brute_force import _TreeNode
+from optuna.samplers._brute_force import _UNEXPANDED_NODE
 from optuna.trial import Trial
 
 
 if TYPE_CHECKING:
-    from optuna.samplers._brute_force import _LazyTreeNode
+    from optuna.samplers._brute_force import _UnexpandedTreeNode
 
-    ChildrenType = dict[float, _TreeNode | _LazyTreeNode]
+    ChildrenType = dict[float, _TreeNode | _UnexpandedTreeNode]
 
 
 def _compare_with_expected_suggested_values(study: optuna.Study) -> None:
@@ -83,7 +83,7 @@ def template_trials_and_tree() -> tuple[list[optuna.trial.FrozenTrial], _TreeNod
     b_cargs = (b_dist.low, b_dist.high, b_dist.step)
     c_cargs = (c_dist.low, c_dist.high, c_dist.step)
     leaf_node = _TreeNode(children={})  # a0_b0_node, a0_b1_node, a1_b0_c0_node
-    unexpanded_node = _LAZY_NODE  # a1_b0_c1_node, a1_b1_node, a2_node
+    unexpanded_node = _UNEXPANDED_NODE  # a1_b0_c1_node, a1_b1_node, a2_node
     a0_b_node_children: ChildrenType = {0.0: leaf_node, 1.0: leaf_node}
     a0_b_node = _TreeNode(param_name="b", children=a0_b_node_children, choices_args=b_cargs)
     a1_b0_c_node_children: ChildrenType = {0: leaf_node, 1: unexpanded_node}

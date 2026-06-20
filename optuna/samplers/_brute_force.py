@@ -34,7 +34,7 @@ if TYPE_CHECKING:
 
 
 @dataclass(frozen=True)
-class _LazyTreeNode:
+class _UnexpandedTreeNode:
     is_running: bool = False
 
     def is_any_expandable(self, exclude_running: bool) -> bool:
@@ -44,7 +44,7 @@ class _LazyTreeNode:
         return 1
 
 
-_LAZY_NODE = _LazyTreeNode()
+_UNEXPANDED_NODE = _UnexpandedTreeNode()
 
 
 # TODO(nabenabe): Simply use `slots=True` once Python 3.9 is dropped.
@@ -65,7 +65,7 @@ class _TreeNode:
     # NOTE(nabenabe): I tried representations by list and dict, but they did not really speed up.
 
     param_name: str | None = None
-    children: dict[float, _TreeNode | _LazyTreeNode] | None = None
+    children: dict[float, _TreeNode | _UnexpandedTreeNode] | None = None
     is_running: bool = False
     choices_args: ChoicesArgsType | None = None
 
@@ -89,7 +89,7 @@ class _TreeNode:
             # Expand the node
             self.param_name = param_name
             choices = _enumerate_candidates(*choices_args)
-            self.children = {value: _LAZY_NODE for value in choices}
+            self.children = {value: _UNEXPANDED_NODE for value in choices}
             self.choices_args = choices_args
         else:
             self._validate_search_space_consistency(param_name, choices_args)
@@ -111,7 +111,7 @@ class _TreeNode:
                 return None
             elif (next_node := children.get(value)) is None:
                 return None
-            elif next_node is _LAZY_NODE:
+            elif next_node is _UNEXPANDED_NODE:
                 next_node = _TreeNode()
                 children[value] = next_node
             current_node = cast(_TreeNode, next_node)
