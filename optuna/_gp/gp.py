@@ -375,18 +375,18 @@ class ConditionalGPRegressor:
     def __init__(
         self,
         gpr: GPRegressor,
-        x_running: torch.Tensor,
+        X_running: torch.Tensor,
         fixed_samples: torch.Tensor,
         stabilizing_noise: float,
     ) -> None:
         self._gpr = gpr
-        self._x_running = x_running
+        self._x_running = X_running
         self._stabilizing_noise = stabilizing_noise
-        Q = x_running.shape[0]
+        Q = X_running.shape[0]
         self._z_x = fixed_samples[:, Q:]  # (S, 1)
 
         with torch.no_grad():
-            mu_r, Sigma_rr = gpr.posterior(x_running, joint=True)
+            mu_r, Sigma_rr = gpr.posterior(X_running, joint=True)
             Sigma_rr.diagonal().add_(stabilizing_noise)
             L_r = torch.linalg.cholesky(Sigma_rr)
 
@@ -396,15 +396,8 @@ class ConditionalGPRegressor:
             self._Sigma_rr_inv = Sigma_rr_inv  # (Q, Q)
             self._Sigma_rr_inv_delta_r = Sigma_rr_inv @ (self._fantasy_samples - mu_r).T  # (Q, S)
 
-            cov_fxr_fX = gpr.kernel(x_running)  # (Q, N)
-            V_r = torch.linalg.solve_triangular(
-                gpr._cov_Y_Y_chol,
-                torch.linalg.solve_triangular(
-                    gpr._cov_Y_Y_chol.T, cov_fxr_fX, upper=True, left=False
-                ),
-                upper=False,
-                left=False,
-            )
+            cov_fxr_fX = gpr.kernel(X_running)  # (Q, N)
+            V_r = _solve_cholesky(gpr._cov_Y_Y_chol, cov_fxr_fX, left=False)
             self._V_r_T = V_r.T  # (N, Q)
 
     def posterior_samples(self, x: torch.Tensor) -> torch.Tensor:
