@@ -426,10 +426,11 @@ class ConditionalGPRegressor:
         cond_cov = (
             cov_xx_post + self._stabilizing_noise - torch.linalg.vecdot(V, cov_xr_post)
         ).clamp_min_(0.0)
-        f_x = cond_mean + cond_cov.sqrt().unsqueeze(-1) * self._fixed_samples_running
-        fantasy = self._fantasy_samples.unsqueeze(0).expand(x_.shape[0], -1, -1)  # (..., S, Q)
-        result = torch.cat([fantasy, f_x.unsqueeze(-1)], dim=-1)  # (..., S, Q+1)
-        return result.squeeze(0) if is_single else result
+        samples = cond_mean + cond_cov.sqrt().unsqueeze(-1) * self._fixed_samples_running
+        if is_single:
+            return torch.cat([self._fantasy_samples, samples.squeeze(0).unsqueeze(-1)], dim=-1)
+        fantasy = self._fantasy_samples.unsqueeze(0).expand(x_.shape[0], -1, -1)
+        return torch.cat([fantasy, samples.unsqueeze(-1)], dim=-1)
 
 
 def fit_kernel_params(
