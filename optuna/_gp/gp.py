@@ -380,7 +380,7 @@ class ConditionalGPRegressor:
         stabilizing_noise: float,
     ) -> None:
         self._gpr = gpr
-        self._x_running = X_running
+        self._X_running = X_running
         self._stabilizing_noise = stabilizing_noise
         Q = X_running.shape[0]
         self._z_x = fixed_samples[:, Q:]  # (S, 1)
@@ -396,8 +396,8 @@ class ConditionalGPRegressor:
             self._Sigma_rr_inv = Sigma_rr_inv  # (Q, Q)
             self._Sigma_rr_inv_delta_r = Sigma_rr_inv @ (self._fantasy_samples - mu_r).T  # (Q, S)
 
-            cov_fxr_fX = gpr.kernel(X_running)  # (Q, N)
-            V_r = _solve_cholesky(gpr._cov_Y_Y_chol, cov_fxr_fX, left=False)
+            cov_fr_fX = gpr.kernel(X_running)  # (Q, N)
+            V_r = _solve_cholesky(gpr._cov_Y_Y_chol, cov_fr_fX, left=False)
             self._V_r_T = V_r.T  # (N, Q)
 
     def posterior_samples(self, x: torch.Tensor) -> torch.Tensor:
@@ -406,7 +406,7 @@ class ConditionalGPRegressor:
 
         mu_x, var_x = self._gpr.posterior(x_)
         cov_fx_fX = self._gpr.kernel(x_)  # (..., N)
-        cov_fx_fr = self._gpr.kernel(x_, self._x_running)  # (..., Q)
+        cov_fx_fr = self._gpr.kernel(x_, self._X_running)  # (..., Q)
         Sigma_xr = cov_fx_fr - cov_fx_fX @ self._V_r_T  # (..., Q)
 
         # p(f_x | f_r, data): conditional mean and variance.
