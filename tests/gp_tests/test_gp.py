@@ -198,11 +198,11 @@ def test_append_running_data(n_running: int) -> None:
 
 
 @pytest.mark.parametrize("n_running", [1, 4])
-def test_conditional_gpr_matches_joint(n_running: int) -> None:
+@pytest.mark.parametrize("batch_size", [1, 16])
+def test_conditional_gpr_matches_joint(n_running: int, batch_size: int) -> None:
     n_trials = 10
     dim = 3
-    n_qmc_samples = 512
-    batch_size = 16
+    n_qmc_samples = 64
     stabilizing_noise = 1e-12
     X_train = torch.rand(n_trials, dim, dtype=torch.float64)
     y_train = torch.sin(X_train.sum(-1))
@@ -217,7 +217,14 @@ def test_conditional_gpr_matches_joint(n_running: int) -> None:
     gpr._cache_matrix()
 
     X_running = torch.rand(n_running, dim, dtype=torch.float64)
-    x_new = torch.rand((batch_size, dim), dtype=torch.float64)
+    if batch_size == 1:
+        x_new = torch.rand(dim, dtype=torch.float64)
+        joint_x = torch.cat([X_running, x_new.unsqueeze(0)], dim=0)
+    else:
+        x_new = torch.rand((batch_size, dim), dtype=torch.float64)
+        joint_x = torch.cat(
+            [X_running.unsqueeze(0).expand(batch_size, -1, -1), x_new.unsqueeze(1)], dim=1
+        )
     fixed_samples = acqf_module._sample_from_normal_sobol(
         dim=n_running + 1, n_samples=n_qmc_samples, seed=42
     )
@@ -225,9 +232,6 @@ def test_conditional_gpr_matches_joint(n_running: int) -> None:
     cond_gpr = ConditionalGPRegressor(gpr, X_running, fixed_samples, stabilizing_noise)
     samples_cond = cond_gpr.posterior_samples(x_new)
 
-    joint_x = torch.cat(
-        [X_running.unsqueeze(0).expand(batch_size, -1, -1), x_new.unsqueeze(1)], dim=1
-    )
     mu, cov = gpr.posterior(joint_x, joint=True)
     cov.diagonal(dim1=-2, dim2=-1).add_(stabilizing_noise)
     L = torch.linalg.cholesky(cov)

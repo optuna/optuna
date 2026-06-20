@@ -399,11 +399,11 @@ class ConditionalGPRegressor:
         with torch.no_grad():
             mean_r, cov_rr_post = gpr.posterior(X_running, joint=True)
             cov_rr_post.diagonal(dim1=-2, dim2=-1).add_(stabilizing_noise)
-            L_r = torch.linalg.cholesky(cov_rr_post)
-            self._fantasy_samples = mean_r + fixed_samples[:, :n_runnings] @ L_r.transpose(-2, -1)
-            cov_rr_post_inv = torch.cholesky_inverse(L_r)
-            self._cov_rr_post_inv = cov_rr_post_inv  # (Q, Q)
-            self._cov_rr_post_inv_delta_r = cov_rr_post_inv @ (self._fantasy_samples - mean_r).T
+            L_rr = torch.linalg.cholesky(cov_rr_post)
+            self._fantasy_samples = mean_r + fixed_samples[:, :n_runnings] @ L_rr.transpose(-2, -1)
+            self._L_rr = L_rr  # (Q, Q)
+            delta_r = (self._fantasy_samples - mean_r).transpose(-2, -1)  # (Q, S)
+            self._cov_rr_post_inv_delta_r = _solve_cholesky(L_rr, delta_r)  # (Q, S)
 
             cov_fr_fX = gpr.kernel(X_running)  # (Q, N)
             V_r = _solve_cholesky(gpr._cov_Y_Y_chol, cov_fr_fX, left=False)
@@ -418,11 +418,10 @@ class ConditionalGPRegressor:
         cov_fx_fr = self._gpr.kernel(x_, self._X_running)  # (..., Q)
         cov_xr_post = cov_fx_fr - cov_fx_fX @ self._V_r_T  # (..., Q)
 
-        # p(f_x | f_r, data): conditional mean and variance.
         cond_mean = mu_x.unsqueeze(-1) + cov_xr_post @ self._cov_rr_post_inv_delta_r  # (..., S)
+        W = _solve_cholesky(self._L_rr, cov_xr_post, left=False)  # (..., Q)
         cond_var = (
-            var_x + self._stabilizing_noise
-            - (cov_xr_post @ self._cov_rr_post_inv * cov_xr_post).sum(-1)
+            var_x + self._stabilizing_noise - torch.linalg.vecdot(cov_xr_post, W)
         ).clamp_min_(0.0)  # (...,)
 
         f_x = cond_mean + cond_var.sqrt().unsqueeze(-1) * self._z_x.T  # (..., S)
