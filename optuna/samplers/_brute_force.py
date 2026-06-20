@@ -36,6 +36,7 @@ if TYPE_CHECKING:
 # TODO(nabenabe): Simply use `slots=True` once Python 3.9 is dropped.
 @dataclass(**({"slots": True} if sys.version_info >= (3, 10) else {}))
 class _TreeNode:
+    # region (_TreeNode documentation)
     # A tree representing the search space for brute force sampling.
     # Each internal node corresponds to a parameter, and its children are keyed by the parameter's
     # candidate values (in internal representation). A path from the root to a terminal node
@@ -49,6 +50,7 @@ class _TreeNode:
     # Leaf represents the last parameter of a finished ``params``, and internal means the node
     # does not represent a complete ``params``.
     # NOTE(nabenabe): I tried representations by list and dict, but they did not really speed up.
+    # endregion
 
     param_name: str | None = None
     children: dict[float, "_TreeNode"] | None = None
@@ -298,17 +300,19 @@ class BruteForceSampler(BaseSampler):
         trials[current_idx] = create_trial(
             state=state, values=values, params=trial.params, distributions=trial.distributions
         )
-        # NOTE(nabenabe): This routine checks whether any existing branches of the current trial
-        # is still expandable (not explored). For example, when `params={"a": 1, "b": 2, "c": 3}`,
-        # We first check whether all possible params represented by `{"a": 1, "b": 2} | X` exists.
-        # If there is any unexplored `X` based on the search space, we still need to evaluate such
-        # X, so study does not have to be stopped yet. This search is much quicker compared to full
-        # tree build because there are much fewer trials among all that take `{"a": 1, "b": 2}`.
-        # If such `X` is already exhaustively searched, `X` is relaxed to `{"a": 1} | X`.
-        # Note that this strategy would not be fast enough if each branch is not sampled uniformly
-        # sometimes. See https://github.com/optuna/optuna/issues/6070 for the discussion.
-        # Also, we avoided `tree_size` caching with the preference of the stateless nature of this
-        # sampler. See https://github.com/optuna/optuna/pull/6646/ for the full discussion.
+        # region (The rationales behind the early-return logic)
+        # NOTE(nabenabe): This routine checks whether any existing branches of the current trial is
+        # expandable (unexplored). For example, if `params={"a": 1, "b": 2, "c": 3}`, we first
+        # check whether all possible params represented by `{"a": 1, "b": 2} | X` exists. If there
+        # is any unexplored `X` based on the search space, we still need to evaluate such `X`, so
+        # study does not have to be stopped yet. This search is much quicker compared to full tree
+        # build because there are much fewer trials among all that take `{"a": 1, "b": 2}`. If such
+        # `X` is already exhaustively searched, `X` is relaxed to `{"a": 1} | X`. Note that this
+        # strategy would not be fast enough if each branch is not sampled uniformly sometimes. See
+        # https://github.com/optuna/optuna/issues/6070 for the discussion. Also, we avoided
+        # `tree_size` caching with the preference of the stateless nature of this sampler.
+        # See https://github.com/optuna/optuna/pull/6646/ for the full discussion.
+        # endregion
         params = trial.params.copy()
         for param_name in reversed(trial.params.keys()):
             params.pop(param_name)
