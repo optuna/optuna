@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
+from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import numpy as np
@@ -8,10 +9,16 @@ import pytest
 
 import optuna
 from optuna import samplers
-from optuna.samplers._brute_force import _LAZY_NODE
 from optuna.samplers._brute_force import _enumerate_candidates
+from optuna.samplers._brute_force import _LAZY_NODE
 from optuna.samplers._brute_force import _TreeNode
 from optuna.trial import Trial
+
+
+if TYPE_CHECKING:
+    from optuna.samplers._brute_force import _LazyTreeNode
+
+    ChildrenType = dict[float, _TreeNode | _LazyTreeNode]
 
 
 def _compare_with_expected_suggested_values(study: optuna.Study) -> None:
@@ -77,25 +84,25 @@ def template_trials_and_tree() -> tuple[list[optuna.trial.FrozenTrial], _TreeNod
     c_cargs = (c_dist.low, c_dist.high, c_dist.step)
     leaf_node = _TreeNode(children={})  # a0_b0_node, a0_b1_node, a1_b0_c0_node
     unexpanded_node = _LAZY_NODE  # a1_b0_c1_node, a1_b1_node, a2_node
-    a0_b_node_children = {0.0: leaf_node, 1.0: leaf_node}
+    a0_b_node_children: ChildrenType = {0.0: leaf_node, 1.0: leaf_node}
     a0_b_node = _TreeNode(param_name="b", children=a0_b_node_children, choices_args=b_cargs)
-    a1_b0_c_node_children = {0: leaf_node, 1: unexpanded_node}
+    a1_b0_c_node_children: ChildrenType = {0: leaf_node, 1: unexpanded_node}
     a1_b0_c_node = _TreeNode(param_name="c", children=a1_b0_c_node_children, choices_args=c_cargs)
-    a1_b_node_children = {0.0: a1_b0_c_node, 1.0: unexpanded_node}
+    a1_b_node_children: ChildrenType = {0.0: a1_b0_c_node, 1.0: unexpanded_node}
     a1_b_node = _TreeNode("b", children=a1_b_node_children, choices_args=b_cargs)
-    tree_children = {0: a0_b_node, 1: a1_b_node, 2: unexpanded_node}
+    tree_children: ChildrenType = {0: a0_b_node, 1: a1_b_node, 2: unexpanded_node}
     tree = _TreeNode(param_name="a", children=tree_children, choices_args=a_cargs)
     return trials, tree
 
 
 def test_tree_node_add_paths(
-    template_trials_and_tree: tuple[list[optuna.trial.FrozenTrial], _TreeNode]
+    template_trials_and_tree: tuple[list[optuna.trial.FrozenTrial], _TreeNode],
 ) -> None:
-    template_trials, correct_tree = template_trials_and_tree
+    template_trials, template_tree = template_trials_and_tree
     template_trials.append(deepcopy(template_trials[0]))  # Duplicate a trial for robustness check.
     tree = _TreeNode()
     samplers.BruteForceSampler._populate_tree(tree, template_trials, {})
-    assert tree == correct_tree
+    assert tree == template_tree
 
 
 def test_tree_node_add_paths_error() -> None:
@@ -111,9 +118,9 @@ def test_tree_node_add_paths_error() -> None:
 
 
 def test_tree_node_count_unexpanded(
-    template_trials_and_tree: tuple[list[optuna.trial.FrozenTrial], _TreeNode]
+    template_trials_and_tree: tuple[list[optuna.trial.FrozenTrial], _TreeNode],
 ) -> None:
-    template_trials, correct_tree = template_trials_and_tree
+    template_trials, template_tree = template_trials_and_tree
     only_a = {"a": template_trials[0].distributions["a"]}
     running_trial = optuna.create_trial(
         state=optuna.trial.TrialState.RUNNING, params={"a": 2}, distributions=only_a
@@ -121,8 +128,10 @@ def test_tree_node_count_unexpanded(
     template_trials.append(running_trial)
     tree = _TreeNode()
     samplers.BruteForceSampler._populate_tree(tree, template_trials, {})
-    n_expanded = correct_tree.count_unexpanded(exclude_running=True)
-    assert correct_tree.count_unexpanded(exclude_running=False) == n_expanded
+    n_expanded = template_tree.count_unexpanded(exclude_running=True)
+    assert template_tree.count_unexpanded(exclude_running=False) == n_expanded, (
+        "No Running in template"
+    )
     assert tree.count_unexpanded(exclude_running=False) == n_expanded
     assert tree.count_unexpanded(exclude_running=True) == n_expanded - 1
 
