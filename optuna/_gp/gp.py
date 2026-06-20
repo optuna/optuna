@@ -375,7 +375,7 @@ class ConditionalGPRegressor:
     conditional samples at new points from p(f_x | f_Xr, complete trials).
 
     Considering p(y_a | y_b) = p(y_x | y_Xr), the posterior of this distribution has:
-        mean: mu_a + cov_aa @ inv(cov_bb) @ (y_b - mu_b),
+        mean: mu_a + cov_ab @ inv(cov_bb) @ (y_b - mu_b),
         cov: cov_aa - cov_ab @ inv(cov_bb) @ cov_ba,
     where mu_a and mu_b are the posterior means of y_a and y_b, cov_aa and cov_bb are the
     posterior covariance of y_a and y_b, cov_ab (= cov_ba.T) is the cross-covariance matrix
@@ -419,11 +419,13 @@ class ConditionalGPRegressor:
         cov_fx_fX = self._gpr.kernel(x_)
         cov_xr_post = cov_fx_fXr - cov_fx_fX.matmul(self._V_r)
 
-        # mean: mu_x + cov_xx @ inv(cov_rr) @ (y_r - mu_r)
+        # mean: mu_x + cov_xr @ inv(cov_rr) @ (y_r - mu_r)
         cond_mean = mu_x.unsqueeze(-1) + cov_xr_post.matmul(self._cov_rr_post_inv_delta_r)
         # cov: cov_xx - cov_xr @ inv(cov_rr) @ cov_rx
         V = _solve_cholesky(self._cov_rr_post_chol, cov_xr_post, left=False)
-        cond_cov = (cov_xx_post - torch.linalg.vecdot(cov_xr_post, V)).clamp_min_(0.0)
+        cond_cov = (
+            cov_xx_post + self._stabilizing_noise - torch.linalg.vecdot(V, cov_xr_post)
+        ).clamp_min_(0.0)
         f_x = cond_mean + cond_cov.sqrt().unsqueeze(-1) * self._fixed_samples_running
         fantasy = self._fantasy_samples.unsqueeze(0).expand(x_.shape[0], -1, -1)  # (..., S, Q)
         result = torch.cat([fantasy, f_x.unsqueeze(-1)], dim=-1)  # (..., S, Q+1)
