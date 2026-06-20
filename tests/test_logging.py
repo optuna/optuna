@@ -27,14 +27,14 @@ def test_default_handler(capsys: _pytest.capture.CaptureFixture) -> None:
 
     # Default handler enabled
     optuna.logging.enable_default_handler()
-    assert library_root_logger.handlers
+    assert optuna.logging._default_handler in library_root_logger.handlers
     example_logger.info("hey")
     _, err = capsys.readouterr()
     assert "hey" in err
 
     # Default handler disabled
     optuna.logging.disable_default_handler()
-    assert not library_root_logger.handlers
+    assert optuna.logging._default_handler not in library_root_logger.handlers
     example_logger.info("yoyo")
     _, err = capsys.readouterr()
     assert "yoyo" not in err
@@ -70,23 +70,35 @@ def test_verbosity(capsys: _pytest.capture.CaptureFixture) -> None:
     assert "bye-debug" not in err
 
 
-def test_propagation(caplog: _pytest.logging.LogCaptureFixture) -> None:
+def test_propagation() -> None:
     optuna.logging._reset_library_root_logger()
     logger = optuna.logging.get_logger("optuna.foo")
 
-    # Propagation is disabled by default.
-    with caplog.at_level(logging.INFO, logger="optuna"):
+    # Capture the records that actually reach the root logger to verify propagation directly.
+    # We cannot rely on caplog here because, since pytest 9.1.0, caplog captures logs even from
+    # non-propagating loggers (https://github.com/pytest-dev/pytest/issues/3697).
+    records: list[logging.LogRecord] = []
+
+    class _RecordingHandler(logging.Handler):
+        def emit(self, record: logging.LogRecord) -> None:
+            records.append(record)
+
+    root_logger = logging.getLogger()
+    handler = _RecordingHandler()
+    root_logger.addHandler(handler)
+    try:
+        # Propagation is disabled by default.
         logger.info("no-propagation")
-    assert "no-propagation" not in caplog.text
+        assert not any(r.getMessage() == "no-propagation" for r in records)
 
-    # Enable propagation.
-    optuna.logging.enable_propagation()
-    with caplog.at_level(logging.INFO, logger="optuna"):
+        # Enable propagation.
+        optuna.logging.enable_propagation()
         logger.info("enable-propagate")
-    assert "enable-propagate" in caplog.text
+        assert any(r.getMessage() == "enable-propagate" for r in records)
 
-    # Disable propagation.
-    optuna.logging.disable_propagation()
-    with caplog.at_level(logging.INFO, logger="optuna"):
+        # Disable propagation.
+        optuna.logging.disable_propagation()
         logger.info("disable-propagation")
-    assert "disable-propagation" not in caplog.text
+        assert not any(r.getMessage() == "disable-propagation" for r in records)
+    finally:
+        root_logger.removeHandler(handler)

@@ -24,12 +24,13 @@ from optuna.trial import TrialState
 
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
     from collections.abc import Sequence
 
     from optuna.distributions import BaseDistribution
     from optuna.study import Study
     from optuna.trial import FrozenTrial
+
+    ChoicesArgsType = tuple[int | float, int | float, int | float | None]  # low, high, step
 
 
 @dataclass(frozen=True)
@@ -69,35 +70,46 @@ class _TreeNode:
     param_name: str | None = None
     children: dict[float, _TreeNode | _LazyTreeNode] | None = None
     is_running: bool = False
+    choices_args: ChoicesArgsType | None = None
 
-    def expand(self, param_name: str | None, choices: Iterable[float]) -> None:
+    def _validate_search_space_consistency(
+        self, param_name: str | None, choices_args: ChoicesArgsType | None
+    ) -> None:
+        if self.param_name != param_name:
+            raise ValueError(f"param_name mismatch: {self.param_name} != {param_name}")
+        if choices_args != self.choices_args:
+            assert self.children is not None and choices_args is not None
+            choices_old = list(self.children)
+            choices_new = _enumerate_candidates(*choices_args)
+            raise ValueError(
+                f"search_space mismatch in {param_name}: {choices_old} != {choices_new}"
+            )
+
+    def expand(self, param_name: str | None, choices_args: ChoicesArgsType) -> None:
         # If the node is unexpanded, expand it.
         # Otherwise, check if the node is compatible with the given search space.
         if self.children is None:
             # Expand the node
             self.param_name = param_name
+            choices = _enumerate_candidates(*choices_args)
             self.children = {value: _LAZY_NODE for value in choices}
+            self.choices_args = choices_args
         else:
-            if self.param_name != param_name:
-                raise ValueError(f"param_name mismatch: {self.param_name} != {param_name}")
-            if self.children.keys() != set(choices):
-                raise ValueError(
-                    f"search_space mismatch: {set(self.children.keys())} != {set(choices)}"
-                )
+            self._validate_search_space_consistency(param_name, choices_args)
 
     def set_running(self) -> None:
         self.is_running = True
 
     def set_leaf(self) -> None:
-        self.expand(None, [])
+        if self.children is not None:
+            self._validate_search_space_consistency(None, None)
+        self.children = {}
 
-    def add_path(
-        self, trial_path: Iterable[tuple[str, Iterable[float], float]]
-    ) -> _TreeNode | None:
+    def add_path(self, trial_path: list[tuple[str, ChoicesArgsType, float]]) -> _TreeNode | None:
         # Add a path (i.e. a list of suggested parameters in one trial) to the tree.
         current_node = self
-        for param_name, choices, value in trial_path:
-            current_node.expand(param_name, choices)
+        for param_name, choices_args, value in trial_path:
+            current_node.expand(param_name, choices_args)
             if not (children := current_node.children):  # children is empty or None.
                 return None
             elif (next_node := children.get(value)) is None:
@@ -232,8 +244,8 @@ class BruteForceSampler(BaseSampler):
         nonnan_params_items = {k: v for k, v in params_items if not _is_nan(v)}.items()
         nan_param_names = [k for k, v in params_items if _is_nan(v)]
 
-        def _get_trial_path(trial: FrozenTrial) -> list:
-            trial_path = []
+        def _get_trial_path(trial: FrozenTrial) -> list[tuple[str, ChoicesArgsType, float]]:
+            trial_path: list[tuple[str, ChoicesArgsType, float]] = []
             trial_params = trial.params
             for name, dist in trial.distributions.items():
                 if name in params:
@@ -245,14 +257,13 @@ class BruteForceSampler(BaseSampler):
                     if isinstance(dist, CategoricalDistribution):
                         cat_internal_repr_cache[name] = {c: i for i, c in enumerate(dist.choices)}
                 if cat_repr := cat_internal_repr_cache[name]:
-                    cands = _enumerate_candidates(0, len(cat_repr) - 1, 1)
                     if (value := cat_repr.get(param_val := trial_params[name])) is None:
                         value = dist.to_internal_repr(param_val)  # most likely param_val is nan.
+                    dist = cast(CategoricalDistribution, dist)  # mypy redefinition.
+                    trial_path.append((name, (0, len(dist.choices) - 1, 1), value))
                 else:
                     dist = cast("IntDistribution | FloatDistribution", dist)  # mypy redefinition.
-                    cands = _enumerate_candidates(dist.low, dist.high, dist.step)
-                    value = trial_params[name]
-                trial_path.append((name, cands, value))
+                    trial_path.append((name, (dist.low, dist.high, dist.step), trial_params[name]))
             return trial_path
 
         for trial in trials:
@@ -281,20 +292,19 @@ class BruteForceSampler(BaseSampler):
         trials.pop(current_idx)
         tree = _TreeNode()
         if isinstance(param_distribution, CategoricalDistribution):
-            candidates = _enumerate_candidates(0, len(param_distribution.choices) - 1, 1)
+            c_args: ChoicesArgsType = (0, len(param_distribution.choices) - 1, 1)
         elif isinstance(param_distribution, (IntDistribution, FloatDistribution)):
-            candidates = _enumerate_candidates(
-                param_distribution.low, param_distribution.high, param_distribution.step
-            )
+            c_args = (param_distribution.low, param_distribution.high, param_distribution.step)
         else:
             assert False, "Should not reach."
-        tree.expand(param_name, candidates)
+        tree.expand(param_name, c_args)
         # Populating must happen after the initialization above to prevent `tree` from
         # being initialized as an empty graph, which is created with n_jobs > 1
         # where we get trials[i].params = {} for some i.
         self._populate_tree(tree, trials, trial.params)
         if not tree.is_any_expandable(exclude_running):
-            return param_distribution.to_external_repr(self._rng.rng.choice(candidates).item())
+            choices = _enumerate_candidates(*c_args)
+            return param_distribution.to_external_repr(self._rng.rng.choice(choices).item())
         else:
             return param_distribution.to_external_repr(
                 tree.sample_child(self._rng.rng, exclude_running)
