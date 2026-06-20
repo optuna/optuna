@@ -368,6 +368,68 @@ class GPRegressor:
         return self
 
 
+class ConditionalGPRegressor:
+    """Pre-samples fantasy values at x_running from p(f_r | data) and draws
+    conditional samples at new points from p(f_x | f_r, data)."""
+
+    def __init__(
+        self,
+        gpr: GPRegressor,
+        x_running: torch.Tensor,
+        fixed_samples: torch.Tensor,
+        stabilizing_noise: float,
+    ) -> None:
+        self._gpr = gpr
+        self._x_running = x_running
+        self._stabilizing_noise = stabilizing_noise
+        Q = x_running.shape[0]
+        self._z_x = fixed_samples[:, Q:]  # (S, 1)
+
+        with torch.no_grad():
+            mu_r, Sigma_rr = gpr.posterior(x_running, joint=True)
+            Sigma_rr.diagonal().add_(stabilizing_noise)
+            L_r = torch.linalg.cholesky(Sigma_rr)
+
+            self._fantasy_samples = mu_r + fixed_samples[:, :Q] @ L_r.mT  # (S, Q)
+
+            Sigma_rr_inv = torch.cholesky_inverse(L_r)
+            self._Sigma_rr_inv = Sigma_rr_inv  # (Q, Q)
+            self._Sigma_rr_inv_delta_r = Sigma_rr_inv @ (self._fantasy_samples - mu_r).T  # (Q, S)
+
+            cov_fxr_fX = gpr.kernel(x_running)  # (Q, N)
+            V_r = torch.linalg.solve_triangular(
+                gpr._cov_Y_Y_chol,
+                torch.linalg.solve_triangular(
+                    gpr._cov_Y_Y_chol.T, cov_fxr_fX, upper=True, left=False
+                ),
+                upper=False,
+                left=False,
+            )
+            self._V_r_T = V_r.T  # (N, Q)
+
+    def posterior_samples(self, x: torch.Tensor) -> torch.Tensor:
+        is_single = x.ndim == 1
+        x_ = x.unsqueeze(0) if is_single else x
+
+        mu_x, var_x = self._gpr.posterior(x_)
+        cov_fx_fX = self._gpr.kernel(x_)  # (..., N)
+        cov_fx_fr = self._gpr.kernel(x_, self._x_running)  # (..., Q)
+        Sigma_xr = cov_fx_fr - cov_fx_fX @ self._V_r_T  # (..., Q)
+
+        # p(f_x | f_r, data): conditional mean and variance.
+        cond_mean = mu_x.unsqueeze(-1) + Sigma_xr @ self._Sigma_rr_inv_delta_r  # (..., S)
+        cond_var = (
+            var_x + self._stabilizing_noise
+            - (Sigma_xr @ self._Sigma_rr_inv * Sigma_xr).sum(-1)
+        ).clamp_min_(0.0)  # (...,)
+
+        f_x = cond_mean + cond_var.sqrt().unsqueeze(-1) * self._z_x.T  # (..., S)
+
+        fantasy = self._fantasy_samples.unsqueeze(0).expand(x_.shape[0], -1, -1)  # (..., S, Q)
+        result = torch.cat([fantasy, f_x.unsqueeze(-1)], dim=-1)  # (..., S, Q+1)
+        return result.squeeze(0) if is_single else result
+
+
 def fit_kernel_params(
     X: np.ndarray,
     Y: np.ndarray,
