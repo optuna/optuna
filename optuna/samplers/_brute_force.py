@@ -298,6 +298,17 @@ class BruteForceSampler(BaseSampler):
         trials[current_idx] = create_trial(
             state=state, values=values, params=trial.params, distributions=trial.distributions
         )
+        # NOTE(nabenabe): This routine checks whether any existing branches of the current trial
+        # is still expandable (not explored). For example, when `params={"a": 1, "b": 2, "c": 3}`,
+        # We first check whether all possible params represented by `{"a": 1, "b": 2} | X` exists.
+        # If there is any unexplored `X` based on the search space, we still need to evaluate such
+        # X, so study does not have to be stopped yet. This search is much quicker compared to full
+        # tree build because there are much fewer trials among all that take `{"a": 1, "b": 2}`.
+        # If such `X` is already exhaustively searched, `X` is relaxed to `{"a": 1} | X`.
+        # Note that this strategy would not be fast enough if each branch is not sampled uniformly
+        # sometimes. See https://github.com/optuna/optuna/issues/6070 for the discussion.
+        # Also, we avoided `tree_size` caching with the preference of the stateless nature of this
+        # sampler. See https://github.com/optuna/optuna/pull/6646/ for the full discussion.
         params = trial.params.copy()
         for param_name in reversed(trial.params.keys()):
             params.pop(param_name)
