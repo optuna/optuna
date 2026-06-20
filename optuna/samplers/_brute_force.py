@@ -33,17 +33,6 @@ if TYPE_CHECKING:
     ChoicesArgsType = tuple[int | float, int | float, int | float | None]  # low, high, step
 
 
-_TREE_SIZE_KEY = "brute_force:tree_size"
-
-
-def _set_tree_size(study: Study, tree_size: int) -> None:
-    study._storage.set_study_system_attr(study._study_id, _TREE_SIZE_KEY, tree_size)
-
-
-def _get_tree_size(study: Study) -> int:
-    return study._storage.get_study_system_attrs(study._study_id).get(_TREE_SIZE_KEY, 0)
-
-
 # TODO(nabenabe): Simply use `slots=True` once Python 3.9 is dropped.
 @dataclass(**({"slots": True} if sys.version_info >= (3, 10) else {}))
 class _TreeNode:
@@ -121,11 +110,6 @@ class _TreeNode:
         if (children := self.children) is None:
             return 0 if exclude_running and self.is_running else 1
         return sum(child.count_unexpanded(exclude_running) for child in children.values())
-
-    def count_total_combinations(self) -> int:
-        if not self.children:
-            return 1
-        return sum(child.count_total_combinations() for child in self.children.values())
 
     def sample_child(self, rng: np.random.RandomState, exclude_running: bool) -> float:
         assert (children := self.children) is not None
@@ -314,15 +298,14 @@ class BruteForceSampler(BaseSampler):
         trials[current_idx] = create_trial(
             state=state, values=values, params=trial.params, distributions=trial.distributions
         )
-        if len(trials) < (tree_size := _get_tree_size(study)):
-            # NOTE(nabenabe): No need to stop study. Early return to avoid tree build overhead.
-            return
-        tree = _TreeNode()
-        self._populate_tree(tree, trials, {})
-        if not tree.is_any_expandable(exclude_running):
-            study.stop()
-        if tree_size < (new_tree_size := tree.count_total_combinations()):
-            _set_tree_size(study, tree_size=new_tree_size)
+        params = trial.params.copy()
+        for param_name in reversed(trial.params.keys()):
+            params.pop(param_name)
+            tree = _TreeNode()
+            self._populate_tree(tree, trials, params)
+            if tree.is_any_expandable(exclude_running):
+                return
+        study.stop()
 
 
 def _is_nan(v: CategoricalChoiceType) -> bool:
