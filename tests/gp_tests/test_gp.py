@@ -234,7 +234,6 @@ def test_conditional_gpr_matches_joint(n_running: int, batch_size: int) -> None:
 
     mu, cov = gpr.posterior(joint_x, joint=True)
     cov.diagonal(dim1=-2, dim2=-1).add_(stabilizing_noise)
-    L = torch.linalg.cholesky(cov)
     samples_joint = mu.unsqueeze(-2) + torch.matmul(
         fixed_samples, torch.linalg.cholesky(cov).transpose(-1, -2)
     )
