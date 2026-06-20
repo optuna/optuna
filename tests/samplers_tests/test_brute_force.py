@@ -9,8 +9,44 @@ import pytest
 import optuna
 from optuna import samplers
 from optuna.samplers._brute_force import _LAZY_NODE
+from optuna.samplers._brute_force import _enumerate_candidates
 from optuna.samplers._brute_force import _TreeNode
 from optuna.trial import Trial
+
+
+def _compare_with_expected_suggested_values(study: optuna.Study) -> None:
+    expected_suggested_values = [
+        {"a": 0, "b": -1.0},
+        {"a": 0, "b": -0.5},
+        {"a": 0, "b": 0.0},
+        {"a": 0, "b": 0.5},
+        {"a": 0, "b": 1.0},
+        {"a": 1, "c": "x"},
+        {"a": 1, "c": "y"},
+        {"a": 1, "c": None},
+        {"a": 2},
+    ]
+    all_suggested_values = [t.params for t in study.trials]
+    assert len(all_suggested_values) == len(expected_suggested_values)
+    for a in all_suggested_values:
+        assert a in expected_suggested_values
+
+
+def conditional_objective(trial: Trial, prune: bool = False) -> float:
+    a = trial.suggest_int("a", 0, 2)
+    if a == 0:
+        b = trial.suggest_float("b", -1.0, 1.0, step=0.5)
+        if prune:
+            raise optuna.TrialPruned
+        return a + b
+    elif a == 1:
+        c = trial.suggest_categorical("c", ["x", "y", None])
+        if c == "x":
+            return a + 1
+        else:
+            return a - 1
+    else:
+        return a * 2
 
 
 @pytest.fixture
@@ -40,15 +76,15 @@ def test_tree_node_add_paths(template_trials: list[optuna.trial.FrozenTrial]) ->
 
 
 def test_tree_node_add_paths_error() -> None:
+    tree = _TreeNode()
+    tree.add_path([("a", (0, 2, 1), 0)])
     with pytest.raises(ValueError):
-        tree = _TreeNode()
-        tree.add_path([("a", [0, 1, 2], 0)])
-        tree.add_path([("a", [0, 1], 0)])
+        tree.add_path([("a", (0, 1, 1), 0)])
 
+    tree = _TreeNode()
+    tree.add_path([("a", (0, 2, 1), 0)])
     with pytest.raises(ValueError):
-        tree = _TreeNode()
-        tree.add_path([("a", [0, 1, 2], 0)])
-        tree.add_path([("b", [0, 1, 2], 0)])
+        tree.add_path([("b", (0, 2, 1), 0)])
 
 
 def test_tree_node_count_unexpanded(template_trials: list[optuna.trial.FrozenTrial]) -> None:
@@ -64,75 +100,15 @@ def test_tree_node_count_unexpanded(template_trials: list[optuna.trial.FrozenTri
 
 
 def test_study_optimize_with_single_search_space() -> None:
-    def objective(trial: Trial) -> float:
-        a = trial.suggest_int("a", 0, 2)
-
-        if a == 0:
-            b = trial.suggest_float("b", -1.0, 1.0, step=0.5)
-            return a + b
-        elif a == 1:
-            c = trial.suggest_categorical("c", ["x", "y", None])
-            if c == "x":
-                return a + 1
-            else:
-                return a - 1
-        else:
-            return a * 2
-
     study = optuna.create_study(sampler=samplers.BruteForceSampler())
-    study.optimize(objective)
-
-    expected_suggested_values = [
-        {"a": 0, "b": -1.0},
-        {"a": 0, "b": -0.5},
-        {"a": 0, "b": 0.0},
-        {"a": 0, "b": 0.5},
-        {"a": 0, "b": 1.0},
-        {"a": 1, "c": "x"},
-        {"a": 1, "c": "y"},
-        {"a": 1, "c": None},
-        {"a": 2},
-    ]
-    all_suggested_values = [t.params for t in study.trials]
-    assert len(all_suggested_values) == len(expected_suggested_values)
-    for a in all_suggested_values:
-        assert a in expected_suggested_values
+    study.optimize(conditional_objective)
+    _compare_with_expected_suggested_values(study)
 
 
 def test_study_optimize_with_pruned_trials() -> None:
-    def objective(trial: Trial) -> float:
-        a = trial.suggest_int("a", 0, 2)
-
-        if a == 0:
-            trial.suggest_float("b", -1.0, 1.0, step=0.5)
-            raise optuna.TrialPruned
-        elif a == 1:
-            c = trial.suggest_categorical("c", ["x", "y", None])
-            if c == "x":
-                return a + 1
-            else:
-                return a - 1
-        else:
-            return a * 2
-
     study = optuna.create_study(sampler=samplers.BruteForceSampler())
-    study.optimize(objective)
-
-    expected_suggested_values = [
-        {"a": 0, "b": -1.0},
-        {"a": 0, "b": -0.5},
-        {"a": 0, "b": 0.0},
-        {"a": 0, "b": 0.5},
-        {"a": 0, "b": 1.0},
-        {"a": 1, "c": "x"},
-        {"a": 1, "c": "y"},
-        {"a": 1, "c": None},
-        {"a": 2},
-    ]
-    all_suggested_values = [t.params for t in study.trials]
-    assert len(all_suggested_values) == len(expected_suggested_values)
-    for a in all_suggested_values:
-        assert a in expected_suggested_values
+    study.optimize(lambda trial: conditional_objective(trial, prune=True))
+    _compare_with_expected_suggested_values(study)
 
 
 def test_study_optimize_with_infinite_search_space() -> None:
@@ -160,21 +136,6 @@ def test_study_optimize_with_nan() -> None:
 
 
 def test_study_optimize_with_single_search_space_user_added() -> None:
-    def objective(trial: Trial) -> float:
-        a = trial.suggest_int("a", 0, 2)
-
-        if a == 0:
-            b = trial.suggest_float("b", -1.0, 1.0, step=0.5)
-            return a + b
-        elif a == 1:
-            c = trial.suggest_categorical("c", ["x", "y", None])
-            if c == "x":
-                return a + 1
-            else:
-                return a - 1
-        else:
-            return a * 2
-
     study = optuna.create_study(sampler=samplers.BruteForceSampler())
 
     # Manually add a trial. This should not be tried again.
@@ -189,26 +150,11 @@ def test_study_optimize_with_single_search_space_user_added() -> None:
         )
     )
 
-    study.optimize(objective)
-
-    expected_suggested_values = [
-        {"a": 0, "b": -1.0},
-        {"a": 0, "b": -0.5},
-        {"a": 0, "b": 0.0},
-        {"a": 0, "b": 0.5},
-        {"a": 0, "b": 1.0},
-        {"a": 1, "c": "x"},
-        {"a": 1, "c": "y"},
-        {"a": 1, "c": None},
-        {"a": 2},
-    ]
-    all_suggested_values = [t.params for t in study.trials]
-    assert len(all_suggested_values) == len(expected_suggested_values)
-    for a in all_suggested_values:
-        assert a in expected_suggested_values
+    study.optimize(conditional_objective)
+    _compare_with_expected_suggested_values(study)
 
 
-def test_study_optimize_with_nonconstant_search_space() -> None:
+def test_study_optimize_with_dynamic_range_search_space() -> None:
     def objective_nonconstant_range(trial: Trial) -> float:
         x = trial.suggest_int("x", -1, trial.number)
         return x
@@ -217,6 +163,8 @@ def test_study_optimize_with_nonconstant_search_space() -> None:
     with pytest.raises(ValueError):
         study.optimize(objective_nonconstant_range, n_trials=10)
 
+
+def test_study_optimize_with_increasing_search_space() -> None:
     def objective_increasing_variable(trial: Trial) -> float:
         return sum(trial.suggest_int(f"x{i}", 0, 0) for i in range(2))
 
@@ -231,6 +179,8 @@ def test_study_optimize_with_nonconstant_search_space() -> None:
     with pytest.raises(ValueError):
         study.optimize(objective_increasing_variable, n_trials=10)
 
+
+def test_study_optimize_with_decreasing_search_space() -> None:
     def objective_decreasing_variable(trial: Trial) -> float:
         return trial.suggest_int("x0", 0, 0)
 
@@ -375,3 +325,34 @@ def test_objective_with_nan() -> None:
     study = optuna.create_study(sampler=sampler)
     study.optimize(_objective_with_nan)
     assert len(study.trials) == len(weird_choices) ** n_params
+
+
+@pytest.mark.parametrize("low,high,step", [(1.0, 3.0, 0.5), (0, 10, 1), (0, 10, 3)])
+def test_enumerate_candidates_sorted_uniform(
+    low: int | float, high: int | float, step: int | float | None
+) -> None:
+    candidates = list(_enumerate_candidates(low, high, step))
+    assert candidates == sorted(candidates), "candidates must be sorted"
+    if len(candidates) >= 2:
+        diffs = [candidates[i + 1] - candidates[i] for i in range(len(candidates) - 1)]
+        assert all(abs(d - diffs[0]) < 1e-12 for d in diffs), "candidates must be uniformly spaced"
+
+
+@pytest.mark.parametrize("low,high,step", [(1.0, 3.0, None), (0, 10, None)])
+def test_enumerate_candidates_step_is_none(
+    low: int | float, high: int | float, step: int | float | None
+) -> None:
+    with pytest.raises(ValueError):
+        _enumerate_candidates(low, high, step)
+
+
+def test_non_divisible_step_with_high_that_fails_to_fallback_to_divisible_range() -> None:
+    study = optuna.create_study(sampler=optuna.samplers.BruteForceSampler())
+    study.ask({"x": optuna.distributions.FloatDistribution(0.0, 0.3, step=0.1)})
+    with pytest.raises(ValueError):
+        study.ask({"x": optuna.distributions.FloatDistribution(0.0, 0.3, step=0.1 - 1e-17)})
+
+
+def test_non_divisible_step_with_successful_fallback() -> None:
+    study = optuna.create_study(sampler=optuna.samplers.BruteForceSampler())
+    study.ask({"x": optuna.distributions.FloatDistribution(0.0, 0.5, step=0.2)})
