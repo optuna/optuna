@@ -42,9 +42,6 @@ class _LazyTreeNode:
     def count_unexpanded(self, exclude_running: bool) -> int:
         return 1
 
-    def count_total_combinations(self) -> int:
-        return 1
-
 
 _LAZY_NODE = _LazyTreeNode()
 
