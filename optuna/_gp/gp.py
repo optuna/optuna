@@ -371,16 +371,17 @@ class GPRegressor:
 class ConditionalGPRegressor:
     """Gaussian process regressor conditioned on a fixed set of samples.
 
-    We first pre-sample fantasy values at X_running from p(f_R | complete trials) and draw
-    conditional samples at new points from p(f_X | f_R, complete trials).
+    We first pre-sample fantasy values at X_running from p(f_Xr | complete trials) and draw
+    conditional samples at new points from p(f_x | f_Xr, complete trials).
 
-    Considering p(y_a | y_b), the posterior of this distribution has:
+    Considering p(y_a | y_b) = p(y_x | y_Xr), the posterior of this distribution has:
         mean: mu_a + cov_aa @ inv(cov_bb) @ (y_b - mu_b),
         cov: cov_aa - cov_ab @ inv(cov_bb) @ cov_ba,
     where mu_a and mu_b are the posterior means of y_a and y_b, cov_aa and cov_bb are the
     posterior covariance of y_a and y_b, cov_ab (= cov_ba.T) is the cross-covariance matrix
-    between y_a and y_b.
-    We use this formulation to compute the conditional posterior.
+    between y_a and y_b. Notice that `cov` here is for posterior not prior. `cov` implies prior
+    covariance elsewhere. We use this formulation to compute the conditional posterior. Replace
+    `a` with `x` and `b` with `r`, then we get the exact formula.
     """
 
     def __init__(
@@ -392,39 +393,38 @@ class ConditionalGPRegressor:
     ) -> None:
         self._gpr = gpr
         self._X_running = X_running
+        self._fixed_samples_running = fixed_samples[..., -1]
         self._stabilizing_noise = stabilizing_noise
-        n_runnings = X_running.shape[0]
-        self._z_x = fixed_samples[:, n_runnings:]  # (S, 1)
-
         with torch.no_grad():
             mean_r, cov_rr_post = gpr.posterior(X_running, joint=True)
             cov_rr_post.diagonal(dim1=-2, dim2=-1).add_(stabilizing_noise)
-            self._L_rr = torch.linalg.cholesky(cov_rr_post)
-            self._fantasy_samples = mean_r + torch.matmul(
-                fixed_samples[:, :n_runnings], self._L_rr.transpose(-2, -1)
+            self._cov_rr_post_chol = torch.linalg.cholesky(cov_rr_post)
+            # fantasy_samples.shape = (n_qmc_samples, n_runnings)
+            self._fantasy_samples = mean_r + fixed_samples[:, :-1].matmul(
+                self._cov_rr_post_chol.transpose(-2, -1)
             )
             delta_r = (self._fantasy_samples - mean_r).transpose(-2, -1)
-            self._cov_rr_post_inv_delta_r = _solve_cholesky(self._L_rr, delta_r)
-            V_r = _solve_cholesky(gpr._cov_Y_Y_chol, gpr.kernel(X_running), left=False)
-            self._V_r_T = V_r.T  # (N, Q)
+            self._cov_rr_post_inv_delta_r = _solve_cholesky(self._cov_rr_post_chol, delta_r)
+            cov_fXr_fX = gpr.kernel(X_running)
+            # cov_fx_fXr_post = cov_fx_fXr - cov_fx_fX @ inv(cov_Y_Y) @ cov_fX_fXr
+            # cov_fx_fX @ inv(cov_Y_Y) @ cov_fX_fXr = cov_fx_fX @ V_r
+            self._V_r = _solve_cholesky(gpr._cov_Y_Y_chol, cov_fXr_fX, left=False).transpose(
+                -2, -1
+            )
 
-    def posterior_samples(self, x: torch.Tensor) -> torch.Tensor:
-        is_single = x.ndim == 1
-        x_ = x.unsqueeze(0) if is_single else x
+    def sample_from_posterior(self, x: torch.Tensor) -> torch.Tensor:
+        x_ = x.unsqueeze(0) if (is_single := x.ndim == 1) else x
+        mu_x, cov_xx_post = self._gpr.posterior(x_)
+        cov_fx_fXr = self._gpr.kernel(x_, self._X_running)
+        cov_fx_fX = self._gpr.kernel(x_)
+        cov_xr_post = cov_fx_fXr - cov_fx_fX.matmul(self._V_r)
 
-        mu_x, var_x = self._gpr.posterior(x_)
-        cov_fx_fX = self._gpr.kernel(x_)  # (..., N)
-        cov_fx_fr = self._gpr.kernel(x_, self._X_running)  # (..., Q)
-        cov_xr_post = cov_fx_fr - cov_fx_fX @ self._V_r_T  # (..., Q)
-
-        cond_mean = mu_x.unsqueeze(-1) + cov_xr_post @ self._cov_rr_post_inv_delta_r  # (..., S)
-        W = _solve_cholesky(self._L_rr, cov_xr_post, left=False)  # (..., Q)
-        cond_var = (
-            var_x + self._stabilizing_noise - torch.linalg.vecdot(cov_xr_post, W)
-        ).clamp_min_(0.0)  # (...,)
-
-        f_x = cond_mean + cond_var.sqrt().unsqueeze(-1) * self._z_x.T  # (..., S)
-
+        # mean: mu_x + cov_xx @ inv(cov_rr) @ (y_r - mu_r)
+        cond_mean = mu_x.unsqueeze(-1) + cov_xr_post.matmul(self._cov_rr_post_inv_delta_r)
+        # cov: cov_xx - cov_xr @ inv(cov_rr) @ cov_rx
+        V = _solve_cholesky(self._cov_rr_post_chol, cov_xr_post, left=False)
+        cond_cov = (cov_xx_post - torch.linalg.vecdot(cov_xr_post, V)).clamp_min_(0.0)
+        f_x = cond_mean + cond_cov.sqrt().unsqueeze(-1) * self._fixed_samples_running
         fantasy = self._fantasy_samples.unsqueeze(0).expand(x_.shape[0], -1, -1)  # (..., S, Q)
         result = torch.cat([fantasy, f_x.unsqueeze(-1)], dim=-1)  # (..., S, Q+1)
         return result.squeeze(0) if is_single else result

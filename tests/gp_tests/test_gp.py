@@ -230,7 +230,7 @@ def test_conditional_gpr_matches_joint(n_running: int, batch_size: int) -> None:
     )
 
     cond_gpr = ConditionalGPRegressor(gpr, X_running, fixed_samples, stabilizing_noise)
-    samples_cond = cond_gpr.posterior_samples(x_new)
+    samples_cond = cond_gpr.sample_from_posterior(x_new)
 
     mu, cov = gpr.posterior(joint_x, joint=True)
     cov.diagonal(dim1=-2, dim2=-1).add_(stabilizing_noise)
