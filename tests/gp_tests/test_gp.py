@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 import torch
 
-from optuna._gp import acqf as acqf_module
+from optuna._gp.acqf import _sample_from_normal_sobol
 from optuna._gp.gp import ConditionalGPRegressor
 from optuna._gp.gp import GPRegressor
 from optuna._gp.gp import warn_and_convert_inf
@@ -225,12 +225,9 @@ def test_conditional_gpr_matches_joint(n_running: int, batch_size: int) -> None:
         joint_x = torch.cat(
             [X_running.unsqueeze(0).expand(batch_size, -1, -1), x_new.unsqueeze(1)], dim=1
         )
-    fixed_samples = acqf_module._sample_from_normal_sobol(
-        dim=n_running + 1, n_samples=n_qmc_samples, seed=42
-    )
-
+    fixed_samples = _sample_from_normal_sobol(dim=n_running + 1, n_samples=n_qmc_samples, seed=42)
     cond_gpr = ConditionalGPRegressor(gpr, X_running, fixed_samples, stabilizing_noise)
-    samples_cond = cond_gpr.sample_from_posterior(x_new)
+    samples_cond = cond_gpr.sample(x_new)
 
     mu, cov = gpr.posterior(joint_x, joint=True)
     cov.diagonal(dim1=-2, dim2=-1).add_(stabilizing_noise)

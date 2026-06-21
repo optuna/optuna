@@ -412,7 +412,7 @@ class ConditionalGPRegressor:
             assert isinstance(cov_Y_Y_chol, torch.Tensor), "MyPy Redefinition"
             self._V_r = _solve_cholesky(cov_Y_Y_chol, cov_fXr_fX, left=False).transpose(-2, -1)
 
-    def sample_from_posterior(self, x: torch.Tensor) -> torch.Tensor:
+    def sample(self, x: torch.Tensor) -> torch.Tensor:
         x_ = x.unsqueeze(0) if (is_single := x.ndim == 1) else x
         mu_x, cov_xx_post = self._gpr.posterior(x_)
         cov_fx_fXr = self._gpr.kernel(x_, self._X_running)
