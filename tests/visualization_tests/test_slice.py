@@ -213,6 +213,45 @@ def test_get_slice_plot_info_params(params: list[str] | None) -> None:
     )
 
 
+def test_get_slice_plot_info_user_attrs() -> None:
+    study = create_study()
+    study.add_trial(create_trial(value=0.0, user_attrs={"n_estimators": 10, "stage": "warmup"}))
+    study.add_trial(create_trial(value=1.0, user_attrs={"n_estimators": 20, "stage": "train"}))
+
+    info = _get_slice_plot_info(
+        study,
+        params=["n_estimators", "stage"],
+        target=None,
+        target_name="Objective Value",
+    )
+
+    assert info == _SlicePlotInfo(
+        target_name="Objective Value",
+        subplots=[
+            _SliceSubplotInfo(
+                param_name="n_estimators",
+                x=[10, 20],
+                y=[0.0, 1.0],
+                trial_numbers=[0, 1],
+                is_log=False,
+                is_numerical=True,
+                x_labels=None,
+                constraints=[True, True],
+            ),
+            _SliceSubplotInfo(
+                param_name="stage",
+                x=["warmup", "train"],
+                y=[0.0, 1.0],
+                trial_numbers=[0, 1],
+                is_log=False,
+                is_numerical=False,
+                x_labels=("warmup", "train"),
+                constraints=[True, True],
+            ),
+        ],
+    )
+
+
 def test_get_slice_plot_info_customized_target() -> None:
     params = ["param_a"]
     study = prepare_study_with_trials()

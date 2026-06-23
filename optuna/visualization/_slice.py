@@ -56,6 +56,10 @@ class _PlotValues(NamedTuple):
     trial_numbers: list[int]
 
 
+def _is_numerical_values(values: list[Any]) -> bool:
+    return all(isinstance(v, int | float) and not isinstance(v, bool) for v in values)
+
+
 def _get_slice_subplot_info(
     trials: list[FrozenTrial],
     param: str,
@@ -83,9 +87,13 @@ def _get_slice_subplot_info(
     )
 
     for t in trials:
-        if param not in t.params:
+        if param in t.params:
+            x_value = t.params[param]
+        elif param in t.user_attrs:
+            x_value = t.user_attrs[param]
+        else:
             continue
-        plot_info.x.append(t.params[param])
+        plot_info.x.append(x_value)
         plot_info.y.append(target(t))
         plot_info.trial_numbers.append(t.number)
         constraints = t.system_attrs.get(_CONSTRAINTS_KEY)
@@ -111,6 +119,11 @@ def _get_slice_plot_info(
         return _SlicePlotInfo(target_name, [])
 
     all_params = {p_name for t in trials for p_name in t.params.keys()}
+    user_attr_values = {
+        attr_name: [t.user_attrs[attr_name] for t in trials if attr_name in t.user_attrs]
+        for attr_name in {attr_name for t in trials for attr_name in t.user_attrs.keys()}
+    }
+    all_plot_attrs = all_params | set(user_attr_values)
 
     distributions = {}
     for trial in trials:
@@ -127,8 +140,10 @@ def _get_slice_plot_info(
         sorted_params = sorted(all_params)
     else:
         for input_p_name in params:
-            if input_p_name not in all_params:
-                raise ValueError(f"Parameter {input_p_name} does not exist in your study.")
+            if input_p_name not in all_plot_attrs:
+                raise ValueError(
+                    f"Parameter or user attribute {input_p_name} does not exist in your study."
+                )
         sorted_params = sorted(set(params))
 
     return _SlicePlotInfo(
@@ -138,9 +153,20 @@ def _get_slice_plot_info(
                 trials=trials,
                 param=param,
                 target=target,
-                log_scale=_is_log_scale(trials, param),
-                numerical=not isinstance(distributions[param], CategoricalDistribution),
-                x_labels=x_labels.get(param),
+                log_scale=param in all_params and _is_log_scale(trials, param),
+                numerical=(
+                    not isinstance(distributions[param], CategoricalDistribution)
+                    if param in distributions
+                    else _is_numerical_values(user_attr_values[param])
+                ),
+                x_labels=(
+                    x_labels[param]
+                    if param in x_labels
+                    else tuple(dict.fromkeys(user_attr_values[param]))
+                    if param in user_attr_values
+                    and not _is_numerical_values(user_attr_values[param])
+                    else None
+                ),
             )
             for param in sorted_params
         ],
