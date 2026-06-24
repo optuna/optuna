@@ -222,9 +222,9 @@ class GPSampler(BaseSampler):
         # NOTE(nabenabe): ehvi in BoTorchSampler uses 20.
         self._n_local_search = 10
         self._tol = 1e-4
-        self._ehvi_n_qmc_samples = 128  # NOTE(nabenabe): The BoTorch default value.
         # NOTE(sawa3030): Benchmark results are available at https://github.com/optuna/optuna/pull/6640#issuecomment-4645179073
-        self._q_acqf_n_qmc_samples = 128
+        self._n_qmc_samples_qei = 128
+        self._n_qmc_samples_ehvi = 128  # NOTE(nabenabe): The BoTorch default value.
 
     def _log_independent_sampling(self, trial: FrozenTrial, param_name: str) -> None:
         msg = _INDEPENDENT_SAMPLING_WARNING_TEMPLATE.format(
@@ -423,7 +423,7 @@ class GPSampler(BaseSampler):
                         gpr=gprs_list[0],
                         search_space=internal_search_space,
                         threshold=standardized_score_vals[:, 0].max(),
-                        n_qmc_samples=self._q_acqf_n_qmc_samples,
+                        n_qmc_samples=self._n_qmc_samples_qei,
                         qmc_seed=self._rng.rng.randint(1 << 30),
                         normalized_params_of_running_trials=normalized_params_of_running_trials,
                     )
@@ -433,7 +433,7 @@ class GPSampler(BaseSampler):
                     gpr_list=gprs_list,
                     search_space=internal_search_space,
                     Y_train=torch.from_numpy(standardized_score_vals),
-                    n_qmc_samples=self._ehvi_n_qmc_samples,
+                    n_qmc_samples=self._n_qmc_samples_ehvi,
                     qmc_seed=self._rng.rng.randint(1 << 30),
                     normalized_params_of_running_trials=normalized_params_of_running_trials,
                 )
@@ -485,7 +485,7 @@ class GPSampler(BaseSampler):
                         if not is_all_infeasible
                         else None
                     ),
-                    n_qmc_samples=128,  # NOTE(nabenabe): The BoTorch default value.
+                    n_qmc_samples=self._n_qmc_samples_ehvi,
                     qmc_seed=self._rng.rng.randint(1 << 30),
                     constraints_gpr_list=constr_gpr_list,
                     constraints_threshold_list=constr_threshold_list,

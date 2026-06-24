@@ -42,11 +42,6 @@ def _sample_from_normal_sobol(dim: int, n_samples: int, seed: int | None) -> tor
     return torch.erfinv(samples) * float(np.sqrt(2))
 
 
-def _logmeanexp(x: torch.Tensor, dim: int | tuple[int, ...]) -> torch.Tensor:
-    n = x.shape[dim] if isinstance(dim, int) else math.prod(x.shape[i] for i in dim)
-    return torch.special.logsumexp(x, dim=dim) - math.log(n)
-
-
 def logehvi(
     Y_post: torch.Tensor,  # (..., n_qmc_samples, n_objectives)
     non_dominated_box_lower_bounds: torch.Tensor,  # (n_boxes, n_objectives)
@@ -180,7 +175,7 @@ class qLogEI(BaseAcquisitionFunc):
         self._gpr = gpr
         self._stabilizing_noise = stabilizing_noise
         self._threshold = threshold
-        self._x_running = torch.from_numpy(normalized_params_of_running_trials)
+        self._X_running = torch.from_numpy(normalized_params_of_running_trials)
         self._fixed_samples = _sample_from_normal_sobol(
             # NOTE(nabe): The number of pending points + the new point, so +1.
             dim=1 + normalized_params_of_running_trials.shape[0],
@@ -199,12 +194,12 @@ class qLogEI(BaseAcquisitionFunc):
 
     def _get_joint_input(self, x: torch.Tensor) -> torch.Tensor:
         if x.ndim == 1:
-            return torch.cat([self._x_running, x.unsqueeze(0)], dim=0)
+            return torch.cat([self._X_running, x.unsqueeze(0)], dim=0)
         if x.ndim == 2:
             # Expand from (Q, D) to (..., Q, D), and then concat to (..., Q+1, D).
-            running = self._x_running.unsqueeze(0).expand(x.shape[0], -1, -1)
+            running = self._X_running.unsqueeze(0).expand(x.shape[0], -1, -1)
             return torch.cat([running, x.unsqueeze(-2)], dim=-2)
-        raise ValueError(f"Does not expect x.ndim = {x.ndim}.")
+        raise ValueError(f"{x.ndim=} must be 1 or 2.")
 
     def eval_acqf(self, x: torch.Tensor) -> torch.Tensor:
         if np.isneginf(self._threshold):
@@ -216,9 +211,11 @@ class qLogEI(BaseAcquisitionFunc):
         log_improvement = y_post.clamp_(min=torch.tensor(_EPS, dtype=torch.float64)).log()
         # Take the max operation along the running candidates direction (the Q-axis).
         # TODO(sawa3030): Consider using fatmax instead of max.
-        smooth_max_log_improvement = torch.max(log_improvement, dim=-1).values
+        max_log_improvement_in_q_batch = torch.amax(log_improvement, dim=-1)
         # Take the mean over the fixed sample direction (the s-axis).
-        return _logmeanexp(smooth_max_log_improvement, dim=-1)
+        return torch.special.logsumexp(max_log_improvement_in_q_batch, dim=-1) - math.log(
+            max_log_improvement_in_q_batch.shape[-1]
+        )
 
 
 class LogPI(BaseAcquisitionFunc):
