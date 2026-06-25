@@ -457,14 +457,25 @@ class GPSampler(BaseSampler):
                 )
                 i_opt = np.argmax(y_with_neginf)
                 best_feasible_y = y_with_neginf[i_opt]
-                acqf = acqf_module.ConstrainedLogEI(
-                    gpr=gprs_list[0],
-                    search_space=internal_search_space,
-                    threshold=best_feasible_y,
-                    constraints_gpr_list=constr_gpr_list,
-                    constraints_threshold_list=constr_threshold_list,
-                    normalized_params_of_running_trials=normalized_params_of_running_trials,
-                )
+                if normalized_params_of_running_trials is None:
+                    acqf = acqf_module.ConstrainedLogEI(
+                        gpr=gprs_list[0],
+                        search_space=internal_search_space,
+                        threshold=best_feasible_y,
+                        constraints_gpr_list=constr_gpr_list,
+                        constraints_threshold_list=constr_threshold_list,
+                    )
+                else:
+                    acqf = acqf_module.qConstrainedLogEI(
+                        gpr=gprs_list[0],
+                        search_space=internal_search_space,
+                        threshold=best_feasible_y,
+                        n_qmc_samples=self._n_qmc_samples_qei,
+                        qmc_seed=self._rng.rng.randint(1 << 30),
+                        constraints_gpr_list=constr_gpr_list,
+                        constraints_threshold_list=constr_threshold_list,
+                        normalized_params_of_running_trials=normalized_params_of_running_trials,
+                    )
                 assert normalized_params.shape[:-1] == y_with_neginf.shape
                 best_params = (
                     None if np.isneginf(best_feasible_y) else normalized_params[i_opt, np.newaxis]

@@ -184,8 +184,8 @@ class qLogEI(BaseAcquisitionFunc):
         )
         super().__init__(gpr.length_scales, search_space)
 
-    def _get_posterior_samples(self, x: torch.Tensor) -> torch.Tensor:
-        mean, cov = self._gpr.posterior(x, joint=True)
+    def _get_posterior_samples(self, x: torch.Tensor, gpr: GPRegressor) -> torch.Tensor:
+        mean, cov = gpr.posterior(x, joint=True)
         cov.diagonal(dim1=-2, dim2=-1).add_(self._stabilizing_noise)
         # mean.shape: (q + 1,), cov.shape: (q + 1, q + 1), fixed_samples.shape: (128, q + 1).
         return mean.unsqueeze(-2) + torch.matmul(
@@ -201,14 +201,20 @@ class qLogEI(BaseAcquisitionFunc):
             return torch.cat([running, x.unsqueeze(-2)], dim=-2)
         raise ValueError(f"{x.ndim=} must be 1 or 2.")
 
-    def eval_acqf(self, x: torch.Tensor) -> torch.Tensor:
+    def _get_log_improvement(self, joint_x: torch.Tensor) -> torch.Tensor:
         if np.isneginf(self._threshold):
-            return torch.zeros(x.shape[:-1], dtype=torch.float64)
+            return joint_x.sum() * 0.0 + torch.zeros(
+                joint_x.shape[:-2] + (self._fixed_samples.shape[0], joint_x.shape[-2]),
+                dtype=torch.float64,
+            )
 
+        y_post = self._get_posterior_samples(joint_x, self._gpr)
+        return y_post.clamp_(min=torch.tensor(_EPS, dtype=torch.float64)).log()
+
+    def eval_acqf(self, x: torch.Tensor) -> torch.Tensor:
         # NOTE(nabenabe): See Eq. (10) of https://arxiv.org/pdf/2310.20708
         joint_x = self._get_joint_input(x)
-        y_post = self._get_posterior_samples(joint_x)
-        log_improvement = y_post.clamp_(min=torch.tensor(_EPS, dtype=torch.float64)).log()
+        log_improvement = self._get_log_improvement(joint_x)
         # Take the max operation along the running candidates direction (the Q-axis).
         # TODO(sawa3030): Consider using fatmax instead of max.
         max_log_improvement_in_q_batch = torch.amax(log_improvement, dim=-1)
@@ -329,6 +335,51 @@ class ConstrainedLogEI(BaseAcquisitionFunc):
         return self._acqf.eval_acqf(x) + sum(
             acqf.eval_acqf(x) for acqf in self._constraints_acqf_list
         )
+
+
+class qConstrainedLogEI(qLogEI):
+    def __init__(
+        self,
+        gpr: GPRegressor,
+        search_space: SearchSpace,
+        threshold: float,
+        n_qmc_samples: int,
+        qmc_seed: int | None,
+        constraints_gpr_list: list[GPRegressor],
+        constraints_threshold_list: list[float],
+        normalized_params_of_running_trials: np.ndarray,
+        stabilizing_noise: float = 1e-12,
+    ) -> None:
+        assert (
+            len(constraints_gpr_list) == len(constraints_threshold_list) and constraints_gpr_list
+        )
+        self._constraints_gpr_list = constraints_gpr_list
+        self._constraints_threshold_list = constraints_threshold_list
+        super().__init__(
+            gpr,
+            search_space,
+            threshold,
+            n_qmc_samples,
+            qmc_seed,
+            normalized_params_of_running_trials,
+            stabilizing_noise,
+        )
+
+    def _get_log_improvement(self, joint_x: torch.Tensor) -> torch.Tensor:
+        log_improvement = super()._get_log_improvement(joint_x)
+        tau = 1e-2
+
+        constraint_log_feasibilities = [
+            torch.nn.functional.logsigmoid(
+                (threshold - self._get_posterior_samples(joint_x, constraint_gpr)) / tau
+            )
+            for constraint_gpr, threshold in zip(
+                self._constraints_gpr_list,
+                self._constraints_threshold_list,
+            )
+        ]
+        log_feasibility = torch.stack(constraint_log_feasibilities).sum(dim=0)
+        return log_improvement + log_feasibility
 
 
 class LogEHVI(BaseAcquisitionFunc):
