@@ -36,6 +36,27 @@ if TYPE_CHECKING:
 _logger = logging.get_logger(__name__)
 
 
+def _warn_if_sampler_never_engages(
+    sampler: "optuna.samplers.BaseSampler", n_trials: int | None
+) -> None:
+    # ``TPESampler`` samples randomly for its first ``n_startup_trials`` trials before TPE engages.
+    # When ``n_trials`` does not exceed that count, every trial is random and TPE never runs, yet
+    # nothing tells the user. Warn once here, where the per-call budget is known, since the sampler
+    # itself never sees ``n_trials``. This is information-only and changes no behavior.
+    from optuna.samplers import TPESampler
+
+    if n_trials is None or not isinstance(sampler, TPESampler):
+        return
+
+    n_startup_trials = sampler._n_startup_trials
+    if n_trials <= n_startup_trials:
+        optuna_warn(
+            f"n_trials={n_trials} is at or below TPESampler's "
+            f"n_startup_trials={n_startup_trials}, so every trial will be sampled randomly "
+            "and TPE will not engage. Increase n_trials or lower n_startup_trials to use TPE."
+        )
+
+
 def _optimize(
     study: "optuna.Study",
     func: "optuna.study.study.ObjectiveFuncType",
@@ -58,6 +79,8 @@ def _optimize(
     if show_progress_bar and n_trials is None and timeout is not None and n_jobs != 1:
         optuna_warn("The timeout-based progress bar is not supported with n_jobs != 1.")
         show_progress_bar = False
+
+    _warn_if_sampler_never_engages(study.sampler, n_trials)
 
     progress_bar = pbar_module._ProgressBar(show_progress_bar, n_trials, timeout)
 

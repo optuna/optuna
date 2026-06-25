@@ -93,6 +93,39 @@ def test_warn_independent_sampling_group(capsys: pytest.CaptureFixture) -> None:
     assert err == ""
 
 
+def _quadratic_objective(trial: Trial) -> float:
+    x = trial.suggest_float("x", -10, 10)
+    return x**2
+
+
+@pytest.mark.parametrize("n_trials", [1, 5, 10])
+def test_warn_when_n_trials_at_or_below_n_startup_trials(n_trials: int) -> None:
+    # All trials are random because TPE only engages after ``n_startup_trials`` (10 by default),
+    # so the user should be warned that TPE never runs.
+    sampler = TPESampler(n_startup_trials=10, seed=0)
+    study = optuna.create_study(sampler=sampler)
+    with pytest.warns(UserWarning, match="n_startup_trials"):
+        study.optimize(_quadratic_objective, n_trials=n_trials)
+
+
+def test_no_warn_when_n_trials_above_n_startup_trials() -> None:
+    sampler = TPESampler(n_startup_trials=10, seed=0)
+    study = optuna.create_study(sampler=sampler)
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", UserWarning)
+        study.optimize(_quadratic_objective, n_trials=11)
+
+
+def test_no_warn_when_n_trials_is_none() -> None:
+    # ``n_trials=None`` means the run is driven by ``timeout`` (or a callback), so the warning
+    # must not fire even though the startup count would otherwise be reached.
+    sampler = TPESampler(n_startup_trials=10, seed=0)
+    study = optuna.create_study(sampler=sampler)
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", UserWarning)
+        study.optimize(_quadratic_objective, n_trials=None, timeout=0.0)
+
+
 def test_infer_relative_search_space() -> None:
     sampler = TPESampler()
     search_space = {
