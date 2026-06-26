@@ -56,7 +56,6 @@ def test_filter(
     assert all(i == j for i, j in zip(indices, filtered_indices))
 
 
-
 def test_n_trials_equal_to_min_n_top_trials() -> None:
     evaluator = PedAnovaImportanceEvaluator()
     study = get_study(seed=0, n_trials=evaluator._min_n_top_trials, is_multi_obj=False)
