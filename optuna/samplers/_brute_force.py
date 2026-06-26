@@ -35,6 +35,8 @@ if TYPE_CHECKING:
 
 @dataclass(frozen=True)
 class _UnexpandedTreeNode:
+    # NOTE(nabenabe): When a node is unexpanded, `_TreeNode` does not have to be instantiated.
+    # This class was introduced to avoid the initialization overhead of `_TreeNode` in such case.
     is_running: bool = False
 
     def is_any_expandable(self, exclude_running: bool) -> bool:
@@ -50,19 +52,65 @@ _UNEXPANDED_NODE = _UnexpandedTreeNode()
 # TODO(nabenabe): Simply use `slots=True` once Python 3.9 is dropped.
 @dataclass(**({"slots": True} if sys.version_info >= (3, 10) else {}))
 class _TreeNode:
+    # region (_TreeNode doc)
     # A tree representing the search space for brute force sampling.
     # Each internal node corresponds to a parameter, and its children are keyed by the parameter's
     # candidate values (in internal representation). A path from the root to a terminal node
-    # represents a complete ``params``.
-    #
+    # represents a complete `params`.
+    # 
     # A node takes one of the following four states:
-    #   1. Unexpanded (no trial tried the ``params``). ``children=None`` and ``is_running=False``.
-    #   2. Running. ``children=None`` and ``is_running=True``.
-    #   3. Leaf. ``children={}`` and ``param_name=None``.
-    #   4. Internal. ``param_name`` is set and ``children`` is non-empty.
-    # Leaf represents the last parameter of a finished ``params``, and internal means the node
-    # does not represent a complete ``params``.
+    #   ┌────────────┬─────────────────┬────────────┐
+    #   │   State    │    children     │ is_running │
+    #   ├────────────┼─────────────────┼────────────┤
+    #   │ Running    │ None            │ True       │
+    #   ├────────────┼─────────────────┼────────────┤
+    #   │ Unexpanded │ None            │ False      │
+    #   ├────────────┼─────────────────┼────────────┤
+    #   │ Leaf       │ {} (empty dict) │ False      │
+    #   ├────────────┼─────────────────┼────────────┤
+    #   │ Internal   │ non-empty dict  │ False      │
+    #   └────────────┴─────────────────┴────────────┘
+    #
+    # So `self.children is None` means `Running` or `Unexpanded`. `not self.children` means the
+    # node is not internal.
+    #
+    # Examples:
+    #   Let's assume that we observed the following `params`'s:
+    #       {"a": 0, "b": 0.0}, {"a": 0, "b": 1.0}, {"a": 1, "b": 0.0, "c": 0}
+    #       where:
+    #           dists = {
+    #               "a": IntDistribution(0, 2),
+    #               "b": FloatDistribution(0.0, 1.0, step=1.0),
+    #               "c": IntDistribution(0, 1),  # Show up only when a == 1.
+    #           }
+    # 
+    #   Then the full tree looks like this:
+    #       tree (param_name="a"; internal)
+    #       ├ 0: a0_b_node (param_name="b"; internal)
+    #       |   ├ 0.0: a0_b0_node (leaf; complete)
+    #       |   └ 1.0: a0_b1_node (leaf; complete)
+    #       ├ 1: a1_b_node (param_name="b"; internal)
+    #       |   ├ 0.0: a1_b0_c_node (param_name="c")
+    #       |   |   ├ 0: a1_b0_c0_node (leaf; complete)
+    #       |   |   └ 1: a1_b0_c1_node (Unexpanded)
+    #       |   └ 1.0: a1_b1_node (Unexpanded)
+    #       └ 2: a2_node (Unexpanded)
+    #
+    #   We know that `Unexpanded` paths such as `{"a": 1, "b": 1}` can be sampled because
+    #   `{"a": 1, "b": 0}` revealed that `a = 1` trigers `suggest_float("b", 0, 1, step=1)`.
+    #   However, since we have not tried them yet, we don't know whether `c` shows up when
+    #   `{"a": 1, "b": 1}` is sampled. This is why we name such paths `Unexpanded`.
+    #   Note that as multiple paths can refer to internal nodes, only leaf nodes can have the
+    #   `Unexpanded` state.
+    #
+    # Essentially, each node represents a param value, and a path from the first node to the leaf
+    # node represents complete `params`. An internal node complements `params`'s but it does
+    # not give self-contained information.
+    #
     # NOTE(nabenabe): I tried representations by list and dict, but they did not really speed up.
+    # NOTE(nabenabe): This class highly optimized to reduce runtime overhead.
+    # cf. https://github.com/optuna/optuna/issues/6659.
+    # endregion
 
     param_name: str | None = None
     children: dict[float, _TreeNode | _UnexpandedTreeNode] | None = None
