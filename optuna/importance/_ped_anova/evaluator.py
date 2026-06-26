@@ -342,8 +342,17 @@ def _get_filtered_trials(
 def _get_distributions_list(
     study: Study, params: list[str] | None
 ) -> list[dict[str, BaseDistribution]]:
+    if params is not None:
+        if not isinstance(params, (list, tuple)):
+            raise TypeError(
+                f"Parameters must be specified as a list. Actual parameters: {params}."
+            )
+        if any(not isinstance(p, str) for p in params):
+            raise TypeError(
+                f"Parameters must be specified by their names with strings. "
+                f"Actual parameters: {params}."
+            )
     trials = study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,))
-    _check_evaluate_args(trials, params)
     params_set = set(params) if params is not None else None
     return [
         {k: v for k, v in t.distributions.items() if params_set is None or k in params_set}
