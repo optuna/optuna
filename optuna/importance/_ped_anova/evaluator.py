@@ -253,9 +253,7 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
                 "low `target` values. If this is not what you want, "
                 "please modify target, e.g., by multiplying the output by -1."
             )
-        dists = _get_distributions_list(study, params=params)
-        if params is None:
-            params = list(dict.fromkeys(k for d in dists for k in d))
+        params = _get_params(study, params=params)
 
         assert params is not None
 
@@ -338,9 +336,9 @@ def _get_filtered_trials(
     ]
 
 
-def _get_distributions_list(
+def _get_params(
     study: Study, params: list[str] | None
-) -> list[dict[str, BaseDistribution]]:
+) -> list[str]:
     if params is not None:
         if not isinstance(params, (list, tuple)):
             raise TypeError(
