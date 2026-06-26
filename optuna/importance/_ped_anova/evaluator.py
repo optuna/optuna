@@ -352,8 +352,12 @@ def _get_distributions_list(
                 f"Actual parameters: {params}."
             )
     trials = study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,))
-    params_set = set(params) if params is not None else None
-    return [
-        {k: v for k, v in t.distributions.items() if params_set is None or k in params_set}
-        for t in trials
-    ]
+    all_params = list(dict.fromkeys(k for t in trials for k in t.distributions))
+    if params is not None:
+        if missing := [p for p in params if p not in all_params]:
+            raise ValueError(
+                "Study must contain at least one completed trial for each specified parameter. "
+                f"Missing parameters: {missing}."
+            )
+        all_params = [p for p in all_params if p in params]
+    return all_params
