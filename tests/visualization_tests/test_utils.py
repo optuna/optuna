@@ -159,12 +159,15 @@ def test_filter_inf_trials_message(caplog: LogCaptureFixture, with_message: bool
 
     if with_message:
         assert msg in caplog.text
-        n_filtered_as_inf = 0
+        # Since pytest 9.1.0, the same record can be captured more than once because caplog also
+        # captures logs from non-propagating loggers in addition to the propagated ones
+        # (https://github.com/pytest-dev/pytest/issues/3697). Deduplicate the records to count how
+        # many times the message was actually logged.
+        filtered_as_inf = {id(record) for record in caplog.records if record.msg == msg}
         for record in caplog.records:
             if record.msg == msg:
                 assert record.levelno == logging.WARNING
-                n_filtered_as_inf += 1
-        assert n_filtered_as_inf == 1
+        assert len(filtered_as_inf) == 1
     else:
         assert msg not in caplog.text
 

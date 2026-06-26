@@ -106,6 +106,12 @@ test = [
 default-groups = []
 exclude-newer = "5 days"
 exclude-newer-package = { torch = false, optuna = false, optuna-integration = false }
+# Workaround for https://github.com/pytorch/vision/issues/9519: a stray
+# torchvision 0.27.1+df56172 wheel (cp311 win_arm64 only) was misplaced on the PyTorch CPU index.
+# Since `+df56172` sorts higher than `+cpu` under PEP 440, the resolver picks it and then fails to
+# install on Linux + Python 3.12. Exclude it so the resolver falls back to the proper +cpu build.
+# TODO(y0z): Remove this constraint once the stray wheel is yanked from the index.
+constraint-dependencies = ["torchvision!=0.27.1+df56172"]
 
 [[tool.uv.index]]
 name = "pytorch-cpu"
