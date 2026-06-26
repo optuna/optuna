@@ -13,8 +13,8 @@ from optuna._warnings import optuna_warn
 from optuna.importance._base import _check_evaluate_args
 from optuna.importance._base import _sort_dict_by_importance
 from optuna.importance._base import BaseImportanceEvaluator
-from optuna.importance._ped_anova.scott_parzen_estimator import _build_parzen_estimator
 from optuna.samplers._tpe.sampler import _split_complete_trials_multi_objective
+from optuna.importance._ped_anova.scott_parzen_estimator import build_parzen_estimator_on_grid
 from optuna.study import StudyDirection
 from optuna.trial import TrialState
 
@@ -239,20 +239,19 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
     ) -> float:
         # When pdf_all == pdf_top, i.e. all_trials == top_trials, this method will give 0.0.
         prior_weight = self._prior_weight
-        pe_top = _build_parzen_estimator(
+        pe_top, grid_size = build_parzen_estimator_on_grid(
             param_name, dist, target_trials, self._n_steps, prior_weight
         )
-        # NOTE: pe_top.n_steps could be different from self._n_steps.
-        grids = np.arange(pe_top.n_steps)
-        pdf_top = pe_top.pdf(grids) + 1e-12
+        grids = np.arange(grid_size)
+        pdf_top = pe_top.pdf({param_name: grids}) + 1e-12
 
         if self._evaluate_on_local:  # The importance of param during the study.
-            pe_local = _build_parzen_estimator(
+            pe_local, _ = build_parzen_estimator_on_grid(
                 param_name, dist, region_trials, self._n_steps, prior_weight
             )
-            pdf_local = pe_local.pdf(grids) + 1e-12
+            pdf_local = pe_local.pdf({param_name: grids}) + 1e-12
         else:  # The importance of param in the search space.
-            pdf_local = np.full(pe_top.n_steps, 1.0 / pe_top.n_steps)
+            pdf_local = np.full(grid_size, 1.0 / grid_size)
 
         return float(pdf_local @ ((pdf_top / pdf_local - 1) ** 2))
 
