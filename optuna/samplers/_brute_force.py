@@ -57,7 +57,7 @@ class _TreeNode:
     # Each internal node corresponds to a parameter, and its children are keyed by the parameter's
     # candidate values (in internal representation). A path from the root to a terminal node
     # represents a complete `params`.
-    # 
+    #
     # A node takes one of the following four states:
     #   ┌────────────┬─────────────────┬────────────┐
     #   │   State    │    children     │ is_running │
@@ -83,7 +83,7 @@ class _TreeNode:
     #               "b": FloatDistribution(0.0, 1.0, step=1.0),
     #               "c": IntDistribution(0, 1),  # Show up only when a == 1.
     #           }
-    # 
+    #
     #   Then the full tree looks like this:
     #       tree (param_name="a"; internal)
     #       ├ 0: a0_b_node (param_name="b"; internal)
