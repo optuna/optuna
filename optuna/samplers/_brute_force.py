@@ -36,7 +36,6 @@ if TYPE_CHECKING:
 # TODO(nabenabe): Simply use `slots=True` once Python 3.9 is dropped.
 @dataclass(**({"slots": True} if sys.version_info >= (3, 10) else {}))
 class _TreeNode:
-    # region (_TreeNode documentation)
     # A tree representing the search space for brute force sampling.
     # Each internal node corresponds to a parameter, and its children are keyed by the parameter's
     # candidate values (in internal representation). A path from the root to a terminal node
@@ -50,7 +49,6 @@ class _TreeNode:
     # Leaf represents the last parameter of a finished ``params``, and internal means the node
     # does not represent a complete ``params``.
     # NOTE(nabenabe): I tried representations by list and dict, but they did not really speed up.
-    # endregion
 
     param_name: str | None = None
     children: dict[float, "_TreeNode"] | None = None
