@@ -271,6 +271,10 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
             )
         if len(target_trials) == 0:
             return {k: 0.0 for k in params}
+        target_trial_ids = set(t._trial_id for t in target_trials)
+        region_trial_ids = set(t._trial_id for t in region_trials)
+        assert target_trial_ids.issubset(region_trial_ids)
+
         # Theorem 4.2 and Algorithm 1 in the original paper:
         # https://arxiv.org/abs/2601.20800
         quantile = len(target_trials) / len(region_trials)  # gamma' / gamma
