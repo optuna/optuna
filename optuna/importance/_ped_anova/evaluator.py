@@ -9,7 +9,6 @@ import numpy as np
 from optuna._deprecated import _DEPRECATION_WARNING_TEMPLATE
 from optuna._experimental import experimental_class
 from optuna._warnings import optuna_warn
-from optuna.importance._base import _check_evaluate_args
 from optuna.importance._base import _sort_dict_by_importance
 from optuna.importance._base import BaseImportanceEvaluator
 from optuna.importance._ped_anova.scott_parzen_estimator import build_parzen_estimator_on_grid
