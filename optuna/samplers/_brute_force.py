@@ -72,7 +72,11 @@ class _TreeNode:
     #   └────────────┴─────────────────┴────────────┘
     #
     # So `self.children is None` means `Running` or `Unexpanded`. `not self.children` means the
-    # node is not internal.
+    # node is not internal. Each trial gives either of `running`, `unexpanded` or `leaf` states
+    # only to its last node.
+    # NOTE(nabenabe): Because running trials are always a snapshot (maybe not fully sampled yet),
+    # internal nodes of some trials can be the last node of some running trials. This induces some
+    # edge cases, which we already handle in this file.
     #
     # Examples:
     #   Let's assume that we observed the following `params`'s:
