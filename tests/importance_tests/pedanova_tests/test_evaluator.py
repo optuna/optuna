@@ -133,5 +133,4 @@ def test_conditional(params: list[str] | None) -> None:
         assert importance == {}
         return
     assert set(importance.keys()) == set(params or ["c", "x", "y"])
-    print(f"{importance=}")
     assert not all(v == 0.0 for v in importance.values()), f"{importance=}"
