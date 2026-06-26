@@ -100,7 +100,10 @@ def test_evaluate_on_local() -> None:
     global_evaluator = PedAnovaImportanceEvaluator(evaluate_on_local=False)
     assert global_evaluator.evaluate(study) != default_evaluator.evaluate(study)
 
-@pytest.mark.parametrize("params", [None, [], ["c"], ["x"], ["c", "x"], ["x", "y"], ["c", "x", "y"], ["d"], ["c", "d"]])
+
+@pytest.mark.parametrize(
+    "params", [None, [], ["c"], ["x"], ["c", "x"], ["x", "y"], ["c", "x", "y"], ["d"], ["c", "d"]]
+)
 def test_conditional(params: list[str] | None) -> None:
     study = optuna.study.create_study()
     dists_cx: dict[str, BaseDistribution] = {
