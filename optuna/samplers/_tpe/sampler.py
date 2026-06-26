@@ -107,6 +107,18 @@ class TPESampler(BaseSampler):
       Problems <https://doi.org/10.1145/3377930.3389817>`__
     - `Multiobjective Tree-Structured Parzen Estimator <https://doi.org/10.1613/jair.1.13188>`__
 
+    For constrained TPE (c-TPE), please refer to the following papers:
+
+    - `Optuna Constrained Tree-Structured Parzen Estimator Is a Joint Density Generalization of
+      c-TPE <https://arxiv.org/abs/2606.09889>`__
+    - `c-TPE: Tree-structured Parzen Estimator with Inequality Constraints for Expensive
+      Hyperparameter Optimization <https://arxiv.org/abs/2211.14411>`__
+
+    The first paper explains how Optuna handles constraints, while the second provides the
+    background of constrained optimization for TPE in general. Notably, the Optuna algorithm
+    differs from the one proposed in the second paper. OptunaHub provides
+    `c-TPE proposed by the second paper <https://hub.optuna.org/samplers/ctpe/>`__.
+
     For the `categorical_distance_func`, please refer to the following paper:
 
     - `Tree-Structured Parzen Estimator Can Solve Black-Box Combinatorial Optimization More
@@ -146,82 +158,11 @@ class TPESampler(BaseSampler):
         explicitly specified when study is created.
 
     Args:
-        consider_prior:
-            Enhance the stability of Parzen estimator by imposing a Gaussian prior when
-            :obj:`True`. The prior is only effective if the sampling distribution is
-            either :class:`~optuna.distributions.FloatDistribution`,
-            or :class:`~optuna.distributions.IntDistribution`.
-
-            .. warning::
-                Deprecated in v4.3.0. ``consider_prior`` argument will be removed in the future.
-                The removal of this feature is currently scheduled for v6.0.0,
-                but this schedule is subject to change.
-                From v4.3.0 onward, ``consider_prior`` automatically falls back to ``True``.
-                See https://github.com/optuna/optuna/releases/tag/v4.3.0.
-        prior_weight:
-            The weight of the prior. This argument is used in
-            :class:`~optuna.distributions.FloatDistribution`,
-            :class:`~optuna.distributions.IntDistribution`, and
-            :class:`~optuna.distributions.CategoricalDistribution`.
-
-            .. warning::
-                Deprecated in v4.9.0. ``prior_weight`` argument will be removed in the future.
-                The removal of this feature is currently scheduled for v6.0.0,
-                but this schedule is subject to change.
-                See https://github.com/optuna/optuna/releases/tag/v4.9.0.
-        consider_magic_clip:
-            Enable a heuristic to limit the smallest variances of Gaussians used in
-            the Parzen estimator.
-
-            .. warning::
-                Deprecated in v4.9.0. ``consider_magic_clip`` argument will be removed in the
-                future. The removal of this feature is currently scheduled for v6.0.0,
-                but this schedule is subject to change.
-                See https://github.com/optuna/optuna/releases/tag/v4.9.0.
-        consider_endpoints:
-            Take endpoints of domains into account when calculating variances of Gaussians
-            in Parzen estimator. See the original paper for details on the heuristics
-            to calculate the variances.
-
-            .. warning::
-                Deprecated in v4.9.0. ``consider_endpoints`` argument will be removed in the
-                future. The removal of this feature is currently scheduled for v6.0.0,
-                but this schedule is subject to change.
-                See https://github.com/optuna/optuna/releases/tag/v4.9.0.
         n_startup_trials:
             The random sampling is used instead of the TPE algorithm until the given number
             of trials finish in the same study.
         n_ei_candidates:
             Number of candidate samples used to calculate the expected improvement.
-        gamma:
-            A function that takes the number of finished trials and returns the number
-            of trials to form a density function for samples with low grains.
-            See the original paper for more details.
-
-            .. warning::
-                Deprecated in v4.9.0. ``gamma`` argument will be removed in the future.
-                The removal of this feature is currently scheduled for v6.0.0,
-                but this schedule is subject to change.
-                See https://github.com/optuna/optuna/releases/tag/v4.9.0.
-        weights:
-            A function that takes the number of finished trials and returns a weight for them.
-            See `Making a Science of Model Search: Hyperparameter Optimization in Hundreds of
-            Dimensions for Vision Architectures
-            <http://proceedings.mlr.press/v28/bergstra13.pdf>`__ for more details.
-
-            .. note::
-                In the multi-objective case, this argument is only used to compute the weights of
-                bad trials, i.e., trials to construct `g(x)` in the `paper
-                <https://papers.nips.cc/paper/4443-algorithms-for-hyper-parameter-optimization.pdf>`__
-                ). The weights of good trials, i.e., trials to construct `l(x)`, are computed by a
-                rule based on the hypervolume contribution proposed in the `paper of MOTPE
-                <https://doi.org/10.1613/jair.1.13188>`__.
-
-            .. warning::
-                Deprecated in v4.9.0. ``weights`` argument will be removed in the future.
-                The removal of this feature is currently scheduled for v6.0.0,
-                but this schedule is subject to change.
-                See https://github.com/optuna/optuna/releases/tag/v4.9.0.
         seed:
             Seed for random number generator.
         multivariate:
@@ -271,16 +212,6 @@ class TPESampler(BaseSampler):
                 sampler = optuna.samplers.TPESampler(multivariate=True, group=True)
                 study = optuna.create_study(sampler=sampler)
                 study.optimize(objective, n_trials=10)
-        warn_independent_sampling:
-            If this is :obj:`True` and ``multivariate=True``, a warning message is emitted when
-            the value of a parameter is sampled by using an independent sampler.
-            If ``multivariate=False``, this flag has no effect.
-
-            .. warning::
-                Deprecated in v4.9.0. ``warn_independent_sampling`` argument will be removed in
-                the future. The removal of this feature is currently scheduled for v6.0.0,
-                but this schedule is subject to change.
-                See https://github.com/optuna/optuna/releases/tag/v4.9.0.
         constant_liar:
             If :obj:`True`, penalize running trials to avoid suggesting parameter configurations
             nearby.
@@ -321,6 +252,87 @@ class TPESampler(BaseSampler):
                 Added in v3.0.0 as an experimental feature. The interface may change in newer
                 versions without prior notice.
                 See https://github.com/optuna/optuna/releases/tag/v3.0.0.
+        consider_prior:
+            Enhance the stability of Parzen estimator by imposing a Gaussian prior when
+            :obj:`True`. The prior is only effective if the sampling distribution is
+            either :class:`~optuna.distributions.FloatDistribution`,
+            or :class:`~optuna.distributions.IntDistribution`.
+
+            .. warning::
+                Deprecated in v4.3.0. ``consider_prior`` argument will be removed in the future.
+                The removal of this feature is currently scheduled for v6.0.0,
+                but this schedule is subject to change.
+                From v4.3.0 onward, ``consider_prior`` automatically falls back to ``True``.
+                See https://github.com/optuna/optuna/releases/tag/v4.3.0.
+        prior_weight:
+            The weight of the prior. This argument is used in
+            :class:`~optuna.distributions.FloatDistribution`,
+            :class:`~optuna.distributions.IntDistribution`, and
+            :class:`~optuna.distributions.CategoricalDistribution`.
+
+            .. warning::
+                Deprecated in v4.9.0. ``prior_weight`` argument will be removed in the future.
+                The removal of this feature is currently scheduled for v6.0.0,
+                but this schedule is subject to change.
+                See https://github.com/optuna/optuna/releases/tag/v4.9.0.
+        consider_magic_clip:
+            Enable a heuristic to limit the smallest variances of Gaussians used in
+            the Parzen estimator.
+
+            .. warning::
+                Deprecated in v4.9.0. ``consider_magic_clip`` argument will be removed in the
+                future. The removal of this feature is currently scheduled for v6.0.0,
+                but this schedule is subject to change.
+                See https://github.com/optuna/optuna/releases/tag/v4.9.0.
+        consider_endpoints:
+            Take endpoints of domains into account when calculating variances of Gaussians
+            in Parzen estimator. See the original paper for details on the heuristics
+            to calculate the variances.
+
+            .. warning::
+                Deprecated in v4.9.0. ``consider_endpoints`` argument will be removed in the
+                future. The removal of this feature is currently scheduled for v6.0.0,
+                but this schedule is subject to change.
+                See https://github.com/optuna/optuna/releases/tag/v4.9.0.
+        gamma:
+            A function that takes the number of finished trials and returns the number
+            of trials to form a density function for samples with low grains.
+            See the original paper for more details.
+
+            .. warning::
+                Deprecated in v4.9.0. ``gamma`` argument will be removed in the future.
+                The removal of this feature is currently scheduled for v6.0.0,
+                but this schedule is subject to change.
+                See https://github.com/optuna/optuna/releases/tag/v4.9.0.
+        weights:
+            A function that takes the number of finished trials and returns a weight for them.
+            See `Making a Science of Model Search: Hyperparameter Optimization in Hundreds of
+            Dimensions for Vision Architectures
+            <http://proceedings.mlr.press/v28/bergstra13.pdf>`__ for more details.
+
+            .. note::
+                In the multi-objective case, this argument is only used to compute the weights of
+                bad trials, i.e., trials to construct `g(x)` in the `paper
+                <https://papers.nips.cc/paper/4443-algorithms-for-hyper-parameter-optimization.pdf>`__
+                ). The weights of good trials, i.e., trials to construct `l(x)`, are computed by a
+                rule based on the hypervolume contribution proposed in the `paper of MOTPE
+                <https://doi.org/10.1613/jair.1.13188>`__.
+
+            .. warning::
+                Deprecated in v4.9.0. ``weights`` argument will be removed in the future.
+                The removal of this feature is currently scheduled for v6.0.0,
+                but this schedule is subject to change.
+                See https://github.com/optuna/optuna/releases/tag/v4.9.0.
+        warn_independent_sampling:
+            If this is :obj:`True` and ``multivariate=True``, a warning message is emitted when
+            the value of a parameter is sampled by using an independent sampler.
+            If ``multivariate=False``, this flag has no effect.
+
+            .. warning::
+                Deprecated in v4.9.0. ``warn_independent_sampling`` argument will be removed in
+                the future. The removal of this feature is currently scheduled for v6.0.0,
+                but this schedule is subject to change.
+                See https://github.com/optuna/optuna/releases/tag/v4.9.0.
         categorical_distance_func:
             A dictionary of distance functions for categorical parameters. The key is the name of
             the categorical parameter and the value is a distance function that takes two

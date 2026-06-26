@@ -2,10 +2,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import decimal
+from functools import lru_cache
 import math
 from numbers import Real
 import sys
 from typing import Any
+from typing import cast
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -22,12 +24,13 @@ from optuna.trial import TrialState
 
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
     from collections.abc import Sequence
 
     from optuna.distributions import BaseDistribution
     from optuna.study import Study
     from optuna.trial import FrozenTrial
+
+    ChoicesArgsType = tuple[int | float, int | float, int | float | None]  # low, high, step
 
 
 # TODO(nabenabe): Simply use `slots=True` once Python 3.9 is dropped.
@@ -50,39 +53,51 @@ class _TreeNode:
     param_name: str | None = None
     children: dict[float, "_TreeNode"] | None = None
     is_running: bool = False
+    choices_args: ChoicesArgsType | None = None
 
-    def expand(self, param_name: str | None, search_space: Iterable[float]) -> None:
+    def _validate_search_space_consistency(
+        self, param_name: str | None, choices_args: ChoicesArgsType | None
+    ) -> None:
+        if self.param_name != param_name:
+            raise ValueError(f"param_name mismatch: {self.param_name} != {param_name}")
+        if choices_args != self.choices_args:
+            assert self.children is not None and choices_args is not None
+            choices_old = list(self.children)
+            choices_new = _enumerate_candidates(*choices_args)
+            raise ValueError(
+                f"search_space mismatch in {param_name}: {choices_old} != {choices_new}"
+            )
+
+    def expand(self, param_name: str | None, choices_args: ChoicesArgsType) -> None:
         # If the node is unexpanded, expand it.
         # Otherwise, check if the node is compatible with the given search space.
         if self.children is None:
             # Expand the node
             self.param_name = param_name
-            self.children = {value: _TreeNode() for value in search_space}
+            choices = _enumerate_candidates(*choices_args)
+            self.children = {value: _TreeNode() for value in choices}
+            self.choices_args = choices_args
         else:
-            if self.param_name != param_name:
-                raise ValueError(f"param_name mismatch: {self.param_name} != {param_name}")
-            if self.children.keys() != set(search_space):
-                raise ValueError(
-                    f"search_space mismatch: {set(self.children.keys())} != {set(search_space)}"
-                )
+            self._validate_search_space_consistency(param_name, choices_args)
 
     def set_running(self) -> None:
         self.is_running = True
 
     def set_leaf(self) -> None:
-        self.expand(None, [])
+        if self.children is not None:
+            self._validate_search_space_consistency(None, None)
+        self.children = {}
 
-    def add_path(
-        self, params_and_search_spaces: Iterable[tuple[str, Iterable[float], float]]
-    ) -> _TreeNode | None:
+    def add_path(self, trial_path: list[tuple[str, ChoicesArgsType, float]]) -> _TreeNode | None:
         # Add a path (i.e. a list of suggested parameters in one trial) to the tree.
         current_node = self
-        for param_name, search_space, value in params_and_search_spaces:
-            current_node.expand(param_name, search_space)
-            assert current_node.children is not None
-            if value not in current_node.children:
+        for param_name, choices_args, value in trial_path:
+            current_node.expand(param_name, choices_args)
+            # TODO(nabenabe): This is a temporal fix until the lazy node is introduced.
+            next_node = (current_node.children or {}).get(value)
+            if next_node is None:
                 return None
-            current_node = current_node.children[value]
+            current_node = next_node
         return current_node
 
     def is_any_expandable(self, exclude_running: bool) -> bool:
@@ -92,17 +107,14 @@ class _TreeNode:
 
     def count_unexpanded(self, exclude_running: bool) -> int:
         # Count the number of unexpanded nodes in the subtree.
-        if self.children is None:
+        if (children := self.children) is None:
             return 0 if exclude_running and self.is_running else 1
-        else:
-            return sum(child.count_unexpanded(exclude_running) for child in self.children.values())
+        return sum(child.count_unexpanded(exclude_running) for child in children.values())
 
     def sample_child(self, rng: np.random.RandomState, exclude_running: bool) -> float:
-        assert self.children is not None
-
+        assert (children := self.children) is not None
         unexpanded_counts = np.array(
-            [child.count_unexpanded(exclude_running) for child in self.children.values()],
-            dtype=np.float64,
+            [child.count_unexpanded(exclude_running) for child in children.values()], dtype=float
         )
 
         # Blend exact uniform sampling with flat uniform sampling
@@ -114,15 +126,14 @@ class _TreeNode:
 
         weights = (1.0 - alpha) * weights_orig + alpha * weights_flat
         if any(
-            not value.is_running and weights[i] > 0
-            for i, value in enumerate(self.children.values())
+            not value.is_running and weights[i] > 0 for i, value in enumerate(children.values())
         ):
             # Prioritize picking non-running and unexpanded nodes.
-            for i, child in enumerate(self.children.values()):
+            for i, child in enumerate(children.values()):
                 if child.is_running:
                     weights[i] = 0.0
         weights /= weights.sum()
-        return rng.choice(list(self.children.keys()), p=weights).item()
+        return rng.choice(list(children.keys()), p=weights).item()
 
 
 def _get_non_waiting_trials_and_current_trial_index(
@@ -208,28 +219,41 @@ class BruteForceSampler(BaseSampler):
     @staticmethod
     def _populate_tree(tree: _TreeNode, trials: list[FrozenTrial], params: dict[str, Any]) -> None:
         # Populate tree under given params from the given trials.
+        cat_internal_repr_cache: dict[str, dict[CategoricalChoiceType, float]] = {}
         params_items = params.items()
         nonnan_params_items = {k: v for k, v in params_items if not _is_nan(v)}.items()
         nan_param_names = [k for k, v in params_items if _is_nan(v)]
-        for trial in trials:
+
+        def _get_trial_path(trial: FrozenTrial) -> list[tuple[str, ChoicesArgsType, float]]:
+            trial_path: list[tuple[str, ChoicesArgsType, float]] = []
             trial_params = trial.params
+            for name, dist in trial.distributions.items():
+                if name in params:
+                    continue
+                if name not in cat_internal_repr_cache:
+                    # NOTE(nabenabe): isinstance is too slow here, and the easiest hack to avoid it
+                    # is to set an empty dict. cf. https://github.com/optuna/optuna/pull/6705
+                    cat_internal_repr_cache[name] = {}
+                    if isinstance(dist, CategoricalDistribution):
+                        cat_internal_repr_cache[name] = {c: i for i, c in enumerate(dist.choices)}
+                if cat_repr := cat_internal_repr_cache[name]:
+                    if (value := cat_repr.get(param_val := trial_params[name])) is None:
+                        value = dist.to_internal_repr(param_val)  # most likely param_val is nan.
+                    dist = cast(CategoricalDistribution, dist)  # mypy redefinition.
+                    trial_path.append((name, (0, len(dist.choices) - 1, 1), value))
+                else:
+                    dist = cast("IntDistribution | FloatDistribution", dist)  # mypy redefinition.
+                    trial_path.append((name, (dist.low, dist.high, dist.step), trial_params[name]))
+            return trial_path
+
+        for trial in trials:
             if params:
+                trial_params = trial.params
                 if not (nonnan_params_items <= trial_params.items()):
                     continue
                 if not all(_is_nan(trial_params.get(p)) for p in nan_param_names):
                     continue
-            leaf = tree.add_path(
-                (
-                    (
-                        param_name,
-                        _enumerate_candidates(param_distribution),
-                        param_distribution.to_internal_repr(trial.params[param_name]),
-                    )
-                    for param_name, param_distribution in trial.distributions.items()
-                    if param_name not in params
-                )
-            )
-            if leaf is not None:
+            if (leaf := tree.add_path(_get_trial_path(trial))) is not None:
                 # The parameters are on the defined grid.
                 if trial.state.is_finished():
                     leaf.set_leaf()
@@ -247,14 +271,20 @@ class BruteForceSampler(BaseSampler):
         trials, current_idx = _get_non_waiting_trials_and_current_trial_index(study, trial.number)
         trials.pop(current_idx)
         tree = _TreeNode()
-        candidates = _enumerate_candidates(param_distribution)
-        tree.expand(param_name, candidates)
+        if isinstance(param_distribution, CategoricalDistribution):
+            c_args: ChoicesArgsType = (0, len(param_distribution.choices) - 1, 1)
+        elif isinstance(param_distribution, (IntDistribution, FloatDistribution)):
+            c_args = (param_distribution.low, param_distribution.high, param_distribution.step)
+        else:
+            assert False, "Should not reach."
+        tree.expand(param_name, c_args)
         # Populating must happen after the initialization above to prevent `tree` from
         # being initialized as an empty graph, which is created with n_jobs > 1
         # where we get trials[i].params = {} for some i.
         self._populate_tree(tree, trials, trial.params)
         if not tree.is_any_expandable(exclude_running):
-            return param_distribution.to_external_repr(self._rng.rng.choice(candidates).item())
+            choices = _enumerate_candidates(*c_args)
+            return param_distribution.to_external_repr(self._rng.rng.choice(choices).item())
         else:
             return param_distribution.to_external_repr(
                 tree.sample_child(self._rng.rng, exclude_running)
@@ -279,29 +309,23 @@ def _is_nan(v: CategoricalChoiceType) -> bool:
     return isinstance(v, Real) and math.isnan(float(v))
 
 
-def _enumerate_candidates(param_distribution: BaseDistribution) -> Sequence[float]:
-    if isinstance(param_distribution, FloatDistribution):
-        if param_distribution.step is None:
-            raise ValueError(
-                "FloatDistribution.step must be given for BruteForceSampler"
-                " (otherwise, the search space will be infinite)."
-            )
-        low = decimal.Decimal(str(param_distribution.low))
-        high = decimal.Decimal(str(param_distribution.high))
-        step = decimal.Decimal(str(param_distribution.step))
-
-        ret = []
-        value = low
-        while value <= high:
-            ret.append(float(value))
-            value += step
-
-        return ret
-    elif isinstance(param_distribution, IntDistribution):
-        return list(
-            range(param_distribution.low, param_distribution.high + 1, param_distribution.step)
+@lru_cache
+def _enumerate_candidates(
+    low: int | float, high: int | float, step: int | float | None
+) -> tuple[float, ...]:
+    if step is None:
+        raise ValueError(
+            "FloatDistribution.step must be given for BruteForceSampler"
+            " (otherwise, the search space will be infinite)."
         )
-    elif isinstance(param_distribution, CategoricalDistribution):
-        return list(range(len(param_distribution.choices)))  # Internal representations.
+    if isinstance(low, int) and isinstance(high, int) and isinstance(step, int):
+        return tuple(range(low, high + 1, step))
     else:
-        raise ValueError(f"Unknown distribution {param_distribution}.")
+        low_ = decimal.Decimal(str(low))
+        high_ = decimal.Decimal(str(high))
+        step_ = decimal.Decimal(str(step))
+        ret = []
+        while low_ <= high_:
+            ret.append(float(low_))
+            low_ += step_
+        return tuple(ret)

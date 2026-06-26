@@ -7,6 +7,8 @@ import numpy as np
 import pytest
 
 import optuna
+from optuna.distributions import BaseDistribution
+from optuna.distributions import FloatDistribution
 from optuna.importance import PedAnovaImportanceEvaluator
 from optuna.importance._ped_anova.evaluator import _QuantileFilter
 from optuna.trial import FrozenTrial
@@ -55,7 +57,7 @@ def test_filter(
 
 
 def test_error_in_ped_anova() -> None:
-    with pytest.raises(RuntimeError):
+    with pytest.raises(ValueError):
         evaluator = PedAnovaImportanceEvaluator()
         study = get_study(seed=0, n_trials=5, is_multi_obj=True)
         evaluator.evaluate(study)
@@ -97,3 +99,26 @@ def test_evaluate_on_local() -> None:
     default_evaluator = PedAnovaImportanceEvaluator(evaluate_on_local=True)
     global_evaluator = PedAnovaImportanceEvaluator(evaluate_on_local=False)
     assert global_evaluator.evaluate(study) != default_evaluator.evaluate(study)
+
+
+def test_conditional() -> None:
+    study = optuna.study.create_study()
+    dists_cx: dict[str, BaseDistribution] = {
+        "c": FloatDistribution(0.0, 1.0),
+        "x": FloatDistribution(0.0, 2.0),
+    }
+    dists_cy: dict[str, BaseDistribution] = {
+        "c": FloatDistribution(0.0, 1.0),
+        "y": FloatDistribution(-2.0, 0.0),
+    }
+    trials = [
+        optuna.create_trial(params={"c": 1.0, "x": 1.0}, distributions=dists_cx, value=1.0),
+        optuna.create_trial(params={"c": 0.0, "y": -1.0}, distributions=dists_cy, value=-1.0),
+        optuna.create_trial(params={"c": 0.8, "x": 0.8}, distributions=dists_cx, value=0.8),
+        optuna.create_trial(params={"c": 0.2, "y": -0.2}, distributions=dists_cy, value=-0.2),
+    ]
+    study.add_trials(trials)
+    evaluator = PedAnovaImportanceEvaluator()
+    importance = evaluator.evaluate(study)
+    assert set(importance.keys()) == {"c", "x", "y"}
+    assert importance != {"c": 0.0, "x": 0.0, "y": 0.0}
