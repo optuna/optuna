@@ -84,6 +84,8 @@ class MeanDecreaseImpurityImportanceEvaluator(BaseImportanceEvaluator):
             return {}
 
         trials: list[FrozenTrial] = _get_filtered_trials(study, params=params, target=target)
+        if len(trials) <= 1:
+            return {k: 0.0 for k in params}
         trans = _SearchSpaceTransform(distributions, transform_log=False, transform_step=False)
         trans_params: np.ndarray = _get_trans_params(trials, trans)
         target_values: np.ndarray = _get_target_values(trials, target)
