@@ -41,13 +41,14 @@ def get_param_importances(
     The returned dictionary is ordered by its values in a descending order.
     By default, the sum of the importance values are normalized to 1.0.
 
-    If ``params`` is :obj:`None`, all parameter that are present in all of the completed trials are
-    assessed.
-    This implies that conditional parameters will be excluded from the evaluation.
-    To assess the importances of conditional parameters, a :obj:`list` of parameter names can be
-    specified via ``params``.
-    If specified, only completed trials that contain all of the parameters will be considered.
-    If no such trials are found, an error will be raised.
+    With the default evaluator, :class:`~optuna.importance.PedAnovaImportanceEvaluator`,
+    ``params=None`` assesses all parameters that appear in completed trials, including conditional
+    parameters.
+    Other evaluators assess only parameters that are present in all of the completed trials and
+    therefore exclude conditional parameters.
+    If ``params`` is specified, only the specified parameters are assessed.
+    When using an evaluator other than :class:`~optuna.importance.PedAnovaImportanceEvaluator`,
+    at least one completed trial must contain all specified parameters.
 
     If the given study does not contain completed trials, an error will be raised.
 
