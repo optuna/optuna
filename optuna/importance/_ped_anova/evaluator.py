@@ -64,7 +64,6 @@ class _QuantileFilter:
         return [t for t, should_keep in zip(trials, should_keep_trials) if should_keep]
 
 
-@experimental_class("3.6.0")
 class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
     """PED-ANOVA importance evaluator.
 
