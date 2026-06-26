@@ -71,15 +71,12 @@ def get_param_importances(
             If :obj:`None`, all parameters that are present in all of the completed trials are
             assessed.
         target:
-            A function to specify the value to evaluate importances.
-            If it is :obj:`None` and ``study`` is being used for single-objective optimization,
-            the objective values are used. ``target`` must be specified if ``study`` is being
-            used for multi-objective optimization.
-
-            .. note::
-                Specify this argument if ``study`` is being used for multi-objective
-                optimization. For example, to get the hyperparameter importance of the first
-                objective, use ``target=lambda t: t.values[0]`` for the target parameter.
+            A function that returns the value used to evaluate importances.
+            If :obj:`None`, objective values are used for single-objective optimization.
+            For multi-objective optimization, :obj:`None` is supported only by
+            :class:`~optuna.importance.PedAnovaImportanceEvaluator`. When using another
+            evaluator, specify ``target``, for example ``target=lambda t: t.values[0]``, to
+            evaluate importances for a specific objective.
         normalize:
             A boolean option to specify whether the sum of the importance values should be
             normalized to 1.0.
