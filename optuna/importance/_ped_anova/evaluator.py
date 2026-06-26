@@ -202,6 +202,11 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
             return trials
         if study._is_multi_objective() and target is None:
             n_below = math.ceil(quantile * len(trials)) - 1
+            # NOTE(kAIto47802): Since HSSP is implemented greedily, target trials could be
+            # obtained by taking the top trials from region trials without solving HSSP again,
+            # which would improve performance by a constant factor. However,
+            # _split_complete_trials_multi_objective does not return trials in the selected
+            # order, so this optimization would require a larger refactoring.
             top_trials, _ = _split_complete_trials_multi_objective(trials, study, n_below)
             return top_trials
         is_lower_better = study.directions[0] == StudyDirection.MINIMIZE
