@@ -355,5 +355,5 @@ def _resolve_params(study: Study, params: list[str] | None) -> list[str]:
                 "Study must contain at least one completed trial for each specified parameter. "
                 f"Missing parameters: {missing}."
             )
-        all_params = [p for p in all_params if p in params]
+        return list(params)
     return all_params
