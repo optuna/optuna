@@ -198,6 +198,10 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
     ) -> list[FrozenTrial]:
         if quantile == 1.0:
             return trials
+        if study._is_multi_objective() and target is None:
+            n_below = math.ceil(quantile * len(trials)) - 1
+            top_trials, _ = _split_complete_trials_multi_objective(trials, study, n_below)
+            return top_trials
         is_lower_better = study.directions[0] == StudyDirection.MINIMIZE
         if target is not None:
             optuna_warn(
