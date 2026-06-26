@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -18,37 +19,19 @@ if TYPE_CHECKING:
     from optuna.trial import FrozenTrial
 
 
-class _ScottParzenEstimator(_ParzenEstimator):
+class ScottParzenEstimator(_ParzenEstimator):
     """1D ParzenEstimator using the bandwidth selection by Scott's rule."""
 
     def __init__(
         self,
-        param_name: str,
-        dist: IntDistribution | CategoricalDistribution,
-        counts: np.ndarray,
-        prior_weight: float,
-    ):
-        assert isinstance(dist, (CategoricalDistribution, IntDistribution))
-        assert not isinstance(dist, IntDistribution) or dist.low == 0
-        n_choices = dist.high + 1 if isinstance(dist, IntDistribution) else len(dist.choices)
-        assert len(counts) == n_choices, counts
-
-        self._n_steps = len(counts)
-        self._param_name = param_name
-        self._counts = counts.copy()
-        super().__init__(
-            observations={param_name: np.arange(self._n_steps)[counts > 0.0]},
-            search_space={param_name: dist},
-            parameters=_ParzenEstimatorParameters(
-                prior_weight=prior_weight,
-                consider_magic_clip=False,
-                consider_endpoints=False,
-                weights=lambda x: np.empty(0),
-                multivariate=True,
-                categorical_distance_func={},
-            ),
-            predetermined_weights=counts[counts > 0.0],
-        )
+        observations: dict[str, np.ndarray],
+        search_space: dict[str, BaseDistribution],
+        parameters: _ParzenEstimatorParameters,
+        predetermined_weights: np.ndarray | None = None,
+    ) -> None:
+        assert predetermined_weights is not None
+        self._weights = predetermined_weights
+        super().__init__(observations, search_space, parameters, predetermined_weights)
 
     def _calculate_numerical_distributions(
         self,
@@ -62,57 +45,34 @@ class _ScottParzenEstimator(_ParzenEstimator):
         step = search_space.step
         assert step is not None and np.isclose(step, 1.0), "MyPy redefinition."
 
-        n_trials = np.sum(self._counts)
-        counts_non_zero = self._counts[self._counts > 0]
-        weights = counts_non_zero / n_trials
-        mus = np.arange(self.n_steps)[self._counts > 0]
-        mean_est = mus @ weights
-        sigma_est = np.sqrt((mus - mean_est) ** 2 @ counts_non_zero / max(1, n_trials - 1))
+        low, high = search_space.low, search_space.high
+        weights_cum = np.cumsum(self._weights)
+        weights_sum = weights_cum[-1]
+        if search_space.log:
+            observations = np.log(observations)
+            low, high = math.log(low), math.log(high)
 
-        count_cum = np.cumsum(counts_non_zero)
-        idx_q25 = np.searchsorted(count_cum, n_trials // 4, side="left")
-        idx_q75 = np.searchsorted(count_cum, n_trials * 3 // 4, side="right")
-        interquantile_range = mus[min(mus.size - 1, idx_q75)] - mus[idx_q25]
-        sigma_est = 1.059 * min(interquantile_range / 1.34, sigma_est) * n_trials ** (-0.2)
-        # To avoid numerical errors. 0.5/1.64 means 1.64sigma (=90%) will fit in the target grid.
-        sigma_min = 0.5 / 1.64
-        sigmas = np.full_like(mus, max(sigma_est, sigma_min), dtype=np.float64)
-        mus = np.append(mus, [0.5 * (search_space.low + search_space.high)])
-        sigmas = np.append(sigmas, [1.0 * (search_space.high - search_space.low + 1)])
-
-        return _BatchedDiscreteTruncNormDistributions(
-            mu=mus, sigma=sigmas, low=0, high=self.n_steps - 1, step=1
+        mean_est = (observations @ self._weights) / weights_sum
+        sigma_est = np.sqrt(
+            ((observations - mean_est) ** 2 @ self._weights) / max(1, weights_sum - 1)
         )
 
-    @property
-    def n_steps(self) -> int:
-        return self._n_steps
+        q1_idx = np.searchsorted(weights_cum, weights_sum // 4, side="left")
+        q3_idx = np.searchsorted(weights_cum, weights_sum * 3 // 4, side="right")
+        iqr = observations[min(observations.size - 1, q3_idx)] - observations[q1_idx]
+        sigma_est = 1.059 * min(iqr / 1.34, sigma_est) * weights_sum**-0.2
+        # To avoid numerical errors. 0.5/1.64 means 1.64sigma (=90%) will fit in the target grid.
+        sigma_min = 0.5 / 1.64
+        mus_with_prior = np.r_[observations, (low + high) / 2.0]
+        sigmas = np.full_like(observations, max(sigma_est, sigma_min), dtype=np.float64)
+        sigmas_with_prior = np.r_[sigmas, high - low + 1]
 
-    def pdf(self, samples: np.ndarray) -> np.ndarray:
-        return np.exp(self.log_pdf({self._param_name: samples}))
+        return _BatchedDiscreteTruncNormDistributions(
+            mu=mus_with_prior, sigma=sigmas_with_prior, low=low, high=high, step=1
+        )
 
-
-def _get_grids_and_grid_indices_of_trials(
-    param_name: str,
-    dist: IntDistribution | FloatDistribution,
-    trials: list[FrozenTrial],
-    n_steps: int,
-) -> tuple[int, np.ndarray]:
-    assert isinstance(dist, (FloatDistribution, IntDistribution)), "Unexpected distribution."
-    if isinstance(dist, IntDistribution) and dist.log:
-        log2_domain_size = int(np.ceil(np.log(dist.high - dist.low + 1) / np.log(2))) + 1
-        n_steps = min(log2_domain_size, n_steps)
-    elif dist.step is not None:
-        assert not dist.log, "log must be False when step is not None."
-        n_steps = min(round((dist.high - dist.low) / dist.step) + 1, n_steps)
-
-    scaler = np.log if dist.log else np.asarray
-    grids = np.linspace(scaler(dist.low), scaler(dist.high), n_steps)
-    params = scaler([t.params[param_name] for t in trials])
-    step_size = grids[1] - grids[0]
-    # grids[indices[n] - 1] < param - step_size / 2 <= grids[indices[n]]
-    indices = np.searchsorted(grids, params - step_size / 2)
-    return grids.size, indices
+    def pdf(self, samples: dict[str, np.ndarray]) -> np.ndarray:
+        return np.exp(self.log_pdf(samples))
 
 
 def _count_numerical_param_in_grid(
@@ -121,32 +81,36 @@ def _count_numerical_param_in_grid(
     trials: list[FrozenTrial],
     n_steps: int,
 ) -> np.ndarray:
-    n_grids, grid_indices_of_trials = _get_grids_and_grid_indices_of_trials(
-        param_name, dist, trials, n_steps
-    )
-    unique_vals, counts_in_unique = np.unique(grid_indices_of_trials, return_counts=True)
-    counts = np.zeros(n_grids, dtype=np.int32)
-    counts[unique_vals] += counts_in_unique
-    return counts
+    assert isinstance(dist, (FloatDistribution, IntDistribution)), "Unexpected distribution."
+    if isinstance(dist, IntDistribution) and dist.log:
+        log2_domain_size = int(np.ceil(np.log(dist.high - dist.low + 1) / np.log(2))) + 1
+        n_steps = min(log2_domain_size, n_steps)
+    elif dist.step is not None:
+        assert not dist.log, "log must be False when step is not None."
+        n_steps = min(round((dist.high - dist.low) / dist.step) + 1, n_steps)
+    low, high = (math.log(dist.low), math.log(dist.high)) if dist.log else (dist.low, dist.high)
+    param_values = (np.log if dist.log else np.asarray)([t.params[param_name] for t in trials])
+    step_size = (high - low) / (n_steps - 1)
+    # For backward compatibility, midpoint ties go to the lower grid.
+    indices = np.ceil((param_values - low) / step_size - 0.5).astype(int)
+    indices = np.clip(indices, 0, n_steps - 1)
+    return np.bincount(indices, minlength=n_steps)
 
 
 def _count_categorical_param_in_grid(
     param_name: str, dist: CategoricalDistribution, trials: list[FrozenTrial]
 ) -> np.ndarray:
-    cat_indices = [int(dist.to_internal_repr(t.params[param_name])) for t in trials]
-    unique_vals, counts_in_unique = np.unique(cat_indices, return_counts=True)
-    counts = np.zeros(len(dist.choices), dtype=np.int32)
-    counts[unique_vals] += counts_in_unique
-    return counts
+    indices = [int(dist.to_internal_repr(t.params[param_name])) for t in trials]
+    return np.bincount(indices, minlength=len(dist.choices))
 
 
-def _build_parzen_estimator(
+def build_parzen_estimator_on_grid(
     param_name: str,
     dist: BaseDistribution,
     trials: list[FrozenTrial],
     n_steps: int,
     prior_weight: float,
-) -> _ScottParzenEstimator:
+) -> tuple[ScottParzenEstimator, int]:
     rounded_dist: IntDistribution | CategoricalDistribution
     if isinstance(dist, (IntDistribution, FloatDistribution)):
         counts = _count_numerical_param_in_grid(param_name, dist, trials, n_steps)
@@ -157,5 +121,20 @@ def _build_parzen_estimator(
     else:
         assert False, f"Got an unknown dist with the type {type(dist)}."
 
-    # counts.astype(float) is necessary for weight calculation in ParzenEstimator.
-    return _ScottParzenEstimator(param_name, rounded_dist, counts.astype(np.float64), prior_weight)
+    observations = np.flatnonzero(counts)
+    weights = counts[observations]
+    parameters = _ParzenEstimatorParameters(
+        prior_weight=prior_weight,
+        consider_magic_clip=False,
+        consider_endpoints=False,
+        weights=lambda x: np.empty(0),
+        multivariate=True,
+        categorical_distance_func={},
+    )
+    pe = ScottParzenEstimator(
+        {param_name: observations},
+        {param_name: rounded_dist},
+        parameters,
+        weights,
+    )
+    return pe, counts.size
