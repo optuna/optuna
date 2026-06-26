@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from collections import defaultdict
+import math
 from typing import cast
 from typing import TYPE_CHECKING
-import math
 
 import numpy as np
 
