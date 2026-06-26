@@ -91,6 +91,12 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
 
     .. note::
 
+        For multi-objective studies, if ``target`` is :obj:`None`, top-quantile trials are
+        selected in the same manner as MOTPE, using non-domination ranks and the hypervolume
+        subset selection problem (HSSP) for tie-breaking.
+
+    .. note::
+
         The performance of PED-ANOVA depends on how many trials to consider above
         ``target_quantile``. To stabilize the analysis, it is preferable to include at least
         5 trials above ``target_quantile``.
