@@ -120,18 +120,6 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
             trials achieve top-50% performance. If ``region_quantile=1.0``, the importance is
             computed in the whole search space.
 
-        baseline_quantile:
-            Compute the importance of achieving top-``baseline_quantile`` quantile objective value.
-            For example, ``baseline_quantile=0.1`` means that the importances give the information
-            of which parameters were important to achieve the top-10% performance during
-            optimization.
-
-            .. warning::
-                Deprecated in v4.7.0. This feature will be removed in the future. The removal of
-                this feature is currently scheduled for v5.0.0, but this schedule is subject to
-                change. ``baseline_quantile`` is currently ignored. Use ``target_quantile``
-                instead. See https://github.com/optuna/optuna/releases/tag/v4.7.0.
-
         evaluate_on_local:
             Whether we measure the importance in the local or global space.
             If :obj:`True`, the importances imply how importance each parameter is during
