@@ -253,7 +253,7 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
                 "low `target` values. If this is not what you want, "
                 "please modify target, e.g., by multiplying the output by -1."
             )
-        params = _get_params(study, params=params)
+        params = _resolve_params(study, params=params)
 
         assert params is not None
 
@@ -336,7 +336,7 @@ def _get_filtered_trials(
     ]
 
 
-def _get_params(
+def _resolve_params(
     study: Study, params: list[str] | None
 ) -> list[str]:
     if params is not None:
