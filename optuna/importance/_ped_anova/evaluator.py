@@ -336,9 +336,7 @@ def _get_filtered_trials(
     ]
 
 
-def _resolve_params(
-    study: Study, params: list[str] | None
-) -> list[str]:
+def _resolve_params(study: Study, params: list[str] | None) -> list[str]:
     if params is not None:
         if not isinstance(params, (list, tuple)):
             raise TypeError(
