@@ -56,6 +56,68 @@ def test_filter(
     assert all(i == j for i, j in zip(indices, filtered_indices))
 
 
+
+def test_n_trials_equal_to_min_n_top_trials() -> None:
+    evaluator = PedAnovaImportanceEvaluator()
+    study = get_study(seed=0, n_trials=evaluator._min_n_top_trials, is_multi_obj=False)
+    param_importance = list(evaluator.evaluate(study).values())
+    n_params = len(param_importance)
+    assert np.allclose(param_importance, np.zeros(n_params))
+
+
+def test_direction() -> None:
+    study_minimize = get_study(seed=0, n_trials=20, is_multi_obj=False)
+    study_maximize = optuna.create_study(direction="maximize")
+    study_maximize.add_trials(study_minimize.trials)
+
+    evaluator = PedAnovaImportanceEvaluator()
+    assert evaluator.evaluate(study_minimize) != evaluator.evaluate(study_maximize)
+
+
+def test_target_quantile() -> None:
+    study = get_study(seed=0, n_trials=20, is_multi_obj=False)
+    default_evaluator = PedAnovaImportanceEvaluator(target_quantile=0.1)
+    evaluator = PedAnovaImportanceEvaluator(target_quantile=0.3)
+    assert evaluator.evaluate(study) != default_evaluator.evaluate(study)
+
+
+def test_region_quantile_less_than_one() -> None:
+    study = get_study(seed=0, n_trials=20, is_multi_obj=False)
+    default_evaluator = PedAnovaImportanceEvaluator(region_quantile=1.0)
+    evaluator = PedAnovaImportanceEvaluator(region_quantile=0.5)
+    assert evaluator.evaluate(study) != default_evaluator.evaluate(study)
+
+
+def test_evaluate_on_local() -> None:
+    study = get_study(seed=0, n_trials=20, is_multi_obj=False)
+    default_evaluator = PedAnovaImportanceEvaluator(evaluate_on_local=True)
+    global_evaluator = PedAnovaImportanceEvaluator(evaluate_on_local=False)
+    assert global_evaluator.evaluate(study) != default_evaluator.evaluate(study)
+
+
+def test_conditional() -> None:
+    study = optuna.study.create_study()
+    dists_cx: dict[str, BaseDistribution] = {
+        "c": FloatDistribution(0.0, 1.0),
+        "x": FloatDistribution(0.0, 2.0),
+    }
+    dists_cy: dict[str, BaseDistribution] = {
+        "c": FloatDistribution(0.0, 1.0),
+        "y": FloatDistribution(-2.0, 0.0),
+    }
+    trials = [
+        optuna.create_trial(params={"c": 1.0, "x": 1.0}, distributions=dists_cx, value=1.0),
+        optuna.create_trial(params={"c": 0.0, "y": -1.0}, distributions=dists_cy, value=-1.0),
+        optuna.create_trial(params={"c": 0.8, "x": 0.8}, distributions=dists_cx, value=0.8),
+        optuna.create_trial(params={"c": 0.2, "y": -0.2}, distributions=dists_cy, value=-0.2),
+    ]
+    study.add_trials(trials)
+    evaluator = PedAnovaImportanceEvaluator()
+    importance = evaluator.evaluate(study)
+    assert set(importance.keys()) == {"c", "x", "y"}
+    assert importance != {"c": 0.0, "x": 0.0, "y": 0.0}
+
+
 @pytest.mark.parametrize(
     (
         "directions",
@@ -125,64 +187,3 @@ def test_get_top_quantile_trials_multi_objective_target_none(
     assert len(target_trials) == expected_target_size
     assert len(region_trials) == expected_region_size
     assert {t._trial_id for t in target_trials}.issubset({t._trial_id for t in region_trials})
-
-
-def test_n_trials_equal_to_min_n_top_trials() -> None:
-    evaluator = PedAnovaImportanceEvaluator()
-    study = get_study(seed=0, n_trials=evaluator._min_n_top_trials, is_multi_obj=False)
-    param_importance = list(evaluator.evaluate(study).values())
-    n_params = len(param_importance)
-    assert np.allclose(param_importance, np.zeros(n_params))
-
-
-def test_direction() -> None:
-    study_minimize = get_study(seed=0, n_trials=20, is_multi_obj=False)
-    study_maximize = optuna.create_study(direction="maximize")
-    study_maximize.add_trials(study_minimize.trials)
-
-    evaluator = PedAnovaImportanceEvaluator()
-    assert evaluator.evaluate(study_minimize) != evaluator.evaluate(study_maximize)
-
-
-def test_target_quantile() -> None:
-    study = get_study(seed=0, n_trials=20, is_multi_obj=False)
-    default_evaluator = PedAnovaImportanceEvaluator(target_quantile=0.1)
-    evaluator = PedAnovaImportanceEvaluator(target_quantile=0.3)
-    assert evaluator.evaluate(study) != default_evaluator.evaluate(study)
-
-
-def test_region_quantile_less_than_one() -> None:
-    study = get_study(seed=0, n_trials=20, is_multi_obj=False)
-    default_evaluator = PedAnovaImportanceEvaluator(region_quantile=1.0)
-    evaluator = PedAnovaImportanceEvaluator(region_quantile=0.5)
-    assert evaluator.evaluate(study) != default_evaluator.evaluate(study)
-
-
-def test_evaluate_on_local() -> None:
-    study = get_study(seed=0, n_trials=20, is_multi_obj=False)
-    default_evaluator = PedAnovaImportanceEvaluator(evaluate_on_local=True)
-    global_evaluator = PedAnovaImportanceEvaluator(evaluate_on_local=False)
-    assert global_evaluator.evaluate(study) != default_evaluator.evaluate(study)
-
-
-def test_conditional() -> None:
-    study = optuna.study.create_study()
-    dists_cx: dict[str, BaseDistribution] = {
-        "c": FloatDistribution(0.0, 1.0),
-        "x": FloatDistribution(0.0, 2.0),
-    }
-    dists_cy: dict[str, BaseDistribution] = {
-        "c": FloatDistribution(0.0, 1.0),
-        "y": FloatDistribution(-2.0, 0.0),
-    }
-    trials = [
-        optuna.create_trial(params={"c": 1.0, "x": 1.0}, distributions=dists_cx, value=1.0),
-        optuna.create_trial(params={"c": 0.0, "y": -1.0}, distributions=dists_cy, value=-1.0),
-        optuna.create_trial(params={"c": 0.8, "x": 0.8}, distributions=dists_cx, value=0.8),
-        optuna.create_trial(params={"c": 0.2, "y": -0.2}, distributions=dists_cy, value=-0.2),
-    ]
-    study.add_trials(trials)
-    evaluator = PedAnovaImportanceEvaluator()
-    importance = evaluator.evaluate(study)
-    assert set(importance.keys()) == {"c", "x", "y"}
-    assert importance != {"c": 0.0, "x": 0.0, "y": 0.0}
