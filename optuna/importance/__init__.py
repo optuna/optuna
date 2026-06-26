@@ -69,8 +69,9 @@ def get_param_importances(
             Defaults to :class:`~optuna.importance.PedAnovaImportanceEvaluator`.
         params:
             A list of names of parameters to assess.
-            If :obj:`None`, all parameters that are present in all of the completed trials are
-            assessed.
+            If :obj:`None`, :class:`~optuna.importance.PedAnovaImportanceEvaluator` assesses all
+            parameters that appear in completed trials, including conditional parameters, while
+            other evaluators assess parameters present in all completed trials.
         target:
             A function that returns the value used to evaluate importances.
             If :obj:`None`, objective values are used for single-objective optimization.
