@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections import defaultdict
 from typing import cast
 from typing import TYPE_CHECKING
+import math
 
 import numpy as np
 
@@ -13,6 +14,7 @@ from optuna.importance._base import _check_evaluate_args
 from optuna.importance._base import _sort_dict_by_importance
 from optuna.importance._base import BaseImportanceEvaluator
 from optuna.importance._ped_anova.scott_parzen_estimator import _build_parzen_estimator
+from optuna.samplers._tpe.sampler import _split_complete_trials_multi_objective
 from optuna.study import StudyDirection
 from optuna.trial import TrialState
 
