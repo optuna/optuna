@@ -273,6 +273,8 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
             return {k: 0.0 for k in params}
         target_trial_ids = set(t._trial_id for t in target_trials)
         region_trial_ids = set(t._trial_id for t in region_trials)
+        # Since HSSP is approximately implemented using a greedy algorithm, target trials
+        # are guaranteed to be included in region trials.
         assert target_trial_ids.issubset(region_trial_ids)
 
         # Theorem 4.2 and Algorithm 1 in the original paper:
