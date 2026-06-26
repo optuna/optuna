@@ -171,13 +171,6 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
         assert 0.0 < target_quantile < region_quantile <= 1.0, (
             "condition 0.0 < `target_quantile` < `region_quantile` <= 1.0 must be satisfied"
         )
-        if baseline_quantile is not None:
-            msg = _DEPRECATION_WARNING_TEMPLATE.format(
-                name="`baseline_quantile`", d_ver="4.7.0", r_ver="5.0.0"
-            )
-            optuna_warn(
-                f"{msg} `baseline_quantile` is currently ignored. Use `target_quantile` instead.",
-            )
         if region_quantile != 1.0 and not evaluate_on_local:
             optuna_warn("If `evaluate_on_local` is False, `region_quantile` has no effect.")
 
