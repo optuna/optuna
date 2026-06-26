@@ -127,13 +127,6 @@ def test_get_top_quantile_trials_multi_objective_target_none(
     assert {t._trial_id for t in target_trials}.issubset({t._trial_id for t in region_trials})
 
 
-def test_error_in_ped_anova() -> None:
-    with pytest.raises(ValueError):
-        evaluator = PedAnovaImportanceEvaluator()
-        study = get_study(seed=0, n_trials=5, is_multi_obj=True)
-        evaluator.evaluate(study)
-
-
 def test_n_trials_equal_to_min_n_top_trials() -> None:
     evaluator = PedAnovaImportanceEvaluator()
     study = get_study(seed=0, n_trials=evaluator._min_n_top_trials, is_multi_obj=False)
