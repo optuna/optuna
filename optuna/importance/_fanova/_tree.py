@@ -306,7 +306,7 @@ def _get_cardinality(search_spaces: np.ndarray) -> float:
     return np.prod(search_spaces[:, 1] - search_spaces[:, 0])
 
 
-def _get_cardinality_batched(search_spaces_list: list[np.ndarray]) -> float:
+def _get_cardinality_batched(search_spaces_list: list[np.ndarray]) -> np.ndarray:
     search_spaces = np.asarray(search_spaces_list)
     return np.prod(search_spaces[:, :, 1] - search_spaces[:, :, 0], axis=1)
 
