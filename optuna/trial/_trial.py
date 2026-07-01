@@ -478,7 +478,7 @@ class Trial(BaseTrial):
                 assume that ``step`` starts at zero. For example,
                 :class:`~optuna.pruners.MedianPruner` simply checks if ``step`` is less than
                 ``n_warmup_steps`` as the warmup mechanism.
-                ``step`` must be a positive integer.
+                ``step`` must be a non-negative integer.
         """
 
         if len(self.study.directions) > 1:
@@ -502,12 +502,12 @@ class Trial(BaseTrial):
             raise TypeError(message) from None
 
         if step < 0:
-            raise ValueError(f"The `step` argument is {step} but cannot be negative.")
+            raise ValueError(f"`{step=}` must be non-negative.")
 
         if step in self._cached_frozen_trial.intermediate_values:
             # Do nothing if already reported.
             optuna_warn(
-                f"The reported value is ignored because this `step` {step} is already reported."
+                f"The reported value is ignored because this `{step=}` is already reported."
             )
             return
 
