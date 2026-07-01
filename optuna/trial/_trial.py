@@ -18,6 +18,7 @@ from optuna.distributions import CategoricalChoiceType
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
+from optuna.study._constrained_optimization import _CONSTRAINTS_KEY
 from optuna.trial._base import _SUGGEST_INT_POSITIONAL_ARGS
 from optuna.trial._base import BaseTrial
 
@@ -765,6 +766,13 @@ class Trial(BaseTrial):
         """
 
         return self._cached_frozen_trial.number
+
+    @property
+    def constraints(self) -> dict[str, float]:
+        con = self.storage.get_trial_system_attrs(self._trial_id).get(_CONSTRAINTS_KEY)
+        if con is None:
+            return {}
+        return {str(i): c for i, c in enumerate(con)}
 
 
 class _LazyTrialSystemAttrs(UserDict):

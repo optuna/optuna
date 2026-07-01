@@ -9,7 +9,6 @@ import numpy as np
 import optuna
 from optuna._experimental import experimental_class
 from optuna._experimental import warn_experimental_argument
-from optuna.samplers._base import _CONSTRAINTS_KEY
 from optuna.samplers._base import _INDEPENDENT_SAMPLING_WARNING_TEMPLATE
 from optuna.samplers._base import _process_constraints_after_trial
 from optuna.samplers._base import BaseSampler
@@ -537,10 +536,7 @@ class GPSampler(BaseSampler):
 def _get_constraint_vals_and_feasibility(
     study: Study, trials: list[FrozenTrial]
 ) -> tuple[np.ndarray, np.ndarray]:
-    _constraint_vals = [
-        study._storage.get_trial_system_attrs(trial._trial_id).get(_CONSTRAINTS_KEY, ())
-        for trial in trials
-    ]
+    _constraint_vals = [list(trial.constraints.values()) for trial in trials]
     if any(len(_constraint_vals[0]) != len(c) for c in _constraint_vals):
         raise ValueError("The number of constraints must be the same for all trials.")
 
