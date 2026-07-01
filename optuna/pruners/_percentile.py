@@ -125,9 +125,9 @@ class PercentilePruner(BasePruner):
         n_startup_trials:
             Pruning is disabled until the given number of trials finish in the same study.
         n_warmup_steps:
-            Pruning is disabled for the first ``n_warmup_steps`` reported steps (steps ``0`` to
-            ``n_warmup_steps - 1``); the earliest a trial can be pruned is at
-            ``step == n_warmup_steps``.
+            Pruning is disabled while the current step is less than ``n_warmup_steps``; the
+            earliest a trial can be pruned is at ``step == n_warmup_steps``. This feature
+            assumes that ``step`` starts at zero.
         interval_steps:
             Interval in number of steps between the pruning checks, offset by the warmup steps.
             If no value has been reported at the time of a pruning check, that particular check
