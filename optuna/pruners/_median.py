@@ -62,7 +62,7 @@ class MedianPruner(PercentilePruner):
         n_warmup_steps:
             Pruning is disabled for the first ``n_warmup_steps`` reported steps (steps ``0`` to
             ``n_warmup_steps - 1``); the earliest a trial can be pruned is at
-            ``step == n_warmup_steps``. This feature assumes that ``step`` starts at zero.
+            ``step == n_warmup_steps``.
         interval_steps:
             Interval in number of steps between the pruning checks, offset by the warmup steps.
             If no value has been reported at the time of a pruning check, that particular check
