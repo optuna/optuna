@@ -238,11 +238,11 @@ for _ in range(3):
 ###################################################################################################
 # .. tip::
 #
-#     :class:`optuna.samplers.TPESampler` class can take a boolean parameter ``constant_liar``. It
-#     is recommended to set this value to ``True`` during batched optimization to avoid having
-#     multiple workers evaluating similar parameter configurations. In particular, if each
-#     objective function evaluation is costly and the durations of the running states are
-#     significant, and/or the number of workers is high.
+#     :class:`optuna.samplers.TPESampler` class can take a boolean parameter ``constant_liar``,
+#     which is enabled by default. It penalizes running trials to avoid having multiple workers
+#     evaluating similar parameter configurations during batched optimization. This is especially
+#     beneficial if each objective function evaluation is costly and the durations of the running
+#     states are significant, and/or the number of workers is high.
 
 ###################################################################################################
 # .. tip::
