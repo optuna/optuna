@@ -224,14 +224,6 @@ class TPESampler(BaseSampler):
                 When using an :class:`~optuna.storages.RDBStorage`, it is possible to enable the
                 ``heartbeat_interval`` to change the records for abnormally terminated trials to
                 ``FAIL``.
-
-            .. note::
-                Enabling this option is especially beneficial during distributed optimization to
-                avoid having multiple workers evaluating similar parameter configurations. In
-                particular, if each objective function evaluation is costly and the durations of
-                the running states are significant, and/or the number of workers is high. For
-                sequential (single-worker) optimization, this option does not affect the sampling
-                results because there are no other running trials.
         constraints_func:
             An optional function that computes the objective constraints. It must take a
             :class:`~optuna.trial.FrozenTrial` and return the constraints. The return value must
