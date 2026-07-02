@@ -16,6 +16,7 @@ from optuna.distributions import _convert_old_distribution_to_new_distribution
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
+from optuna.study._constrained_optimization import _CONSTRAINTS_KEY
 from optuna.trial._base import _SUGGEST_INT_POSITIONAL_ARGS
 from optuna.trial._base import BaseTrial
 from optuna.trial._state import TrialState
@@ -478,6 +479,13 @@ class FrozenTrial(BaseTrial):
             return self.datetime_complete - self.datetime_start
         else:
             return None
+
+    @property
+    def constraints(self) -> dict[str, float]:
+        con = self.system_attrs.get(_CONSTRAINTS_KEY)
+        if con is None:
+            return {}
+        return {str(i): c for i, c in enumerate(con)}
 
 
 def create_trial(
