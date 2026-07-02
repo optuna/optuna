@@ -780,20 +780,24 @@ def test_mutation_invalid_value() -> None:
 
 
 @pytest.mark.parametrize(
-    "rand_value,expected_param",
+    "param,rand_value,expected_param",
     [
-        (0.0, 0.0),
-        (0.5, 5.0),
-        (1.0, 10.0),
+        (5.0, 0.0, 0.0),
+        (5.0, 0.25, 5.0 + (np.sqrt(0.625) - 1.0) * 10.0),
+        (5.0, 0.5, 5.0),
+        (5.0, 0.75, 5.0 + (1.0 - np.sqrt(0.625)) * 10.0),
+        (5.0, 1.0, 10.0),
+        (2.0, 0.25, 2.0 + (np.sqrt(0.82) - 1.0) * 10.0),
+        (2.0, 0.75, 2.0 + (1.0 - np.sqrt(0.52)) * 10.0),
     ],
 )
-def test_mutation_deterministic(rand_value: float, expected_param: float) -> None:
+def test_mutation_deterministic(param: float, rand_value: float, expected_param: float) -> None:
     study = optuna.study.create_study()
     rng = Mock()
     rng.rand = Mock(return_value=rand_value)
 
     child_param = PolynomialMutation(eta=1.0).mutation(
-        param=5.0,
+        param=param,
         rng=rng,
         study=study,
         search_space_bounds=np.array([0.0, 10.0]),
