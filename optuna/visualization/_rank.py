@@ -404,8 +404,13 @@ def _convert_color_idxs_to_scaled_rgb_colors(color_idxs: np.ndarray) -> np.ndarr
         labeled_colors = plotly.colors.sample_colorscale(colormap, color_idxs)
         scaled_rgb_colors = np.array([plotly.colors.unlabel_rgb(cl) for cl in labeled_colors])
         return scaled_rgb_colors
-    else:
+    elif matplotlib_imports.is_successful():
         cmap = matplotlib_plt.get_cmap(colormap)
         colors = cmap(color_idxs)[:, :3]  # Drop alpha values.
         rgb_colors = np.asarray(colors * 255, dtype=int)
         return rgb_colors
+    else:
+        raise ImportError(
+            "Neither plotly nor matplotlib is available. Please install either of them "
+            "to use this feature."
+        )
