@@ -372,12 +372,12 @@ class BruteForceSampler(BaseSampler):
         # expandable (unexplored). For example, if `params={"a": 1, "b": 2, "c": 3}`, we first
         # check whether all possible params represented by `{"a": 1, "b": 2} | X` exist. If there
         # is any unexplored `X` based on the search space, we still need to evaluate such `X`, so
-        # the study does not have to be stopped yet. This search is much faster compared to a full tree
-        # build because there are much fewer trials among all that take `{"a": 1, "b": 2}`. If such
-        # `X` is already exhaustively searched, the condition is relaxed to `{"a": 1} | X`. Note that this
-        # strategy would sometimes not be fast enough if each branch is not sampled uniformly. See
-        # https://github.com/optuna/optuna/issues/6070 for the discussion. Also, we avoided
-        # `tree_size` caching in favor of the stateless nature of this sampler.
+        # the study does not have to be stopped yet. This search is much faster compared to a full
+        # tree build because there are much fewer trials among all that take `{"a": 1, "b": 2}`. If
+        # such `X` is already exhaustively searched, the condition is relaxed to `{"a": 1} | X`.
+        # Note that this strategy would sometimes not be fast enough if each branch is not sampled
+        # uniformly. See https://github.com/optuna/optuna/issues/6070 for the discussion. Also, we
+        # avoided `tree_size` caching in favor of the stateless nature of this sampler.
         # See https://github.com/optuna/optuna/pull/6646/ for the full discussion.
         # endregion
         params = trial.params.copy()
