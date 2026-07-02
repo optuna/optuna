@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
+import math
 from typing import cast
 from typing import TYPE_CHECKING
 
@@ -13,6 +14,7 @@ from optuna.importance._base import _check_evaluate_args
 from optuna.importance._base import _sort_dict_by_importance
 from optuna.importance._base import BaseImportanceEvaluator
 from optuna.importance._ped_anova.scott_parzen_estimator import build_parzen_estimator_on_grid
+from optuna.samplers._tpe.sampler import _split_complete_trials_multi_objective
 from optuna.study import StudyDirection
 from optuna.trial import TrialState
 
@@ -86,6 +88,12 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
 
     ``target_quantile`` and ``region_quantile`` correspond to the parameters
     :math:`\\gamma'` and :math:`\\gamma` in the original paper, respectively.
+
+    .. note::
+
+        For multi-objective studies, if ``target`` is :obj:`None`, top-quantile trials are
+        selected in the same manner as MOTPE, using non-domination ranks and the hypervolume
+        subset selection problem (HSSP) for tie-breaking.
 
     .. note::
 
@@ -198,6 +206,15 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
     ) -> list[FrozenTrial]:
         if quantile == 1.0:
             return trials
+        if study._is_multi_objective() and target is None:
+            n_below = math.ceil(quantile * len(trials)) - 1
+            # NOTE(kAIto47802): Since HSSP is implemented greedily, target trials could be
+            # obtained by taking the top trials from region trials without solving HSSP again,
+            # which would improve performance by a constant factor. However,
+            # _split_complete_trials_multi_objective does not return trials in the selected
+            # order, so this optimization would require a larger refactoring.
+            top_trials, _ = _split_complete_trials_multi_objective(trials, study, n_below)
+            return top_trials
         is_lower_better = study.directions[0] == StudyDirection.MINIMIZE
         if target is not None:
             optuna_warn(
@@ -245,15 +262,6 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
         *,
         target: Callable[[FrozenTrial], float] | None = None,
     ) -> dict[str, float]:
-        if target is None and study._is_multi_objective():
-            raise ValueError(
-                "If the `study` is being used for multi-objective optimization, "
-                "please specify the `target`. For example, use "
-                "`target=lambda t: t.values[0]` for the first objective value. "
-                f"{self.__class__.__name__} computes the importances of params to achieve "
-                "low `target` values. If this is not what you want, "
-                "please modify target, e.g., by multiplying the output by -1."
-            )
         dists = _get_distributions_list(study, params=params)
         if params is None:
             params = list(dict.fromkeys(k for d in dists for k in d))
@@ -275,11 +283,17 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
             )
         if len(target_trials) == 0:
             return {k: 0.0 for k in params}
+        target_trial_ids = set(t._trial_id for t in target_trials)
+        region_trial_ids = set(t._trial_id for t in region_trials)
+        # Since HSSP is approximately implemented using a greedy algorithm, target trials
+        # are guaranteed to be included in region trials, even when target is None for
+        # multi-objective studies.
+        assert target_trial_ids.issubset(region_trial_ids)
+
         # Theorem 4.2 and Algorithm 1 in the original paper:
         # https://arxiv.org/abs/2601.20800
         quantile = len(target_trials) / len(region_trials)  # gamma' / gamma
         param_importances = {k: 0.0 for k in params}
-        target_trial_ids = set(t._trial_id for t in target_trials)
         for param_name in params:
             regime_trials = _partition_by_regime(
                 param_name, region_trials, self._min_n_trials_in_regime

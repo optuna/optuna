@@ -56,13 +56,6 @@ def test_filter(
     assert all(i == j for i, j in zip(indices, filtered_indices))
 
 
-def test_error_in_ped_anova() -> None:
-    with pytest.raises(ValueError):
-        evaluator = PedAnovaImportanceEvaluator()
-        study = get_study(seed=0, n_trials=5, is_multi_obj=True)
-        evaluator.evaluate(study)
-
-
 def test_n_trials_equal_to_min_n_top_trials() -> None:
     evaluator = PedAnovaImportanceEvaluator()
     study = get_study(seed=0, n_trials=evaluator._min_n_top_trials, is_multi_obj=False)
@@ -122,3 +115,74 @@ def test_conditional() -> None:
     importance = evaluator.evaluate(study)
     assert set(importance.keys()) == {"c", "x", "y"}
     assert importance != {"c": 0.0, "x": 0.0, "y": 0.0}
+
+
+@pytest.mark.parametrize(
+    (
+        "directions",
+        "values",
+        "target_quantile",
+        "region_quantile",
+        "expected_target_size",
+        "expected_region_size",
+    ),
+    [
+        pytest.param(
+            ["minimize", "minimize"],
+            [[float(i), float(i)] for i in range(6)],
+            0.5,
+            0.8,
+            2,
+            4,
+            id="different-nondomination-ranks",
+        ),
+        pytest.param(
+            ["minimize", "minimize"],
+            [
+                [0.0, 0.0],
+                [1.0, 5.0],
+                [2.0, 4.0],
+                [3.0, 3.0],
+                [4.0, 2.0],
+                [5.0, 1.0],
+                [6.0, 6.0],
+                [7.0, 7.0],
+            ],
+            0.5,
+            0.75,
+            3,
+            5,
+            id="same-rank-hssp-tie-break-after-best-rank",
+        ),
+        pytest.param(
+            ["minimize", "minimize"],
+            [[float(i), float(5 - i)] for i in range(6)],
+            0.5,
+            0.8,
+            2,
+            4,
+            id="same-rank-hssp-tie-break-on-front",
+        ),
+    ],
+)
+def test_get_top_quantile_trials_multi_objective_target_none(
+    directions: list[str],
+    values: list[list[float]],
+    target_quantile: float,
+    region_quantile: float,
+    expected_target_size: int,
+    expected_region_size: int,
+) -> None:
+    study = optuna.create_study(directions=directions)
+    study.add_trials([optuna.create_trial(values=vs) for vs in values])
+    trials = study.get_trials(deepcopy=False)
+    evaluator = PedAnovaImportanceEvaluator(
+        target_quantile=target_quantile, region_quantile=region_quantile
+    )
+
+    target_trials = evaluator._get_top_quantile_trials(study, trials, target_quantile, target=None)
+    region_trials = evaluator._get_top_quantile_trials(study, trials, region_quantile, target=None)
+
+    assert len(target_trials) == expected_target_size
+    assert len(region_trials) == expected_region_size
+    assert {t._trial_id for t in target_trials}.issubset({t._trial_id for t in region_trials})
