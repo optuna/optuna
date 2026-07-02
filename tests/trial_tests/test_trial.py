@@ -652,6 +652,33 @@ def test_report_warning() -> None:
         trial.report(1, 1)
 
 
+def test_report_decreasing_step_warning() -> None:
+    """Test that a warning is emitted when step decreases with standard pruners."""
+    study = create_study()
+    trial = study.ask()
+
+    trial.report(1.0, 5)
+    trial.report(2.0, 10)
+
+    # Reporting a step smaller than the current maximum (10) should warn.
+    with pytest.warns(UserWarning, match="smaller than the previously reported maximum step"):
+        trial.report(3.0, 3)
+
+
+def test_report_decreasing_step_no_warning_with_wilcoxon() -> None:
+    """Test that no warning is emitted when step decreases with WilcoxonPruner."""
+    study = create_study(pruner=optuna.pruners.WilcoxonPruner())
+    trial = study.ask()
+
+    trial.report(1.0, 5)
+    trial.report(2.0, 10)
+
+    # WilcoxonPruner supports non-monotonic steps, so no warning should be emitted.
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        trial.report(3.0, 3)
+
+
 def test_suggest_with_multi_objectives() -> None:
     study = create_study(directions=["maximize", "maximize"])
 

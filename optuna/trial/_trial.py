@@ -504,6 +504,26 @@ class Trial(BaseTrial):
         if step < 0:
             raise ValueError(f"`{step=}` must be non-negative.")
 
+        # Warn if the step is smaller than the previously reported maximum step.
+        # Most pruners (MedianPruner, SuccessiveHalvingPruner, etc.) assume that
+        # steps are reported in monotonically increasing order. Reporting a
+        # decreasing step typically indicates a bug in the objective function.
+        # WilcoxonPruner is the exception: it explicitly supports non-monotonic
+        # step ordering (steps represent instance IDs, not epochs).
+        if self._cached_frozen_trial.intermediate_values:
+            max_reported_step = max(self._cached_frozen_trial.intermediate_values.keys())
+            if step < max_reported_step:
+                from optuna.pruners._wilcoxon import WilcoxonPruner
+
+                if not isinstance(self.study.pruner, WilcoxonPruner):
+                    optuna_warn(
+                        f"The step {step} is smaller than the previously reported "
+                        f"maximum step {max_reported_step}. Most pruners assume that "
+                        f"`step` is monotonically increasing. If you intend to report "
+                        f"values in a non-monotonic order, consider using "
+                        f"`WilcoxonPruner`."
+                    )
+
         if step in self._cached_frozen_trial.intermediate_values:
             # Do nothing if already reported.
             optuna_warn(
