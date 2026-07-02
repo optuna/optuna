@@ -206,7 +206,7 @@ class _TreeNode:
 
 
 def _get_non_waiting_trials_and_current_trial_index(
-    study: Study, current_trial_number: int, states: list[TrialState]
+    study: Study, current_trial_number: int, states: tuple[TrialState, ...]
 ) -> tuple[list[FrozenTrial], int]:
     # We directly query the storage to get trials here instead of `study.get_trials`,
     # since some pruners such as `HyperbandPruner` use the study transformed
