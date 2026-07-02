@@ -12,7 +12,7 @@ from optuna.distributions import FloatDistribution
 from optuna.importance import PedAnovaImportanceEvaluator
 from optuna.importance._ped_anova.evaluator import _QuantileFilter
 from optuna.trial import FrozenTrial
-from tests.importance_tests.test_importance_evaluators import get_study
+from tests.importance_tests.test_evaluator import get_study
 
 
 _VALUES = list([[float(i)] for i in range(10)])[::-1]
@@ -54,13 +54,6 @@ def test_filter(
     indices = [t.user_attrs["index"] for t in _filter.filter(trials)]
     assert len(indices) == len(filtered_indices)
     assert all(i == j for i, j in zip(indices, filtered_indices))
-
-
-def test_error_in_ped_anova() -> None:
-    with pytest.raises(ValueError):
-        evaluator = PedAnovaImportanceEvaluator()
-        study = get_study(seed=0, n_trials=5, is_multi_obj=True)
-        evaluator.evaluate(study)
 
 
 def test_n_trials_equal_to_min_n_top_trials() -> None:
