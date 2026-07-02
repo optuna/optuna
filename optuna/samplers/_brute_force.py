@@ -206,12 +206,11 @@ class _TreeNode:
 
 
 def _get_non_waiting_trials_and_current_trial_index(
-    study: Study, current_trial_number: int
+    study: Study, current_trial_number: int, states: tuple[TrialState, ...]
 ) -> tuple[list[FrozenTrial], int]:
     # We directly query the storage to get trials here instead of `study.get_trials`,
     # since some pruners such as `HyperbandPruner` use the study transformed
     # to filter trials. See https://github.com/optuna/optuna/issues/2327 for details.
-    states = (TrialState.COMPLETE, TrialState.PRUNED, TrialState.RUNNING, TrialState.FAIL)
     trials = study._storage.get_all_trials(study._study_id, deepcopy=False, states=states)
     # `trials` is fetched by shallow copy, so pop() or element replacement are safe operations.
     for i in range(1, len(trials) + 1):
@@ -274,6 +273,20 @@ class BruteForceSampler(BaseSampler):
     def __init__(self, seed: int | None = None, avoid_premature_stop: bool = False) -> None:
         self._rng = LazyRandomState(seed)
         self._avoid_premature_stop = avoid_premature_stop
+        # region (Private attribute for advanced users)
+        # NOTE(nabenabe): Defining this in global scope lets advanced users customize the target
+        # states externally (e.g., excluding FAIL). See
+        # https://github.com/optuna/optuna/issues/6654 for the motivation. Additionally, setting
+        # `None` skips state filtering in the storage layer, speeding up `BruteForceSampler`,
+        # though this is valid only for non-parallel setups. Please note that this is not an
+        # official API, so we do not guarantee any correctness.
+        # endregion
+        self._trial_states_in_tree = (
+            TrialState.COMPLETE,
+            TrialState.PRUNED,
+            TrialState.RUNNING,
+            TrialState.FAIL,
+        )
 
     def infer_relative_search_space(
         self, study: Study, trial: FrozenTrial
@@ -337,7 +350,9 @@ class BruteForceSampler(BaseSampler):
         param_distribution: BaseDistribution,
     ) -> Any:
         exclude_running = not self._avoid_premature_stop
-        trials, current_idx = _get_non_waiting_trials_and_current_trial_index(study, trial.number)
+        trials, current_idx = _get_non_waiting_trials_and_current_trial_index(
+            study, trial.number, states=self._trial_states_in_tree
+        )
         trials.pop(current_idx)
         tree = _TreeNode()
         if isinstance(param_distribution, CategoricalDistribution):
@@ -363,7 +378,9 @@ class BruteForceSampler(BaseSampler):
         self, study: Study, trial: FrozenTrial, state: TrialState, values: Sequence[float] | None
     ) -> None:
         exclude_running = not self._avoid_premature_stop
-        trials, current_idx = _get_non_waiting_trials_and_current_trial_index(study, trial.number)
+        trials, current_idx = _get_non_waiting_trials_and_current_trial_index(
+            study, trial.number, states=self._trial_states_in_tree
+        )
         # Set current trial as complete.
         trials[current_idx] = create_trial(
             state=state, values=values, params=trial.params, distributions=trial.distributions
