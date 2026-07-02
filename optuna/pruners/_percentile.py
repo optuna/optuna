@@ -127,7 +127,7 @@ class PercentilePruner(BasePruner):
         n_warmup_steps:
             Pruning is disabled while the current step is less than ``n_warmup_steps``; the
             earliest a trial can be pruned is at ``step == n_warmup_steps``. This feature
-            assumes that ``step`` starts at zero.
+            assumes that ``step`` is a non-negative integer.
         interval_steps:
             Interval in number of steps between the pruning checks, offset by the warmup steps.
             If no value has been reported at the time of a pruning check, that particular check
