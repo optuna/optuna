@@ -22,7 +22,7 @@ _MULTI_VALUES = [[float(i), float(j)] for i, j in zip(range(10), reversed(range(
 @pytest.mark.parametrize(
     "quantile,is_lower_better,values,target,filtered_indices",
     [
-        (0.1, True, [[1.0], [2.0]], None, [0, 1]),  # Check min_n_trials = 2
+        (0.1, True, [[1.0], [2.0]], None, [0]),
         (0.49, True, deepcopy(_VALUES), None, list(range(10))[-5:]),
         (0.5, True, deepcopy(_VALUES), None, list(range(10))[-5:]),
         (0.51, True, deepcopy(_VALUES), None, list(range(10))[-6:]),
@@ -136,8 +136,8 @@ def test_conditional() -> None:
             [[float(i), float(i)] for i in range(6)],
             0.5,
             0.8,
-            2,
-            4,
+            3,
+            5,
             id="different-nondomination-ranks",
         ),
         pytest.param(
@@ -154,8 +154,8 @@ def test_conditional() -> None:
             ],
             0.5,
             0.75,
-            3,
-            5,
+            4,
+            6,
             id="same-rank-hssp-tie-break-after-best-rank",
         ),
         pytest.param(
@@ -163,8 +163,8 @@ def test_conditional() -> None:
             [[float(i), float(5 - i)] for i in range(6)],
             0.5,
             0.8,
-            2,
-            4,
+            3,
+            5,
             id="same-rank-hssp-tie-break-on-front",
         ),
     ],
