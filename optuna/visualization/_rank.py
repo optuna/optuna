@@ -400,6 +400,8 @@ def _convert_color_idxs_to_scaled_rgb_colors(color_idxs: np.ndarray) -> np.ndarr
         scaled_rgb_colors = np.array([plotly.colors.unlabel_rgb(cl) for cl in labeled_colors])
         return scaled_rgb_colors
     else:
+        if not matplotlib_imports.is_successful():
+            raise ImportError("Neither plotly nor matplotlib is available. Please install one of them to use rank plots.")
         cmap = matplotlib_plt.get_cmap(colormap)
         colors = cmap(color_idxs)[:, :3]  # Drop alpha values.
         rgb_colors = np.asarray(colors * 255, dtype=int)

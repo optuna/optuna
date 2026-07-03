@@ -699,3 +699,11 @@ def test_convert_color_idxs_to_scaled_rgb_colors() -> None:
     x2 = np.array([])
     result2 = _convert_color_idxs_to_scaled_rgb_colors(x2)
     np.testing.assert_array_equal(result2, [])
+
+
+def test_convert_color_idxs_to_scaled_rgb_colors_requires_plot_backend(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr("optuna.visualization._rank.plotly_is_available", False)
+    monkeypatch.setattr("optuna.visualization._rank.matplotlib_imports.is_successful", lambda: False)
+
+    with pytest.raises(ImportError, match="Neither plotly nor matplotlib is available"):
+        _convert_color_idxs_to_scaled_rgb_colors(np.array([0.1]))
