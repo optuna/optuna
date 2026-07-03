@@ -78,9 +78,30 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
 
     .. note::
 
-        For multi-objective studies, if ``target`` is :obj:`None`, top-quantile trials are
-        selected in the same manner as MOTPE, using non-domination ranks and the hypervolume
-        subset selection problem (HSSP) for tie-breaking.
+        **Behavior on multi-objective studies.**
+        If ``target`` is :obj:`None`, top-quantile trials are selected in the same
+        manner as multi-objective :class:`~optuna.samplers.TPESampler`: trials are
+        ranked by non-domination rank, with the hypervolume subset selection problem
+        (HSSP) used to break ties within a rank. The resulting importance can be
+        interpreted as how important each hyperparameter is to reach the Pareto
+        front without preference for any particular objective.
+
+        To compute the importance against a *single* objective instead, pass a
+        ``target`` callable explicitly. Note that :class:`PedAnovaImportanceEvaluator`
+        assumes **minimization** (i.e., lower ``target`` values are better); when an
+        objective is being maximized, negate it inside ``target``::
+
+            # Objective 0 is being minimized.
+            importance = get_param_importances(
+                study, evaluator=PedAnovaImportanceEvaluator(),
+                target=lambda t: t.values[0],
+            )
+
+            # Objective 0 is being maximized—negate so that "lower is better".
+            importance = get_param_importances(
+                study, evaluator=PedAnovaImportanceEvaluator(),
+                target=lambda t: -t.values[0],
+            )
 
     .. note::
 
