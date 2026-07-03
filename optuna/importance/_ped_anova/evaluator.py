@@ -348,7 +348,7 @@ def _resolve_params(study: Study, params: list[str] | None) -> list[str]:
                 f"Actual parameters: {params}."
             )
     trials = study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,))
-    all_params = list(dict.fromkeys(k for t in trials for k in t.distributions))
+    all_params = list(set(k for t in trials for k in t.distributions))
     if params is not None:
         if missing := [p for p in params if p not in all_params]:
             raise ValueError(
