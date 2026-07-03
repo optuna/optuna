@@ -207,7 +207,7 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
         if quantile == 1.0:
             return trials
         if study._is_multi_objective() and target is None:
-            n_below = math.ceil(quantile * len(trials)) - 1
+            n_below = math.ceil(quantile * len(trials))
             # NOTE(kAIto47802): Since HSSP is implemented greedily, target trials could be
             # obtained by taking the top trials from region trials without solving HSSP again,
             # which would improve performance by a constant factor. However,
