@@ -56,12 +56,16 @@ def test_filter(
     assert all(i == j for i, j in zip(indices, filtered_indices))
 
 
-def test_n_trials_equal_to_min_n_top_trials() -> None:
+@pytest.mark.parametrize("n_trials", [0, 1, 2])
+def test_n_trials_less_than_two(n_trials: int) -> None:
     evaluator = PedAnovaImportanceEvaluator()
-    study = get_study(seed=0, n_trials=evaluator._min_n_top_trials, is_multi_obj=False)
+    study = get_study(seed=0, n_trials=n_trials, is_multi_obj=False)
     param_importance = list(evaluator.evaluate(study).values())
     n_params = len(param_importance)
-    assert np.allclose(param_importance, np.zeros(n_params))
+    if n_trials < 2:
+        assert np.allclose(param_importance, np.zeros(n_params))
+    else:
+        assert not np.allclose(param_importance, np.zeros(n_params))
 
 
 def test_direction() -> None:
