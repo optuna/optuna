@@ -211,7 +211,7 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
             is_lower_better = True
 
         top_trials = _QuantileFilter(
-            quantile, is_lower_better, self._min_n_top_trials, target
+            quantile, is_lower_better, target
         ).filter(trials)
 
         return top_trials
