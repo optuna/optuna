@@ -276,6 +276,10 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
 
         trials = _get_filtered_trials(study, target)
         if len(trials) <= 1:
+            optuna_warn(
+                "The number of trials is too small to compute importances. "
+                "Parameter importances will be equal."
+            )
             return {k: 0.0 for k in params}
 
         target_trials = self._get_top_quantile_trials(study, trials, self._target_quantile, target)
