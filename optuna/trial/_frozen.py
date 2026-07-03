@@ -482,6 +482,14 @@ class FrozenTrial(BaseTrial):
 
     @property
     def constraints(self) -> dict[str, float]:
+        """Returns constraint values.
+
+        The trial is considered feasible when all constraint values are zero or less.
+
+        Returns:
+            constraint values of trial.
+        """
+
         con = self.system_attrs.get(_CONSTRAINTS_KEY)
         if con is None:
             return {}
