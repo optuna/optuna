@@ -46,7 +46,7 @@ def test_filter(
     target: Callable[[FrozenTrial], float] | None,
     filtered_indices: list[int],
 ) -> None:
-    _filter = _QuantileFilter(quantile, is_lower_better, min_n_top_trials=2, target=target)
+    _filter = _QuantileFilter(quantile, is_lower_better, target=target)
     trials = [optuna.create_trial(values=vs) for vs in values]
     for i, t in enumerate(trials):
         t.set_user_attr("index", i)
