@@ -93,13 +93,15 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
 
             # Objective 0 is being minimized.
             importance = get_param_importances(
-                study, evaluator=PedAnovaImportanceEvaluator(),
+                study,
+                evaluator=PedAnovaImportanceEvaluator(),
                 target=lambda t: t.values[0],
             )
 
             # Objective 0 is being maximized—negate so that "lower is better".
             importance = get_param_importances(
-                study, evaluator=PedAnovaImportanceEvaluator(),
+                study,
+                evaluator=PedAnovaImportanceEvaluator(),
                 target=lambda t: -t.values[0],
             )
 
