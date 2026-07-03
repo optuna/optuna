@@ -178,8 +178,6 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
         self._n_steps: int = 50
         # Control the regularization effect by prior.
         self._prior_weight = 1.0
-        # How many `trials` must be included in `top_trials`.
-        self._min_n_top_trials = 2
         # How many `trials` must be included in each regime.
         self._min_n_trials_in_regime = 2
 
