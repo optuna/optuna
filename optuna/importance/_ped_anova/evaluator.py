@@ -255,8 +255,6 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
         assert params is not None
 
         trials = study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,))
-        # The following should be tested at _get_filtered_trials.
-        assert target is not None or max([len(t.values) for t in trials], default=1) == 1
         if len(trials) <= 1:
             return {k: 0.0 for k in params}
 
