@@ -275,6 +275,8 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
             return {k: 0.0 for k in params}
 
         target_trials = self._get_top_quantile_trials(study, trials, self._target_quantile, target)
+        if len(target_trials) <= self._min_n_top_trials:
+            return {k: 0.0 for k in params}
         region_trials = self._get_top_quantile_trials(study, trials, self._region_quantile, target)
         if len(target_trials) == len(region_trials):
             optuna_warn(
