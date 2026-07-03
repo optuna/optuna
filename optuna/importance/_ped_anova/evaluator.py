@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from collections import defaultdict
 import math
-from typing import cast
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -41,7 +40,9 @@ class _QuantileFilter:
 
     def filter(self, trials: list[FrozenTrial]) -> list[FrozenTrial]:
         sign = 1.0 if self._is_lower_better else -1.0
-        loss_values = sign * np.asarray([t.value if self._target is None else self._target(t) for t in trials])
+        loss_values = sign * np.asarray(
+            [t.value if self._target is None else self._target(t) for t in trials]
+        )
         # TODO(nabenabe0928): After dropping Python3.10, replace below with
         # np.quantile(loss_values, self._quantile, method="inverted_cdf").
         cutoff_index = int(math.ceil(self._quantile * loss_values.size)) - 1
@@ -208,9 +209,7 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
             )
             is_lower_better = True
 
-        top_trials = _QuantileFilter(
-            quantile, is_lower_better, target
-        ).filter(trials)
+        top_trials = _QuantileFilter(quantile, is_lower_better, target).filter(trials)
 
         return top_trials
 
@@ -322,7 +321,6 @@ def _partition_by_regime(
     regime_trials = {k: v for k, v in regime_trials.items() if len(v) >= min_n_trials_in_regime}
 
     return regime_trials
-
 
 
 def _get_distributions_list(
