@@ -330,7 +330,11 @@ def _get_filtered_trials(
     return [
         trial
         for trial in trials
-        if (math.isfinite(target(trial)) if target is not None else all(math.isfinite(v) for v in trial.values))
+        if (
+            math.isfinite(target(trial))
+            if target is not None
+            else all(math.isfinite(v) for v in trial.values)
+        )
     ]
 
 
