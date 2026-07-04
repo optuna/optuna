@@ -15,6 +15,7 @@ from optuna._imports import _LazyImport
 from optuna._transform import _SearchSpaceTransform
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
+from optuna.distributions import IntDistribution
 from optuna.samplers import BaseSampler
 from optuna.samplers._base import _INDEPENDENT_SAMPLING_WARNING_TEMPLATE
 from optuna.trial import TrialState
@@ -53,8 +54,8 @@ class QMCSampler(BaseSampler):
     <https://scipy.github.io/devdocs/reference/stats.qmc.html>`__.
 
     .. note::
-        If your search space contains categorical parameters, it samples the categorical
-        parameters by its `independent_sampler` without using QMC algorithm.
+        Categorical parameters are sampled by the QMC algorithm: each categorical parameter maps
+        to a single QMC dimension whose value is rounded to a choice index.
 
     .. note::
         The search space of the sampler is determined by either previous trials in the study or
@@ -220,13 +221,7 @@ class QMCSampler(BaseSampler):
         return self._infer_initial_search_space(first_trial)
 
     def _infer_initial_search_space(self, trial: FrozenTrial) -> dict[str, BaseDistribution]:
-        search_space: dict[str, BaseDistribution] = {}
-        for param_name, distribution in trial.distributions.items():
-            if isinstance(distribution, CategoricalDistribution):
-                continue
-            search_space[param_name] = distribution
-
-        return search_space
+        return dict(trial.distributions)
 
     @staticmethod
     def _log_asynchronous_seeding() -> None:
@@ -238,20 +233,15 @@ class QMCSampler(BaseSampler):
         )
 
     def _log_independent_sampling(self, trial: FrozenTrial, param_name: str) -> None:
-        # NOTE(nabenabe): We can extend `QMCSampler` to dynamic search space and categorical dist
-        # as well. For dynamic search space, we need to use the same mechanism as `group` by TPE.
-        # For categorical, we simply need to sample from [-1/2, C+1/2] and then round the number
-        # to get a categorical index.
+        # NOTE(nabenabe): We can extend `QMCSampler` to dynamic search space as well by using the
+        # same mechanism as `group` by TPE.
         _logger.warning(
             _INDEPENDENT_SAMPLING_WARNING_TEMPLATE.format(
                 param_name=param_name,
                 trial_number=trial.number,
                 independent_sampler_name=self._independent_sampler.__class__.__name__,
                 sampler_name=self.__class__.__name__,
-                fallback_reason=(
-                    "dynamic search space and `CategoricalDistribution` are not supported "
-                    "by `QMCSampler`"
-                ),
+                fallback_reason="dynamic search space is not supported by `QMCSampler`",
             )
         )
 
@@ -277,9 +267,26 @@ class QMCSampler(BaseSampler):
             return {}
 
         sample = self._sample_qmc(study, search_space)
-        trans = _SearchSpaceTransform(search_space)
-        sample = trans.bounds[:, 0] + sample * (trans.bounds[:, 1] - trans.bounds[:, 0])
-        return trans.untransform(sample[0, :])
+        # A categorical parameter is mapped to a single IntDistribution dimension so QMC draws one
+        # coordinate for it and rounds to a choice index, rather than one-hot encoding it into
+        # several correlated dimensions. See https://github.com/optuna/optuna/issues/6617.
+        pseudo_search_space = {
+            name: (
+                IntDistribution(0, len(dist.choices) - 1)
+                if isinstance(dist, CategoricalDistribution)
+                else dist
+            )
+            for name, dist in search_space.items()
+        }
+        trans = _SearchSpaceTransform(pseudo_search_space, transform_0_1=True)
+        return {
+            name: (
+                dist.to_external_repr(value)
+                if isinstance(dist := search_space[name], CategoricalDistribution)
+                else value
+            )
+            for name, value in trans.untransform(sample[0]).items()
+        }
 
     def before_trial(self, study: Study, trial: FrozenTrial) -> None:
         self._independent_sampler.before_trial(study, trial)
