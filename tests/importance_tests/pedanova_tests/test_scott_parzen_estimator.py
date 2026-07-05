@@ -14,7 +14,6 @@ from optuna.importance._ped_anova.scott_parzen_estimator import _count_categoric
 from optuna.importance._ped_anova.scott_parzen_estimator import _count_numerical_param_in_grid
 from optuna.importance._ped_anova.scott_parzen_estimator import build_parzen_estimator_on_grid
 from optuna.importance._ped_anova.scott_parzen_estimator import ScottParzenEstimator
-from optuna.samplers._tpe.parzen_estimator import _ParzenEstimatorParameters
 from optuna.samplers._tpe.probability_distributions import _BatchedCategoricalDistributions
 from optuna.samplers._tpe.probability_distributions import _BatchedDiscreteTruncNormDistributions
 from optuna.samplers._tpe.probability_distributions import _MixtureOfProductDistribution
