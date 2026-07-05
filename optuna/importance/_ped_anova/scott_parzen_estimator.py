@@ -8,10 +8,10 @@ import numpy as np
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
-from optuna.samplers._tpe.parzen_estimator import _ParzenEstimator
-from optuna.samplers._tpe.parzen_estimator import _ParzenEstimatorParameters
+from optuna.samplers._tpe.probability_distributions import _BatchedCategoricalDistributions
 from optuna.samplers._tpe.probability_distributions import _BatchedDiscreteTruncNormDistributions
 from optuna.samplers._tpe.probability_distributions import _BatchedDistributions
+from optuna.samplers._tpe.probability_distributions import _MixtureOfProductDistribution
 
 
 if TYPE_CHECKING:
@@ -19,25 +19,79 @@ if TYPE_CHECKING:
     from optuna.trial import FrozenTrial
 
 
-class ScottParzenEstimator(_ParzenEstimator):
+class ScottParzenEstimator:
     """1D ParzenEstimator using the bandwidth selection by Scott's rule."""
 
     def __init__(
         self,
         observations: dict[str, np.ndarray],
         search_space: dict[str, BaseDistribution],
-        parameters: _ParzenEstimatorParameters,
-        predetermined_weights: np.ndarray | None = None,
+        predetermined_weights: np.ndarray,
+        prior_weight: float,
     ) -> None:
-        assert predetermined_weights is not None
-        self._weights = predetermined_weights
-        super().__init__(observations, search_space, parameters, predetermined_weights)
+        if prior_weight < 0:
+            raise ValueError(f"{prior_weight=} must be non-negative.")
+        self._search_space = search_space
+        transformed_observations = self._transform(observations)
+        assert len(transformed_observations) == len(predetermined_weights)
+        if len(transformed_observations) == 0:
+            weights = np.array([1.0])
+        else:
+            weights = np.append(predetermined_weights, [prior_weight])
+        weights /= weights.sum()
+        dists = [
+            self._calculate_distributions(param_vals, dist, predetermined_weights, prior_weight)
+            for dist, param_vals in zip(search_space.values(), transformed_observations.T)
+        ]
+        self._mixture_distribution = _MixtureOfProductDistribution(
+            weights=weights, distributions=dists
+        )
+
+    def log_pdf(self, samples_dict: dict[str, np.ndarray]) -> np.ndarray:
+        transformed_samples = self._transform(samples_dict)
+        return self._mixture_distribution.log_pdf(transformed_samples)
+
+    def _transform(self, samples_dict: dict[str, np.ndarray]) -> np.ndarray:
+        return np.array([samples_dict[param] for param in self._search_space]).T
+
+    def _calculate_distributions(
+        self,
+        observations: np.ndarray,
+        search_space: BaseDistribution,
+        weights: np.ndarray,
+        prior_weight: float,
+    ) -> _BatchedDistributions:
+        if isinstance(search_space, CategoricalDistribution):
+            return self._calculate_categorical_distributions(
+                observations, search_space, prior_weight
+            )
+        else:
+            assert isinstance(search_space, (FloatDistribution, IntDistribution))
+            return self._calculate_numerical_distributions(observations, search_space, weights)
+
+    def _calculate_categorical_distributions(
+        self, observations: np.ndarray, search_space: CategoricalDistribution, prior_weight: float
+    ) -> _BatchedDistributions:
+        choices = search_space.choices
+        n_choices = len(choices)
+        if len(observations) == 0:
+            return _BatchedCategoricalDistributions(
+                weights=np.full((1, n_choices), fill_value=1.0 / n_choices)
+            )
+
+        n_kernels = len(observations) + 1  # NOTE(sawa3030): +1 for prior.
+        weights = np.full(shape=(n_kernels, n_choices), fill_value=prior_weight / n_kernels)
+        observed_indices = observations.astype(int)
+        weights[np.arange(len(observed_indices)), observed_indices] += 1
+        row_sums = weights.sum(axis=1, keepdims=True)
+        weights /= np.where(row_sums == 0, 1, row_sums)
+        return _BatchedCategoricalDistributions(weights)
 
     def _calculate_numerical_distributions(
         self,
         observations: np.ndarray,
         search_space: FloatDistribution | IntDistribution,
-        parameters: _ParzenEstimatorParameters,
+        weights: np.ndarray,
     ) -> _BatchedDistributions:
         # NOTE: The Optuna TPE bandwidth selection is too wide for this analysis.
         # So use the Scott's rule by Scott, D.W. (1992),
@@ -46,16 +100,14 @@ class ScottParzenEstimator(_ParzenEstimator):
         assert step is not None and np.isclose(step, 1.0), "MyPy redefinition."
 
         low, high = search_space.low, search_space.high
-        weights_cum = np.cumsum(self._weights)
+        weights_cum = np.cumsum(weights)
         weights_sum = weights_cum[-1]
         if search_space.log:
             observations = np.log(observations)
             low, high = math.log(low), math.log(high)
 
-        mean_est = (observations @ self._weights) / weights_sum
-        sigma_est = np.sqrt(
-            ((observations - mean_est) ** 2 @ self._weights) / max(1, weights_sum - 1)
-        )
+        mean_est = (observations @ weights) / weights_sum
+        sigma_est = np.sqrt(((observations - mean_est) ** 2 @ weights) / max(1, weights_sum - 1))
 
         q1_idx = np.searchsorted(weights_cum, weights_sum // 4, side="left")
         q3_idx = np.searchsorted(weights_cum, weights_sum * 3 // 4, side="right")
@@ -123,18 +175,10 @@ def build_parzen_estimator_on_grid(
 
     observations = np.flatnonzero(counts)
     weights = counts[observations]
-    parameters = _ParzenEstimatorParameters(
-        prior_weight=prior_weight,
-        consider_magic_clip=False,
-        consider_endpoints=False,
-        weights=lambda x: np.empty(0),
-        multivariate=True,
-        categorical_distance_func={},
-    )
     pe = ScottParzenEstimator(
-        {param_name: observations},
-        {param_name: rounded_dist},
-        parameters,
-        weights,
+        observations={param_name: observations},
+        search_space={param_name: rounded_dist},
+        predetermined_weights=weights,
+        prior_weight=prior_weight,
     )
     return pe, counts.size

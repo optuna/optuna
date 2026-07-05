@@ -21,14 +21,7 @@ from optuna.samplers._tpe.probability_distributions import _MixtureOfProductDist
 from tests.samplers_tests.tpe_tests.test_parzen_estimator import assert_distribution_almost_equal
 
 
-pe_parameters = _ParzenEstimatorParameters(
-    prior_weight=0.0,
-    consider_magic_clip=False,
-    consider_endpoints=False,
-    weights=lambda x: np.empty(0),
-    multivariate=True,
-    categorical_distance_func={},
-)
+NO_PRIOR_WEIGHT = 0.0
 
 
 @pytest.mark.parametrize("dist_type", ["int", "cat"])
@@ -36,14 +29,14 @@ def test_init_scott_parzen_estimator(dist_type: str) -> None:
     counts = np.array([1, 1, 1, 1]).astype(float)
     is_cat = dist_type == "cat"
     pe = ScottParzenEstimator(
-        {"a": np.arange(counts.size)},
-        {
+        observations={"a": np.arange(counts.size)},
+        search_space={
             "a": IntDistribution(low=0, high=counts.size - 1)
             if not is_cat
             else CategoricalDistribution(choices=["a" * i for i in range(counts.size)])
         },
-        pe_parameters,
-        counts,
+        prior_weight=NO_PRIOR_WEIGHT,
+        predetermined_weights=counts,
     )
     assert len(pe._mixture_distribution.distributions) == 1
     target_pe = pe._mixture_distribution.distributions[0]
@@ -93,10 +86,10 @@ def test_build_int_scott_parzen_estimator(
     counts: np.ndarray, mu: np.ndarray, sigma: np.ndarray, weights: np.ndarray
 ) -> None:
     pe = ScottParzenEstimator(
-        {"a": (obs := np.flatnonzero(counts))},
-        {"a": IntDistribution(low=0, high=counts.size - 1)},
-        pe_parameters,
-        counts[obs].astype(float),
+        observations={"a": (obs := np.flatnonzero(counts))},
+        search_space={"a": IntDistribution(low=0, high=counts.size - 1)},
+        prior_weight=NO_PRIOR_WEIGHT,
+        predetermined_weights=counts[obs].astype(float),
     )
     dist = _BatchedDiscreteTruncNormDistributions(
         mu=mu, sigma=sigma, low=0, high=counts.size - 1, step=1
@@ -117,10 +110,10 @@ def test_build_int_scott_parzen_estimator(
 )
 def test_build_cat_scott_parzen_estimator(counts: np.ndarray, weights: np.ndarray) -> None:
     pe = ScottParzenEstimator(
-        {"a": (obs := np.flatnonzero(counts))},
-        {"a": CategoricalDistribution(choices=["a" * i for i in range(counts.size)])},
-        pe_parameters,
-        counts[obs].astype(float),
+        observations={"a": (obs := np.flatnonzero(counts))},
+        search_space={"a": CategoricalDistribution(choices=["a" * i for i in range(counts.size)])},
+        prior_weight=NO_PRIOR_WEIGHT,
+        predetermined_weights=counts[obs].astype(float),
     )
     dist = _BatchedCategoricalDistributions(
         weights=np.concatenate(
