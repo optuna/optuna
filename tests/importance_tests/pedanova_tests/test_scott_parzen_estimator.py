@@ -29,12 +29,12 @@ def test_init_scott_parzen_estimator(dist_type: str) -> None:
     counts = np.array([1, 1, 1, 1]).astype(float)
     is_cat = dist_type == "cat"
     pe = ScottParzenEstimator(
-        observations={"a": np.arange(counts.size)},
-        search_space={
-            "a": IntDistribution(low=0, high=counts.size - 1)
+        observations=np.arange(counts.size),
+        search_space=(
+            IntDistribution(low=0, high=counts.size - 1)
             if not is_cat
             else CategoricalDistribution(choices=["a" * i for i in range(counts.size)])
-        },
+        ),
         prior_weight=NO_PRIOR_WEIGHT,
         predetermined_weights=counts,
     )
@@ -86,8 +86,8 @@ def test_build_int_scott_parzen_estimator(
     counts: np.ndarray, mu: np.ndarray, sigma: np.ndarray, weights: np.ndarray
 ) -> None:
     pe = ScottParzenEstimator(
-        observations={"a": (obs := np.flatnonzero(counts))},
-        search_space={"a": IntDistribution(low=0, high=counts.size - 1)},
+        observations=(obs := np.flatnonzero(counts)),
+        search_space=IntDistribution(low=0, high=counts.size - 1),
         prior_weight=NO_PRIOR_WEIGHT,
         predetermined_weights=counts[obs].astype(float),
     )
@@ -110,8 +110,8 @@ def test_build_int_scott_parzen_estimator(
 )
 def test_build_cat_scott_parzen_estimator(counts: np.ndarray, weights: np.ndarray) -> None:
     pe = ScottParzenEstimator(
-        observations={"a": (obs := np.flatnonzero(counts))},
-        search_space={"a": CategoricalDistribution(choices=["a" * i for i in range(counts.size)])},
+        observations=(obs := np.flatnonzero(counts)),
+        search_space=CategoricalDistribution(choices=["a" * i for i in range(counts.size)]),
         prior_weight=NO_PRIOR_WEIGHT,
         predetermined_weights=counts[obs].astype(float),
     )

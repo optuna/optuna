@@ -24,50 +24,31 @@ class ScottParzenEstimator:
 
     def __init__(
         self,
-        observations: dict[str, np.ndarray],
-        search_space: dict[str, BaseDistribution],
+        observations: np.ndarray,
+        search_space: BaseDistribution,
         predetermined_weights: np.ndarray,
         prior_weight: float,
     ) -> None:
         if prior_weight < 0:
             raise ValueError(f"{prior_weight=} must be non-negative.")
-        self._search_space = search_space
-        transformed_observations = self._transform(observations)
-        assert len(transformed_observations) == len(predetermined_weights)
-        if len(transformed_observations) == 0:
+        assert len(observations) == len(predetermined_weights)
+        if len(observations) == 0:
             weights = np.array([1.0])
         else:
             weights = np.append(predetermined_weights, [prior_weight])
         weights /= weights.sum()
-        dists = [
-            self._calculate_distributions(param_vals, dist, predetermined_weights, prior_weight)
-            for dist, param_vals in zip(search_space.values(), transformed_observations.T)
-        ]
-        self._mixture_distribution = _MixtureOfProductDistribution(
-            weights=weights, distributions=dists
-        )
-
-    def log_pdf(self, samples_dict: dict[str, np.ndarray]) -> np.ndarray:
-        transformed_samples = self._transform(samples_dict)
-        return self._mixture_distribution.log_pdf(transformed_samples)
-
-    def _transform(self, samples_dict: dict[str, np.ndarray]) -> np.ndarray:
-        return np.array([samples_dict[param] for param in self._search_space]).T
-
-    def _calculate_distributions(
-        self,
-        observations: np.ndarray,
-        search_space: BaseDistribution,
-        weights: np.ndarray,
-        prior_weight: float,
-    ) -> _BatchedDistributions:
         if isinstance(search_space, CategoricalDistribution):
-            return self._calculate_categorical_distributions(
+            dist = self._calculate_categorical_distributions(
                 observations, search_space, prior_weight
             )
         else:
             assert isinstance(search_space, (FloatDistribution, IntDistribution))
-            return self._calculate_numerical_distributions(observations, search_space, weights)
+            dist = self._calculate_numerical_distributions(
+                observations, search_space, predetermined_weights
+            )
+        self._mixture_distribution = _MixtureOfProductDistribution(
+            weights=weights, distributions=[dist]
+        )
 
     def _calculate_categorical_distributions(
         self, observations: np.ndarray, search_space: CategoricalDistribution, prior_weight: float
@@ -123,8 +104,9 @@ class ScottParzenEstimator:
             mu=mus_with_prior, sigma=sigmas_with_prior, low=low, high=high, step=1
         )
 
-    def pdf(self, samples: dict[str, np.ndarray]) -> np.ndarray:
-        return np.exp(self.log_pdf(samples))
+    def pdf(self, samples: np.ndarray) -> np.ndarray:
+        assert samples.ndim == 1
+        return np.exp(self._mixture_distribution.log_pdf(samples[np.newaxis]))
 
 
 def _count_numerical_param_in_grid(
@@ -176,8 +158,8 @@ def build_parzen_estimator_on_grid(
     observations = np.flatnonzero(counts)
     weights = counts[observations]
     pe = ScottParzenEstimator(
-        observations={param_name: observations},
-        search_space={param_name: rounded_dist},
+        observations=observations,
+        search_space=rounded_dist,
         predetermined_weights=weights,
         prior_weight=prior_weight,
     )
