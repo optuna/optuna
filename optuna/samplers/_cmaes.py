@@ -110,27 +110,6 @@ class CmaEsSampler(BaseSampler):
 
     Args:
 
-        x0:
-            A dictionary of an initial parameter values for CMA-ES. By default, the mean of ``low``
-            and ``high`` for each distribution is used. Note that ``x0`` is sampled uniformly
-            within the search space domain for each restart if you specify ``restart_strategy``
-            argument.
-
-            .. warning::
-                Deprecated in v4.9.0. ``x0`` argument will be removed in the future.
-                The removal of this feature is currently scheduled for v6.0.0,
-                but this schedule is subject to change.
-
-        sigma0:
-            Initial standard deviation of CMA-ES. By default, ``sigma0`` is set to
-            ``min_range / 6``, where ``min_range`` denotes the minimum range of the distributions
-            in the search space.
-
-            .. warning::
-                Deprecated in v4.9.0. ``sigma0`` argument will be removed in the future.
-                The removal of this feature is currently scheduled for v6.0.0,
-                but this schedule is subject to change.
-
         seed:
             A random seed for CMA-ES.
 
@@ -160,37 +139,8 @@ class CmaEsSampler(BaseSampler):
             Note that the parameters of the first trial in a study are always sampled
             via an independent sampler, so no warning messages are emitted in this case.
 
-        restart_strategy:
-            Strategy for restarting CMA-ES optimization when converges to a local minimum.
-            If :obj:`None` is given, CMA-ES will not restart (default).
-            If 'ipop' is given, CMA-ES will restart with increasing population size.
-            if 'bipop' is given, CMA-ES will restart with the population size
-            increased or decreased.
-            Please see also ``inc_popsize`` parameter.
-
-            .. warning::
-                Deprecated in v4.4.0. ``restart_strategy`` argument will be removed in the future.
-                The removal of this feature is currently scheduled for v6.0.0,
-                but this schedule is subject to change.
-                From v4.4.0 onward, ``restart_strategy`` automatically falls back to ``None``, and
-                ``restart_strategy`` will be supported in OptunaHub.
-                See https://github.com/optuna/optuna/releases/tag/v4.4.0.
-
         popsize:
             A population size of CMA-ES.
-
-        inc_popsize:
-            Multiplier for increasing population size before each restart.
-            This argument will be used when ``restart_strategy = 'ipop'``
-            or ``restart_strategy = 'bipop'`` is specified.
-
-            .. warning::
-                Deprecated in v4.4.0. ``inc_popsize`` argument will be removed in the future.
-                The removal of this feature is currently scheduled for v6.0.0,
-                but this schedule is subject to change.
-                From v4.4.0 onward, ``inc_popsize`` is no longer utilized within Optuna, and
-                ``inc_popsize`` will be supported in OptunaHub.
-                See https://github.com/optuna/optuna/releases/tag/v4.4.0.
 
         consider_pruned_trials:
             If this is :obj:`True`, the PRUNED trials are considered for sampling.
@@ -252,6 +202,56 @@ class CmaEsSampler(BaseSampler):
                 Added in v2.6.0 as an experimental feature. The interface may change in newer
                 versions without prior notice. See
                 https://github.com/optuna/optuna/releases/tag/v2.6.0.
+
+        x0:
+            A dictionary of an initial parameter values for CMA-ES. By default, the mean of ``low``
+            and ``high`` for each distribution is used. Note that ``x0`` is sampled uniformly
+            within the search space domain for each restart if you specify ``restart_strategy``
+            argument.
+
+            .. warning::
+                Deprecated in v4.9.0. ``x0`` argument will be removed in the future.
+                The removal of this feature is currently scheduled for v6.0.0,
+                but this schedule is subject to change.
+
+        sigma0:
+            Initial standard deviation of CMA-ES. By default, ``sigma0`` is set to
+            ``min_range / 6``, where ``min_range`` denotes the minimum range of the distributions
+            in the search space.
+
+            .. warning::
+                Deprecated in v4.9.0. ``sigma0`` argument will be removed in the future.
+                The removal of this feature is currently scheduled for v6.0.0,
+                but this schedule is subject to change.
+
+        restart_strategy:
+            Strategy for restarting CMA-ES optimization when converges to a local minimum.
+            If :obj:`None` is given, CMA-ES will not restart (default).
+            If 'ipop' is given, CMA-ES will restart with increasing population size.
+            if 'bipop' is given, CMA-ES will restart with the population size
+            increased or decreased.
+            Please see also ``inc_popsize`` parameter.
+
+            .. warning::
+                Deprecated in v4.4.0. ``restart_strategy`` argument will be removed in the future.
+                The removal of this feature is currently scheduled for v6.0.0,
+                but this schedule is subject to change.
+                From v4.4.0 onward, ``restart_strategy`` automatically falls back to ``None``, and
+                ``restart_strategy`` will be supported in OptunaHub.
+                See https://github.com/optuna/optuna/releases/tag/v4.4.0.
+
+        inc_popsize:
+            Multiplier for increasing population size before each restart.
+            This argument will be used when ``restart_strategy = 'ipop'``
+            or ``restart_strategy = 'bipop'`` is specified.
+
+            .. warning::
+                Deprecated in v4.4.0. ``inc_popsize`` argument will be removed in the future.
+                The removal of this feature is currently scheduled for v6.0.0,
+                but this schedule is subject to change.
+                From v4.4.0 onward, ``inc_popsize`` is no longer utilized within Optuna, and
+                ``inc_popsize`` will be supported in OptunaHub.
+                See https://github.com/optuna/optuna/releases/tag/v4.4.0.
 
     """  # NOQA: E501
 
