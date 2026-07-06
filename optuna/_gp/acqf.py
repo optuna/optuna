@@ -160,12 +160,17 @@ class qLogEI(BaseAcquisitionFunc):
         )
         super().__init__(gpr.length_scales, search_space)
 
-    def _get_posterior_samples(self, x: torch.Tensor, gpr: GPRegressor) -> torch.Tensor:
+    def _get_posterior_samples(
+        self,
+        x: torch.Tensor,
+        gpr: GPRegressor,
+        fixed_samples: torch.Tensor,
+    ) -> torch.Tensor:
         mean, cov = gpr.posterior(x, joint=True)
         cov.diagonal(dim1=-2, dim2=-1).add_(self._stabilizing_noise)
         # mean.shape: (q + 1,), cov.shape: (q + 1, q + 1), fixed_samples.shape: (128, q + 1).
         return mean.unsqueeze(-2) + torch.matmul(
-            self._fixed_samples, torch.linalg.cholesky(cov).transpose(-1, -2)
+            fixed_samples, torch.linalg.cholesky(cov).transpose(-1, -2)
         )
 
     def _get_joint_input(self, x: torch.Tensor) -> torch.Tensor:
@@ -184,7 +189,7 @@ class qLogEI(BaseAcquisitionFunc):
                 dtype=torch.float64,
             )
 
-        y_post = self._get_posterior_samples(joint_x, self._gpr)
+        y_post = self._get_posterior_samples(joint_x, self._gpr, self._fixed_samples)
         return y_post.clamp_(min=torch.tensor(_EPS, dtype=torch.float64)).log()
 
     def eval_acqf(self, x: torch.Tensor) -> torch.Tensor:
@@ -326,6 +331,14 @@ class qConstrainedLogEI(qLogEI):
         )
         self._constraints_gpr_list = constraints_gpr_list
         self._constraints_threshold_list = constraints_threshold_list
+        self._constraint_fixed_samples_list = [
+            _sample_from_normal_sobol(
+                dim=1 + normalized_params_of_running_trials.shape[0],
+                n_samples=n_qmc_samples,
+                seed=None if qmc_seed is None else qmc_seed + i + 1,
+            )
+            for i in range(len(constraints_gpr_list))
+        ]
         super().__init__(
             gpr,
             search_space,
@@ -342,11 +355,20 @@ class qConstrainedLogEI(qLogEI):
 
         constraint_log_feasibilities = [
             torch.nn.functional.logsigmoid(
-                (self._get_posterior_samples(joint_x, constraint_gpr) - threshold) / tau
+                (
+                    self._get_posterior_samples(
+                        joint_x,
+                        constraint_gpr,
+                        fixed_samples,
+                    )
+                    - threshold
+                )
+                / tau
             )
-            for constraint_gpr, threshold in zip(
+            for constraint_gpr, threshold, fixed_samples in zip(
                 self._constraints_gpr_list,
                 self._constraints_threshold_list,
+                self._constraint_fixed_samples_list,
             )
         ]
         log_feasibility = torch.stack(constraint_log_feasibilities).sum(dim=0)
