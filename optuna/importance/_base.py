@@ -113,11 +113,6 @@ def _get_distributions(study: Study, params: list[str] | None) -> dict[str, Base
 
 
 def _check_evaluate_args(completed_trials: list[FrozenTrial], params: list[str] | None) -> None:
-    if len(completed_trials) == 0:
-        raise ValueError("Cannot evaluate parameter importances without completed trials.")
-    if len(completed_trials) == 1:
-        raise ValueError("Cannot evaluate parameter importances with only a single trial.")
-
     if params is not None:
         if not isinstance(params, (list, tuple)):
             raise TypeError(

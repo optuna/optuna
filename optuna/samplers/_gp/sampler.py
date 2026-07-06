@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 import optuna
-from optuna._experimental import experimental_class
 from optuna._experimental import warn_experimental_argument
 from optuna.samplers._base import _CONSTRAINTS_KEY
 from optuna.samplers._base import _INDEPENDENT_SAMPLING_WARNING_TEMPLATE
@@ -63,7 +62,6 @@ def _standardize_values(values: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.
     return standardized_values, means, stds
 
 
-@experimental_class("3.6.0")
 class GPSampler(BaseSampler):
     """Sampler using Gaussian process-based Bayesian optimization.
 
@@ -164,6 +162,11 @@ class GPSampler(BaseSampler):
             the minimum value (slightly above 0 to ensure numerical stability).
             Defaults to :obj:`False`. Currently, all the objectives will be assume to be
             deterministic if :obj:`True`.
+
+            .. note::
+                Added in v3.6.0 as an experimental feature. The interface may change in newer
+                versions without prior notice. See
+                https://github.com/optuna/optuna/releases/tag/v3.6.0.
         constraints_func:
             An optional function that computes the objective constraints. It must take a
             :class:`~optuna.trial.FrozenTrial` and return the constraints. The return value must
@@ -175,6 +178,11 @@ class GPSampler(BaseSampler):
             The ``constraints_func`` will be evaluated after each successful trial.
             The function won't be called when trials fail or are pruned, but this behavior is
             subject to change in future releases.
+
+            .. note::
+                Added in v4.2.0 as an experimental feature. The interface may change in newer
+                versions without prior notice. See
+                https://github.com/optuna/optuna/releases/tag/v4.2.0.
         warn_independent_sampling:
             If this is :obj:`True`, a warning message is emitted when
             the value of a parameter is sampled by using an independent sampler,
@@ -218,6 +226,8 @@ class GPSampler(BaseSampler):
 
         if constraints_func is not None:
             warn_experimental_argument("constraints_func")
+        if deterministic_objective:
+            warn_experimental_argument("deterministic_objective")
 
         # Control parameters of the acquisition function optimization.
         self._n_preliminary_samples: int = 2048

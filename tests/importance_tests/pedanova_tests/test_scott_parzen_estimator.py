@@ -10,35 +10,42 @@ from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
-from optuna.importance._ped_anova.scott_parzen_estimator import _build_parzen_estimator
 from optuna.importance._ped_anova.scott_parzen_estimator import _count_categorical_param_in_grid
 from optuna.importance._ped_anova.scott_parzen_estimator import _count_numerical_param_in_grid
-from optuna.importance._ped_anova.scott_parzen_estimator import _ScottParzenEstimator
+from optuna.importance._ped_anova.scott_parzen_estimator import build_parzen_estimator_on_grid
+from optuna.importance._ped_anova.scott_parzen_estimator import ScottParzenEstimator
+from optuna.samplers._tpe.parzen_estimator import _ParzenEstimatorParameters
 from optuna.samplers._tpe.probability_distributions import _BatchedCategoricalDistributions
 from optuna.samplers._tpe.probability_distributions import _BatchedDiscreteTruncNormDistributions
 from optuna.samplers._tpe.probability_distributions import _MixtureOfProductDistribution
 from tests.samplers_tests.tpe_tests.test_parzen_estimator import assert_distribution_almost_equal
 
 
-DIST_TYPES = ["int", "cat"]
+pe_parameters = _ParzenEstimatorParameters(
+    prior_weight=0.0,
+    consider_magic_clip=False,
+    consider_endpoints=False,
+    weights=lambda x: np.empty(0),
+    multivariate=True,
+    categorical_distance_func={},
+)
 
 
-@pytest.mark.parametrize("dist_type", DIST_TYPES)
+@pytest.mark.parametrize("dist_type", ["int", "cat"])
 def test_init_scott_parzen_estimator(dist_type: str) -> None:
     counts = np.array([1, 1, 1, 1]).astype(float)
     is_cat = dist_type == "cat"
-    pe = _ScottParzenEstimator(
-        param_name="a",
-        dist=(
-            IntDistribution(low=0, high=counts.size - 1)
+    pe = ScottParzenEstimator(
+        {"a": np.arange(counts.size)},
+        {
+            "a": IntDistribution(low=0, high=counts.size - 1)
             if not is_cat
             else CategoricalDistribution(choices=["a" * i for i in range(counts.size)])
-        ),
-        counts=counts,
-        prior_weight=0.0,
+        },
+        pe_parameters,
+        counts,
     )
     assert len(pe._mixture_distribution.distributions) == 1
-    assert pe.n_steps == counts.size
     target_pe = pe._mixture_distribution.distributions[0]
     if is_cat:
         assert isinstance(target_pe, _BatchedCategoricalDistributions)
@@ -85,15 +92,14 @@ def test_init_scott_parzen_estimator(dist_type: str) -> None:
 def test_build_int_scott_parzen_estimator(
     counts: np.ndarray, mu: np.ndarray, sigma: np.ndarray, weights: np.ndarray
 ) -> None:
-    _counts = counts.astype(float)
-    pe = _ScottParzenEstimator(
-        param_name="a",
-        dist=IntDistribution(low=0, high=_counts.size - 1),
-        counts=_counts,
-        prior_weight=0.0,
+    pe = ScottParzenEstimator(
+        {"a": (obs := np.flatnonzero(counts))},
+        {"a": IntDistribution(low=0, high=counts.size - 1)},
+        pe_parameters,
+        counts[obs].astype(float),
     )
     dist = _BatchedDiscreteTruncNormDistributions(
-        mu=mu, sigma=sigma, low=0, high=_counts.size - 1, step=1
+        mu=mu, sigma=sigma, low=0, high=counts.size - 1, step=1
     )
     expected_dist = _MixtureOfProductDistribution(weights=weights, distributions=[dist])
     assert_distribution_almost_equal(pe._mixture_distribution, expected_dist)
@@ -110,12 +116,11 @@ def test_build_int_scott_parzen_estimator(
     ],
 )
 def test_build_cat_scott_parzen_estimator(counts: np.ndarray, weights: np.ndarray) -> None:
-    _counts = counts.astype(float)
-    pe = _ScottParzenEstimator(
-        param_name="a",
-        dist=CategoricalDistribution(choices=["a" * i for i in range(counts.size)]),
-        counts=_counts,
-        prior_weight=0.0,
+    pe = ScottParzenEstimator(
+        {"a": (obs := np.flatnonzero(counts))},
+        {"a": CategoricalDistribution(choices=["a" * i for i in range(counts.size)])},
+        pe_parameters,
+        counts[obs].astype(float),
     )
     dist = _BatchedCategoricalDistributions(
         weights=np.concatenate(
@@ -175,7 +180,7 @@ def test_build_parzen_estimator(
     params: list[int] | list[float] | list[str],
 ) -> None:
     trials = [create_trial(value=0.0, params={"a": p}, distributions={"a": dist}) for p in params]
-    pe = _build_parzen_estimator(
+    pe, _ = build_parzen_estimator_on_grid(
         param_name="a",
         dist=dist,
         trials=trials,
@@ -206,7 +211,7 @@ def test_assert_in_build_parzen_estimator() -> None:
             raise NotImplementedError
 
     with pytest.raises(AssertionError):
-        _build_parzen_estimator(
+        build_parzen_estimator_on_grid(
             param_name="a",
             dist=UnknownDistribution(),
             trials=[],
