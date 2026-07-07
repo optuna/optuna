@@ -152,14 +152,16 @@ def test_sample_relative_prior() -> None:
     trial = frozen_trial_factory(8)
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
-        sampler = TPESampler(n_startup_trials=5, seed=0, multivariate=True)
+        sampler = TPESampler(n_startup_trials=5, seed=0, multivariate=True, constant_liar=False)
     with patch.object(study._storage, "get_all_trials", return_value=past_trials):
         suggestion = sampler.sample_relative(study, trial, {"param-a": dist})
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
         warnings.simplefilter("ignore", FutureWarning)
-        sampler = TPESampler(prior_weight=0.2, n_startup_trials=5, seed=0, multivariate=True)
+        sampler = TPESampler(
+            prior_weight=0.2, n_startup_trials=5, seed=0, multivariate=True, constant_liar=False
+        )
     with patch.object(study._storage, "get_all_trials", return_value=past_trials):
         assert sampler.sample_relative(study, trial, {"param-a": dist}) != suggestion
 
@@ -173,7 +175,7 @@ def test_sample_relative_n_startup_trial() -> None:
     # sample_relative returns {} for only 4 observations.
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
-        sampler = TPESampler(n_startup_trials=5, seed=0, multivariate=True)
+        sampler = TPESampler(n_startup_trials=5, seed=0, multivariate=True, constant_liar=False)
     with patch.object(study._storage, "get_all_trials", return_value=past_trials[:4]):
         assert sampler.sample_relative(study, trial, {"param-a": dist}) == {}
     # sample_relative returns some value for only 7 observations.
@@ -191,21 +193,25 @@ def test_sample_relative_misc_arguments() -> None:
     trial = frozen_trial_factory(40)
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
-        sampler = TPESampler(n_startup_trials=5, seed=0, multivariate=True)
+        sampler = TPESampler(n_startup_trials=5, seed=0, multivariate=True, constant_liar=False)
     with patch.object(study._storage, "get_all_trials", return_value=past_trials):
         suggestion = sampler.sample_relative(study, trial, {"param-a": dist})
 
     # Test misc. parameters.
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
-        sampler = TPESampler(n_ei_candidates=13, n_startup_trials=5, seed=0, multivariate=True)
+        sampler = TPESampler(
+            n_ei_candidates=13, n_startup_trials=5, seed=0, multivariate=True, constant_liar=False
+        )
     with patch.object(study._storage, "get_all_trials", return_value=past_trials):
         assert sampler.sample_relative(study, trial, {"param-a": dist}) != suggestion
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
         warnings.simplefilter("ignore", FutureWarning)
-        sampler = TPESampler(gamma=lambda _: 5, n_startup_trials=5, seed=0, multivariate=True)
+        sampler = TPESampler(
+            gamma=lambda _: 5, n_startup_trials=5, seed=0, multivariate=True, constant_liar=False
+        )
     with patch.object(study._storage, "get_all_trials", return_value=past_trials):
         assert sampler.sample_relative(study, trial, {"param-a": dist}) != suggestion
 
@@ -217,6 +223,7 @@ def test_sample_relative_misc_arguments() -> None:
             n_startup_trials=5,
             seed=0,
             multivariate=True,
+            constant_liar=False,
         )
     with patch.object(study._storage, "get_all_trials", return_value=past_trials):
         assert sampler.sample_relative(study, trial, {"param-a": dist}) != suggestion
@@ -231,7 +238,7 @@ def test_sample_relative_uniform_distributions() -> None:
     trial = frozen_trial_factory(8)
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
-        sampler = TPESampler(n_startup_trials=5, seed=0, multivariate=True)
+        sampler = TPESampler(n_startup_trials=5, seed=0, multivariate=True, constant_liar=False)
     with patch.object(study._storage, "get_all_trials", return_value=past_trials):
         uniform_suggestion = sampler.sample_relative(study, trial, {"param-a": uni_dist})
     assert 1.0 <= uniform_suggestion["param-a"] < 100.0
@@ -247,7 +254,7 @@ def test_sample_relative_log_uniform_distributions() -> None:
     trial = frozen_trial_factory(8)
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
-        sampler = TPESampler(n_startup_trials=5, seed=0, multivariate=True)
+        sampler = TPESampler(n_startup_trials=5, seed=0, multivariate=True, constant_liar=False)
     with patch.object(study._storage, "get_all_trials", return_value=past_trials):
         uniform_suggestion = sampler.sample_relative(study, trial, {"param-a": uni_dist})
 
@@ -257,7 +264,7 @@ def test_sample_relative_log_uniform_distributions() -> None:
     trial = frozen_trial_factory(8)
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
-        sampler = TPESampler(n_startup_trials=5, seed=0, multivariate=True)
+        sampler = TPESampler(n_startup_trials=5, seed=0, multivariate=True, constant_liar=False)
     with patch.object(study._storage, "get_all_trials", return_value=past_trials):
         loguniform_suggestion = sampler.sample_relative(study, trial, {"param-a": log_dist})
     assert 1.0 <= loguniform_suggestion["param-a"] < 100.0
@@ -278,7 +285,7 @@ def test_sample_relative_disrete_uniform_distributions() -> None:
     trial = frozen_trial_factory(8)
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
-        sampler = TPESampler(n_startup_trials=5, seed=0, multivariate=True)
+        sampler = TPESampler(n_startup_trials=5, seed=0, multivariate=True, constant_liar=False)
     with patch.object(study._storage, "get_all_trials", return_value=past_trials):
         discrete_uniform_suggestion = sampler.sample_relative(study, trial, {"param-a": disc_dist})
     assert 1.0 <= discrete_uniform_suggestion["param-a"] <= 100.0
@@ -305,7 +312,7 @@ def test_sample_relative_categorical_distributions() -> None:
     trial = frozen_trial_factory(8)
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
-        sampler = TPESampler(n_startup_trials=5, seed=0, multivariate=True)
+        sampler = TPESampler(n_startup_trials=5, seed=0, multivariate=True, constant_liar=False)
     with patch.object(study._storage, "get_all_trials", return_value=past_trials):
         categorical_suggestion = sampler.sample_relative(study, trial, {"param-a": cat_dist})
     assert categorical_suggestion["param-a"] in categories
@@ -328,7 +335,7 @@ def test_sample_relative_int_uniform_distributions(step: int) -> None:
     trial = frozen_trial_factory(8)
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
-        sampler = TPESampler(n_startup_trials=5, seed=0, multivariate=True)
+        sampler = TPESampler(n_startup_trials=5, seed=0, multivariate=True, constant_liar=False)
     with patch.object(study._storage, "get_all_trials", return_value=past_trials):
         int_suggestion = sampler.sample_relative(study, trial, {"param-a": int_dist})
     assert 1 <= int_suggestion["param-a"] <= 100
@@ -352,7 +359,7 @@ def test_sample_relative_int_loguniform_distributions() -> None:
     trial = frozen_trial_factory(8)
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
-        sampler = TPESampler(n_startup_trials=5, seed=0, multivariate=True)
+        sampler = TPESampler(n_startup_trials=5, seed=0, multivariate=True, constant_liar=False)
     with patch.object(study._storage, "get_all_trials", return_value=past_trials):
         intlog_suggestion = sampler.sample_relative(study, trial, {"param-a": intlog_dist})
     assert 1 <= intlog_suggestion["param-a"] <= 100
@@ -381,7 +388,7 @@ def test_sample_relative_handle_unsuccessful_states(
     trial = frozen_trial_factory(100)
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
-        sampler = TPESampler(n_startup_trials=5, seed=0, multivariate=True)
+        sampler = TPESampler(n_startup_trials=5, seed=0, multivariate=True, constant_liar=False)
     all_success_suggestion = sampler.sample_relative(study, trial, {"param-a": dist})
 
     # Test unsuccessful trials are handled differently.
@@ -393,7 +400,7 @@ def test_sample_relative_handle_unsuccessful_states(
     trial = frozen_trial_factory(100)
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
-        sampler = TPESampler(n_startup_trials=5, seed=0, multivariate=True)
+        sampler = TPESampler(n_startup_trials=5, seed=0, multivariate=True, constant_liar=False)
     partial_unsuccessful_suggestion = sampler.sample_relative(study, trial, {"param-a": dist})
 
     assert partial_unsuccessful_suggestion != all_success_suggestion
@@ -417,7 +424,9 @@ def test_sample_relative_ignored_states() -> None:
             study._storage.create_new_trial(study._study_id, template_trial=trial)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
-            sampler = TPESampler(n_startup_trials=5, seed=0, multivariate=True)
+            sampler = TPESampler(
+                n_startup_trials=5, seed=0, multivariate=True, constant_liar=False
+            )
         suggestions.append(sampler.sample_relative(study, trial, {"param-a": dist})["param-a"])
 
     assert len(set(suggestions)) == 1
@@ -442,7 +451,9 @@ def test_sample_relative_pruned_state() -> None:
         trial = frozen_trial_factory(40)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
-            sampler = TPESampler(n_startup_trials=5, seed=0, multivariate=True)
+            sampler = TPESampler(
+                n_startup_trials=5, seed=0, multivariate=True, constant_liar=False
+            )
         suggestions.append(sampler.sample_relative(study, trial, {"param-a": dist})["param-a"])
 
     assert len(set(suggestions)) == 3
@@ -1116,17 +1127,10 @@ def test_group_experimental_warning() -> None:
         _ = TPESampler(multivariate=True, group=True)
 
 
-def test_constant_liar_experimental_warning() -> None:
-    with pytest.warns(optuna.exceptions.ExperimentalWarning):
-        _ = TPESampler(constant_liar=True)
-
-
 @pytest.mark.parametrize("multivariate", [True, False])
 @pytest.mark.parametrize("multiobjective", [True, False])
 def test_constant_liar_with_running_trial(multivariate: bool, multiobjective: bool) -> None:
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
-        sampler = TPESampler(multivariate=multivariate, constant_liar=True, n_startup_trials=0)
+    sampler = TPESampler(multivariate=multivariate, constant_liar=True, n_startup_trials=0)
 
     directions = ["minimize"] * 2 if multiobjective else ["minimize"]
     study = optuna.create_study(sampler=sampler, directions=directions)
