@@ -22,7 +22,7 @@ _MULTI_VALUES = [[float(i), float(j)] for i, j in zip(range(10), reversed(range(
 @pytest.mark.parametrize(
     "quantile,is_lower_better,values,target,filtered_indices",
     [
-        (0.1, True, [[1.0], [2.0]], None, [0, 1]),  # Check min_n_trials = 2
+        (0.1, True, [[1.0], [2.0]], None, [0]),
         (0.49, True, deepcopy(_VALUES), None, list(range(10))[-5:]),
         (0.5, True, deepcopy(_VALUES), None, list(range(10))[-5:]),
         (0.51, True, deepcopy(_VALUES), None, list(range(10))[-6:]),
@@ -46,7 +46,7 @@ def test_filter(
     target: Callable[[FrozenTrial], float] | None,
     filtered_indices: list[int],
 ) -> None:
-    _filter = _QuantileFilter(quantile, is_lower_better, min_n_top_trials=2, target=target)
+    _filter = _QuantileFilter(quantile, is_lower_better, target=target)
     trials = [optuna.create_trial(values=vs) for vs in values]
     for i, t in enumerate(trials):
         t.set_user_attr("index", i)
@@ -56,12 +56,16 @@ def test_filter(
     assert all(i == j for i, j in zip(indices, filtered_indices))
 
 
-def test_n_trials_equal_to_min_n_top_trials() -> None:
+@pytest.mark.parametrize("n_trials", [0, 1, 2])
+def test_n_trials_less_than_two(n_trials: int) -> None:
     evaluator = PedAnovaImportanceEvaluator()
-    study = get_study(seed=0, n_trials=evaluator._min_n_top_trials, is_multi_obj=False)
+    study = get_study(seed=0, n_trials=n_trials, is_multi_obj=False)
     param_importance = list(evaluator.evaluate(study).values())
     n_params = len(param_importance)
-    assert np.allclose(param_importance, np.zeros(n_params))
+    if n_trials < 2:
+        assert np.allclose(param_importance, np.zeros(n_params))
+    else:
+        assert not np.allclose(param_importance, np.zeros(n_params))
 
 
 def test_direction() -> None:
@@ -132,8 +136,8 @@ def test_conditional() -> None:
             [[float(i), float(i)] for i in range(6)],
             0.5,
             0.8,
-            2,
-            4,
+            3,
+            5,
             id="different-nondomination-ranks",
         ),
         pytest.param(
@@ -150,8 +154,8 @@ def test_conditional() -> None:
             ],
             0.5,
             0.75,
-            3,
-            5,
+            4,
+            6,
             id="same-rank-hssp-tie-break-after-best-rank",
         ),
         pytest.param(
@@ -159,8 +163,8 @@ def test_conditional() -> None:
             [[float(i), float(5 - i)] for i in range(6)],
             0.5,
             0.8,
-            2,
-            4,
+            3,
+            5,
             id="same-rank-hssp-tie-break-on-front",
         ),
     ],

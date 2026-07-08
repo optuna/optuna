@@ -134,16 +134,16 @@ def test_multi_objective_sample_independent_misc_arguments() -> None:
 
     # Prepare a trial and a sample for later checks.
     trial = frozen_trial_factory(16, [0, 0])
-    sampler = TPESampler(seed=0)
+    sampler = TPESampler(seed=0, constant_liar=False)
     suggestion = suggest(sampler, study, trial, dist, past_trials)
 
     # Test misc. parameters.
-    sampler = TPESampler(n_ei_candidates=13, seed=0)
+    sampler = TPESampler(n_ei_candidates=13, seed=0, constant_liar=False)
     assert suggest(sampler, study, trial, dist, past_trials) != suggestion
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", FutureWarning)
-        sampler = TPESampler(gamma=lambda _: 1, seed=0)
+        sampler = TPESampler(gamma=lambda _: 1, seed=0, constant_liar=False)
     assert suggest(sampler, study, trial, dist, past_trials) != suggestion
 
 
