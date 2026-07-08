@@ -260,8 +260,8 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
                 An optimized study.
             params:
                 A list of names of parameters to assess.
-                If :obj:`None`, all parameters that are present in all of the completed trials are
-                assessed.
+                If :obj:`None`, all parameters that appear in completed trials, including
+                conditional parameters, are assessed.
             target:
                 A function to specify the value to evaluate importances.
                 If it is :obj:`None` and ``study`` is being used for single-objective optimization,
