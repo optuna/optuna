@@ -18,8 +18,7 @@ as a guide, paying close attention to the format of the return value from the ev
 
 .. note::
 
-   For detailed usage of the default evaluator, please refer to
-   :func:`~optuna.importance.get_param_importances`.
+   For detailed usage, please refer to :func:`~optuna.importance.get_param_importances`.
 
 .. autosummary::
    :toctree: generated/
