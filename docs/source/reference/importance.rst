@@ -25,6 +25,6 @@ as a guide, paying close attention to the format of the return value from the ev
    :nosignatures:
 
    get_param_importances
+   PedAnovaImportanceEvaluator
    FanovaImportanceEvaluator
    MeanDecreaseImpurityImportanceEvaluator
-   PedAnovaImportanceEvaluator
