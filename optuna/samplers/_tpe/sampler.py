@@ -172,11 +172,6 @@ class TPESampler(BaseSampler):
             <http://proceedings.mlr.press/v80/falkner18a.html>`__ and `our article
             <https://medium.com/optuna/multivariate-tpe-makes-optuna-even-more-powerful-63c4bfbaebe2>`__
             for more details.
-
-            .. note::
-                Added in v2.2.0 as an experimental feature. The interface may change in newer
-                versions without prior notice. See
-                https://github.com/optuna/optuna/releases/tag/v2.2.0.
         group:
             If this and ``multivariate`` are :obj:`True`, the multivariate TPE with the group
             decomposed search space is used when suggesting parameters.
@@ -366,7 +361,7 @@ class TPESampler(BaseSampler):
         gamma: Callable[[int], int] | None = None,
         weights: Callable[[int], np.ndarray] | None = None,
         seed: int | None = None,
-        multivariate: bool = False,
+        multivariate: bool = True,
         group: bool = False,
         warn_independent_sampling: bool | None = None,
         constant_liar: bool = True,
@@ -424,9 +419,6 @@ class TPESampler(BaseSampler):
         self._constraints_func = constraints_func
         # NOTE(nabenabe0928): Users can overwrite _ParzenEstimator to customize the TPE behavior.
         self._parzen_estimator_cls = _ParzenEstimator
-
-        if multivariate:
-            warn_experimental_argument("multivariate")
 
         if group:
             if not multivariate:
