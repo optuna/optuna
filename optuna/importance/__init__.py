@@ -41,6 +41,17 @@ def get_param_importances(
     The returned dictionary is ordered by its values in a descending order.
     By default, the sum of the importance values are normalized to 1.0.
 
+    By default, this function uses
+    :class:`~optuna.importance.PedAnovaImportanceEvaluator`.
+    For details on this evaluator, please refer to the following papers:
+
+    - `PED-ANOVA: Efficiently Quantifying Hyperparameter Importance in Arbitrary Subspaces
+      <https://arxiv.org/abs/2304.10255>`__ (IJCAI 2023)
+    - `Conditional PED-ANOVA: Hyperparameter Importance in Hierarchical & Dynamic Search Spaces
+      <https://arxiv.org/abs/2601.20800>`__ (KDD 2026)
+
+    When using this evaluator in your project, please cite both papers.
+
     With the default evaluator, :class:`~optuna.importance.PedAnovaImportanceEvaluator`,
     ``params=None`` assesses all parameters that appear in completed trials, including conditional
     parameters.
