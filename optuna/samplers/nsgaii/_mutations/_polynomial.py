@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from optuna._experimental import experimental_class
-from optuna.samplers.nsgaii._mutations._base import BaseMutation
+from optuna.samplers.nsgaii._mutations._base import NumericalMutation
 
 
 if TYPE_CHECKING:
@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
 
 @experimental_class("5.0.0")
-class PolynomialMutation(BaseMutation):
+class PolynomialMutation(NumericalMutation):
     """Polynomial mutation operation used by :class:`~optuna.samplers.NSGAIISampler`.
 
     This operator mutates a real-valued parameter according to the polynomial probability

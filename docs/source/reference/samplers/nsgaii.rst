@@ -29,4 +29,7 @@ Mutation
     :nosignatures:
 
     BaseMutation
+    NumericalMutation
+    CategoricalMutation
+    MixedMutation
     PolynomialMutation
