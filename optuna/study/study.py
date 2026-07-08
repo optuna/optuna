@@ -21,7 +21,6 @@ from optuna import logging
 from optuna import pruners
 from optuna import samplers
 from optuna import storages
-from optuna._convert_positional_args import convert_positional_args
 from optuna._deprecated import deprecated_func
 from optuna._experimental import experimental_func
 from optuna._imports import _LazyImport
@@ -1189,18 +1188,6 @@ class Study:
             assert False, "Should not reach."
 
 
-@convert_positional_args(
-    previous_positional_arg_names=[
-        "storage",
-        "sampler",
-        "pruner",
-        "study_name",
-        "direction",
-        "load_if_exists",
-    ],
-    deprecated_version="3.0.0",
-    removed_version="5.0.0",
-)
 def create_study(
     *,
     storage: str | storages.BaseStorage | None = None,
@@ -1341,16 +1328,6 @@ def create_study(
     return study
 
 
-@convert_positional_args(
-    previous_positional_arg_names=[
-        "study_name",
-        "storage",
-        "sampler",
-        "pruner",
-    ],
-    deprecated_version="3.0.0",
-    removed_version="5.0.0",
-)
 def load_study(
     *,
     study_name: str | None,
@@ -1432,14 +1409,6 @@ def load_study(
     return study
 
 
-@convert_positional_args(
-    previous_positional_arg_names=[
-        "study_name",
-        "storage",
-    ],
-    deprecated_version="3.0.0",
-    removed_version="5.0.0",
-)
 def delete_study(
     *,
     study_name: str,
@@ -1492,17 +1461,6 @@ def delete_study(
     storage.delete_study(study_id)
 
 
-@convert_positional_args(
-    previous_positional_arg_names=[
-        "from_study_name",
-        "from_storage",
-        "to_storage",
-        "to_study_name",
-    ],
-    warning_stacklevel=3,
-    deprecated_version="3.0.0",
-    removed_version="5.0.0",
-)
 def copy_study(
     *,
     from_study_name: str,
