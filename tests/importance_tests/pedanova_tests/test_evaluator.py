@@ -132,6 +132,7 @@ def test_conditional(params: list[str] | None) -> None:
     assert set(importance.keys()) == set(params or ["c", "x", "y"])
     assert not all(v == 0.0 for v in importance.values()), f"{importance=}"
 
+
 @pytest.mark.parametrize(
     (
         "directions",
