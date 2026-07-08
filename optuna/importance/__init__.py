@@ -58,8 +58,10 @@ def get_param_importances(
     Other evaluators assess only parameters that are present in all of the completed trials and
     therefore exclude conditional parameters.
     If ``params`` is specified, only the specified parameters are assessed.
-    When using an evaluator other than :class:`~optuna.importance.PedAnovaImportanceEvaluator`,
-    at least one completed trial must contain all specified parameters.
+    When using :class:`~optuna.importance.PedAnovaImportanceEvaluator`, each specified parameter
+    must appear in at least one completed trial.
+    When using other evaluators, at least one completed trial must contain all specified
+    parameters.
 
     If the given study does not contain completed trials, an error will be raised.
 
