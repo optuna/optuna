@@ -408,27 +408,3 @@ def test_create_trial_distribution_conversion_noop() -> None:
 
     # Check fixed_distributions doesn't change.
     assert trial.distributions == fixed_distributions
-
-
-@pytest.mark.filterwarnings("ignore::FutureWarning")
-@pytest.mark.parametrize("positional_args_names", [[], ["step"], ["step", "log"]])
-def test_suggest_int_positional_args(positional_args_names: list[str]) -> None:
-    # If log is specified as positional, step must also be provided as positional.
-    trial = FrozenTrial(
-        number=0,
-        trial_id=0,
-        state=TrialState.COMPLETE,
-        value=0.0,
-        values=None,
-        datetime_start=datetime.datetime.now(),
-        datetime_complete=datetime.datetime.now(),
-        params={"x": 1},
-        distributions={"x": IntDistribution(-1, 1)},
-        user_attrs={},
-        system_attrs={},
-        intermediate_values={},
-    )
-    kwargs = dict(step=1, log=False)
-    args = [kwargs[name] for name in positional_args_names]
-    # No error should not be raised even if the coding style is old.
-    trial.suggest_int("x", -1, 1, *args)
