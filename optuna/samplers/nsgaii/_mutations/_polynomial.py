@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from optuna._experimental import experimental_class
 from optuna.samplers.nsgaii._mutations._base import BaseMutation
 
 
@@ -11,6 +12,7 @@ if TYPE_CHECKING:
     from optuna.study import Study
 
 
+@experimental_class("5.0.0")
 class PolynomialMutation(BaseMutation):
     """Polynomial mutation operation used by :class:`~optuna.samplers.NSGAIISampler`.
 

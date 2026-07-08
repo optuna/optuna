@@ -3,6 +3,8 @@ from __future__ import annotations
 import abc
 from typing import TYPE_CHECKING
 
+from build.lib.optuna._experimental import experimental_class
+
 
 if TYPE_CHECKING:
     import numpy as np
@@ -10,6 +12,7 @@ if TYPE_CHECKING:
     from optuna.study import Study
 
 
+@experimental_class("5.0.0")
 class BaseMutation(abc.ABC):
     """Base class for mutations.
 
