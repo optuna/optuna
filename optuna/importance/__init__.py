@@ -104,6 +104,24 @@ def get_param_importances(
     Returns:
         A :obj:`dict` where the keys are parameter names and the values are assessed importances.
 
+    Example:
+        .. testcode::
+
+            import optuna
+
+
+            def objective(trial: optuna.trial.Trial) -> float:
+                x = trial.suggest_int("x", 0, 2)
+                y = trial.suggest_float("y", -1.0, 1.0)
+                z = trial.suggest_float("z", 0.0, 1.5)
+                return x**2 + y**3 - z**4
+
+            sampler = optuna.samplers.RandomSampler(seed=42)
+            study = optuna.create_study(sampler=sampler)
+            study.optimize(objective, n_trials=100)
+
+            importances = optuna.importance.get_param_importances(study)
+
     """
     if evaluator is None:
         evaluator = PedAnovaImportanceEvaluator()
