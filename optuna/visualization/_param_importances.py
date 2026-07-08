@@ -144,6 +144,12 @@ def plot_param_importances(
               Spaces <https://arxiv.org/abs/2601.20800>`__ (KDD 2026)
 
             When using this evaluator in your project, please cite both papers.
+
+            .. note::
+
+               Both Optuna and Optuna Dashboard use
+               :class:`~optuna.importance.PedAnovaImportanceEvaluator` as the default importance
+               evaluator.
         params:
             A list of names of parameters to assess.
             If :obj:`None`, :class:`~optuna.importance.PedAnovaImportanceEvaluator` assesses all
