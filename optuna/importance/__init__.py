@@ -63,7 +63,6 @@ def get_param_importances(
     When using other evaluators, at least one completed trial must contain all specified
     parameters.
 
-    If the given study does not contain completed trials, an error will be raised.
 
     .. note::
 
