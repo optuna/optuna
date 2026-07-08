@@ -77,6 +77,21 @@ def test_eval_acqf(
 
 
 @parametrized_x
+def test_eval_qlogei(x: np.ndarray, search_space: SearchSpace) -> None:
+    Y = np.array([1.0, 2.0, 3.0])
+    acqf = acqf_module.qLogEI(
+        gpr=get_gpr(Y),
+        search_space=search_space,
+        threshold=np.max(Y),
+        n_qmc_samples=32,
+        qmc_seed=42,
+        normalized_params_of_running_trials=np.array([[0.4, 0.6]]),
+        stabilizing_noise=0.0,
+    )
+    verify_eval_acqf(x, acqf)
+
+
+@parametrized_x
 @parametrized_additional_values
 def test_eval_acqf_with_constraints(
     x: np.ndarray,

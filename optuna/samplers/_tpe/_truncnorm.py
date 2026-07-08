@@ -36,6 +36,7 @@ from __future__ import annotations
 import functools
 import math
 import sys
+from typing import cast
 
 import numpy as np
 
@@ -102,7 +103,7 @@ def _log_ndtr_single(a: float) -> float:
 
 
 def _log_ndtr(a: np.ndarray) -> np.ndarray:
-    return np.frompyfunc(_log_ndtr_single, 1, 1)(a).astype(float)
+    return cast(np.ndarray, np.frompyfunc(_log_ndtr_single, 1, 1)(a)).astype(float)
 
 
 def _norm_logpdf(x: np.ndarray) -> np.ndarray:

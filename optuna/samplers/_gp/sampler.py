@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 import optuna
-from optuna._experimental import experimental_class
 from optuna._experimental import warn_experimental_argument
 from optuna.samplers._base import _CONSTRAINTS_KEY
 from optuna.samplers._base import _INDEPENDENT_SAMPLING_WARNING_TEMPLATE
@@ -63,7 +62,6 @@ def _standardize_values(values: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.
     return standardized_values, means, stds
 
 
-@experimental_class("3.6.0")
 class GPSampler(BaseSampler):
     """Sampler using Gaussian process-based Bayesian optimization.
 
@@ -80,9 +78,14 @@ class GPSampler(BaseSampler):
     As an acquisition function, we use:
 
     - log expected improvement (logEI) for single-objective optimization,
-    - log expected hypervolume improvement (logEHVI) for Multi-objective optimization, and
+    - log expected hypervolume improvement (logEHVI) for Multi-objective optimization,
     - the summation of logEI and the logarithm of the feasible probability with the independent
-      assumption of each constraint for (black-box inequality) constrained optimization.
+      assumption of each constraint for (black-box inequality) constrained optimization, and
+    - MC-based batch log expected improvement (qLogEI) for single-objective optimization with
+      running trials.
+
+    Note that We adopt a sequential greedy selection for batch candidates instead of joint
+    optimization.
 
     For further information about these acquisition functions, please refer to the following
     papers:
@@ -157,6 +160,11 @@ class GPSampler(BaseSampler):
             the minimum value (slightly above 0 to ensure numerical stability).
             Defaults to :obj:`False`. Currently, all the objectives will be assume to be
             deterministic if :obj:`True`.
+
+            .. note::
+                Added in v3.6.0 as an experimental feature. The interface may change in newer
+                versions without prior notice. See
+                https://github.com/optuna/optuna/releases/tag/v3.6.0.
         constraints_func:
             An optional function that computes the objective constraints. It must take a
             :class:`~optuna.trial.FrozenTrial` and return the constraints. The return value must
@@ -168,6 +176,11 @@ class GPSampler(BaseSampler):
             The ``constraints_func`` will be evaluated after each successful trial.
             The function won't be called when trials fail or are pruned, but this behavior is
             subject to change in future releases.
+
+            .. note::
+                Added in v4.2.0 as an experimental feature. The interface may change in newer
+                versions without prior notice. See
+                https://github.com/optuna/optuna/releases/tag/v4.2.0.
         warn_independent_sampling:
             If this is :obj:`True`, a warning message is emitted when
             the value of a parameter is sampled by using an independent sampler,
@@ -211,12 +224,17 @@ class GPSampler(BaseSampler):
 
         if constraints_func is not None:
             warn_experimental_argument("constraints_func")
+        if deterministic_objective:
+            warn_experimental_argument("deterministic_objective")
 
         # Control parameters of the acquisition function optimization.
         self._n_preliminary_samples: int = 2048
         # NOTE(nabenabe): ehvi in BoTorchSampler uses 20.
         self._n_local_search = 10
         self._tol = 1e-4
+        # NOTE(sawa3030): Benchmark results are available at https://github.com/optuna/optuna/pull/6640#issuecomment-4645179073
+        self._n_qmc_samples_qei = 128
+        self._n_qmc_samples_ehvi = 128  # NOTE(nabenabe): The BoTorch default value.
 
     def _log_independent_sampling(self, trial: FrozenTrial, param_name: str) -> None:
         msg = _INDEPENDENT_SAMPLING_WARNING_TEMPLATE.format(
@@ -404,19 +422,28 @@ class GPSampler(BaseSampler):
         if self._constraints_func is None:
             if n_objectives == 1:
                 assert len(gprs_list) == 1
-                acqf = acqf_module.LogEI(
-                    gpr=gprs_list[0],
-                    search_space=internal_search_space,
-                    threshold=standardized_score_vals[:, 0].max(),
-                    normalized_params_of_running_trials=normalized_params_of_running_trials,
-                )
+                if normalized_params_of_running_trials is None:
+                    acqf = acqf_module.LogEI(
+                        gpr=gprs_list[0],
+                        search_space=internal_search_space,
+                        threshold=standardized_score_vals[:, 0].max(),
+                    )
+                else:
+                    acqf = acqf_module.qLogEI(
+                        gpr=gprs_list[0],
+                        search_space=internal_search_space,
+                        threshold=standardized_score_vals[:, 0].max(),
+                        n_qmc_samples=self._n_qmc_samples_qei,
+                        qmc_seed=self._rng.rng.randint(1 << 30),
+                        normalized_params_of_running_trials=normalized_params_of_running_trials,
+                    )
                 best_params = normalized_params[np.argmax(standardized_score_vals), np.newaxis]
             else:
                 acqf = acqf_module.LogEHVI(
                     gpr_list=gprs_list,
                     search_space=internal_search_space,
                     Y_train=torch.from_numpy(standardized_score_vals),
-                    n_qmc_samples=128,  # NOTE(nabenabe): The BoTorch default value.
+                    n_qmc_samples=self._n_qmc_samples_ehvi,
                     qmc_seed=self._rng.rng.randint(1 << 30),
                     normalized_params_of_running_trials=normalized_params_of_running_trials,
                 )
@@ -468,7 +495,7 @@ class GPSampler(BaseSampler):
                         if not is_all_infeasible
                         else None
                     ),
-                    n_qmc_samples=128,  # NOTE(nabenabe): The BoTorch default value.
+                    n_qmc_samples=self._n_qmc_samples_ehvi,
                     qmc_seed=self._rng.rng.randint(1 << 30),
                     constraints_gpr_list=constr_gpr_list,
                     constraints_threshold_list=constr_threshold_list,

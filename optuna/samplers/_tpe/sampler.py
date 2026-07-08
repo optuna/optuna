@@ -107,6 +107,18 @@ class TPESampler(BaseSampler):
       Problems <https://doi.org/10.1145/3377930.3389817>`__
     - `Multiobjective Tree-Structured Parzen Estimator <https://doi.org/10.1613/jair.1.13188>`__
 
+    For constrained TPE (c-TPE), please refer to the following papers:
+
+    - `Optuna Constrained Tree-Structured Parzen Estimator Is a Joint Density Generalization of
+      c-TPE <https://arxiv.org/abs/2606.09889>`__
+    - `c-TPE: Tree-structured Parzen Estimator with Inequality Constraints for Expensive
+      Hyperparameter Optimization <https://arxiv.org/abs/2211.14411>`__
+
+    The first paper explains how Optuna handles constraints, while the second provides the
+    background of constrained optimization for TPE in general. Notably, the Optuna algorithm
+    differs from the one proposed in the second paper. OptunaHub provides
+    `c-TPE proposed by the second paper <https://hub.optuna.org/samplers/ctpe/>`__.
+
     For the `categorical_distance_func`, please refer to the following paper:
 
     - `Tree-Structured Parzen Estimator Can Solve Black-Box Combinatorial Optimization More
@@ -202,7 +214,7 @@ class TPESampler(BaseSampler):
                 study.optimize(objective, n_trials=10)
         constant_liar:
             If :obj:`True`, penalize running trials to avoid suggesting parameter configurations
-            nearby.
+            nearby. Defaults to :obj:`True`.
 
             .. note::
                 Abnormally terminated trials often leave behind a record with a state of
@@ -212,18 +224,6 @@ class TPESampler(BaseSampler):
                 When using an :class:`~optuna.storages.RDBStorage`, it is possible to enable the
                 ``heartbeat_interval`` to change the records for abnormally terminated trials to
                 ``FAIL``.
-
-            .. note::
-                It is recommended to set this value to :obj:`True` during distributed
-                optimization to avoid having multiple workers evaluating similar parameter
-                configurations. In particular, if each objective function evaluation is costly
-                and the durations of the running states are significant, and/or the number of
-                workers is high.
-
-            .. note::
-                Added in v2.8.0 as an experimental feature. The interface may change in newer
-                versions without prior notice. See
-                https://github.com/optuna/optuna/releases/tag/v2.8.0.
         constraints_func:
             An optional function that computes the objective constraints. It must take a
             :class:`~optuna.trial.FrozenTrial` and return the constraints. The return value must
@@ -369,7 +369,7 @@ class TPESampler(BaseSampler):
         multivariate: bool = False,
         group: bool = False,
         warn_independent_sampling: bool | None = None,
-        constant_liar: bool = False,
+        constant_liar: bool = True,
         constraints_func: Callable[[FrozenTrial], Sequence[float]] | None = None,
         categorical_distance_func: (
             dict[str, Callable[[CategoricalChoiceType, CategoricalChoiceType], float]] | None
@@ -435,9 +435,6 @@ class TPESampler(BaseSampler):
                 )
             warn_experimental_argument("group")
             self._group_decomposed_search_space = _GroupDecomposedSearchSpace(True)
-
-        if constant_liar:
-            warn_experimental_argument("constant_liar")
 
         if constraints_func is not None:
             warn_experimental_argument("constraints_func")
