@@ -9,7 +9,6 @@ import numpy as np
 from optuna._deprecated import _DEPRECATION_WARNING_TEMPLATE
 from optuna._experimental import experimental_class
 from optuna._warnings import optuna_warn
-from optuna.importance._base import _check_evaluate_args
 from optuna.importance._base import _sort_dict_by_importance
 from optuna.importance._base import BaseImportanceEvaluator
 from optuna.importance._ped_anova.scott_parzen_estimator import build_parzen_estimator_on_grid
@@ -284,8 +283,8 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
                 An optimized study.
             params:
                 A list of names of parameters to assess.
-                If :obj:`None`, all parameters that are present in all of the completed trials are
-                assessed.
+                If :obj:`None`, all parameters that appear in completed trials, including
+                conditional parameters, are assessed.
             target:
                 A function to specify the value to evaluate importances.
                 If it is :obj:`None` and ``study`` is being used for single-objective optimization,
@@ -306,11 +305,7 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
             importances.
 
         """
-        dists = _get_distributions_list(study, params=params)
-        if params is None:
-            params = list(dict.fromkeys(k for d in dists for k in d))
-
-        assert params is not None
+        params = _resolve_params(study, params=params)
 
         trials = _get_filtered_trials(study, target)
         if len(trials) <= 1:
@@ -403,13 +398,24 @@ def _get_filtered_trials(
     ]
 
 
-def _get_distributions_list(
-    study: Study, params: list[str] | None
-) -> list[dict[str, BaseDistribution]]:
+def _resolve_params(study: Study, params: list[str] | None) -> list[str]:
+    if params is not None:
+        if not isinstance(params, (list, tuple)):
+            raise TypeError(
+                f"Parameters must be specified as a list. Actual parameters: {params}."
+            )
+        if any(not isinstance(p, str) for p in params):
+            raise TypeError(
+                f"Parameters must be specified by their names with strings. "
+                f"Actual parameters: {params}."
+            )
     trials = study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,))
-    _check_evaluate_args(trials, params)
-    params_set = set(params) if params is not None else None
-    return [
-        {k: v for k, v in t.distributions.items() if params_set is None or k in params_set}
-        for t in trials
-    ]
+    all_params = list(set(k for t in trials for k in t.distributions))
+    if params is not None:
+        if missing := [p for p in params if p not in all_params]:
+            raise ValueError(
+                "Study must contain at least one completed trial for each specified parameter. "
+                f"Missing parameters: {missing}."
+            )
+        return list(params)
+    return all_params

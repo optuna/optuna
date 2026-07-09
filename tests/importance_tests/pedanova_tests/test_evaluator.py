@@ -98,27 +98,39 @@ def test_evaluate_on_local() -> None:
     assert global_evaluator.evaluate(study) != default_evaluator.evaluate(study)
 
 
-def test_conditional() -> None:
+@pytest.mark.parametrize(
+    "params", [None, [], ["c"], ["x"], ["c", "x"], ["x", "y"], ["c", "x", "y"], ["d"], ["c", "d"]]
+)
+def test_conditional(params: list[str] | None) -> None:
     study = optuna.study.create_study()
     dists_cx: dict[str, BaseDistribution] = {
         "c": FloatDistribution(0.0, 1.0),
-        "x": FloatDistribution(0.0, 2.0),
+        "x": FloatDistribution(-2.0, 0.0),
     }
     dists_cy: dict[str, BaseDistribution] = {
         "c": FloatDistribution(0.0, 1.0),
-        "y": FloatDistribution(-2.0, 0.0),
+        "y": FloatDistribution(0.0, 2.0),
     }
     trials = [
-        optuna.create_trial(params={"c": 1.0, "x": 1.0}, distributions=dists_cx, value=1.0),
-        optuna.create_trial(params={"c": 0.0, "y": -1.0}, distributions=dists_cy, value=-1.0),
-        optuna.create_trial(params={"c": 0.8, "x": 0.8}, distributions=dists_cx, value=0.8),
-        optuna.create_trial(params={"c": 0.2, "y": -0.2}, distributions=dists_cy, value=-0.2),
+        optuna.create_trial(params={"c": 1.0, "x": -1.0}, distributions=dists_cx, value=-1.0),
+        optuna.create_trial(params={"c": 0.0, "y": 1.0}, distributions=dists_cy, value=1.0),
+        optuna.create_trial(params={"c": 0.8, "x": -0.8}, distributions=dists_cx, value=-0.8),
+        optuna.create_trial(params={"c": 0.2, "y": 0.2}, distributions=dists_cy, value=0.2),
+        optuna.create_trial(params={"c": 0.8, "x": -0.6}, distributions=dists_cx, value=-0.6),
+        optuna.create_trial(params={"c": 0.2, "y": 0.3}, distributions=dists_cy, value=0.3),
     ]
     study.add_trials(trials)
     evaluator = PedAnovaImportanceEvaluator()
-    importance = evaluator.evaluate(study)
-    assert set(importance.keys()) == {"c", "x", "y"}
-    assert importance != {"c": 0.0, "x": 0.0, "y": 0.0}
+    if params and "d" in params:
+        with pytest.raises(ValueError):
+            evaluator.evaluate(study, params=params)
+        return
+    importance = evaluator.evaluate(study, params=params)
+    if params == []:
+        assert importance == {}
+        return
+    assert set(importance.keys()) == set(params or ["c", "x", "y"])
+    assert not all(v == 0.0 for v in importance.values()), f"{importance=}"
 
 
 @pytest.mark.parametrize(
