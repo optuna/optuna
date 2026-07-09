@@ -54,10 +54,6 @@ class QMCSampler(BaseSampler):
     <https://scipy.github.io/devdocs/reference/stats.qmc.html>`__.
 
     .. note::
-        Categorical parameters are sampled by the QMC algorithm: each categorical parameter maps
-        to a single QMC dimension whose value is rounded to a choice index.
-
-    .. note::
         The search space of the sampler is determined by either previous trials in the study or
         the first trial that this sampler samples.
 
@@ -266,10 +262,6 @@ class QMCSampler(BaseSampler):
         if search_space == {}:
             return {}
 
-        # Each parameter, including a categorical one, occupies exactly one QMC dimension, so
-        # sample[i] is the coordinate of the i-th parameter in insertion order. A categorical
-        # parameter is mapped to a single IntDistribution dimension rather than one-hot encoded
-        # into several correlated dimensions. See https://github.com/optuna/optuna/issues/6617.
         sample = self._sample_qmc(study, search_space)[0]
         pseudo_search_space = {
             name: (
