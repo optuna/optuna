@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import Counter
 from typing import Any
 from typing import TYPE_CHECKING
 from unittest.mock import Mock
@@ -245,6 +246,30 @@ def test_sample_relative_categorical() -> None:
         assert value in ("a", "b", "c", "d")
         seen.add(value)
     assert len(seen) > 1
+
+
+@pytest.mark.parametrize("n", [4, 16])
+def test_sample_relative_categorical_balanced(n: int) -> None:
+    # Unscrambled Sobol at n = 2^m must draw every choice equally often. Binning through
+    # np.round broke this structurally: Sobol values are dyadic, so many coordinates land
+    # exactly on the bin boundaries and round-half-to-even overdraws the even indices.
+    search_space: dict[str, BaseDistribution] = {
+        "c": optuna.distributions.CategoricalDistribution(["a", "b", "c", "d"]),
+    }
+    sampler = _init_QMCSampler_without_exp_warning(qmc_type="sobol", scramble=False)
+    study = optuna.create_study(sampler=sampler)
+    trial = Mock()
+    counts = Counter(sampler.sample_relative(study, trial, search_space)["c"] for _ in range(n))
+    assert counts == {"a": n // 4, "b": n // 4, "c": n // 4, "d": n // 4}
+
+
+def test_sample_relative_categorical_single_choice() -> None:
+    search_space: dict[str, BaseDistribution] = {
+        "c": optuna.distributions.CategoricalDistribution(["only"]),
+    }
+    sampler = _init_QMCSampler_without_exp_warning(qmc_type="sobol", scramble=False)
+    study = optuna.create_study(sampler=sampler)
+    assert sampler.sample_relative(study, Mock(), search_space)["c"] == "only"
 
 
 def test_sample_relative_halton() -> None:

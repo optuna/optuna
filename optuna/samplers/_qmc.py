@@ -266,10 +266,11 @@ class QMCSampler(BaseSampler):
         if search_space == {}:
             return {}
 
-        sample = self._sample_qmc(study, search_space)
-        # A categorical parameter is mapped to a single IntDistribution dimension so QMC draws one
-        # coordinate for it and rounds to a choice index, rather than one-hot encoding it into
-        # several correlated dimensions. See https://github.com/optuna/optuna/issues/6617.
+        # Each parameter, including a categorical one, occupies exactly one QMC dimension, so
+        # sample[i] is the coordinate of the i-th parameter in insertion order. A categorical
+        # parameter is mapped to a single IntDistribution dimension rather than one-hot encoded
+        # into several correlated dimensions. See https://github.com/optuna/optuna/issues/6617.
+        sample = self._sample_qmc(study, search_space)[0]
         pseudo_search_space = {
             name: (
                 IntDistribution(0, len(dist.choices) - 1)
@@ -279,14 +280,21 @@ class QMCSampler(BaseSampler):
             for name, dist in search_space.items()
         }
         trans = _SearchSpaceTransform(pseudo_search_space, transform_0_1=True)
-        return {
-            name: (
-                dist.to_external_repr(value)
-                if isinstance(dist := search_space[name], CategoricalDistribution)
-                else value
-            )
-            for name, value in trans.untransform(sample[0]).items()
-        }
+        untransformed = trans.untransform(sample)
+        params: dict[str, Any] = {}
+        for i, (name, dist) in enumerate(search_space.items()):
+            if isinstance(dist, CategoricalDistribution):
+                # Bin the raw coordinate with equal-width half-open bins instead of going through
+                # the transform, which ends in np.round and rounds half to even. Sobol and Halton
+                # emit dyadic values, so after scaling many coordinates land exactly on the bin
+                # boundaries and even indices get drawn systematically more often. The clamp only
+                # guards against a coordinate of exactly 1.0; the engines emit values in [0, 1).
+                n_choices = len(dist.choices)
+                index = min(int(sample[i] * n_choices), n_choices - 1)
+                params[name] = dist.to_external_repr(index)
+            else:
+                params[name] = untransformed[name]
+        return params
 
     def before_trial(self, study: Study, trial: FrozenTrial) -> None:
         self._independent_sampler.before_trial(study, trial)
