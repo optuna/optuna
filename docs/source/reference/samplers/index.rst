@@ -102,7 +102,8 @@ The :mod:`~optuna.samplers` module defines a base class for parameter sampling a
     PartialFixedSampler
 
 .. note::
-    The following :mod:`optuna.samplers.nsgaii` module defines crossover operations used by :class:`~optuna.samplers.NSGAIISampler`.
+    The following :mod:`optuna.samplers.nsgaii` module defines crossover and mutation operations
+    used by :class:`~optuna.samplers.NSGAIISampler` and :class:`~optuna.samplers.NSGAIIISampler`.
 
 .. toctree::
     :maxdepth: 1
