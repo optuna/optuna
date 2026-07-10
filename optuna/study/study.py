@@ -1427,7 +1427,7 @@ def load_study(
             )
         study_name = study_names[0]
         _logger.info(
-            f"Study name was omitted but trying to load '{study_name=}' because that was the only "
+            f"Study name was omitted but trying to load `{study_name=}` because that was the only "
             "study found in the storage."
         )
 
