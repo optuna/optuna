@@ -15,7 +15,7 @@ from optuna._imports import _LazyImport
 from optuna._transform import _SearchSpaceTransform
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
-from optuna.distributions import IntDistribution
+from optuna.distributions import FloatDistribution
 from optuna.samplers import BaseSampler
 from optuna.samplers._base import _INDEPENDENT_SAMPLING_WARNING_TEMPLATE
 from optuna.trial import TrialState
@@ -262,31 +262,29 @@ class QMCSampler(BaseSampler):
         if search_space == {}:
             return {}
 
-        sample = self._sample_qmc(study, search_space)[0]
-        pseudo_search_space = {
-            name: (
-                IntDistribution(0, len(dist.choices) - 1)
-                if isinstance(dist, CategoricalDistribution)
-                else dist
-            )
+        categorical_space = {
+            name: dist
             for name, dist in search_space.items()
+            if isinstance(dist, CategoricalDistribution)
         }
-        trans = _SearchSpaceTransform(pseudo_search_space, transform_0_1=True)
-        untransformed = trans.untransform(sample)
-        params: dict[str, Any] = {}
-        for i, (name, dist) in enumerate(search_space.items()):
-            if isinstance(dist, CategoricalDistribution):
-                # Bin the raw coordinate with equal-width half-open bins instead of going through
-                # the transform, which ends in np.round and rounds half to even. Sobol and Halton
-                # emit dyadic values, so after scaling many coordinates land exactly on the bin
-                # boundaries and even indices get drawn systematically more often. The clamp only
-                # guards against a coordinate of exactly 1.0; the engines emit values in [0, 1).
-                n_choices = len(dist.choices)
-                index = min(int(sample[i] * n_choices), n_choices - 1)
-                params[name] = dist.to_external_repr(index)
-            else:
-                params[name] = untransformed[name]
-        return params
+        # Map each categorical parameter to FloatDistribution(0, C) so it takes one QMC
+        # coordinate in [0, C). Flooring that with int() gives a uniform choice index in
+        # [0, C - 1]; it never reaches C because the engines emit values in [0, 1). Going through
+        # IntDistribution instead would round to nearest and reintroduce a bin-boundary bias.
+        pseudo_categorical_space = {
+            name: FloatDistribution(0, len(dist.choices))
+            for name, dist in categorical_space.items()
+        }
+        trans = _SearchSpaceTransform(search_space | pseudo_categorical_space, transform_0_1=True)
+        sample = trans.untransform(self._sample_qmc(study, search_space)[0])
+        return {
+            name: (
+                dist.to_external_repr(int(value))
+                if (dist := categorical_space.get(name)) is not None
+                else value
+            )
+            for name, value in sample.items()
+        }
 
     def before_trial(self, study: Study, trial: FrozenTrial) -> None:
         self._independent_sampler.before_trial(study, trial)
