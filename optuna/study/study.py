@@ -1326,11 +1326,16 @@ def create_study(
             assert study_name is not None
 
             _logger.info(
-                f"Using an existing study with name '{study_name}' instead of creating a new one."
+                f"Using an existing study with `{study_name=}` instead of creating a new one."
             )
             study_id = storage.get_study_id_from_name(study_name)
         else:
-            raise
+            study_names = get_all_study_names(storage)
+            raise exceptions.DuplicatedStudyError(
+                f"Another study with {study_name=} already exists. Please specify a name not in "
+                f"{study_names=}, or reuse the existing one by setting `load_if_exists` (for "
+                "Python API) or `--skip-if-exists` flag (for CLI)."
+            )
 
     if sampler is None and len(direction_objects) > 1:
         sampler = samplers.NSGAIISampler()
@@ -1417,12 +1422,12 @@ def load_study(
         study_names = get_all_study_names(storage)
         if len(study_names) != 1:
             raise ValueError(
-                f"Could not determine the study name since the storage {storage} does not "
-                "contain exactly 1 study. Specify `study_name`."
+                f"Could not determine the study name since the {storage=} does not contain exactly"
+                f" 1 study. Specify `study_name` from {study_names=}."
             )
         study_name = study_names[0]
         _logger.info(
-            f"Study name was omitted but trying to load '{study_name}' because that was the only "
+            f"Study name was omitted but trying to load '{study_name=}' because that was the only "
             "study found in the storage."
         )
 
