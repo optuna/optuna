@@ -3,7 +3,7 @@ from __future__ import annotations
 import abc
 from typing import TYPE_CHECKING
 
-from build.lib.optuna._experimental import experimental_class
+from optuna._experimental import experimental_class
 
 
 if TYPE_CHECKING:
