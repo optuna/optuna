@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING
 from optuna.samplers.nsgaii._constraints_evaluation import _constrained_dominates
 from optuna.samplers.nsgaii._crossover import perform_crossover
 from optuna.samplers.nsgaii._crossovers._base import BaseCrossover
-from optuna.samplers.nsgaii._mutation import _MUTATION_FALLBACK
 from optuna.samplers.nsgaii._mutation import perform_mutation
 from optuna.samplers.nsgaii._mutations._base import BaseMutation
 from optuna.study._multi_objective import _dominates
@@ -115,6 +114,6 @@ class NSGAIIChildGenerationStrategy:
                     search_space[param_name],
                     child_params[param_name],
                 )
-                if mutation_value is not _MUTATION_FALLBACK:
+                if mutation_value is not None:
                     params[param_name] = mutation_value
         return params

@@ -26,9 +26,6 @@ from optuna.samplers._lazy_random_state import LazyRandomState
 from optuna.samplers.nsgaii import BaseCrossover
 from optuna.samplers.nsgaii import BaseMutation
 from optuna.samplers.nsgaii import BLXAlphaCrossover
-from optuna.samplers.nsgaii import CategoricalMutation
-from optuna.samplers.nsgaii import MixedMutation
-from optuna.samplers.nsgaii import NumericalMutation
 from optuna.samplers.nsgaii import PolynomialMutation
 from optuna.samplers.nsgaii import SBXCrossover
 from optuna.samplers.nsgaii import SPXCrossover
@@ -46,7 +43,6 @@ from optuna.samplers.nsgaii._elite_population_selection_strategy import _rank_po
 from optuna.samplers.nsgaii._elite_population_selection_strategy import (
     NSGAIIElitePopulationSelectionStrategy,
 )
-from optuna.samplers.nsgaii._mutation import _MUTATION_FALLBACK
 from optuna.samplers.nsgaii._mutation import perform_mutation
 from optuna.study._multi_objective import _dominates
 from optuna.study._study_direction import StudyDirection
@@ -673,7 +669,7 @@ def test_child_generation_strategy_mutation_prob(
     assert child_generation_strategy(study, search_space, parent_population) == child_params
 
 
-class _FixedNumericalMutation(NumericalMutation):
+class _FixedMutation(BaseMutation):
     def __init__(self, value: float) -> None:
         self._value = value
 
@@ -684,20 +680,6 @@ class _FixedNumericalMutation(NumericalMutation):
         study: optuna.study.Study,
         search_space_bounds: np.ndarray,
     ) -> float:
-        return self._value
-
-
-class _FixedCategoricalMutation(CategoricalMutation):
-    def __init__(self, value: Any) -> None:
-        self._value = value
-
-    def mutation(
-        self,
-        param: Any,
-        rng: np.random.RandomState,
-        study: optuna.study.Study,
-        choices: Sequence[Any],
-    ) -> Any:
         return self._value
 
 
@@ -728,35 +710,6 @@ def test_child_generation_strategy_mutation() -> None:
     assert 0 <= child_params["x"] <= 10
 
 
-def test_child_generation_strategy_mixed_mutation() -> None:
-    child_generation_strategy = NSGAIIChildGenerationStrategy(
-        crossover_prob=0.0,
-        crossover=UniformCrossover(),
-        mutation=MixedMutation(
-            numerical=_FixedNumericalMutation(3.0),
-            categorical=_FixedCategoricalMutation(1),
-        ),
-        mutation_prob=1.0,
-        swapping_prob=0.5,
-        rng=LazyRandomState(seed=1),
-    )
-    study = MagicMock(spec=optuna.study.Study)
-    search_space = {
-        "x": FloatDistribution(0, 10),
-        "y": CategoricalDistribution([-1, 0, 1]),
-    }
-    parent_population = [
-        optuna.trial.create_trial(
-            params={"x": 1.0, "y": 0},
-            distributions=search_space,
-            value=5.0,
-        )
-    ]
-    child_params = child_generation_strategy(study, search_space, parent_population)
-
-    assert child_params == {"x": 3.0, "y": 1}
-
-
 def test_perform_mutation_contains_distribution() -> None:
     distributions: list[FloatDistribution | IntDistribution] = [
         FloatDistribution(1e-3, 1e3, log=True),
@@ -778,7 +731,7 @@ def test_perform_mutation_uses_search_space_transform() -> None:
     log_distribution = FloatDistribution(1e-3, 1e3, log=True)
     study = MagicMock(spec=optuna.study.Study)
     assert perform_mutation(
-        _FixedNumericalMutation(np.log(10.0)),
+        _FixedMutation(np.log(10.0)),
         np.random.RandomState(0),
         study,
         log_distribution,
@@ -787,28 +740,18 @@ def test_perform_mutation_uses_search_space_transform() -> None:
 
     step_distribution = FloatDistribution(0.0, 1.0, step=0.2)
     assert perform_mutation(
-        _FixedNumericalMutation(0.31),
-        np.random.RandomState(0),
-        study,
-        step_distribution,
-        0.0,
+        _FixedMutation(0.31), np.random.RandomState(0), study, step_distribution, 0.0
     ) == pytest.approx(0.4)
 
     int_distribution = IntDistribution(0, 10, step=2)
     assert (
-        perform_mutation(
-            _FixedNumericalMutation(3.1),
-            np.random.RandomState(0),
-            study,
-            int_distribution,
-            0,
-        )
+        perform_mutation(_FixedMutation(3.1), np.random.RandomState(0), study, int_distribution, 0)
         == 4
     )
 
     assert (
         perform_mutation(
-            _FixedNumericalMutation(-100.0),
+            _FixedMutation(-100.0),
             np.random.RandomState(0),
             study,
             FloatDistribution(0.0, 1.0),
@@ -827,104 +770,8 @@ def test_perform_mutation_categorical_distribution() -> None:
             CategoricalDistribution(["a", "b"]),
             "a",
         )
-        is _MUTATION_FALLBACK
-    )
-
-    assert (
-        perform_mutation(
-            _FixedCategoricalMutation("b"),
-            np.random.RandomState(0),
-            MagicMock(spec=optuna.study.Study),
-            CategoricalDistribution(["a", "b"]),
-            "a",
-        )
-        == "b"
-    )
-
-    assert (
-        perform_mutation(
-            _FixedCategoricalMutation(None),
-            np.random.RandomState(0),
-            MagicMock(spec=optuna.study.Study),
-            CategoricalDistribution(["a", None]),
-            "a",
-        )
         is None
     )
-
-    with pytest.raises(ValueError):
-        perform_mutation(
-            _FixedCategoricalMutation("c"),
-            np.random.RandomState(0),
-            MagicMock(spec=optuna.study.Study),
-            CategoricalDistribution(["a", "b"]),
-            "a",
-        )
-
-
-def test_perform_mutation_numerical_distribution_with_categorical_mutation() -> None:
-    assert (
-        perform_mutation(
-            _FixedCategoricalMutation("b"),
-            np.random.RandomState(0),
-            MagicMock(spec=optuna.study.Study),
-            FloatDistribution(0.0, 1.0),
-            0.5,
-        )
-        is _MUTATION_FALLBACK
-    )
-
-
-def test_perform_mutation_mixed_mutation() -> None:
-    mutation = MixedMutation(
-        numerical=_FixedNumericalMutation(0.25),
-        categorical=_FixedCategoricalMutation("b"),
-    )
-    study = MagicMock(spec=optuna.study.Study)
-
-    assert perform_mutation(
-        mutation,
-        np.random.RandomState(0),
-        study,
-        FloatDistribution(0.0, 1.0),
-        0.0,
-    ) == pytest.approx(0.25)
-    assert (
-        perform_mutation(
-            mutation,
-            np.random.RandomState(0),
-            study,
-            CategoricalDistribution(["a", "b"]),
-            "a",
-        )
-        == "b"
-    )
-
-    assert (
-        perform_mutation(
-            MixedMutation(numerical=_FixedNumericalMutation(0.25)),
-            np.random.RandomState(0),
-            study,
-            CategoricalDistribution(["a", "b"]),
-            "a",
-        )
-        is _MUTATION_FALLBACK
-    )
-    assert (
-        perform_mutation(
-            MixedMutation(categorical=_FixedCategoricalMutation("b")),
-            np.random.RandomState(0),
-            study,
-            FloatDistribution(0.0, 1.0),
-            0.0,
-        )
-        is _MUTATION_FALLBACK
-    )
-
-
-def test_mixed_mutation_invalid_value() -> None:
-    with pytest.raises(ValueError):
-        MixedMutation()
 
 
 def test_mutation_invalid_value() -> None:
