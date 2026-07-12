@@ -190,15 +190,12 @@ class qLogEI(BaseAcquisitionFunc):
         )
         super().__init__(gpr.length_scales, search_space)
 
-    def _get_posterior_samples(self, x: torch.Tensor) -> torch.Tensor:
-        return self._conditional_gpr.sample(x)
-
     def eval_acqf(self, x: torch.Tensor) -> torch.Tensor:
         if np.isneginf(self._threshold):
             return torch.zeros(x.shape[:-1], dtype=torch.float64)
 
         # NOTE(nabenabe): See Eq. (10) of https://arxiv.org/pdf/2310.20708
-        y_post = self._get_posterior_samples(x)
+        y_post = self._conditional_gpr.sample(x)
         log_improvement = y_post.clamp_(min=torch.tensor(_EPS, dtype=torch.float64)).log()
         # Take the max operation along the running candidates direction (the Q-axis).
         # TODO(sawa3030): Consider using fatmax instead of max.
