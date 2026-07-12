@@ -135,6 +135,27 @@ def test_eval_multi_objective_acqf(
 
 @parametrized_x
 @parametrized_additional_values
+def test_eval_qlogehvi(
+    x: np.ndarray,
+    additional_values: np.ndarray,
+    search_space: SearchSpace,
+) -> None:
+    Y = np.hstack([np.array([1.0, 2.0, 3.0])[:, np.newaxis], additional_values])
+    n_objectives = Y.shape[-1]
+    acqf = acqf_module.qLogEHVI(
+        gpr_list=[get_gpr(Y[:, i]) for i in range(n_objectives)],
+        search_space=search_space,
+        Y_train=torch.from_numpy(Y),
+        n_qmc_samples=32,
+        qmc_seed=42,
+        normalized_params_of_running_trials=np.array([[0.4, 0.6]]),
+        stabilizing_noise=0.0,
+    )
+    verify_eval_acqf(x, acqf)
+
+
+@parametrized_x
+@parametrized_additional_values
 def test_eval_multi_objective_acqf_with_constraints(
     x: np.ndarray,
     additional_values: np.ndarray,

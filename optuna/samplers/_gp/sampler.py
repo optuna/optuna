@@ -439,14 +439,23 @@ class GPSampler(BaseSampler):
                     )
                 best_params = normalized_params[np.argmax(standardized_score_vals), np.newaxis]
             else:
-                acqf = acqf_module.LogEHVI(
-                    gpr_list=gprs_list,
-                    search_space=internal_search_space,
-                    Y_train=torch.from_numpy(standardized_score_vals),
-                    n_qmc_samples=self._n_qmc_samples_ehvi,
-                    qmc_seed=self._rng.rng.randint(1 << 30),
-                    normalized_params_of_running_trials=normalized_params_of_running_trials,
-                )
+                if normalized_params_of_running_trials is None:
+                    acqf = acqf_module.LogEHVI(
+                        gpr_list=gprs_list,
+                        search_space=internal_search_space,
+                        Y_train=torch.from_numpy(standardized_score_vals),
+                        n_qmc_samples=self._n_qmc_samples_ehvi,
+                        qmc_seed=self._rng.rng.randint(1 << 30),
+                    )
+                else:
+                    acqf = acqf_module.qLogEHVI(
+                        gpr_list=gprs_list,
+                        search_space=internal_search_space,
+                        Y_train=torch.from_numpy(standardized_score_vals),
+                        n_qmc_samples=self._n_qmc_samples_ehvi,
+                        qmc_seed=self._rng.rng.randint(1 << 30),
+                        normalized_params_of_running_trials=normalized_params_of_running_trials,
+                    )
                 best_params = self._get_best_params_for_multi_objective(
                     normalized_params, standardized_score_vals
                 )
