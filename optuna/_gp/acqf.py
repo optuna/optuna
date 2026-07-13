@@ -191,7 +191,8 @@ class qLogEI(BaseAcquisitionFunc):
             return torch.cat([running, x.unsqueeze(-2)], dim=-2)
         raise ValueError(f"{x.ndim=} must be 1 or 2.")
 
-    def _get_log_improvement(self, joint_x: torch.Tensor) -> torch.Tensor:
+    def _get_log_improvement(self, x: torch.Tensor) -> torch.Tensor:
+        joint_x = self._get_joint_input(x)
         if np.isneginf(self._threshold):
             return torch.zeros(
                 joint_x.shape[:-2] + (self._fixed_samples.shape[0], joint_x.shape[-2]),
@@ -203,8 +204,7 @@ class qLogEI(BaseAcquisitionFunc):
 
     def eval_acqf(self, x: torch.Tensor) -> torch.Tensor:
         # NOTE(nabenabe): See Eq. (10) of https://arxiv.org/pdf/2310.20708
-        joint_x = self._get_joint_input(x)
-        log_improvement = self._get_log_improvement(joint_x)
+        log_improvement = self._get_log_improvement(x)
         return _aggregate_log_acqf_over_q_batch(log_improvement)
 
 
@@ -354,10 +354,10 @@ class qConstrainedLogEI(BaseAcquisitionFunc):
         super().__init__(gpr.length_scales, search_space)
 
     def eval_acqf(self, x: torch.Tensor) -> torch.Tensor:
-        joint_x = self._acqf._get_joint_input(x)
-        log_improvement = self._acqf._get_log_improvement(joint_x)
+        log_improvement = self._acqf._get_log_improvement(x)
         tau = 1e-2
 
+        joint_x = self._acqf._get_joint_input(x)
         constraint_log_feasibilities = [
             torch.nn.functional.logsigmoid(
                 (
