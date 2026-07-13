@@ -9,6 +9,7 @@ import pytest
 import optuna
 from optuna import samplers
 from optuna import Study
+from optuna.distributions import BaseDistribution
 from optuna.distributions import FloatDistribution
 from optuna.exceptions import ExperimentalWarning
 from optuna.importance import BaseImportanceEvaluator
@@ -252,6 +253,7 @@ def test_get_param_importances_with_params(
     normalize: bool,
 ) -> None:
     """Test that conditional parameters are properly handled by supported evaluators."""
+
     def objective(trial: Trial) -> float:
         x1 = trial.suggest_float("x1", 0.1, 3)
         x2 = trial.suggest_float("x2", 0.1, 3, log=True)
@@ -294,11 +296,11 @@ def test_conditional_parameters(
 ) -> None:
     """Test that conditional parameters are handled correctly by supported evaluators."""
     study = optuna.study.create_study()
-    dists_cx: dict[str, FloatDistribution] = {
+    dists_cx: dict[str, BaseDistribution] = {
         "c": FloatDistribution(0.0, 1.0),
         "x": FloatDistribution(-2.0, 0.0),
     }
-    dists_cy: dict[str, FloatDistribution] = {
+    dists_cy: dict[str, BaseDistribution] = {
         "c": FloatDistribution(0.0, 1.0),
         "y": FloatDistribution(0.0, 2.0),
     }
@@ -330,6 +332,7 @@ def test_get_param_importances_non_conditional(
     evaluator_cls: Callable[[], BaseImportanceEvaluator], normalize: bool
 ) -> None:
     """Test that tree-based evaluators ignore conditional parameters."""
+
     def objective(trial: Trial) -> float:
         x1 = trial.suggest_float("x1", 0.1, 3)
         x2 = trial.suggest_float("x2", 0.1, 3, log=True)
@@ -377,6 +380,7 @@ def test_get_param_importance_target_is_none_and_study_is_multi_obj(
     evaluator_cls: Callable[[], BaseImportanceEvaluator],
 ) -> None:
     """Test that evaluators supporting multi-objective work without target specification."""
+
     def objective(trial: Trial) -> tuple[float, float]:
         x1 = trial.suggest_float("x1", 0.1, 3)
         x2 = trial.suggest_float("x2", 0.1, 3, log=True)
