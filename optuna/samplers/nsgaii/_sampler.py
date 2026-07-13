@@ -14,6 +14,7 @@ from optuna.samplers.nsgaii._crossovers._uniform import UniformCrossover
 from optuna.samplers.nsgaii._elite_population_selection_strategy import (
     NSGAIIElitePopulationSelectionStrategy,
 )
+from optuna.samplers.nsgaii._mutations._base import BaseMutation
 from optuna.search_space import IntersectionSearchSpace
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
@@ -73,6 +74,14 @@ class NSGAIISampler(BaseGASampler):
             For :class:`~optuna.samplers.nsgaii.UNDXCrossover` and
             :class:`~optuna.samplers.nsgaii.SPXCrossover`, ``n_parents=3``, and for the other
             algorithms, ``n_parents=2``.
+
+        mutation:
+            Mutation to be applied when creating child individuals.
+            The available mutations are listed here:
+            https://optuna.readthedocs.io/en/stable/reference/samplers/nsgaii.html.
+
+            If :obj:`None` is specified, the parameter selected for mutation is instead
+            resampled independently using :class:`~optuna.samplers.RandomSampler`.
 
         mutation_prob:
             Probability of mutating each parameter when creating a new individual.
@@ -158,6 +167,7 @@ class NSGAIISampler(BaseGASampler):
         self,
         *,
         population_size: int = 50,
+        mutation: BaseMutation | None = None,
         mutation_prob: float | None = None,
         crossover: BaseCrossover | None = None,
         crossover_prob: float = 0.9,
@@ -224,6 +234,7 @@ class NSGAIISampler(BaseGASampler):
             child_generation_strategy
             or NSGAIIChildGenerationStrategy(
                 crossover_prob=crossover_prob,
+                mutation=mutation,
                 mutation_prob=mutation_prob,
                 swapping_prob=swapping_prob,
                 crossover=crossover,

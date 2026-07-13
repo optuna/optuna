@@ -15,9 +15,11 @@ from optuna.study._multi_objective import _is_pareto_front
 if TYPE_CHECKING:
     import torch
 
+    from optuna._gp.gp import ConditionalGPRegressor
     from optuna._gp.gp import GPRegressor
     from optuna._gp.search_space import SearchSpace
 else:
+    from optuna._gp.gp import ConditionalGPRegressor
     from optuna._imports import _LazyImport
 
     torch = _LazyImport("torch")
@@ -167,39 +169,22 @@ class qLogEI(BaseAcquisitionFunc):
             n_samples=n_qmc_samples,
             seed=qmc_seed,
         )
+        self._conditional_gpr = ConditionalGPRegressor(
+            gpr=gpr,
+            X_running=self._X_running,
+            fixed_samples=self._fixed_samples,
+            stabilizing_noise=stabilizing_noise,
+        )
         super().__init__(gpr.length_scales, search_space)
 
-    def _get_posterior_samples(
-        self,
-        x: torch.Tensor,
-        gpr: GPRegressor,
-        fixed_samples: torch.Tensor,
-    ) -> torch.Tensor:
-        mean, cov = gpr.posterior(x, joint=True)
-        cov.diagonal(dim1=-2, dim2=-1).add_(self._stabilizing_noise)
-        # mean.shape: (q + 1,), cov.shape: (q + 1, q + 1), fixed_samples.shape: (128, q + 1).
-        return mean.unsqueeze(-2) + torch.matmul(
-            fixed_samples, torch.linalg.cholesky(cov).transpose(-1, -2)
-        )
-
-    def _get_joint_input(self, x: torch.Tensor) -> torch.Tensor:
-        if x.ndim == 1:
-            return torch.cat([self._X_running, x.unsqueeze(0)], dim=0)
-        if x.ndim == 2:
-            # Expand from (Q, D) to (..., Q, D), and then concat to (..., Q+1, D).
-            running = self._X_running.unsqueeze(0).expand(x.shape[0], -1, -1)
-            return torch.cat([running, x.unsqueeze(-2)], dim=-2)
-        raise ValueError(f"{x.ndim=} must be 1 or 2.")
-
     def _get_log_improvement(self, x: torch.Tensor) -> torch.Tensor:
-        joint_x = self._get_joint_input(x)
         if np.isneginf(self._threshold):
             return torch.zeros(
-                joint_x.shape[:-2] + (self._fixed_samples.shape[0], joint_x.shape[-2]),
+                x.shape[:-1] + (self._fixed_samples.shape[0], self._X_running.shape[0] + 1),
                 dtype=torch.float64,
             )
 
-        y_post = self._get_posterior_samples(joint_x, self._gpr, self._fixed_samples)
+        y_post = self._conditional_gpr.sample(x)
         return y_post.clamp_(min=torch.tensor(_EPS, dtype=torch.float64)).log()
 
     def eval_acqf(self, x: torch.Tensor) -> torch.Tensor:
@@ -351,29 +336,28 @@ class qConstrainedLogEI(BaseAcquisitionFunc):
             )
             for i in range(len(constraints_gpr_list))
         ]
+        self._constraint_conditional_gpr_list = [
+            ConditionalGPRegressor(
+                gpr=constraint_gpr,
+                X_running=self._acqf._X_running,
+                fixed_samples=fixed_samples,
+                stabilizing_noise=stabilizing_noise,
+            )
+            for constraint_gpr, fixed_samples in zip(
+                constraints_gpr_list, self._constraint_fixed_samples_list
+            )
+        ]
         super().__init__(gpr.length_scales, search_space)
 
     def eval_acqf(self, x: torch.Tensor) -> torch.Tensor:
         log_improvement = self._acqf._get_log_improvement(x)
         tau = 1e-2
 
-        joint_x = self._acqf._get_joint_input(x)
         constraint_log_feasibilities = [
-            torch.nn.functional.logsigmoid(
-                (
-                    self._acqf._get_posterior_samples(
-                        joint_x,
-                        constraint_gpr,
-                        fixed_samples,
-                    )
-                    - threshold
-                )
-                / tau
-            )
-            for constraint_gpr, threshold, fixed_samples in zip(
-                self._constraints_gpr_list,
+            torch.nn.functional.logsigmoid((conditional_gpr.sample(x) - threshold) / tau)
+            for threshold, conditional_gpr in zip(
                 self._constraints_threshold_list,
-                self._constraint_fixed_samples_list,
+                self._constraint_conditional_gpr_list,
             )
         ]
         log_feasibility = torch.stack(constraint_log_feasibilities).sum(dim=0)
