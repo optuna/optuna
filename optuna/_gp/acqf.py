@@ -92,6 +92,15 @@ def logei(mean: torch.Tensor, var: torch.Tensor, f0: float) -> torch.Tensor:
     return standard_logei((mean - f0) / (sigma := var.sqrt_())) + sigma.log()
 
 
+def _aggregate_log_acqf_over_q_batch(log_acqf: torch.Tensor) -> torch.Tensor:
+    # Take the max over the q-batch axis, then the mean over the fixed sample axis in log space.
+    # TODO(sawa3030): Consider using fatmax instead of max.
+    max_log_acqf_in_q_batch = torch.amax(log_acqf, dim=-1)
+    return torch.special.logsumexp(max_log_acqf_in_q_batch, dim=-1) - math.log(
+        max_log_acqf_in_q_batch.shape[-1]
+    )
+
+
 class BaseAcquisitionFunc(ABC):
     def __init__(self, length_scales: np.ndarray, search_space: SearchSpace) -> None:
         self.length_scales = length_scales
@@ -196,13 +205,7 @@ class qLogEI(BaseAcquisitionFunc):
         # NOTE(nabenabe): See Eq. (10) of https://arxiv.org/pdf/2310.20708
         joint_x = self._get_joint_input(x)
         log_improvement = self._get_log_improvement(joint_x)
-        # Take the max operation along the running candidates direction (the Q-axis).
-        # TODO(sawa3030): Consider using fatmax instead of max.
-        max_log_improvement_in_q_batch = torch.amax(log_improvement, dim=-1)
-        # Take the mean over the fixed sample direction (the s-axis).
-        return torch.special.logsumexp(max_log_improvement_in_q_batch, dim=-1) - math.log(
-            max_log_improvement_in_q_batch.shape[-1]
-        )
+        return _aggregate_log_acqf_over_q_batch(log_improvement)
 
 
 class LogPI(BaseAcquisitionFunc):
@@ -374,10 +377,7 @@ class qConstrainedLogEI(BaseAcquisitionFunc):
             )
         ]
         log_feasibility = torch.stack(constraint_log_feasibilities).sum(dim=0)
-        max_log_improvement_in_q_batch = torch.amax(log_improvement + log_feasibility, dim=-1)
-        return torch.special.logsumexp(max_log_improvement_in_q_batch, dim=-1) - math.log(
-            max_log_improvement_in_q_batch.shape[-1]
-        )
+        return _aggregate_log_acqf_over_q_batch(log_improvement + log_feasibility)
 
 
 class LogEHVI(BaseAcquisitionFunc):
