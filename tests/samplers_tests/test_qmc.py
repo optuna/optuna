@@ -123,20 +123,6 @@ def test_infer_relative_search_space_with_ask_fixed() -> None:
     assert "b" in search_space
 
 
-def test_infer_initial_search_space() -> None:
-    trial = Mock()
-    sampler = _init_QMCSampler_without_exp_warning()
-    # Can it handle empty search space?
-    trial.distributions = {}
-    initial_search_space = sampler._infer_initial_search_space(trial)
-    assert initial_search_space == {}
-    # Does it keep every distribution, including categorical?
-    search_space = _SEARCH_SPACE.copy()
-    trial.distributions = search_space
-    initial_search_space = sampler._infer_initial_search_space(trial)
-    assert initial_search_space == search_space
-
-
 def test_sample_independent() -> None:
     def objective(t: Trial) -> float:
         return t.suggest_categorical("x", [1.0, 2.0])

@@ -195,7 +195,7 @@ class QMCSampler(BaseSampler):
             union_search_space: dict[str, BaseDistribution] = {}
             intersection_keys: set[str] | None = None
             for t in pending_trials:
-                space = self._infer_initial_search_space(t)
+                space = dict(t.distributions)
                 union_search_space.update(space)
                 if intersection_keys is None:
                     intersection_keys = set(space.keys())
@@ -214,10 +214,7 @@ class QMCSampler(BaseSampler):
         # If an initial trial was already made,
         # construct search_space of this sampler from the initial trial.
         first_trial = min(past_trials, key=lambda t: t.number)
-        return self._infer_initial_search_space(first_trial)
-
-    def _infer_initial_search_space(self, trial: FrozenTrial) -> dict[str, BaseDistribution]:
-        return dict(trial.distributions)
+        return dict(first_trial.distributions)
 
     @staticmethod
     def _log_asynchronous_seeding() -> None:
