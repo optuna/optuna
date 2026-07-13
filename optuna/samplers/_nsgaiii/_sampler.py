@@ -14,6 +14,7 @@ from optuna.samplers.nsgaii._after_trial_strategy import NSGAIIAfterTrialStrateg
 from optuna.samplers.nsgaii._child_generation_strategy import NSGAIIChildGenerationStrategy
 from optuna.samplers.nsgaii._crossovers._base import BaseCrossover
 from optuna.samplers.nsgaii._crossovers._uniform import UniformCrossover
+from optuna.samplers.nsgaii._mutations._base import BaseMutation
 from optuna.search_space import IntersectionSearchSpace
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
@@ -83,6 +84,7 @@ class NSGAIIISampler(BaseGASampler):
         self,
         *,
         population_size: int = 50,
+        mutation: BaseMutation | None = None,
         mutation_prob: float | None = None,
         crossover: BaseCrossover | None = None,
         crossover_prob: float = 0.9,
@@ -144,6 +146,7 @@ class NSGAIIISampler(BaseGASampler):
             child_generation_strategy
             or NSGAIIChildGenerationStrategy(
                 crossover_prob=crossover_prob,
+                mutation=mutation,
                 mutation_prob=mutation_prob,
                 swapping_prob=swapping_prob,
                 crossover=crossover,
