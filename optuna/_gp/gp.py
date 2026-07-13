@@ -417,14 +417,14 @@ class ConditionalGPRegressor:
         mu_x, cov_xx_post = self._gpr.posterior(x_)
         cov_fx_fXr = self._gpr.kernel(x_, self._X_running)
         cov_fx_fX = self._gpr.kernel(x_)
-        cov_xr_post = cov_fx_fXr - cov_fx_fX.matmul(self._V_r)
+        cov_fx_fXr_post = cov_fx_fXr - cov_fx_fX.matmul(self._V_r)
 
         # mean: mu_x + cov_xr @ inv(cov_rr) @ (y_r - mu_r)
-        cond_mean = mu_x.unsqueeze(-1) + cov_xr_post.matmul(self._cov_rr_post_inv_delta_r)
+        cond_mean = mu_x.unsqueeze(-1) + cov_fx_fXr_post.matmul(self._cov_rr_post_inv_delta_r)
         # cov: cov_xx - cov_xr @ inv(cov_rr) @ cov_rx
-        V = _solve_cholesky(self._cov_rr_post_chol, cov_xr_post, left=False)
+        V = _solve_cholesky(self._cov_rr_post_chol, cov_fx_fXr_post, left=False)
         cond_cov = (
-            cov_xx_post + self._stabilizing_noise - torch.linalg.vecdot(V, cov_xr_post)
+            cov_xx_post + self._stabilizing_noise - torch.linalg.vecdot(V, cov_fx_fXr_post)
         ).clamp_min_(0.0)
         samples = cond_mean + cond_cov.sqrt().unsqueeze(-1) * self._fixed_samples_running
         if is_single:
