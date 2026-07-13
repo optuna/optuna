@@ -184,7 +184,7 @@ class qLogEI(BaseAcquisitionFunc):
 
     def _get_log_improvement(self, joint_x: torch.Tensor) -> torch.Tensor:
         if np.isneginf(self._threshold):
-            return joint_x.sum() * 0.0 + torch.zeros(
+            return torch.zeros(
                 joint_x.shape[:-2] + (self._fixed_samples.shape[0], joint_x.shape[-2]),
                 dtype=torch.float64,
             )
