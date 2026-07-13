@@ -313,7 +313,7 @@ class ConstrainedLogEI(BaseAcquisitionFunc):
         )
 
 
-class qConstrainedLogEI(qLogEI):
+class qConstrainedLogEI(BaseAcquisitionFunc):
     def __init__(
         self,
         gpr: GPRegressor,
@@ -329,6 +329,15 @@ class qConstrainedLogEI(qLogEI):
         assert (
             len(constraints_gpr_list) == len(constraints_threshold_list) and constraints_gpr_list
         )
+        self._acqf = qLogEI(
+            gpr,
+            search_space,
+            threshold,
+            n_qmc_samples,
+            qmc_seed,
+            normalized_params_of_running_trials,
+            stabilizing_noise,
+        )
         self._constraints_gpr_list = constraints_gpr_list
         self._constraints_threshold_list = constraints_threshold_list
         self._constraint_fixed_samples_list = [
@@ -339,24 +348,17 @@ class qConstrainedLogEI(qLogEI):
             )
             for i in range(len(constraints_gpr_list))
         ]
-        super().__init__(
-            gpr,
-            search_space,
-            threshold,
-            n_qmc_samples,
-            qmc_seed,
-            normalized_params_of_running_trials,
-            stabilizing_noise,
-        )
+        super().__init__(gpr.length_scales, search_space)
 
-    def _get_log_improvement(self, joint_x: torch.Tensor) -> torch.Tensor:
-        log_improvement = super()._get_log_improvement(joint_x)
+    def eval_acqf(self, x: torch.Tensor) -> torch.Tensor:
+        joint_x = self._acqf._get_joint_input(x)
+        log_improvement = self._acqf._get_log_improvement(joint_x)
         tau = 1e-2
 
         constraint_log_feasibilities = [
             torch.nn.functional.logsigmoid(
                 (
-                    self._get_posterior_samples(
+                    self._acqf._get_posterior_samples(
                         joint_x,
                         constraint_gpr,
                         fixed_samples,
@@ -372,7 +374,10 @@ class qConstrainedLogEI(qLogEI):
             )
         ]
         log_feasibility = torch.stack(constraint_log_feasibilities).sum(dim=0)
-        return log_improvement + log_feasibility
+        max_log_improvement_in_q_batch = torch.amax(log_improvement + log_feasibility, dim=-1)
+        return torch.special.logsumexp(max_log_improvement_in_q_batch, dim=-1) - math.log(
+            max_log_improvement_in_q_batch.shape[-1]
+        )
 
 
 class LogEHVI(BaseAcquisitionFunc):
