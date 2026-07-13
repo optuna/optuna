@@ -1330,11 +1330,11 @@ def create_study(
             )
             study_id = storage.get_study_id_from_name(study_name)
         else:
-            study_names = get_all_study_names(storage)
             raise exceptions.DuplicatedStudyError(
                 f"Another study with {study_name=} already exists. Please specify a name not in "
-                f"{study_names=}, or reuse the existing one by setting `load_if_exists` (for "
-                "Python API) or `--skip-if-exists` flag (for CLI)."
+                f"the storage, or reuse the existing one by setting `load_if_exists` (for "
+                "Python API) or `--skip-if-exists` flag (for CLI).\n"
+                "Use `optuna.study.get_all_study_names(storage)` to list all the used names."
             )
 
     if sampler is None and len(direction_objects) > 1:
