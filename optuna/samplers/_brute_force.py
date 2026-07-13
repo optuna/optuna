@@ -33,25 +33,91 @@ if TYPE_CHECKING:
     ChoicesArgsType = tuple[int | float, int | float, int | float | None]  # low, high, step
 
 
+@dataclass(frozen=True)
+class _UnexpandedTreeNode:
+    # NOTE(nabenabe): When a node is unexpanded, `_TreeNode` does not have to be instantiated.
+    # This class was introduced to avoid the initialization overhead of `_TreeNode` in such case.
+    is_running: bool = False
+
+    def is_any_expandable(self, exclude_running: bool) -> bool:
+        return True
+
+    def count_unexpanded(self, exclude_running: bool) -> int:
+        return 1
+
+
+_UNEXPANDED_NODE = _UnexpandedTreeNode()
+
+
 # TODO(nabenabe): Simply use `slots=True` once Python 3.9 is dropped.
 @dataclass(**({"slots": True} if sys.version_info >= (3, 10) else {}))
 class _TreeNode:
+    # region (_TreeNode doc)
     # A tree representing the search space for brute force sampling.
     # Each internal node corresponds to a parameter, and its children are keyed by the parameter's
     # candidate values (in internal representation). A path from the root to a terminal node
-    # represents a complete ``params``.
+    # represents a complete `params`.
     #
     # A node takes one of the following four states:
-    #   1. Unexpanded (no trial tried the ``params``). ``children=None`` and ``is_running=False``.
-    #   2. Running. ``children=None`` and ``is_running=True``.
-    #   3. Leaf. ``children={}`` and ``param_name=None``.
-    #   4. Internal. ``param_name`` is set and ``children`` is non-empty.
-    # Leaf represents the last parameter of a finished ``params``, and internal means the node
-    # does not represent a complete ``params``.
+    #   ┌────────────┬─────────────────┬────────────┐
+    #   │   State    │    children     │ is_running │
+    #   ├────────────┼─────────────────┼────────────┤
+    #   │ Running    │ None            │ True       │
+    #   ├────────────┼─────────────────┼────────────┤
+    #   │ Unexpanded │ None            │ False      │
+    #   ├────────────┼─────────────────┼────────────┤
+    #   │ Leaf       │ {} (empty dict) │ False      │
+    #   ├────────────┼─────────────────┼────────────┤
+    #   │ Internal   │ non-empty dict  │ False      │
+    #   └────────────┴─────────────────┴────────────┘
+    #
+    # So `self.children is None` means `Running` or `Unexpanded`. `not self.children` means the
+    # node is not internal. Each trial gives either of `running`, `unexpanded` or `leaf` states
+    # only to its last node.
+    # NOTE(nabenabe): Because running trials are always a snapshot (maybe not fully sampled yet),
+    # internal nodes of some trials can be the last node of some running trials. This induces some
+    # edge cases, which we already handle in this file.
+    #
+    # Examples:
+    #   Let's assume that we observed the following `params`'s:
+    #       {"a": 0, "b": 0.0}, {"a": 0, "b": 1.0}, {"a": 1, "b": 0.0, "c": 0}
+    #       where:
+    #           dists = {
+    #               "a": IntDistribution(0, 2),
+    #               "b": FloatDistribution(0.0, 1.0, step=1.0),
+    #               "c": IntDistribution(0, 1),  # Show up only when a == 1.
+    #           }
+    #
+    #   Then the full tree looks like this:
+    #       tree (param_name="a"; internal)
+    #       ├ 0: a0_b_node (param_name="b"; internal)
+    #       |   ├ 0.0: a0_b0_node (leaf; complete)
+    #       |   └ 1.0: a0_b1_node (leaf; complete)
+    #       ├ 1: a1_b_node (param_name="b"; internal)
+    #       |   ├ 0.0: a1_b0_c_node (param_name="c")
+    #       |   |   ├ 0: a1_b0_c0_node (leaf; complete)
+    #       |   |   └ 1: a1_b0_c1_node (Unexpanded)
+    #       |   └ 1.0: a1_b1_node (Unexpanded)
+    #       └ 2: a2_node (Unexpanded)
+    #
+    #   We know that `Unexpanded` paths such as `{"a": 1, "b": 1}` can be sampled because
+    #   `{"a": 1, "b": 0}` revealed that `a = 1` trigers `suggest_float("b", 0, 1, step=1)`.
+    #   However, since we have not tried them yet, we don't know whether `c` shows up when
+    #   `{"a": 1, "b": 1}` is sampled. This is why we name such paths `Unexpanded`.
+    #   Note that as multiple paths can refer to internal nodes, only leaf nodes can have the
+    #   `Unexpanded` state.
+    #
+    # Essentially, each node represents a param value, and a path from the first node to the leaf
+    # node represents complete `params`. An internal node complements `params`'s but it does
+    # not give self-contained information.
+    #
     # NOTE(nabenabe): I tried representations by list and dict, but they did not really speed up.
+    # NOTE(nabenabe): This class highly optimized to reduce runtime overhead.
+    # cf. https://github.com/optuna/optuna/issues/6659.
+    # endregion
 
     param_name: str | None = None
-    children: dict[float, "_TreeNode"] | None = None
+    children: dict[float, _TreeNode | _UnexpandedTreeNode] | None = None
     is_running: bool = False
     choices_args: ChoicesArgsType | None = None
 
@@ -75,7 +141,7 @@ class _TreeNode:
             # Expand the node
             self.param_name = param_name
             choices = _enumerate_candidates(*choices_args)
-            self.children = {value: _TreeNode() for value in choices}
+            self.children = {value: _UNEXPANDED_NODE for value in choices}
             self.choices_args = choices_args
         else:
             self._validate_search_space_consistency(param_name, choices_args)
@@ -93,11 +159,14 @@ class _TreeNode:
         current_node = self
         for param_name, choices_args, value in trial_path:
             current_node.expand(param_name, choices_args)
-            # TODO(nabenabe): This is a temporal fix until the lazy node is introduced.
-            next_node = (current_node.children or {}).get(value)
-            if next_node is None:
+            if not (children := current_node.children):  # children is empty or None.
                 return None
-            current_node = next_node
+            elif (next_node := children.get(value)) is None:
+                return None
+            elif next_node is _UNEXPANDED_NODE:
+                next_node = _TreeNode()
+                children[value] = next_node
+            current_node = cast(_TreeNode, next_node)
         return current_node
 
     def is_any_expandable(self, exclude_running: bool) -> bool:
@@ -282,13 +351,12 @@ class BruteForceSampler(BaseSampler):
         # being initialized as an empty graph, which is created with n_jobs > 1
         # where we get trials[i].params = {} for some i.
         self._populate_tree(tree, trials, trial.params)
-        if not tree.is_any_expandable(exclude_running):
-            choices = _enumerate_candidates(*c_args)
-            return param_distribution.to_external_repr(self._rng.rng.choice(choices).item())
+        if tree.is_any_expandable(exclude_running):
+            param_val = tree.sample_child(self._rng.rng, exclude_running)
         else:
-            return param_distribution.to_external_repr(
-                tree.sample_child(self._rng.rng, exclude_running)
-            )
+            choices = _enumerate_candidates(*c_args)
+            param_val = self._rng.rng.choice(choices).item()
+        return param_distribution.to_external_repr(param_val)
 
     def after_trial(
         self, study: Study, trial: FrozenTrial, state: TrialState, values: Sequence[float] | None
@@ -299,10 +367,27 @@ class BruteForceSampler(BaseSampler):
         trials[current_idx] = create_trial(
             state=state, values=values, params=trial.params, distributions=trial.distributions
         )
-        tree = _TreeNode()
-        self._populate_tree(tree, trials, {})
-        if not tree.is_any_expandable(exclude_running):
-            study.stop()
+        # region (Rationale behind the early-return logic)
+        # NOTE(nabenabe): This routine checks whether any existing branch of the current trial is
+        # expandable (unexplored). For example, if `params={"a": 1, "b": 2, "c": 3}`, we first
+        # check whether all possible params represented by `{"a": 1, "b": 2} | X` exist. If there
+        # is any unexplored `X` based on the search space, we still need to evaluate such `X`, so
+        # the study does not have to be stopped yet. This search is much faster compared to a full
+        # tree build because there are much fewer trials among all that take `{"a": 1, "b": 2}`. If
+        # such `X` is already exhaustively searched, the condition is relaxed to `{"a": 1} | X`.
+        # Note that this strategy would sometimes not be fast enough if each branch is not sampled
+        # uniformly. See https://github.com/optuna/optuna/issues/6070 for the discussion. Also, we
+        # avoided `tree_size` caching in favor of the stateless nature of this sampler.
+        # See https://github.com/optuna/optuna/pull/6646/ for the full discussion.
+        # endregion
+        params = trial.params.copy()
+        for param_name in reversed(trial.params.keys()):
+            params.pop(param_name)
+            tree = _TreeNode()
+            self._populate_tree(tree, trials, params)
+            if tree.is_any_expandable(exclude_running):
+                return
+        study.stop()
 
 
 def _is_nan(v: CategoricalChoiceType) -> bool:
