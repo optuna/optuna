@@ -66,7 +66,7 @@ class GPSampler(BaseSampler):
     """Sampler using Gaussian process-based Bayesian optimization.
 
     .. note::
-        This sampler requires ``scipy`` and ``torch``.
+        This sampler requires ``scipy`` and ``torch`` (the CPU version is sufficient).
         You can install these dependencies with ``pip install scipy torch``.
 
     This sampler fits a Gaussian process (GP) to the objective function and optimizes

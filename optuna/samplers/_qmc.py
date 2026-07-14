@@ -39,7 +39,7 @@ class QMCSampler(BaseSampler):
 
     .. note::
         This sampler requires ``scipy``.
-        You can install these dependencies with ``pip install scipy``.
+        You can install this dependency with ``pip install scipy``.
 
         You can see `scipy.stats.qmc
         <https://scipy.github.io/devdocs/reference/stats.qmc.html>`__ for the QMC algorithm detail.

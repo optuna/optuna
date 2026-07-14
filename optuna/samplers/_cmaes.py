@@ -52,7 +52,7 @@ class CmaEsSampler(BaseSampler):
 
     .. note::
         This sampler requires ``cmaes``.
-        You can install these dependencies with ``pip install cmaes``.
+        You can install this dependency with ``pip install cmaes``.
 
     Example:
 
