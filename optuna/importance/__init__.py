@@ -50,7 +50,7 @@ def get_param_importances(
     - `Conditional PED-ANOVA: Hyperparameter Importance in Hierarchical & Dynamic Search Spaces
       <https://arxiv.org/abs/2601.20800>`__ (KDD 2026)
 
-    When using this evaluator in your project, please cite both papers.
+    When using this evaluator in your project, please consider citing both papers.
 
     With the default evaluator, :class:`~optuna.importance.PedAnovaImportanceEvaluator`,
     ``params=None`` assesses all parameters that appear in completed trials, including conditional
