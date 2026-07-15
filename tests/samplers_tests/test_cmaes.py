@@ -7,9 +7,6 @@ from unittest.mock import patch
 import warnings
 
 import _pytest.capture
-from cmaes import CMA
-from cmaes import CMAwM
-from cmaes import SepCMA
 import numpy as np
 import pytest
 
