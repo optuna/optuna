@@ -11,8 +11,6 @@ The :mod:`~optuna.visualization` module provides utility functions for plotting 
     In the :mod:`optuna.visualization` module, the following functions use plotly to create figures, but `JupyterLab`_ cannot
     render them by default. Please follow this `installation guide`_ to show figures in
     `JupyterLab`_.
-.. note::
-    The :func:`~optuna.visualization.plot_param_importances` requires the Python package of `scikit-learn <https://github.com/scikit-learn/scikit-learn>`__.
 
     .. _JupyterLab: https://github.com/jupyterlab/jupyterlab
     .. _installation guide: https://github.com/plotly/plotly.py#jupyterlab-support
