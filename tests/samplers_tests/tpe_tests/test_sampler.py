@@ -13,7 +13,7 @@ import optuna
 from optuna import distributions
 from optuna.samplers import _tpe
 from optuna.samplers import TPESampler
-from optuna.samplers._base import _CONSTRAINTS_KEY
+from optuna.study._constrained_optimization import _CONSTRAINTS_KEY
 from optuna.trial import Trial
 
 

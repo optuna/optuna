@@ -17,7 +17,6 @@ from optuna._hypervolume import compute_hypervolume
 from optuna._hypervolume.hssp import _solve_hssp
 from optuna._warnings import optuna_warn
 from optuna.logging import get_logger
-from optuna.samplers._base import _CONSTRAINTS_KEY
 from optuna.samplers._base import _INDEPENDENT_SAMPLING_WARNING_TEMPLATE
 from optuna.samplers._base import _process_constraints_after_trial
 from optuna.samplers._base import BaseSampler
@@ -861,8 +860,8 @@ def _split_pruned_trials(
 
 
 def _get_infeasible_trial_score(trial: FrozenTrial) -> float:
-    constraint = trial.system_attrs.get(_CONSTRAINTS_KEY)
-    if constraint is None:
+    constraint = trial.constraints
+    if len(constraint) == 0:
         optuna_warn(
             f"Trial {trial.number} does not have constraint values."
             " It will be treated as a lower priority than other trials."
@@ -870,7 +869,7 @@ def _get_infeasible_trial_score(trial: FrozenTrial) -> float:
         return float("inf")
     else:
         # Violation values of infeasible dimensions are summed up.
-        return sum(v for v in constraint if v > 0)
+        return sum(v for v in constraint.values() if v > 0)
 
 
 def _split_infeasible_trials(

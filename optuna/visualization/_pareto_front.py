@@ -9,7 +9,6 @@ from typing import TYPE_CHECKING
 import optuna
 from optuna import _deprecated
 from optuna._warnings import optuna_warn
-from optuna.samplers._base import _CONSTRAINTS_KEY
 from optuna.study._multi_objective import _get_pareto_front_trials_by_trials
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
@@ -217,9 +216,9 @@ def _get_pareto_front_info(
                 infeasible_trials.append(trial)
             continue
 
-        constraints = trial.system_attrs.get(_CONSTRAINTS_KEY)
-        has_constraints |= constraints is not None
-        if constraints is None or all(x <= 0.0 for x in constraints):
+        constraints = trial.constraints
+        has_constraints |= len(constraints) > 0
+        if all(x <= 0.0 for x in constraints.values()):
             feasible_trials.append(trial)
         else:
             infeasible_trials.append(trial)
