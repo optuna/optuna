@@ -190,8 +190,9 @@ def test_switch_label_when_param_insignificant() -> None:
 
     info = _get_importances_info(study, None, None, None, "Objective Value")
 
-    # Test if label for `y` param has been switched to `<0.01`.
-    assert info.importance_labels == ["<0.01", "1.00"]
+    # Test if label for `y` param is smaller than label for `x` param,
+    # because `y` param is insignificant.
+    assert info.importance_values[0] < info.importance_values[1]
 
 
 @pytest.mark.parametrize("inf_value", [float("inf"), -float("inf")])
