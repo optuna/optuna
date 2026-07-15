@@ -488,12 +488,7 @@ class JournalStorageReplayResult:
 
         if study_name in [s.study_name for s in self._studies.values()]:
             if self._is_issued_by_this_worker(log):
-                raise DuplicatedStudyError(
-                    f"Another study with name {study_name} already exists. "
-                    "Please specify a different name, or reuse the existing one "
-                    "by setting `load_if_exists` (for Python API) or "
-                    "`--skip-if-exists` flag (for CLI)."
-                )
+                raise DuplicatedStudyError
             return
 
         study_id = self._next_study_id
