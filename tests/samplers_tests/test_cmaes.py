@@ -349,87 +349,31 @@ def _create_trials() -> list[FrozenTrial]:
     return trials
 
 
-@pytest.mark.parametrize("sampler_opts", [{}, {"use_separable_cma": True}, {"with_margin": True}])
-def test_restore_optimizer_from_substrings(sampler_opts: dict[str, Any]) -> None:
-    popsize = 8
-    sampler = optuna.samplers.CmaEsSampler(popsize=popsize, **sampler_opts)
-    optimizer = sampler._restore_optimizer([])
-    assert optimizer is None
-
-    def objective(trial: optuna.Trial) -> float:
-        x1 = trial.suggest_float("x1", -10, 10, step=1)
-        x2 = trial.suggest_float("x2", -10, 10)
-        return x1**2 + x2**2
-
-    study = optuna.create_study(sampler=sampler)
-    study.optimize(objective, n_trials=popsize + 2)
-    optimizer = sampler._restore_optimizer(study.trials)
-
-    assert optimizer is not None
-    assert optimizer.generation == 1
-    if sampler._with_margin:
-        assert isinstance(optimizer, CMAwM)
-    elif sampler._use_separable_cma:
-        assert isinstance(optimizer, SepCMA)
-    else:
-        assert isinstance(optimizer, CMA)
-
-
-def test_get_solution_trials() -> None:
+@pytest.mark.parametrize(
+    "sampler_opts",
+    [
+        {},
+        {"use_separable_cma": True},
+        {"with_margin": True},
+    ],
+)
+def test_solution_trial_numbers(sampler_opts: dict[str, Any]) -> None:
     def objective(trial: optuna.Trial) -> float:
         x1 = trial.suggest_float("x1", -10, 10, step=1)
         x2 = trial.suggest_float("x2", -10, 10)
         return x1**2 + x2**2
 
     popsize = 5
-    sampler = optuna.samplers.CmaEsSampler(popsize=popsize)
+    sampler = optuna.samplers.CmaEsSampler(popsize=popsize, **sampler_opts)
     study = optuna.create_study(sampler=sampler)
-    study.optimize(objective, n_trials=popsize + 2)
+    study.optimize(objective, n_trials=popsize + 1)
 
     # The number of solutions for generation 0 equals population size.
-    assert len(sampler._get_solution_trials(study.trials, 0)) == popsize
+    assert len(sampler._solution_trial_numbers) == popsize
 
     # The number of solutions for generation 1 is 1.
-    assert len(sampler._get_solution_trials(study.trials, 1)) == 1
-
-
-@pytest.mark.parametrize(
-    "sampler_opts",
-    [
-        {"use_separable_cma": True},
-        {"with_margin": True},
-    ],
-)
-def test_get_solution_trials_with_other_options(sampler_opts: dict[str, Any]) -> None:
-    def objective(trial: optuna.Trial) -> float:
-        x1 = trial.suggest_float("x1", -10, 10, step=1)
-        x2 = trial.suggest_float("x2", -10, 10)
-        return x1**2 + x2**2
-
-    sampler = optuna.samplers.CmaEsSampler(popsize=5)
-    study = optuna.create_study(sampler=sampler)
-    study.optimize(objective, n_trials=5 + 2)
-
-    # The number of solutions is 0 after changed samplers
-    sampler = optuna.samplers.CmaEsSampler(**sampler_opts)
-    assert len(sampler._get_solution_trials(study.trials, 0)) == 0
-
-
-@pytest.mark.parametrize(
-    "dummy_optimizer_str,attr_len",
-    [
-        ("012", 1),
-        ("01234", 1),
-        ("012345", 2),
-    ],
-)
-def test_split_and_concat_optimizer_string(dummy_optimizer_str: str, attr_len: int) -> None:
-    sampler = optuna.samplers.CmaEsSampler()
-    with patch("optuna.samplers._cmaes._SYSTEM_ATTR_MAX_LENGTH", 5):
-        attrs = sampler._split_optimizer_str(dummy_optimizer_str)
-        assert len(attrs) == attr_len
-        actual = sampler._concat_optimizer_attrs(attrs)
-        assert dummy_optimizer_str == actual
+    study.optimize(objective, n_trials=1)
+    assert len(sampler._solution_trial_numbers) == 1
 
 
 def test_call_after_trial_of_base_sampler() -> None:
