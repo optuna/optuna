@@ -32,7 +32,8 @@ def get_param_importances(
     target: Callable[[FrozenTrial], float] | None = None,
     normalize: bool = True,
 ) -> dict[str, float]:
-    """Evaluate parameter importances based on completed trials in the given study.
+    """Evaluate parameter importances (:class:`~optuna.importance.PedAnovaImportanceEvaluator` by
+    default) based on completed trials in the given study.
 
     The parameter importances are returned as a dictionary where the keys consist of parameter
     names and their values importances.
