@@ -15,9 +15,10 @@ Users implementing custom evaluators should refer to
 as a guide, paying close attention to the format of the return value from the evaluator's
 ``evaluate`` function.
 
-.. note::
+.. seealso::
 
-   For detailed usage, please refer to :func:`~optuna.importance.get_param_importances`.
+   :func:`~optuna.visualization.plot_param_importances` visualizes parameter importances.
+   The parameter importances in Optuna Dashboard also follow this implementation.
 
 .. autosummary::
    :toctree: generated/
