@@ -707,6 +707,12 @@ class _Ask(_BaseCommand):
                 sampler_kwargs = {}
             sampler_cls = getattr(optuna.samplers, parsed_args.sampler)
             sampler = sampler_cls(**sampler_kwargs)
+            if isinstance(sampler, optuna.samplers.CmaEsSampler):
+                # See https://github.com/optuna/optuna/pull/6752
+                optuna_warn(
+                    "`CmaEsSampler` is not supported with the `ask` command. "
+                    "Please use a different sampler."
+                )
             create_study_kwargs["sampler"] = sampler
         else:
             if parsed_args.sampler_kwargs is not None:
