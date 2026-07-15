@@ -123,7 +123,8 @@ def plot_param_importances(
     target: Callable[[FrozenTrial], float] | None = None,
     target_name: str = "Objective Value",
 ) -> "go.Figure":
-    """Plot hyperparameter importances.
+    """Plot hyperparameter importances (:class:`~optuna.importance.PedAnovaImportanceEvaluator` by
+    default).
 
     .. seealso::
 
