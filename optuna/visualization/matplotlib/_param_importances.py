@@ -61,11 +61,6 @@ def plot_param_importances(
 
             When using this evaluator in your project, please consider citing both papers.
 
-            .. note::
-
-                Both Optuna and Optuna Dashboard use
-                :class:`~optuna.importance.PedAnovaImportanceEvaluator` as the default importance
-                evaluator.
         params:
             A list of names of parameters to assess.
             If :obj:`None`, :class:`~optuna.importance.PedAnovaImportanceEvaluator` assesses all
