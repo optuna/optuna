@@ -40,7 +40,8 @@ def plot_param_importances(
     target: Callable[[FrozenTrial], float] | None = None,
     target_name: str = "Objective Value",
 ) -> "Axes":
-    """Plot hyperparameter importances with Matplotlib.
+    """Plot hyperparameter importances (:class:`~optuna.importance.PedAnovaImportanceEvaluator` by
+    default) with Matplotlib.
 
     .. seealso::
         Please refer to :func:`optuna.visualization.plot_param_importances` for an example.
