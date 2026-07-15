@@ -24,7 +24,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from optuna._gp.scipy_blas_thread_patch import single_blas_thread_if_scipy_v1_15_or_newer
+from optuna._gp.thread_limiting import limit_threads_in_optimization
 from optuna._warnings import optuna_warn
 from optuna.logging import get_logger
 
@@ -343,7 +343,7 @@ class GPRegressor:
                 assert not deterministic_objective or raw_noise_var_grad == 0
             return loss.item(), raw_params_tensor.grad.detach().cpu().numpy()  # type: ignore
 
-        with single_blas_thread_if_scipy_v1_15_or_newer():
+        with limit_threads_in_optimization():
             # jac=True means loss_func returns the gradient for gradient descent.
             res = scipy.optimize.minimize(
                 # Too small `gtol` causes instability in loss_func optimization.
