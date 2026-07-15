@@ -6,9 +6,8 @@ optuna.importance
 The :mod:`~optuna.importance` module provides functionality for evaluating hyperparameter
 importances based on completed trials in a given study.
 The utility function :func:`~optuna.importance.get_param_importances` takes a
-:class:`~optuna.study.Study` and optional evaluator as two of its inputs.
-The evaluator must derive from :class:`~optuna.importance.BaseImportanceEvaluator`, and
-:class:`~optuna.importance.PedAnovaImportanceEvaluator` is used by default when not passed in.
+:class:`~optuna.study.Study` and optional evaluator (defaults to :class:`~optuna.importance.PedAnovaImportanceEvaluator`) as its inputs.
+The evaluator must derive from :class:`~optuna.importance.BaseImportanceEvaluator`.
 Users implementing custom evaluators should refer to
 :class:`~optuna.importance.PedAnovaImportanceEvaluator`,
 :class:`~optuna.importance.FanovaImportanceEvaluator`, or
