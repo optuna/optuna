@@ -18,11 +18,6 @@ as a guide, paying close attention to the format of the return value from the ev
 
 .. note::
 
-   Both Optuna and Optuna Dashboard use :class:`~optuna.importance.PedAnovaImportanceEvaluator`
-   as the default importance evaluator.
-
-.. note::
-
    For detailed usage, please refer to :func:`~optuna.importance.get_param_importances`.
 
 .. autosummary::
