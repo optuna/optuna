@@ -1,8 +1,7 @@
 from __future__ import annotations
 
 import copy
-import math
-import pickle
+import threading
 from typing import Any
 from typing import cast
 from typing import TYPE_CHECKING
@@ -43,8 +42,6 @@ else:
 _logger = logging.get_logger(__name__)
 
 _EPS = 1e-10
-# The value of system_attrs must be less than 2046 characters on RDBStorage.
-_SYSTEM_ATTR_MAX_LENGTH = 2045
 
 
 class CmaEsSampler(BaseSampler):
@@ -78,10 +75,6 @@ class CmaEsSampler(BaseSampler):
     `CatCmawmSampler <https://hub.optuna.org/samplers/catcmawm/>`__ available on
     `OptunaHub <https://hub.optuna.org/>`__.
 
-    Furthermore, there is room for performance improvements in parallel
-    optimization settings. This sampler cannot use some trials for updating
-    the parameters of multivariate normal distribution.
-
     For further information about CMA-ES algorithm, please refer to the following papers:
 
     - `N. Hansen, The CMA Evolution Strategy: A Tutorial. arXiv:1604.00772, 2016.
@@ -111,7 +104,11 @@ class CmaEsSampler(BaseSampler):
     Args:
 
         seed:
-            A random seed for CMA-ES.
+            A random seed for CMA-ES. The optimizer state is kept in memory and is not persisted
+            in storage, so each sampler instance in distributed optimization updates its own
+            optimizer independently. To avoid identical optimization trajectories, use a different
+            seed for each worker. With the default ``None``, each sampler is initialized with a
+            random seed.
 
         n_startup_trials:
             The independent sampling is used instead of the CMA-ES algorithm until the given number
@@ -319,13 +316,10 @@ class CmaEsSampler(BaseSampler):
         self._with_margin = with_margin
         self._lr_adapt = lr_adapt
         self._source_trials = source_trials
-
-        if self._use_separable_cma:
-            self._attr_prefix = "sepcma:"
-        elif self._with_margin:
-            self._attr_prefix = "cmawm:"
-        else:
-            self._attr_prefix = "cma:"
+        self._optimizer: CmaClass | None = None
+        self._search_space_transform: _SearchSpaceTransform | None = None
+        self._solution_trial_numbers: set[int] = set()
+        self._lock = threading.Lock()
 
         if self._consider_pruned_trials:
             warn_experimental_argument("consider_pruned_trials")
@@ -369,6 +363,15 @@ class CmaEsSampler(BaseSampler):
         # _cma_rng doesn't require reseeding because the relative sampling reseeds in each trial.
         self._independent_sampler.reseed_rng()
 
+    def __getstate__(self) -> dict[Any, Any]:
+        state = self.__dict__.copy()
+        state.pop("_lock", None)
+        return state
+
+    def __setstate__(self, state: dict[Any, Any]) -> None:
+        self.__dict__.update(state)
+        self._lock = threading.Lock()
+
     def infer_relative_search_space(
         self, study: "optuna.Study", trial: "optuna.trial.FrozenTrial"
     ) -> dict[str, BaseDistribution]:
@@ -402,107 +405,63 @@ class CmaEsSampler(BaseSampler):
         if len(completed_trials) < self._n_startup_trials:
             return {}
 
-        # When `with_margin=True`, bounds in discrete dimensions are handled inside `CMAwM`.
-        trans = _SearchSpaceTransform(
-            search_space, transform_step=not self._with_margin, transform_0_1=True
-        )
-
-        optimizer = self._restore_optimizer(completed_trials)
-        if optimizer is None:
-            optimizer = self._init_optimizer(trans, study.direction)
-
-        if optimizer.dim != len(trans.bounds):
-            if self._warn_independent_sampling:
-                ind_sampler_name = self._independent_sampler.__class__.__name__
-                _logger.warning(
-                    "`CmaEsSampler` does not support dynamic search space. "
-                    f"`{ind_sampler_name}` is used instead of `CmaEsSampler`."
+        with self._lock:
+            if self._search_space_transform is None:
+                # When `with_margin=True`, bounds in discrete dimensions are
+                # handled inside `CMAwM`.
+                self._search_space_transform = _SearchSpaceTransform(
+                    copy.deepcopy(search_space),
+                    transform_step=not self._with_margin,
+                    transform_0_1=True,
                 )
-                self._warn_independent_sampling = False
-            return {}
+            trans = self._search_space_transform
+            assert trans is not None
+            if self._optimizer is None:
+                self._optimizer = self._init_optimizer(
+                    self._search_space_transform, study.direction
+                )
+            optimizer = self._optimizer
+            assert optimizer is not None
 
-        # TODO(c-bata): Reduce the number of wasted trials during parallel optimization.
-        # See https://github.com/optuna/optuna/pull/920#discussion_r385114002 for details.
-        solution_trials = self._get_solution_trials(completed_trials, optimizer.generation)
+            if optimizer.dim != len(trans.bounds) or trans._search_space != search_space:
+                if self._warn_independent_sampling:
+                    ind_sampler_name = self._independent_sampler.__class__.__name__
+                    _logger.warning(
+                        "`CmaEsSampler` does not support dynamic search space. "
+                        f"`{ind_sampler_name}` is used instead of `CmaEsSampler`."
+                    )
+                    self._warn_independent_sampling = False
+                return {}
 
-        if len(solution_trials) >= optimizer.population_size:
-            solutions: list[tuple[np.ndarray, float]] = []
-            for t in solution_trials[: optimizer.population_size]:
-                assert t.value is not None, "completed trials must have a value"
-                if isinstance(optimizer, cmaes.CMAwM):
-                    x = np.array(t.system_attrs["x_for_tell"])
-                else:
-                    x = trans.transform(t.params)
-                y = t.value if study.direction == StudyDirection.MINIMIZE else -t.value
-                solutions.append((x, y))
+            solution_trials = [
+                t for t in completed_trials if t.number in self._solution_trial_numbers
+            ]
+            if len(solution_trials) >= optimizer.population_size:
+                solutions: list[tuple[np.ndarray, float]] = []
+                for t in solution_trials[: optimizer.population_size]:
+                    assert t.value is not None, "completed trials must have a value"
+                    if isinstance(optimizer, cmaes.CMAwM):
+                        x = np.array(t.system_attrs["x_for_tell"])
+                    else:
+                        x = trans.transform(t.params)
+                    y = t.value if study.direction == StudyDirection.MINIMIZE else -t.value
+                    solutions.append((x, y))
 
-            optimizer.tell(solutions)
+                optimizer.tell(solutions)
+                self._solution_trial_numbers.clear()
 
-            # Store optimizer.
-            optimizer_str = pickle.dumps(optimizer).hex()
-            optimizer_attrs = self._split_optimizer_str(optimizer_str)
-            for key in optimizer_attrs:
-                study._storage.set_trial_system_attr(trial._trial_id, key, optimizer_attrs[key])
+            if isinstance(optimizer, cmaes.CMAwM):
+                params, x_for_tell = optimizer.ask()
+                study._storage.set_trial_system_attr(
+                    trial._trial_id, "x_for_tell", x_for_tell.tolist()
+                )
+            else:
+                params = optimizer.ask()
 
-        # Caution: optimizer should update its seed value.
-        seed = self._cma_rng.rng.randint(1, 2**16) + trial.number
-        optimizer._rng.seed(seed)
-        if isinstance(optimizer, cmaes.CMAwM):
-            params, x_for_tell = optimizer.ask()
-            study._storage.set_trial_system_attr(
-                trial._trial_id, "x_for_tell", x_for_tell.tolist()
-            )
-        else:
-            params = optimizer.ask()
-
-        generation_attr_key = self._attr_key_generation
-        study._storage.set_trial_system_attr(
-            trial._trial_id, generation_attr_key, optimizer.generation
-        )
-
-        external_values = trans.untransform(params)
+            self._solution_trial_numbers.add(trial.number)
+            external_values = trans.untransform(np.asarray(params, dtype=float))
 
         return external_values
-
-    @property
-    def _attr_key_generation(self) -> str:
-        return self._attr_prefix + "generation"
-
-    @property
-    def _attr_key_optimizer(self) -> str:
-        return self._attr_prefix + "optimizer"
-
-    def _concat_optimizer_attrs(self, optimizer_attrs: dict[str, str]) -> str:
-        return "".join(
-            optimizer_attrs[f"{self._attr_key_optimizer}:{i}"] for i in range(len(optimizer_attrs))
-        )
-
-    def _split_optimizer_str(self, optimizer_str: str) -> dict[str, str]:
-        optimizer_len = len(optimizer_str)
-        attrs = {}
-        for i in range(math.ceil(optimizer_len / _SYSTEM_ATTR_MAX_LENGTH)):
-            start = i * _SYSTEM_ATTR_MAX_LENGTH
-            end = min((i + 1) * _SYSTEM_ATTR_MAX_LENGTH, optimizer_len)
-            attrs[f"{self._attr_key_optimizer}:{i}"] = optimizer_str[start:end]
-        return attrs
-
-    def _restore_optimizer(
-        self,
-        completed_trials: "list[optuna.trial.FrozenTrial]",
-    ) -> "CmaClass" | None:
-        # Restore a previous CMA object.
-        for trial in reversed(completed_trials):
-            optimizer_attrs = {
-                key: value
-                for key, value in trial.system_attrs.items()
-                if key.startswith(self._attr_key_optimizer)
-            }
-            if len(optimizer_attrs) == 0:
-                continue
-
-            optimizer_str = self._concat_optimizer_attrs(optimizer_attrs)
-            return pickle.loads(bytes.fromhex(optimizer_str))
-        return None
 
     def _init_optimizer(
         self,
@@ -649,12 +608,6 @@ class CmaEsSampler(BaseSampler):
                 copied_t.value = value
                 complete_trials.append(copied_t)
         return complete_trials
-
-    def _get_solution_trials(
-        self, trials: list[FrozenTrial], generation: int
-    ) -> list[FrozenTrial]:
-        generation_attr_key = self._attr_key_generation
-        return [t for t in trials if generation == t.system_attrs.get(generation_attr_key, -1)]
 
     def before_trial(self, study: optuna.Study, trial: FrozenTrial) -> None:
         self._independent_sampler.before_trial(study, trial)
