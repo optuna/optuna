@@ -709,7 +709,7 @@ class _Ask(_BaseCommand):
             sampler = sampler_cls(**sampler_kwargs)
             if isinstance(sampler, optuna.samplers.CmaEsSampler):
                 # See https://github.com/optuna/optuna/pull/6752
-                raise ValueError
+                raise ValueError(
                     "`CmaEsSampler` is not supported with the `ask` command. "
                     "Please use a different sampler."
                 )

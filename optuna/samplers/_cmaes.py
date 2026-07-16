@@ -360,8 +360,8 @@ class CmaEsSampler(BaseSampler):
             )
 
     def reseed_rng(self) -> None:
-        # _cma_rng doesn't require reseeding because the relative sampling reseeds in each trial.
         self._independent_sampler.reseed_rng()
+        self._cma_rng.rng.seed()
 
     def __getstate__(self) -> dict[Any, Any]:
         state = self.__dict__.copy()
