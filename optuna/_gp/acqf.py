@@ -15,9 +15,11 @@ from optuna.study._multi_objective import _is_pareto_front
 if TYPE_CHECKING:
     import torch
 
+    from optuna._gp.gp import ConditionalGPRegressor
     from optuna._gp.gp import GPRegressor
     from optuna._gp.search_space import SearchSpace
 else:
+    from optuna._gp.gp import ConditionalGPRegressor
     from optuna._imports import _LazyImport
 
     torch = _LazyImport("torch")
@@ -105,6 +107,15 @@ def logei(mean: torch.Tensor, var: torch.Tensor, f0: float) -> torch.Tensor:
     return standard_logei((mean - f0) / (sigma := var.sqrt_())) + sigma.log()
 
 
+def _aggregate_log_acqf_over_q_batch(log_acqf: torch.Tensor) -> torch.Tensor:
+    # Take the max over the q-batch axis, then the mean over the fixed sample axis in log space.
+    # TODO(sawa3030): Consider using fatmax instead of max.
+    max_log_acqf_in_q_batch = torch.amax(log_acqf, dim=-1)
+    return torch.special.logsumexp(max_log_acqf_in_q_batch, dim=-1) - math.log(
+        max_log_acqf_in_q_batch.shape[-1]
+    )
+
+
 class BaseAcquisitionFunc(ABC):
     def __init__(self, length_scales: np.ndarray, search_space: SearchSpace) -> None:
         self.length_scales = length_scales
@@ -132,35 +143,11 @@ class LogEI(BaseAcquisitionFunc):
         gpr: GPRegressor,
         search_space: SearchSpace,
         threshold: float,
-        normalized_params_of_running_trials: np.ndarray | None = None,
         stabilizing_noise: float = 1e-12,
     ) -> None:
         self._gpr = gpr
         self._stabilizing_noise = stabilizing_noise
         self._threshold = threshold
-
-        if normalized_params_of_running_trials is not None:
-            normalized_params_of_running_trials_tensor = torch.from_numpy(
-                normalized_params_of_running_trials
-            )
-
-            # NOTE(sawa3030): To handle running trials, the `best` constant liar strategy is
-            # currently implemented, as it is simple and performs well in our benchmarks.
-            # We plan to implement Monte-Carlo based approaches (e.g., BoTorch’s fantasize)
-            # in the near future.
-            # See https://github.com/optuna/optuna/pull/6430 for details.
-            # For background on the Constant Liar and Kriging Believer strategies, see
-            # Ginsbourger et al., "Kriging Is Well-Suited to Parallelize Optimization" (2010).
-            constant_liar_value = self._gpr._y_train.max()
-            constant_liar_y = constant_liar_value.expand(
-                normalized_params_of_running_trials_tensor.shape[0]
-            )
-
-            self._gpr.append_running_data(
-                normalized_params_of_running_trials_tensor,
-                constant_liar_y,
-            )
-
         super().__init__(gpr.length_scales, search_space)
 
     def eval_acqf(self, x: torch.Tensor) -> torch.Tensor:
@@ -195,40 +182,28 @@ class qLogEI(BaseAcquisitionFunc):
             n_samples=n_qmc_samples,
             seed=qmc_seed,
         )
+        self._conditional_gpr = ConditionalGPRegressor(
+            gpr=gpr,
+            X_running=self._X_running,
+            fixed_samples=self._fixed_samples,
+            stabilizing_noise=stabilizing_noise,
+        )
         super().__init__(gpr.length_scales, search_space)
 
-    def _get_posterior_samples(self, x: torch.Tensor) -> torch.Tensor:
-        mean, cov = self._gpr.posterior(x, joint=True)
-        cov.diagonal(dim1=-2, dim2=-1).add_(self._stabilizing_noise)
-        # mean.shape: (q + 1,), cov.shape: (q + 1, q + 1), fixed_samples.shape: (128, q + 1).
-        return mean.unsqueeze(-2) + torch.matmul(
-            self._fixed_samples, torch.linalg.cholesky(cov).transpose(-1, -2)
-        )
+    def _get_log_improvement(self, x: torch.Tensor) -> torch.Tensor:
+        if np.isneginf(self._threshold):
+            return torch.zeros(
+                x.shape[:-1] + (self._fixed_samples.shape[0], self._X_running.shape[0] + 1),
+                dtype=torch.float64,
+            )
 
-    def _get_joint_input(self, x: torch.Tensor) -> torch.Tensor:
-        if x.ndim == 1:
-            return torch.cat([self._X_running, x.unsqueeze(0)], dim=0)
-        if x.ndim == 2:
-            # Expand from (Q, D) to (..., Q, D), and then concat to (..., Q+1, D).
-            running = self._X_running.unsqueeze(0).expand(x.shape[0], -1, -1)
-            return torch.cat([running, x.unsqueeze(-2)], dim=-2)
-        raise ValueError(f"{x.ndim=} must be 1 or 2.")
+        y_post = self._conditional_gpr.sample(x)
+        return y_post.clamp_(min=torch.tensor(_EPS, dtype=torch.float64)).log()
 
     def eval_acqf(self, x: torch.Tensor) -> torch.Tensor:
-        if np.isneginf(self._threshold):
-            return torch.zeros(x.shape[:-1], dtype=torch.float64)
-
         # NOTE(nabenabe): See Eq. (10) of https://arxiv.org/pdf/2310.20708
-        joint_x = self._get_joint_input(x)
-        y_post = self._get_posterior_samples(joint_x)
-        log_improvement = y_post.clamp_(min=torch.tensor(_EPS, dtype=torch.float64)).log()
-        # Take the max operation along the running candidates direction (the Q-axis).
-        # TODO(sawa3030): Consider using fatmax instead of max.
-        max_log_improvement_in_q_batch = torch.amax(log_improvement, dim=-1)
-        # Take the mean over the fixed sample direction (the s-axis).
-        return torch.special.logsumexp(max_log_improvement_in_q_batch, dim=-1) - math.log(
-            max_log_improvement_in_q_batch.shape[-1]
-        )
+        log_improvement = self._get_log_improvement(x)
+        return _aggregate_log_acqf_over_q_batch(log_improvement)
 
 
 class LogPI(BaseAcquisitionFunc):
@@ -313,23 +288,18 @@ class ConstrainedLogEI(BaseAcquisitionFunc):
         threshold: float,
         constraints_gpr_list: list[GPRegressor],
         constraints_threshold_list: list[float],
-        normalized_params_of_running_trials: np.ndarray | None = None,
         stabilizing_noise: float = 1e-12,
     ) -> None:
         assert (
             len(constraints_gpr_list) == len(constraints_threshold_list) and constraints_gpr_list
         )
-        # TODO(sawa3030): Remove constant liar strategy once we implement Monte-Carlo based
-        # approaches for handling running trials in constrained optimization.
-        self._acqf = LogEI(
-            gpr, search_space, threshold, normalized_params_of_running_trials, stabilizing_noise
-        )
+        self._acqf = LogEI(gpr, search_space, threshold, stabilizing_noise)
         self._constraints_acqf_list = [
             LogPI(
                 _gpr,
                 search_space,
                 _threshold,
-                normalized_params_of_running_trials,
+                None,
                 stabilizing_noise,
             )
             for _gpr, _threshold in zip(constraints_gpr_list, constraints_threshold_list)
@@ -342,6 +312,69 @@ class ConstrainedLogEI(BaseAcquisitionFunc):
         return self._acqf.eval_acqf(x) + sum(
             acqf.eval_acqf(x) for acqf in self._constraints_acqf_list
         )
+
+
+class qConstrainedLogEI(BaseAcquisitionFunc):
+    def __init__(
+        self,
+        gpr: GPRegressor,
+        search_space: SearchSpace,
+        threshold: float,
+        n_qmc_samples: int,
+        qmc_seed: int | None,
+        constraints_gpr_list: list[GPRegressor],
+        constraints_threshold_list: list[float],
+        normalized_params_of_running_trials: np.ndarray,
+        stabilizing_noise: float = 1e-12,
+    ) -> None:
+        assert (
+            len(constraints_gpr_list) == len(constraints_threshold_list) and constraints_gpr_list
+        )
+        self._acqf = qLogEI(
+            gpr,
+            search_space,
+            threshold,
+            n_qmc_samples,
+            qmc_seed,
+            normalized_params_of_running_trials,
+            stabilizing_noise,
+        )
+        self._constraints_gpr_list = constraints_gpr_list
+        self._constraints_threshold_list = constraints_threshold_list
+        self._constraint_fixed_samples_list = [
+            _sample_from_normal_sobol(
+                dim=1 + normalized_params_of_running_trials.shape[0],
+                n_samples=n_qmc_samples,
+                seed=None if qmc_seed is None else qmc_seed + i + 1,
+            )
+            for i in range(len(constraints_gpr_list))
+        ]
+        self._constraint_conditional_gpr_list = [
+            ConditionalGPRegressor(
+                gpr=constraint_gpr,
+                X_running=self._acqf._X_running,
+                fixed_samples=fixed_samples,
+                stabilizing_noise=stabilizing_noise,
+            )
+            for constraint_gpr, fixed_samples in zip(
+                constraints_gpr_list, self._constraint_fixed_samples_list
+            )
+        ]
+        super().__init__(gpr.length_scales, search_space)
+
+    def eval_acqf(self, x: torch.Tensor) -> torch.Tensor:
+        log_improvement = self._acqf._get_log_improvement(x)
+        tau = 1e-2
+
+        constraint_log_feasibilities = [
+            torch.nn.functional.logsigmoid((conditional_gpr.sample(x) - threshold) / tau)
+            for threshold, conditional_gpr in zip(
+                self._constraints_threshold_list,
+                self._constraint_conditional_gpr_list,
+            )
+        ]
+        log_feasibility = torch.stack(constraint_log_feasibilities).sum(dim=0)
+        return _aggregate_log_acqf_over_q_batch(log_improvement + log_feasibility)
 
 
 class LogEHVI(BaseAcquisitionFunc):

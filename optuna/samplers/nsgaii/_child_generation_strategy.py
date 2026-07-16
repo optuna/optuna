@@ -6,6 +6,8 @@ from typing import TYPE_CHECKING
 from optuna.samplers.nsgaii._constraints_evaluation import _constrained_dominates
 from optuna.samplers.nsgaii._crossover import perform_crossover
 from optuna.samplers.nsgaii._crossovers._base import BaseCrossover
+from optuna.samplers.nsgaii._mutation import perform_mutation
+from optuna.samplers.nsgaii._mutations._base import BaseMutation
 from optuna.study._multi_objective import _dominates
 
 
@@ -23,6 +25,7 @@ class NSGAIIChildGenerationStrategy:
     def __init__(
         self,
         *,
+        mutation: BaseMutation | None = None,
         mutation_prob: float | None = None,
         crossover: BaseCrossover,
         crossover_prob: float,
@@ -41,6 +44,9 @@ class NSGAIIChildGenerationStrategy:
         if not (0.0 <= swapping_prob <= 1.0):
             raise ValueError("`swapping_prob` must be a float value within the range [0.0, 1.0].")
 
+        if mutation is not None and not isinstance(mutation, BaseMutation):
+            raise ValueError(f"'{mutation}' is not a valid mutation.")
+
         if not isinstance(crossover, BaseCrossover):
             raise ValueError(
                 f"'{crossover}' is not a valid crossover."
@@ -51,6 +57,7 @@ class NSGAIIChildGenerationStrategy:
         self._crossover_prob = crossover_prob
         self._mutation_prob = mutation_prob
         self._swapping_prob = swapping_prob
+        self._mutation = mutation
         self._crossover = crossover
         self._constraints_func = constraints_func
         self._rng = rng
@@ -99,4 +106,14 @@ class NSGAIIChildGenerationStrategy:
         for param_name in child_params.keys():
             if self._rng.rng.rand() >= mutation_prob:
                 params[param_name] = child_params[param_name]
+            elif self._mutation is not None:
+                mutation_value = perform_mutation(
+                    self._mutation,
+                    self._rng.rng,
+                    study,
+                    search_space[param_name],
+                    child_params[param_name],
+                )
+                if mutation_value is not None:
+                    params[param_name] = mutation_value
         return params

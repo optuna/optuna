@@ -24,7 +24,9 @@ from optuna.samplers import NSGAIISampler
 from optuna.samplers._base import _CONSTRAINTS_KEY
 from optuna.samplers._lazy_random_state import LazyRandomState
 from optuna.samplers.nsgaii import BaseCrossover
+from optuna.samplers.nsgaii import BaseMutation
 from optuna.samplers.nsgaii import BLXAlphaCrossover
+from optuna.samplers.nsgaii import PolynomialMutation
 from optuna.samplers.nsgaii import SBXCrossover
 from optuna.samplers.nsgaii import SPXCrossover
 from optuna.samplers.nsgaii import UNDXCrossover
@@ -41,6 +43,7 @@ from optuna.samplers.nsgaii._elite_population_selection_strategy import _rank_po
 from optuna.samplers.nsgaii._elite_population_selection_strategy import (
     NSGAIIElitePopulationSelectionStrategy,
 )
+from optuna.samplers.nsgaii._mutation import perform_mutation
 from optuna.study._multi_objective import _dominates
 from optuna.study._study_direction import StudyDirection
 from optuna.testing.trials import _create_frozen_trial
@@ -156,7 +159,8 @@ def test_constraints_func_none() -> None:
 
     study = optuna.create_study(directions=["minimize"] * n_objectives, sampler=sampler)
     study.optimize(
-        lambda t: [t.suggest_float(f"x{i}", 0, 1) for i in range(n_objectives)], n_trials=n_trials
+        lambda t: [t.suggest_float(f"x{i}", 0, 1) for i in range(n_objectives)],
+        n_trials=n_trials,
     )
 
     assert len(study.trials) == n_trials
@@ -182,7 +186,8 @@ def test_constraints_func(constraint_value: float) -> None:
 
     study = optuna.create_study(directions=["minimize"] * n_objectives, sampler=sampler)
     study.optimize(
-        lambda t: [t.suggest_float(f"x{i}", 0, 1) for i in range(n_objectives)], n_trials=n_trials
+        lambda t: [t.suggest_float(f"x{i}", 0, 1) for i in range(n_objectives)],
+        n_trials=n_trials,
     )
 
     assert len(study.trials) == n_trials
@@ -230,7 +235,9 @@ def test_constraints_func_nan() -> None:
     ],
 )
 def test_constrained_dominates_feasible_vs_feasible(
-    direction1: StudyDirection, direction2: StudyDirection, constraints_list: list[list[float]]
+    direction1: StudyDirection,
+    direction2: StudyDirection,
+    constraints_list: list[list[float]],
 ) -> None:
     directions = [direction1, direction2]
     # Check all pairs of trials consisting of these values, i.e.,
@@ -287,7 +294,9 @@ def test_constrained_dominates_feasible_vs_infeasible(
 
 
 @pytest.mark.parametrize("direction", [StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE])
-def test_constrained_dominates_infeasible_vs_infeasible(direction: StudyDirection) -> None:
+def test_constrained_dominates_infeasible_vs_infeasible(
+    direction: StudyDirection,
+) -> None:
     inf = float("inf")
     directions = [direction]
 
@@ -500,7 +509,15 @@ def test_rank_population_empty(n_dims: int) -> None:
         ([[-float("inf")], [-float("inf")], [-float("inf")]], [0, 0, 0]),
         ([[-float("inf")], [float("inf")]], [float("inf"), float("inf")]),
         (
-            [[-float("inf")], [-float("inf")], [-float("inf")], [0], [1], [2], [float("inf")]],
+            [
+                [-float("inf")],
+                [-float("inf")],
+                [-float("inf")],
+                [0],
+                [1],
+                [2],
+                [float("inf")],
+            ],
             [0, 0, float("inf"), float("inf"), 1, float("inf"), float("inf")],
         ),
     ],
@@ -592,18 +609,20 @@ def test_elite_population_selection_strategy_result(
 
 
 @pytest.mark.parametrize(
-    "mutation_prob,crossover,crossover_prob,swapping_prob",
+    "mutation,mutation_prob,crossover,crossover_prob,swapping_prob",
     [
-        (1.2, UniformCrossover(), 0.9, 0.5),
-        (-0.2, UniformCrossover(), 0.9, 0.5),
-        (None, UniformCrossover(), 1.2, 0.5),
-        (None, UniformCrossover(), -0.2, 0.5),
-        (None, UniformCrossover(), 0.9, 1.2),
-        (None, UniformCrossover(), 0.9, -0.2),
-        (None, 3, 0.9, 0.5),
+        (None, 1.2, UniformCrossover(), 0.9, 0.5),
+        (None, -0.2, UniformCrossover(), 0.9, 0.5),
+        (None, None, UniformCrossover(), 1.2, 0.5),
+        (None, None, UniformCrossover(), -0.2, 0.5),
+        (None, None, UniformCrossover(), 0.9, 1.2),
+        (None, None, UniformCrossover(), 0.9, -0.2),
+        (None, None, 3, 0.9, 0.5),
+        (3, None, 3, 0.9, 0.5),
     ],
 )
 def test_child_generation_strategy_invalid_value(
+    mutation: BaseMutation | int | None,
     mutation_prob: float,
     crossover: BaseCrossover | int,
     crossover_prob: float,
@@ -611,6 +630,7 @@ def test_child_generation_strategy_invalid_value(
 ) -> None:
     with pytest.raises(ValueError):
         NSGAIIChildGenerationStrategy(
+            mutation=mutation,  # type: ignore[arg-type]
             mutation_prob=mutation_prob,
             crossover=crossover,  # type: ignore[arg-type]
             crossover_prob=crossover_prob,
@@ -647,6 +667,142 @@ def test_child_generation_strategy_mutation_prob(
         )
     ]
     assert child_generation_strategy(study, search_space, parent_population) == child_params
+
+
+class _FixedMutation(BaseMutation):
+    def __init__(self, value: float) -> None:
+        self._value = value
+
+    def mutation(
+        self,
+        param: float,
+        rng: np.random.RandomState,
+        study: optuna.study.Study,
+        search_space_bounds: np.ndarray,
+    ) -> float:
+        return self._value
+
+
+def test_child_generation_strategy_mutation() -> None:
+    child_generation_strategy = NSGAIIChildGenerationStrategy(
+        crossover_prob=0.0,
+        crossover=UniformCrossover(),
+        mutation=PolynomialMutation(),
+        mutation_prob=1.0,
+        swapping_prob=0.5,
+        rng=LazyRandomState(seed=1),
+    )
+    study = MagicMock(spec=optuna.study.Study)
+    search_space = {
+        "x": FloatDistribution(0, 10),
+        "y": CategoricalDistribution([-1, 0, 1]),
+    }
+    parent_population = [
+        optuna.trial.create_trial(
+            params={"x": 1.0, "y": 0},
+            distributions=search_space,
+            value=5.0,
+        )
+    ]
+    child_params = child_generation_strategy(study, search_space, parent_population)
+
+    assert set(child_params.keys()) == {"x"}
+    assert 0 <= child_params["x"] <= 10
+
+
+def test_perform_mutation_contains_distribution() -> None:
+    distributions: list[FloatDistribution | IntDistribution] = [
+        FloatDistribution(1e-3, 1e3, log=True),
+        FloatDistribution(0, 1, step=0.2),
+        IntDistribution(1, 100, log=True),
+        IntDistribution(0, 10, step=2),
+    ]
+
+    rng = np.random.RandomState(0)
+    study = MagicMock(spec=optuna.study.Study)
+    for distribution in distributions:
+        value = distribution.low
+        mutated_value = perform_mutation(PolynomialMutation(), rng, study, distribution, value)
+        assert mutated_value is not None
+        assert distribution._contains(distribution.to_internal_repr(mutated_value))
+
+
+def test_perform_mutation_uses_search_space_transform() -> None:
+    log_distribution = FloatDistribution(1e-3, 1e3, log=True)
+    study = MagicMock(spec=optuna.study.Study)
+    assert perform_mutation(
+        _FixedMutation(np.log(10.0)),
+        np.random.RandomState(0),
+        study,
+        log_distribution,
+        1.0,
+    ) == pytest.approx(10.0)
+
+    step_distribution = FloatDistribution(0.0, 1.0, step=0.2)
+    assert perform_mutation(
+        _FixedMutation(0.31), np.random.RandomState(0), study, step_distribution, 0.0
+    ) == pytest.approx(0.4)
+
+    int_distribution = IntDistribution(0, 10, step=2)
+    assert (
+        perform_mutation(_FixedMutation(3.1), np.random.RandomState(0), study, int_distribution, 0)
+        == 4
+    )
+
+    assert (
+        perform_mutation(
+            _FixedMutation(-100.0),
+            np.random.RandomState(0),
+            study,
+            FloatDistribution(0.0, 1.0),
+            0.5,
+        )
+        == 0.0
+    )
+
+
+def test_perform_mutation_categorical_distribution() -> None:
+    assert (
+        perform_mutation(
+            PolynomialMutation(),
+            np.random.RandomState(0),
+            MagicMock(spec=optuna.study.Study),
+            CategoricalDistribution(["a", "b"]),
+            "a",
+        )
+        is None
+    )
+
+
+def test_mutation_invalid_value() -> None:
+    with pytest.raises(ValueError):
+        PolynomialMutation(eta=-1.0)
+
+
+@pytest.mark.parametrize(
+    "param,rand_value,expected_param",
+    [
+        (5.0, 0.0, 0.0),
+        (5.0, 0.25, 5.0 + (np.sqrt(0.625) - 1.0) * 10.0),
+        (5.0, 0.5, 5.0),
+        (5.0, 0.75, 5.0 + (1.0 - np.sqrt(0.625)) * 10.0),
+        (5.0, 1.0, 10.0),
+        (2.0, 0.25, 2.0 + (np.sqrt(0.82) - 1.0) * 10.0),
+        (2.0, 0.75, 2.0 + (1.0 - np.sqrt(0.52)) * 10.0),
+    ],
+)
+def test_mutation_deterministic(param: float, rand_value: float, expected_param: float) -> None:
+    study = optuna.study.create_study()
+    rng = Mock()
+    rng.rand = Mock(return_value=rand_value)
+
+    child_param = PolynomialMutation(eta=1.0).mutation(
+        param=param,
+        rng=rng,
+        study=study,
+        search_space_bounds=np.array([0.0, 10.0]),
+    )
+    np.testing.assert_almost_equal(child_param, expected_param)
 
 
 def test_child_generation_strategy_generation_key() -> None:
@@ -720,7 +876,9 @@ def test_call_after_trial_of_random_sampler() -> None:
     sampler = NSGAIISampler()
     study = optuna.create_study(sampler=sampler)
     with patch.object(
-        sampler._random_sampler, "after_trial", wraps=sampler._random_sampler.after_trial
+        sampler._random_sampler,
+        "after_trial",
+        wraps=sampler._random_sampler.after_trial,
     ) as mock_object:
         study.optimize(lambda _: 1.0, n_trials=1)
         assert mock_object.call_count == 1
@@ -774,7 +932,8 @@ def test_crossover_objectives(n_objectives: int, sampler_class: Callable[[], Bas
 
     study = optuna.create_study(directions=["minimize"] * n_objectives, sampler=sampler_class())
     study.optimize(
-        lambda t: [t.suggest_float(f"x{i}", 0, 1) for i in range(n_objectives)], n_trials=n_trials
+        lambda t: [t.suggest_float(f"x{i}", 0, 1) for i in range(n_objectives)],
+        n_trials=n_trials,
     )
 
     assert len(study.trials) == n_trials
