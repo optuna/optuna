@@ -466,33 +466,24 @@ class qLogEHVI(BaseAcquisitionFunc):
             n_samples=n_qmc_samples,
             seed=qmc_seed,
         ).reshape(n_qmc_samples, n_running + 1, Y_train.shape[-1])
+        self._conditional_gpr_list = [
+            ConditionalGPRegressor(
+                gpr=gpr,
+                X_running=self._X_running,
+                fixed_samples=self._fixed_samples[..., i],
+                stabilizing_noise=stabilizing_noise,
+            )
+            for i, gpr in enumerate(gpr_list)
+        ]
         super().__init__(np.mean([gpr.length_scales for gpr in gpr_list], axis=0), search_space)
 
-    def _get_joint_input(self, x: torch.Tensor) -> torch.Tensor:
-        if x.ndim == 1:
-            return torch.cat([self._X_running, x.unsqueeze(0)], dim=0)
-        if x.ndim == 2:
-            running = self._X_running.unsqueeze(0).expand(x.shape[0], -1, -1)
-            return torch.cat([running, x.unsqueeze(-2)], dim=-2)
-        raise ValueError(f"{x.ndim=} must be 1 or 2.")
-
     def _get_posterior_samples(self, x: torch.Tensor) -> torch.Tensor:
-        Y_post = []
-        for i, gpr in enumerate(self._gpr_list):
-            mean, cov = gpr.posterior(x, joint=True)
-            cov.diagonal(dim1=-2, dim2=-1).add_(self._stabilizing_noise)
-            Y_post.append(
-                mean.unsqueeze(-2)
-                + torch.matmul(
-                    self._fixed_samples[..., i],
-                    torch.linalg.cholesky(cov).transpose(-1, -2),
-                )
-            )
-        return torch.stack(Y_post, dim=-1)
+        return torch.stack(
+            [conditional_gpr.sample(x) for conditional_gpr in self._conditional_gpr_list], dim=-1
+        )
 
     def eval_acqf(self, x: torch.Tensor) -> torch.Tensor:
-        joint_x = self._get_joint_input(x)
-        Y_post = self._get_posterior_samples(joint_x)
+        Y_post = self._get_posterior_samples(x)
         batch_shape = Y_post.shape[:-3]
         n_qmc_samples = Y_post.shape[-3]
         Y_running_post = Y_post[..., :-1, :]
