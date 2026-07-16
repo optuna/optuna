@@ -41,9 +41,6 @@ class QMCSampler(BaseSampler):
         This sampler requires ``scipy``.
         You can install this dependency with ``pip install scipy``.
 
-        You can see `scipy.stats.qmc
-        <https://scipy.github.io/devdocs/reference/stats.qmc.html>`__ for the QMC algorithm detail.
-
     Quasi Monte Carlo (QMC) sequences are designed to have lower discrepancies than
     standard random sequences. They are known to perform better than the standard
     random sequences in hyperparameter optimization.
@@ -54,6 +51,10 @@ class QMCSampler(BaseSampler):
     - `Bergstra, James, and Yoshua Bengio. Random search for hyper-parameter optimization.
       Journal of machine learning research 13.2, 2012.
       <https://jmlr.org/papers/v13/bergstra12a.html>`__
+
+    We use the QMC implementations in Scipy. For the details of the QMC algorithm,
+    see the Scipy API references on `scipy.stats.qmc
+    <https://scipy.github.io/devdocs/reference/stats.qmc.html>`__.
 
     .. note::
         If your search space contains categorical parameters, it samples the categorical
