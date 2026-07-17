@@ -1080,6 +1080,72 @@ def test_invalid_multivariate_and_group() -> None:
         _ = TPESampler(multivariate=False, group=True)
 
 
+@pytest.mark.parametrize(
+    ("multivariate", "multiobjective", "expected_multivariate"),
+    [
+        (None, False, True),
+        (None, True, False),
+        (True, False, True),
+        (True, True, True),
+        (False, False, False),
+        (False, True, False),
+    ],
+)
+def test_multivariate_default_value(
+    multivariate: bool | None, multiobjective: bool, expected_multivariate: bool
+) -> None:
+    sampler = TPESampler(multivariate=multivariate, n_startup_trials=0)
+    if multiobjective:
+        directions = ["minimize", "minimize"]
+        values = [0.0, 0.0]
+    else:
+        directions = ["minimize"]
+        values = [0.0]
+    study = optuna.create_study(sampler=sampler, directions=directions)
+
+    for _ in range(2):
+        trial = study.ask()
+        trial.suggest_float("x", 0, 10)
+        trial.suggest_float("y", 0, 10)
+        study.tell(trial, values)
+
+    search_space = sampler.infer_relative_search_space(study, study.trials[-1])
+    assert (len(search_space) > 0) == expected_multivariate
+
+
+@pytest.mark.parametrize("multiobjective", [True, False])
+def test_group_with_default_multivariate(multiobjective: bool) -> None:
+    with pytest.warns(optuna.exceptions.ExperimentalWarning):
+        sampler = TPESampler(group=True, n_startup_trials=0)
+
+    # ``group=True`` enables the multivariate TPE even for multi-objective optimization.
+    if multiobjective:
+        directions = ["minimize", "minimize"]
+        values = [0.0, 0.0]
+    else:
+        directions = ["minimize"]
+        values = [0.0]
+    study = optuna.create_study(sampler=sampler, directions=directions)
+
+    def run_trials() -> None:
+        for _ in range(2):
+            trial = study.ask()
+            trial.suggest_float("x", 0, 10)
+            trial.suggest_float("y", 0, 10)
+            study.tell(trial, values)
+
+    if multiobjective:
+        # A warning is emitted because ``multivariate=False``, the default value for
+        # multi-objective optimization, is overridden by ``group=True``.
+        with pytest.warns(UserWarning):
+            run_trials()
+    else:
+        run_trials()
+
+    search_space = sampler.infer_relative_search_space(study, study.trials[-1])
+    assert set(search_space.keys()) == {"x", "y"}
+
+
 def test_group_experimental_warning() -> None:
     with pytest.warns(optuna.exceptions.ExperimentalWarning):
         _ = TPESampler(multivariate=True, group=True)

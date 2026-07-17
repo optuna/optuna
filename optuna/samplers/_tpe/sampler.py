@@ -151,10 +151,6 @@ class TPESampler(BaseSampler):
         :class:`~optuna.samplers.TPESampler`, which became much faster in v4.0.0, c.f. `our article
         <https://medium.com/optuna/significant-speed-up-of-multi-objective-tpesampler-in-optuna-v4-0-0-2bacdcd1d99b>`__,
         can handle multi-objective optimization with many trials as well.
-        Please note that :class:`~optuna.samplers.NSGAIISampler` will be used by default for
-        multi-objective optimization, so if users would like to use
-        :class:`~optuna.samplers.TPESampler` for multi-objective optimization, ``sampler`` must be
-        explicitly specified when study is created.
 
     Args:
         n_startup_trials:
@@ -171,6 +167,9 @@ class TPESampler(BaseSampler):
             <http://proceedings.mlr.press/v80/falkner18a.html>`__ and `our article
             <https://medium.com/optuna/multivariate-tpe-makes-optuna-even-more-powerful-63c4bfbaebe2>`__
             for more details.
+            If this is :obj:`None`, the value is automatically determined based on the number of
+            objectives: :obj:`True` for single-objective optimization and :obj:`False` for
+            multi-objective optimization.
         group:
             If this and ``multivariate`` are :obj:`True`, the multivariate TPE with the group
             decomposed search space is used when suggesting parameters.
@@ -360,7 +359,7 @@ class TPESampler(BaseSampler):
         gamma: Callable[[int], int] | None = None,
         weights: Callable[[int], np.ndarray] | None = None,
         seed: int | None = None,
-        multivariate: bool = True,
+        multivariate: bool | None = None,
         group: bool = False,
         warn_independent_sampling: bool | None = None,
         constant_liar: bool = True,
@@ -397,7 +396,9 @@ class TPESampler(BaseSampler):
             consider_magic_clip=consider_magic_clip,
             consider_endpoints=consider_endpoints,
             weights=weights,
-            multivariate=multivariate,
+            # The ``multivariate`` field remains only for historical reasons and is unused,
+            # so any value is fine here.
+            multivariate=True,
             categorical_distance_func=categorical_distance_func or {},
         )
 
@@ -409,7 +410,7 @@ class TPESampler(BaseSampler):
         self._rng = LazyRandomState(seed)
         self._random_sampler = RandomSampler(seed=seed)
 
-        self._multivariate = multivariate
+        self._multivariate: bool | None = multivariate
         self._group = group
         self._group_decomposed_search_space: _GroupDecomposedSearchSpace | None = None
         self._search_space_group: _SearchSpaceGroup | None = None
@@ -420,7 +421,7 @@ class TPESampler(BaseSampler):
         self._parzen_estimator_cls = _ParzenEstimator
 
         if group:
-            if not multivariate:
+            if multivariate is False:
                 raise ValueError(
                     "``group`` option can only be enabled when ``multivariate`` is enabled."
                 )
@@ -434,14 +435,32 @@ class TPESampler(BaseSampler):
         self._rng.rng.seed()
         self._random_sampler.reseed_rng()
 
+    def _is_multivariate(self, study: Study) -> bool:
+        if self._multivariate is not None:
+            return self._multivariate
+        if self._group:
+            # ``group`` can only be enabled with the multivariate TPE.
+            if study._is_multi_objective():
+                optuna_warn(
+                    "``multivariate`` defaults to False for multi-objective optimization, but"
+                    " it is treated as True because ``group`` can only be enabled with the"
+                    " multivariate TPE. Set ``multivariate=True`` explicitly to suppress this"
+                    " warning."
+                )
+            return True
+        # By default, the multivariate TPE is used for single-objective optimization and
+        # the independent TPE is used for multi-objective optimization.
+        return not study._is_multi_objective()
+
     def infer_relative_search_space(
         self, study: Study, trial: FrozenTrial
     ) -> dict[str, BaseDistribution]:
-        if not self._multivariate:
+        multivariate = self._is_multivariate(study)
+        if not multivariate:
             return {}
 
         search_space: dict[str, BaseDistribution] = {}
-        use_trial_cache = self._multivariate or not self._constant_liar
+        use_trial_cache = multivariate or not self._constant_liar
 
         if self._group:
             assert self._group_decomposed_search_space is not None
@@ -525,7 +544,7 @@ class TPESampler(BaseSampler):
                 study, trial, param_name, param_distribution
             )
 
-        if self._warn_independent_sampling and self._multivariate:
+        if self._warn_independent_sampling and self._is_multivariate(study):
             # Avoid independent warning at the first sampling of `param_name`.
             if any(param_name in trial.params for trial in trials):
                 _logger.warning(
@@ -543,8 +562,8 @@ class TPESampler(BaseSampler):
 
         return self._sample(study, trial, {param_name: param_distribution})[param_name]
 
-    def _get_params(self, trial: FrozenTrial) -> dict[str, Any]:
-        if trial.state.is_finished() or not self._multivariate:
+    def _get_params(self, trial: FrozenTrial, study: Study) -> dict[str, Any]:
+        if trial.state.is_finished() or not self._is_multivariate(study):
             # NOTE(not522): If not multivariate, `relative_params` does not exist and
             # `system_attrs` access will be unnecessary, so we skip it.
             return trial.params
@@ -567,11 +586,11 @@ class TPESampler(BaseSampler):
         return params
 
     def _get_internal_repr(
-        self, trials: list[FrozenTrial], search_space: dict[str, BaseDistribution]
+        self, trials: list[FrozenTrial], search_space: dict[str, BaseDistribution], study: Study
     ) -> dict[str, np.ndarray]:
         values: dict[str, list[float]] = {param_name: [] for param_name in search_space}
         for trial in trials:
-            params = self._get_params(trial)
+            params = self._get_params(trial, study)
             if search_space.keys() <= params.keys():
                 for param_name, distribution in search_space.items():
                     param = params[param_name]
@@ -624,10 +643,10 @@ class TPESampler(BaseSampler):
         trials: list[FrozenTrial],
         handle_below: bool,
     ) -> _ParzenEstimator:
-        observations = self._get_internal_repr(trials, search_space)
+        observations = self._get_internal_repr(trials, search_space, study)
         if handle_below and study._is_multi_objective():
             param_mask_below = [
-                search_space.keys() <= self._get_params(trial).keys() for trial in trials
+                search_space.keys() <= self._get_params(trial, study).keys() for trial in trials
             ]
             weights_below = _calculate_weights_below_for_multi_objective(
                 study, trials, self._constraints_func
