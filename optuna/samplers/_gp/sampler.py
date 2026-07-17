@@ -143,8 +143,7 @@ class GPSampler(BaseSampler):
     We use line search instead of rounding the results from the continuous optimization since EI
     typically yields a high value between one grid and its adjacent grid.
 
-    .. note::
-        :title: Linux runtime performance note
+    .. admonition:: Linux runtime performance note
 
         If you feel ``GPSampler`` laggy on Linux, it may be due to thread oversubscription.
         Essentially, OpenBLAS threads in NumPy and OpenMP threads in PyTorch compete,
@@ -158,8 +157,7 @@ class GPSampler(BaseSampler):
         This oversubscription has not been observed on macOS, which uses Apple Accelerate
         with dynamic threading.
 
-    .. important::
-        :title: Complete solution to the runtime performance issue
+    .. admonition:: Complete solution to the runtime performance issue
 
         Set ``OMP_NUM_THREADS=1`` BEFORE running your script (or before torch imports).
 
