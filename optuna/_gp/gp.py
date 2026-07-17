@@ -384,8 +384,7 @@ class ConditionalGPRegressor:
     `a` with `x` and `b` with `r`, then we get the exact formula.
 
     `gpr` is assumed to contain only completed trials; running trials are handled separately
-    through `X_running`.
-    `fixed_samples` must contain standard-normal base samples of shape
+    through `X_running`. `fixed_samples` must contain standard-normal base samples of shape
     (n_qmc_samples, n_running + 1), with the final column reserved for the queried point.
     """
 
@@ -398,7 +397,7 @@ class ConditionalGPRegressor:
     ) -> None:
         self._gpr = gpr
         self._X_running = X_running
-        self._fixed_samples_running = fixed_samples[..., -1]
+        self._fixed_samples_x = fixed_samples[..., -1]
         self._stabilizing_noise = stabilizing_noise
         with torch.no_grad():
             mean_r, cov_rr_post = gpr.posterior(X_running, joint=True)
@@ -431,7 +430,7 @@ class ConditionalGPRegressor:
         cond_cov = (
             cov_xx_post + self._stabilizing_noise - torch.linalg.vecdot(V, cov_fx_fXr_post)
         ).clamp_min_(0.0)
-        samples = cond_mean + cond_cov.sqrt().unsqueeze(-1) * self._fixed_samples_running
+        samples = cond_mean + cond_cov.sqrt().unsqueeze(-1) * self._fixed_samples_x
         if is_single:
             return torch.cat([self._fantasy_samples, samples.squeeze(0).unsqueeze(-1)], dim=-1)
         fantasy = self._fantasy_samples.unsqueeze(0).expand(x_.shape[0], -1, -1)
