@@ -9,7 +9,6 @@ import pytest
 from optuna import create_study
 from optuna.distributions import BaseDistribution
 from optuna.distributions import FloatDistribution
-from optuna.distributions import IntDistribution
 from optuna.testing.storages import STORAGE_MODES
 from optuna.testing.storages import StorageSupplier
 import optuna.trial

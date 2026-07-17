@@ -742,7 +742,6 @@ def test_lazy_trial_system_attrs(storage_mode: str) -> None:
         assert set(system_attrs.items()) == {("int", 0), ("str", "A")}
 
 
-
 def test_before_trial() -> None:
     n_calls = 0
     n_trials = 3

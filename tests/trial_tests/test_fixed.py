@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import pytest
-
 from optuna.trial import FixedTrial
 
 
@@ -12,6 +10,7 @@ def test_params() -> None:
 
     assert trial.suggest_float("x", 0, 10) == 1
     assert trial.params == params
+
 
 def test_number() -> None:
     params = {"x": 1}
