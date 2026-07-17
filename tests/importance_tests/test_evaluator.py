@@ -263,8 +263,6 @@ def test_importance_evaluator_with_target(evaluator_cls: Any) -> None:
     assert param_importance != param_importance_with_target
 
 
-
-
 @parametrize_all
 @pytest.mark.parametrize("params", [[], ["x1"], ["x1", "x3"], ["x1", "x4"]])
 @pytest.mark.parametrize("normalize", [True, False])
