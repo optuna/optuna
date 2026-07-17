@@ -64,6 +64,10 @@ def _standardize_values(values: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.
 class GPSampler(BaseSampler):
     """Sampler using Gaussian process-based Bayesian optimization.
 
+    .. note::
+        This sampler requires ``scipy`` and ``torch`` (the CPU version is sufficient).
+        You can install these dependencies with ``pip install scipy torch``.
+
     This sampler fits a Gaussian process (GP) to the objective function and optimizes
     the acquisition function to suggest the next parameters.
 
@@ -138,10 +142,6 @@ class GPSampler(BaseSampler):
 
     We use line search instead of rounding the results from the continuous optimization since EI
     typically yields a high value between one grid and its adjacent grid.
-
-    .. note::
-        This sampler requires ``scipy`` and ``torch``.
-        You can install these dependencies with ``pip install scipy torch``.
 
     .. note::
         :title: Linux runtime performance note
