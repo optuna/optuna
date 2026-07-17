@@ -144,38 +144,30 @@ class GPSampler(BaseSampler):
         You can install these dependencies with ``pip install scipy torch``.
 
     .. note::
-        **Linux performance note**: If you experience slower-than-expected optimization
-        performance on Linux, it may be due to excessive threading. L-BFGS-B is inherently
-        sequential and performs poorly with multiple threads.
+        :title: Linux runtime performance note
 
-        Two distinct threading issues occur on Linux:
+        If you feel ``GPSampler`` laggy on Linux, it may be due to thread oversubscription.
+        Essentially, OpenBLAS threads in NumPy and OpenMP threads in PyTorch compete,
+        slowing down the throughput. It is a compounding issue rather than two separate
+        ones: the two thread pools eat up each other's threads on the same cores.
 
-        1. **Torch and OpenMP (libgomp)**: Torch uses OpenMP (libgomp) which creates excessive
-           threads by default on Linux, causing severe context-switching overhead. This sampler
-           automatically limits torch intraop threads to 1, providing ~30-50% improvement.
+        This sampler mitigates it automatically by limiting PyTorch intra-op threads to 1,
+        and, on SciPy v1.15+, also limiting ``OPENBLAS_NUM_THREADS`` to 1.
+        (`SciPy Issue #22438 <https://github.com/scipy/scipy/issues/22438>`__)
 
-        2. **SciPy v1.15+ and OpenBLAS**: SciPy v1.15.0 switched to OpenBLAS for L-BFGS-B,
-           which also creates excessive threads by default. This sampler automatically limits
-           OPENBLAS_NUM_THREADS to 1 for SciPy v1.15+, providing additional improvement.
-           (`SciPy Issue #22438 <https://github.com/scipy/scipy/issues/22438>`__)
+        This oversubscription has not been observed on macOS, which uses Apple Accelerate
+        with dynamic threading.
 
-        **Automatic mitigation** (built into this sampler):
-        - Limits torch intraop threads (30-50% speedup) ✓
-        - Limits OPENBLAS_NUM_THREADS (SciPy v1.15+) ✓
+    .. important::
+        :title: Complete solution to the runtime performance issue
 
-        **For complete solution**: Set ``OMP_NUM_THREADS=1`` BEFORE running your script.
-        This limits torch's inter-operation threads, which this sampler cannot control due to
-        torch API limitations (can only be set once, before any parallel work):
+        Set ``OMP_NUM_THREADS=1`` BEFORE running your script (or before torch imports).
 
         .. code-block:: bash
 
             OMP_NUM_THREADS=1 python your_script.py
 
-        **Important**: OMP_NUM_THREADS must be set before torch imports (before Python starts).
         Setting it at runtime has no effect because torch reads this variable during import.
-
-        This issue does not occur on macOS (uses Apple Accelerate with dynamic threading)
-        or Windows (uses different BLAS implementations).
 
     Args:
         seed:
