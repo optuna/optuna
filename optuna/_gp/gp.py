@@ -382,6 +382,11 @@ class ConditionalGPRegressor:
     between y_a and y_b. Notice that `cov` here is for posterior not prior. `cov` implies prior
     covariance elsewhere. We use this formulation to compute the conditional posterior. Replace
     `a` with `x` and `b` with `r`, then we get the exact formula.
+
+    `gpr` is assumed to contain only completed trials; running trials are handled separately
+    through `X_running`.
+    `fixed_samples` must contain standard-normal base samples of shape
+    (n_qmc_samples, n_running + 1), with the final column reserved for the queried point.
     """
 
     def __init__(
