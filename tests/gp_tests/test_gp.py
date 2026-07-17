@@ -4,6 +4,8 @@ import numpy as np
 import pytest
 import torch
 
+from optuna._gp.acqf import _sample_from_normal_sobol
+from optuna._gp.gp import ConditionalGPRegressor
 from optuna._gp.gp import GPRegressor
 from optuna._gp.gp import warn_and_convert_inf
 import optuna._gp.prior as prior
@@ -193,3 +195,44 @@ def test_append_running_data(n_running: int) -> None:
     reference_mean, reference_var = reference_gpr.posterior(x)
     assert torch.allclose(mean, reference_mean)
     assert torch.allclose(var, reference_var)
+
+
+@pytest.mark.parametrize("n_running", [1, 4])
+@pytest.mark.parametrize("batch_size", [1, 16])
+def test_conditional_gpr_matches_joint(n_running: int, batch_size: int) -> None:
+    n_trials = 10
+    dim = 3
+    n_qmc_samples = 64
+    stabilizing_noise = 1e-12
+    X_train = torch.rand(n_trials, dim, dtype=torch.float64)
+    y_train = torch.sin(X_train.sum(-1))
+    gpr = GPRegressor(
+        is_categorical=torch.zeros(dim, dtype=torch.bool),
+        X_train=X_train,
+        y_train=y_train,
+        inverse_squared_lengthscales=torch.ones(dim, dtype=torch.float64),
+        kernel_scale=torch.tensor(1.0, dtype=torch.float64),
+        noise_var=torch.tensor(0.01, dtype=torch.float64),
+    )
+    gpr._cache_matrix()
+
+    X_running = torch.rand(n_running, dim, dtype=torch.float64)
+    if batch_size == 1:
+        x_new = torch.rand(dim, dtype=torch.float64)
+        joint_x = torch.cat([X_running, x_new.unsqueeze(0)], dim=0)
+    else:
+        x_new = torch.rand((batch_size, dim), dtype=torch.float64)
+        joint_x = torch.cat(
+            [X_running.unsqueeze(0).expand(batch_size, -1, -1), x_new.unsqueeze(1)], dim=1
+        )
+    fixed_samples = _sample_from_normal_sobol(dim=n_running + 1, n_samples=n_qmc_samples, seed=42)
+    cond_gpr = ConditionalGPRegressor(gpr, X_running, fixed_samples, stabilizing_noise)
+    samples_cond = cond_gpr.sample(x_new)
+
+    mu, cov = gpr.posterior(joint_x, joint=True)
+    cov.diagonal(dim1=-2, dim2=-1).add_(stabilizing_noise)
+    samples_joint = mu.unsqueeze(-2) + torch.matmul(
+        fixed_samples, torch.linalg.cholesky(cov).transpose(-1, -2)
+    )
+
+    torch.testing.assert_close(samples_joint, samples_cond)

@@ -50,13 +50,13 @@ _SYSTEM_ATTR_MAX_LENGTH = 2045
 class CmaEsSampler(BaseSampler):
     """A sampler using `cmaes <https://github.com/CyberAgentAILab/cmaes>`__ as the backend.
 
+    .. note::
+        This sampler requires ``cmaes``.
+        You can install this dependency with ``pip install cmaes``.
+
     Example:
 
         Optimize a simple quadratic function by using :class:`~optuna.samplers.CmaEsSampler`.
-
-        .. code-block:: console
-
-           $ pip install cmaes
 
         .. testcode::
 

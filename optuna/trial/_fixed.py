@@ -11,6 +11,7 @@ from optuna._warnings import optuna_warn
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
+from optuna.study._constrained_optimization import _CONSTRAINTS_KEY
 from optuna.trial._base import BaseTrial
 
 
@@ -182,3 +183,18 @@ class FixedTrial(BaseTrial):
     @property
     def number(self) -> int:
         return self._number
+
+    @property
+    def constraints(self) -> dict[str, float]:
+        """Returns constraint values.
+
+        The trial is considered feasible when all constraint values are zero or less.
+
+        Returns:
+            constraint values of trial.
+        """
+
+        con = self.system_attrs.get(_CONSTRAINTS_KEY)
+        if con is None:
+            return {}
+        return {str(i): c for i, c in enumerate(con)}

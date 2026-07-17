@@ -15,6 +15,7 @@ from optuna._imports import _LazyImport
 from optuna._transform import _SearchSpaceTransform
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
+from optuna.distributions import FloatDistribution
 from optuna.samplers import BaseSampler
 from optuna.samplers._base import _INDEPENDENT_SAMPLING_WARNING_TEMPLATE
 from optuna.trial import TrialState
@@ -37,6 +38,10 @@ _threading_lock = threading.Lock()
 class QMCSampler(BaseSampler):
     """A Quasi Monte Carlo Sampler that generates low-discrepancy sequences.
 
+    .. note::
+        This sampler requires ``scipy``.
+        You can install this dependency with ``pip install scipy``.
+
     Quasi Monte Carlo (QMC) sequences are designed to have lower discrepancies than
     standard random sequences. They are known to perform better than the standard
     random sequences in hyperparameter optimization.
@@ -51,10 +56,6 @@ class QMCSampler(BaseSampler):
     We use the QMC implementations in Scipy. For the details of the QMC algorithm,
     see the Scipy API references on `scipy.stats.qmc
     <https://scipy.github.io/devdocs/reference/stats.qmc.html>`__.
-
-    .. note::
-        If your search space contains categorical parameters, it samples the categorical
-        parameters by its `independent_sampler` without using QMC algorithm.
 
     .. note::
         The search space of the sampler is determined by either previous trials in the study or
@@ -198,7 +199,7 @@ class QMCSampler(BaseSampler):
             union_search_space: dict[str, BaseDistribution] = {}
             intersection_keys: set[str] | None = None
             for t in pending_trials:
-                space = self._infer_initial_search_space(t)
+                space = dict(t.distributions)
                 union_search_space.update(space)
                 if intersection_keys is None:
                     intersection_keys = set(space.keys())
@@ -217,16 +218,7 @@ class QMCSampler(BaseSampler):
         # If an initial trial was already made,
         # construct search_space of this sampler from the initial trial.
         first_trial = min(past_trials, key=lambda t: t.number)
-        return self._infer_initial_search_space(first_trial)
-
-    def _infer_initial_search_space(self, trial: FrozenTrial) -> dict[str, BaseDistribution]:
-        search_space: dict[str, BaseDistribution] = {}
-        for param_name, distribution in trial.distributions.items():
-            if isinstance(distribution, CategoricalDistribution):
-                continue
-            search_space[param_name] = distribution
-
-        return search_space
+        return dict(first_trial.distributions)
 
     @staticmethod
     def _log_asynchronous_seeding() -> None:
@@ -238,20 +230,15 @@ class QMCSampler(BaseSampler):
         )
 
     def _log_independent_sampling(self, trial: FrozenTrial, param_name: str) -> None:
-        # NOTE(nabenabe): We can extend `QMCSampler` to dynamic search space and categorical dist
-        # as well. For dynamic search space, we need to use the same mechanism as `group` by TPE.
-        # For categorical, we simply need to sample from [-1/2, C+1/2] and then round the number
-        # to get a categorical index.
+        # NOTE(nabenabe): We can extend `QMCSampler` to dynamic search space as well by using the
+        # same mechanism as `group` by TPE.
         _logger.warning(
             _INDEPENDENT_SAMPLING_WARNING_TEMPLATE.format(
                 param_name=param_name,
                 trial_number=trial.number,
                 independent_sampler_name=self._independent_sampler.__class__.__name__,
                 sampler_name=self.__class__.__name__,
-                fallback_reason=(
-                    "dynamic search space and `CategoricalDistribution` are not supported "
-                    "by `QMCSampler`"
-                ),
+                fallback_reason="dynamic search space is not supported by `QMCSampler`",
             )
         )
 
@@ -276,10 +263,29 @@ class QMCSampler(BaseSampler):
         if search_space == {}:
             return {}
 
-        sample = self._sample_qmc(study, search_space)
-        trans = _SearchSpaceTransform(search_space)
-        sample = trans.bounds[:, 0] + sample * (trans.bounds[:, 1] - trans.bounds[:, 0])
-        return trans.untransform(sample[0, :])
+        categorical_space = {
+            name: dist
+            for name, dist in search_space.items()
+            if isinstance(dist, CategoricalDistribution)
+        }
+        # Map each categorical parameter to FloatDistribution(0, C) so it takes one QMC
+        # coordinate in [0, C). Flooring that with int() gives a uniform choice index in
+        # [0, C - 1]; it never reaches C because the engines emit values in [0, 1). Going through
+        # IntDistribution instead would round to nearest and reintroduce a bin-boundary bias.
+        pseudo_categorical_space = {
+            name: FloatDistribution(0, len(dist.choices))
+            for name, dist in categorical_space.items()
+        }
+        trans = _SearchSpaceTransform(search_space | pseudo_categorical_space, transform_0_1=True)
+        sample = trans.untransform(self._sample_qmc(study, search_space)[0])
+        return {
+            name: (
+                dist.to_external_repr(int(value))
+                if (dist := categorical_space.get(name)) is not None
+                else value
+            )
+            for name, value in sample.items()
+        }
 
     def before_trial(self, study: Study, trial: FrozenTrial) -> None:
         self._independent_sampler.before_trial(study, trial)

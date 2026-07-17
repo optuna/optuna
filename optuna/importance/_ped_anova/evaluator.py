@@ -1,18 +1,16 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import cast
+import math
 from typing import TYPE_CHECKING
 
 import numpy as np
 
-from optuna._deprecated import _DEPRECATION_WARNING_TEMPLATE
-from optuna._experimental import experimental_class
 from optuna._warnings import optuna_warn
-from optuna.importance._base import _check_evaluate_args
 from optuna.importance._base import _sort_dict_by_importance
 from optuna.importance._base import BaseImportanceEvaluator
 from optuna.importance._ped_anova.scott_parzen_estimator import build_parzen_estimator_on_grid
+from optuna.samplers._tpe.sampler import _split_complete_trials_multi_objective
 from optuna.study import StudyDirection
 from optuna.trial import TrialState
 
@@ -30,39 +28,26 @@ class _QuantileFilter:
         self,
         quantile: float,
         is_lower_better: bool,
-        min_n_top_trials: int,
         target: Callable[[FrozenTrial], float] | None,
     ) -> None:
         assert 0 < quantile <= 1, "quantile must be in (0, 1]."
-        assert min_n_top_trials > 0, "min_n_top_trials must be positive."
-
         self._quantile = quantile
         self._is_lower_better = is_lower_better
-        self._min_n_top_trials = min_n_top_trials
         self._target = target
 
     def filter(self, trials: list[FrozenTrial]) -> list[FrozenTrial]:
-        target, min_n_top_trials = self._target, self._min_n_top_trials
         sign = 1.0 if self._is_lower_better else -1.0
-        loss_values = sign * np.asarray([t.value if target is None else target(t) for t in trials])
-        err_msg = "len(trials) must be larger than or equal to min_n_top_trials"
-        assert min_n_top_trials <= loss_values.size, err_msg
-
-        def _quantile(v: np.ndarray, q: float) -> float:
-            cutoff_index = int(np.ceil(q * loss_values.size)) - 1
-            return float(np.partition(loss_values, cutoff_index)[cutoff_index])
-
-        cutoff_val = max(
-            np.partition(loss_values, min_n_top_trials - 1)[min_n_top_trials - 1],
-            # TODO(nabenabe0928): After dropping Python3.10, replace below with
-            # np.quantile(loss_values, self._quantile, method="inverted_cdf").
-            _quantile(loss_values, self._quantile),
+        loss_values = sign * np.asarray(
+            [t.value if self._target is None else self._target(t) for t in trials]
         )
+        # TODO(nabenabe0928): After dropping Python3.10, replace below with
+        # np.quantile(loss_values, self._quantile, method="inverted_cdf").
+        cutoff_index = int(math.ceil(self._quantile * loss_values.size)) - 1
+        cutoff_val = float(np.partition(loss_values, cutoff_index)[cutoff_index])
         should_keep_trials = loss_values <= cutoff_val
         return [t for t, should_keep in zip(trials, should_keep_trials) if should_keep]
 
 
-@experimental_class("3.6.0")
 class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
     """PED-ANOVA importance evaluator.
 
@@ -89,6 +74,35 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
 
     .. note::
 
+        **Behavior on multi-objective studies.**
+        If ``target`` is :obj:`None`, top-quantile trials are selected in the same
+        manner as multi-objective :class:`~optuna.samplers.TPESampler`: trials are
+        ranked by non-domination rank, with the hypervolume subset selection problem
+        (HSSP) used to break ties within a rank. The resulting importance can be
+        interpreted as how important each hyperparameter is to reach the Pareto
+        front without preference for any particular objective.
+
+        To compute the importance against a *single* objective instead, pass a
+        ``target`` callable explicitly. Note that :class:`PedAnovaImportanceEvaluator`
+        assumes **minimization** (i.e., lower ``target`` values are better); when an
+        objective is being maximized, negate it inside ``target``::
+
+            # Objective 0 is being minimized.
+            importance = get_param_importances(
+                study,
+                evaluator=PedAnovaImportanceEvaluator(),
+                target=lambda t: t.values[0],
+            )
+
+            # Objective 0 is being maximized—negate so that "lower is better".
+            importance = get_param_importances(
+                study,
+                evaluator=PedAnovaImportanceEvaluator(),
+                target=lambda t: -t.values[0],
+            )
+
+    .. note::
+
         The performance of PED-ANOVA depends on how many trials to consider above
         ``target_quantile``. To stabilize the analysis, it is preferable to include at least
         5 trials above ``target_quantile``.
@@ -112,18 +126,6 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
             ``region_quantile=0.5`` means that we compute the importance in the region where
             trials achieve top-50% performance. If ``region_quantile=1.0``, the importance is
             computed in the whole search space.
-
-        baseline_quantile:
-            Compute the importance of achieving top-``baseline_quantile`` quantile objective value.
-            For example, ``baseline_quantile=0.1`` means that the importances give the information
-            of which parameters were important to achieve the top-10% performance during
-            optimization.
-
-            .. warning::
-                Deprecated in v4.7.0. This feature will be removed in the future. The removal of
-                this feature is currently scheduled for v5.0.0, but this schedule is subject to
-                change. ``baseline_quantile`` is currently ignored. Use ``target_quantile``
-                instead. See https://github.com/optuna/optuna/releases/tag/v4.7.0.
 
         evaluate_on_local:
             Whether we measure the importance in the local or global space.
@@ -159,19 +161,11 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
         *,
         target_quantile: float = 0.1,  # gamma' in the original paper
         region_quantile: float = 1.0,  # gamma in the original paper
-        baseline_quantile: float | None = None,
         evaluate_on_local: bool = True,
     ) -> None:
         assert 0.0 < target_quantile < region_quantile <= 1.0, (
             "condition 0.0 < `target_quantile` < `region_quantile` <= 1.0 must be satisfied"
         )
-        if baseline_quantile is not None:
-            msg = _DEPRECATION_WARNING_TEMPLATE.format(
-                name="`baseline_quantile`", d_ver="4.7.0", r_ver="5.0.0"
-            )
-            optuna_warn(
-                f"{msg} `baseline_quantile` is currently ignored. Use `target_quantile` instead.",
-            )
         if region_quantile != 1.0 and not evaluate_on_local:
             optuna_warn("If `evaluate_on_local` is False, `region_quantile` has no effect.")
 
@@ -184,8 +178,6 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
         self._n_steps: int = 50
         # Control the regularization effect by prior.
         self._prior_weight = 1.0
-        # How many `trials` must be included in `top_trials`.
-        self._min_n_top_trials = 2
         # How many `trials` must be included in each regime.
         self._min_n_trials_in_regime = 2
 
@@ -198,6 +190,15 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
     ) -> list[FrozenTrial]:
         if quantile == 1.0:
             return trials
+        if study._is_multi_objective() and target is None:
+            n_below = math.ceil(quantile * len(trials))
+            # NOTE(kAIto47802): Since HSSP is implemented greedily, target trials could be
+            # obtained by taking the top trials from region trials without solving HSSP again,
+            # which would improve performance by a constant factor. However,
+            # _split_complete_trials_multi_objective does not return trials in the selected
+            # order, so this optimization would require a larger refactoring.
+            top_trials, _ = _split_complete_trials_multi_objective(trials, study, n_below)
+            return top_trials
         is_lower_better = study.directions[0] == StudyDirection.MINIMIZE
         if target is not None:
             optuna_warn(
@@ -207,9 +208,7 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
             )
             is_lower_better = True
 
-        top_trials = _QuantileFilter(
-            quantile, is_lower_better, self._min_n_top_trials, target
-        ).filter(trials)
+        top_trials = _QuantileFilter(quantile, is_lower_better, target).filter(trials)
 
         return top_trials
 
@@ -245,25 +244,52 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
         *,
         target: Callable[[FrozenTrial], float] | None = None,
     ) -> dict[str, float]:
-        if target is None and study._is_multi_objective():
-            raise ValueError(
-                "If the `study` is being used for multi-objective optimization, "
-                "please specify the `target`. For example, use "
-                "`target=lambda t: t.values[0]` for the first objective value. "
-                f"{self.__class__.__name__} computes the importances of params to achieve "
-                "low `target` values. If this is not what you want, "
-                "please modify target, e.g., by multiplying the output by -1."
+        """Evaluate parameter importances based on completed trials in the given study.
+
+        .. note::
+
+            This method is not meant to be called by library users.
+
+        .. seealso::
+
+            Please refer to :func:`~optuna.importance.get_param_importances` for how a concrete
+            evaluator should implement this method.
+
+        Args:
+            study:
+                An optimized study.
+            params:
+                A list of names of parameters to assess.
+                If :obj:`None`, all parameters that appear in completed trials, including
+                conditional parameters, are assessed.
+            target:
+                A function to specify the value to evaluate importances.
+                If it is :obj:`None` and ``study`` is being used for single-objective optimization,
+                the objective values are used. If it is :obj:`None` and ``study`` is being used for
+                multi-objective optimization, the importance of reaching the Pareto front is
+                evaluated by selecting top-quantile trials without preference for any particular
+                objective, using non-domination rank and HSSP tie-breaking. To evaluate importance
+                against a single objective or another trial attribute, specify ``target``
+                explicitly, for example ``target=lambda t: t.values[0]`` or
+                ``target=lambda t: t.duration.total_seconds()``.
+
+                .. note::
+                    :class:`PedAnovaImportanceEvaluator` assumes lower ``target`` values are
+                    better.
+
+        Returns:
+            A :obj:`dict` where the keys are parameter names and the values are assessed
+            importances.
+
+        """
+        params = _resolve_params(study, params=params)
+
+        trials = _get_filtered_trials(study, target)
+        if len(trials) <= 1:
+            optuna_warn(
+                "The number of trials is too small to compute importances. "
+                "Parameter importances will be equal."
             )
-        dists = _get_distributions_list(study, params=params)
-        if params is None:
-            params = list(dict.fromkeys(k for d in dists for k in d))
-
-        assert params is not None
-
-        trials = _get_filtered_trials(study, target=target)
-        # The following should be tested at _get_filtered_trials.
-        assert target is not None or max([len(t.values) for t in trials], default=1) == 1
-        if len(trials) <= self._min_n_top_trials:
             return {k: 0.0 for k in params}
 
         target_trials = self._get_top_quantile_trials(study, trials, self._target_quantile, target)
@@ -275,11 +301,17 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
             )
         if len(target_trials) == 0:
             return {k: 0.0 for k in params}
+        target_trial_ids = set(t._trial_id for t in target_trials)
+        region_trial_ids = set(t._trial_id for t in region_trials)
+        # Since HSSP is approximately implemented using a greedy algorithm, target trials
+        # are guaranteed to be included in region trials, even when target is None for
+        # multi-objective studies.
+        assert target_trial_ids.issubset(region_trial_ids)
+
         # Theorem 4.2 and Algorithm 1 in the original paper:
         # https://arxiv.org/abs/2601.20800
         quantile = len(target_trials) / len(region_trials)  # gamma' / gamma
         param_importances = {k: 0.0 for k in params}
-        target_trial_ids = set(t._trial_id for t in target_trials)
         for param_name in params:
             regime_trials = _partition_by_regime(
                 param_name, region_trials, self._min_n_trials_in_regime
@@ -335,17 +367,32 @@ def _get_filtered_trials(
     return [
         trial
         for trial in trials
-        if np.isfinite(target(trial) if target is not None else cast(float, trial.value))  # TC006
+        if (
+            math.isfinite(target(trial))
+            if target is not None
+            else all(math.isfinite(v) for v in trial.values)
+        )
     ]
 
 
-def _get_distributions_list(
-    study: Study, params: list[str] | None
-) -> list[dict[str, BaseDistribution]]:
+def _resolve_params(study: Study, params: list[str] | None) -> list[str]:
+    if params is not None:
+        if not isinstance(params, (list, tuple)):
+            raise TypeError(
+                f"Parameters must be specified as a list. Actual parameters: {params}."
+            )
+        if any(not isinstance(p, str) for p in params):
+            raise TypeError(
+                f"Parameters must be specified by their names with strings. "
+                f"Actual parameters: {params}."
+            )
     trials = study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,))
-    _check_evaluate_args(trials, params)
-    params_set = set(params) if params is not None else None
-    return [
-        {k: v for k, v in t.distributions.items() if params_set is None or k in params_set}
-        for t in trials
-    ]
+    all_params = list(set(k for t in trials for k in t.distributions))
+    if params is not None:
+        if missing := [p for p in params if p not in all_params]:
+            raise ValueError(
+                "Study must contain at least one completed trial for each specified parameter. "
+                f"Missing parameters: {missing}."
+            )
+        return list(params)
+    return all_params

@@ -368,6 +368,80 @@ class GPRegressor:
         return self
 
 
+class ConditionalGPRegressor:
+    """Gaussian process regressor conditioned on a fixed set of samples.
+
+    We first pre-sample fantasy values at X_running from p(f_Xr | complete trials) and draw
+    conditional samples at new points from p(f_x | f_Xr, complete trials).
+
+    Considering p(y_a | y_b) = p(y_x | y_Xr), the posterior of this distribution has:
+        mean: mu_a + cov_ab @ inv(cov_bb) @ (y_b - mu_b),
+        cov: cov_aa - cov_ab @ inv(cov_bb) @ cov_ba,
+    where mu_a and mu_b are the posterior means of y_a and y_b, cov_aa and cov_bb are the
+    posterior covariance of y_a and y_b, cov_ab (= cov_ba.T) is the cross-covariance matrix
+    between y_a and y_b. Notice that `cov` here is for posterior not prior. `cov` implies prior
+    covariance elsewhere. We use this formulation to compute the conditional posterior. Replace
+    `a` with `x` and `b` with `r`, then we get the exact formula.
+
+    `gpr` is assumed to contain only completed trials; running trials are handled separately
+    through `X_running`. `fixed_samples` must contain standard-normal base samples of shape
+    (n_qmc_samples, n_running + 1), with the final column reserved for the queried point.
+    """
+
+    def __init__(
+        self,
+        gpr: GPRegressor,
+        X_running: torch.Tensor,
+        fixed_samples: torch.Tensor,
+        stabilizing_noise: float,
+    ) -> None:
+        self._gpr = gpr
+        self._X_running = X_running
+        self._fixed_samples_x = fixed_samples[..., -1]
+        self._stabilizing_noise = stabilizing_noise
+        with torch.no_grad():
+            mean_r, cov_rr_post = gpr.posterior(X_running, joint=True)
+            cov_rr_post.diagonal(dim1=-2, dim2=-1).add_(stabilizing_noise)
+            self._cov_rr_post_chol = torch.linalg.cholesky(cov_rr_post)
+            # fantasy_samples.shape = (n_qmc_samples, n_runnings)
+            self._fantasy_samples = mean_r + fixed_samples[:, :-1].matmul(
+                self._cov_rr_post_chol.transpose(-2, -1)
+            )
+            delta_r = (self._fantasy_samples - mean_r).transpose(-2, -1)
+            self._cov_rr_post_inv_delta_r = _solve_cholesky(self._cov_rr_post_chol, delta_r)
+            cov_fXr_fX = gpr.kernel(X_running)
+            # cov_fx_fXr_post = cov_fx_fXr - cov_fx_fX @ inv(cov_Y_Y) @ cov_fX_fXr
+            # cov_fx_fX @ inv(cov_Y_Y) @ cov_fX_fXr = cov_fx_fX @ V_r
+            cov_Y_Y_chol = gpr._cov_Y_Y_chol
+            assert isinstance(cov_Y_Y_chol, torch.Tensor), "MyPy Redefinition"
+            self._V_r = _solve_cholesky(cov_Y_Y_chol, cov_fXr_fX, left=False).transpose(-2, -1)
+
+    def sample(self, x: torch.Tensor) -> torch.Tensor:
+        """Return conditional samples for each query point.
+
+        For batched ``x``, each batch element is treated as a separate query sharing the same
+        running fantasies, rather than as part of a joint posterior over the query points.
+        """
+        x_ = x.unsqueeze(0) if (is_single := x.ndim == 1) else x
+        mu_x, cov_xx_post = self._gpr.posterior(x_)
+        cov_fx_fXr = self._gpr.kernel(x_, self._X_running)
+        cov_fx_fX = self._gpr.kernel(x_)
+        cov_fx_fXr_post = cov_fx_fXr - cov_fx_fX.matmul(self._V_r)
+
+        # mean: mu_x + cov_xr @ inv(cov_rr) @ (y_r - mu_r)
+        cond_mean = mu_x.unsqueeze(-1) + cov_fx_fXr_post.matmul(self._cov_rr_post_inv_delta_r)
+        # cov: cov_xx - cov_xr @ inv(cov_rr) @ cov_rx
+        V = _solve_cholesky(self._cov_rr_post_chol, cov_fx_fXr_post, left=False)
+        cond_cov = (
+            cov_xx_post + self._stabilizing_noise - torch.linalg.vecdot(V, cov_fx_fXr_post)
+        ).clamp_min_(0.0)
+        samples = cond_mean + cond_cov.sqrt().unsqueeze(-1) * self._fixed_samples_x
+        if is_single:
+            return torch.cat([self._fantasy_samples, samples.squeeze(0).unsqueeze(-1)], dim=-1)
+        fantasy = self._fantasy_samples.unsqueeze(0).expand(*x_.shape[:-1], -1, -1)
+        return torch.cat([fantasy, samples.unsqueeze(-1)], dim=-1)
+
+
 def fit_kernel_params(
     X: np.ndarray,
     Y: np.ndarray,

@@ -28,7 +28,6 @@ from optuna._warnings import optuna_warn
 from optuna.distributions import _convert_old_distribution_to_new_distribution
 from optuna.distributions import BaseDistribution
 from optuna.storages._heartbeat import is_heartbeat_enabled
-from optuna.study._constrained_optimization import _CONSTRAINTS_KEY
 from optuna.study._constrained_optimization import _get_feasible_trials
 from optuna.study._multi_objective import _get_pareto_front_trials
 from optuna.study._optimize import _optimize
@@ -195,7 +194,7 @@ class Study:
 
         # Check whether the study is constrained optimization.
         trials = self.get_trials(deepcopy=False)
-        is_constrained = any((_CONSTRAINTS_KEY in trial.system_attrs) for trial in trials)
+        is_constrained = any(len(trial.constraints) > 0 for trial in trials)
 
         return _get_pareto_front_trials(self, consider_constraint=is_constrained)
 
@@ -335,8 +334,7 @@ class Study:
         # If the trial with the best value is infeasible, select the best trial from all feasible
         # trials. Note that the behavior is undefined when constrained optimization without the
         # violation value in the best-valued trial.
-        constraints = best_trial.system_attrs.get(_CONSTRAINTS_KEY)
-        if constraints is not None and any([x > 0.0 for x in constraints]):
+        if any(x > 0.0 for x in best_trial.constraints.values()):
             complete_trials = self.get_trials(deepcopy=False, states=[TrialState.COMPLETE])
             feasible_trials = _get_feasible_trials(complete_trials)
             if len(feasible_trials) == 0:
@@ -1313,11 +1311,16 @@ def create_study(
             assert study_name is not None
 
             _logger.info(
-                f"Using an existing study with name '{study_name}' instead of creating a new one."
+                f"Using an existing study with `{study_name=}` instead of creating a new one."
             )
             study_id = storage.get_study_id_from_name(study_name)
         else:
-            raise
+            raise exceptions.DuplicatedStudyError(
+                f"Another study with {study_name=} already exists. Please specify a name not in "
+                f"the storage, or reuse the existing one by setting `load_if_exists` (for "
+                "Python API) or `--skip-if-exists` flag (for CLI).\n"
+                "Use `optuna.study.get_all_study_names(storage)` to list all the used names."
+            )
 
     if sampler is None and len(direction_objects) > 1:
         sampler = samplers.NSGAIISampler()
@@ -1394,12 +1397,12 @@ def load_study(
         study_names = get_all_study_names(storage)
         if len(study_names) != 1:
             raise ValueError(
-                f"Could not determine the study name since the storage {storage} does not "
-                "contain exactly 1 study. Specify `study_name`."
+                f"Could not determine the study name since the {storage=} does not contain exactly"
+                f" 1 study. Specify `study_name` from {study_names=}."
             )
         study_name = study_names[0]
         _logger.info(
-            f"Study name was omitted but trying to load '{study_name}' because that was the only "
+            f"Study name was omitted but trying to load `{study_name=}` because that was the only "
             "study found in the storage."
         )
 
