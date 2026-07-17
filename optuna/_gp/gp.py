@@ -417,6 +417,11 @@ class ConditionalGPRegressor:
             self._V_r = _solve_cholesky(cov_Y_Y_chol, cov_fXr_fX, left=False).transpose(-2, -1)
 
     def sample(self, x: torch.Tensor) -> torch.Tensor:
+        """Return conditional samples for each query point.
+
+        For batched ``x``, each batch element is treated as a separate query sharing the same
+        running fantasies, rather than as part of a joint posterior over the query points.
+        """
         x_ = x.unsqueeze(0) if (is_single := x.ndim == 1) else x
         mu_x, cov_xx_post = self._gpr.posterior(x_)
         cov_fx_fXr = self._gpr.kernel(x_, self._X_running)
