@@ -263,10 +263,9 @@ def test_importance_evaluator_with_target(evaluator_cls: Any) -> None:
     assert param_importance != param_importance_with_target
 
 
-# Tests for conditional parameter handling
 
 
-@parametrize_conditional_supported
+@parametrize_all
 @pytest.mark.parametrize("params", [[], ["x1"], ["x1", "x3"], ["x1", "x4"]])
 @pytest.mark.parametrize("normalize", [True, False])
 def test_get_param_importances_with_params(
@@ -307,6 +306,7 @@ def test_get_param_importances_with_params(
     if normalize:
         assert len(param_importance) == 0 or np.isclose(sum(param_importance.values()), 1.0)
 
+# Tests for conditional parameter handling
 
 @parametrize_conditional_supported
 @pytest.mark.parametrize(
