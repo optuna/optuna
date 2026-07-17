@@ -55,6 +55,10 @@ def default_gamma(x: int) -> int:
     return min(math.ceil(0.1 * x), 25)
 
 
+def default_gamma_multiobjective(x: int) -> int:
+    return math.ceil(0.1 * x)
+
+
 def hyperopt_default_gamma(x: int) -> int:
     return min(math.ceil(0.25 * x**0.5), 25)
 
@@ -380,7 +384,7 @@ class TPESampler(BaseSampler):
         consider_endpoints = _warn_if_deprecated_argument(
             "`consider_endpoints`", consider_endpoints, False, "4.9.0", "6.0.0"
         )
-        gamma = _warn_if_deprecated_argument("`gamma`", gamma, default_gamma, "4.9.0", "6.0.0")
+        gamma = _warn_if_deprecated_argument("`gamma`", gamma, None, "4.9.0", "6.0.0")
         weights = _warn_if_deprecated_argument(
             "`weights`", weights, default_weights, "4.9.0", "6.0.0"
         )
@@ -612,7 +616,13 @@ class TPESampler(BaseSampler):
             trials = [t for t in trials if trial.number != t.number]
 
         # We divide data into below and above.
+        if self._gamma is None:
+            if len(study.directions) <= 1:
+                self._gamma = default_gamma
+            else:
+                self._gamma = default_gamma_multiobjective
         n = sum(trial.state != TrialState.RUNNING for trial in trials)  # Ignore running trials.
+
         below_trials, above_trials = _split_trials(
             study,
             trials,
