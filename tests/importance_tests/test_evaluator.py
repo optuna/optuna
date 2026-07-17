@@ -304,7 +304,9 @@ def test_get_param_importances_with_params(
     if normalize:
         assert len(param_importance) == 0 or np.isclose(sum(param_importance.values()), 1.0)
 
+
 # Tests for conditional parameter handling
+
 
 @parametrize_conditional_supported
 @pytest.mark.parametrize(
