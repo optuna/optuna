@@ -438,7 +438,7 @@ class ConditionalGPRegressor:
         samples = cond_mean + cond_cov.sqrt().unsqueeze(-1) * self._fixed_samples_x
         if is_single:
             return torch.cat([self._fantasy_samples, samples.squeeze(0).unsqueeze(-1)], dim=-1)
-        fantasy = self._fantasy_samples.unsqueeze(0).expand(x_.shape[0], -1, -1)
+        fantasy = self._fantasy_samples.unsqueeze(0).expand(*x_.shape[:-1], -1, -1)
         return torch.cat([fantasy, samples.unsqueeze(-1)], dim=-1)
 
 
