@@ -168,7 +168,10 @@ class FrozenTrial(BaseTrial):
             self._values = [value]
         elif values is not None:
             self._values = list(values)
-        self._datetime_start = datetime_start
+
+        # Datetime values are normalized to UTC internally and converted to local time by the
+        # public properties.
+        self.datetime_start = datetime_start
         self.datetime_complete = datetime_complete
         self._params = params
         self._user_attrs = user_attrs
@@ -199,13 +202,19 @@ class FrozenTrial(BaseTrial):
 
     def __repr__(self) -> str:
         cls = self.__class__.__name__
-        kwargs = (
-            ", ".join(
-                f"{field if not field.startswith('_') else field[1:]}={repr(getattr(self, field))}"
-                for field in self.__dict__
-            )
-            + ", value=None"
-        )
+        fields = []
+        for field in self.__dict__:
+            if field == "_datetime_start_utc":
+                name = "datetime_start"
+                value = self.datetime_start
+            elif field == "_datetime_complete_utc":
+                name = "datetime_complete"
+                value = self.datetime_complete
+            else:
+                name = field if not field.startswith("_") else field[1:]
+                value = getattr(self, field)
+            fields.append(f"{name}={value!r}")
+        kwargs = ", ".join(fields) + ", value=None"
         return f"{cls}({kwargs})"
 
     def suggest_float(
@@ -416,11 +425,31 @@ class FrozenTrial(BaseTrial):
 
     @property
     def datetime_start(self) -> datetime.datetime | None:
-        return self._datetime_start
+        return (
+            self._datetime_start_utc.astimezone().replace(tzinfo=None)
+            if self._datetime_start_utc is not None
+            else None
+        )
 
     @datetime_start.setter
     def datetime_start(self, value: datetime.datetime | None) -> None:
-        self._datetime_start = value
+        self._datetime_start_utc = (
+            value.astimezone(datetime.timezone.utc) if value is not None else None
+        )
+
+    @property
+    def datetime_complete(self) -> datetime.datetime | None:
+        return (
+            self._datetime_complete_utc.astimezone().replace(tzinfo=None)
+            if self._datetime_complete_utc is not None
+            else None
+        )
+
+    @datetime_complete.setter
+    def datetime_complete(self, value: datetime.datetime | None) -> None:
+        self._datetime_complete_utc = (
+            value.astimezone(datetime.timezone.utc) if value is not None else None
+        )
 
     @property
     def params(self) -> dict[str, Any]:

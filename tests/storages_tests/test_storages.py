@@ -1,7 +1,13 @@
 from __future__ import annotations
 
 from collections.abc import Generator
+from contextlib import contextmanager
+from datetime import datetime
+from datetime import timedelta
+from datetime import timezone
+from datetime import tzinfo
 import pickle
+from unittest.mock import patch
 
 import pytest
 from pytest import FixtureRequest
@@ -24,6 +30,48 @@ from optuna.testing.storages import StorageSupplier
 def storage(request: FixtureRequest) -> Generator[BaseStorage, None, None]:
     with StorageSupplier(request.param) as storage:
         yield storage
+
+
+@contextmanager
+def _mock_storage_datetime(value: datetime) -> Generator[None, None, None]:
+    class MockDatetime(datetime):
+        @classmethod
+        def now(cls, tz: tzinfo | None = None) -> MockDatetime:
+            return cls.fromtimestamp(value.timestamp(), tz)
+
+    with (
+        patch("optuna.storages._in_memory.datetime", MockDatetime),
+        patch("optuna.storages._rdb.storage.datetime", MockDatetime),
+        patch("optuna.storages.journal._storage.datetime", MockDatetime),
+    ):
+        yield
+
+
+def test_ask_and_tell_store_utc_and_return_local_time_without_timezone(
+    storage: BaseStorage,
+) -> None:
+    datetime_start = datetime(2020, 1, 2, 3, 4, 5, tzinfo=timezone(timedelta(hours=9)))
+    datetime_complete = datetime(2020, 1, 2, 1, 2, 3, tzinfo=timezone(timedelta(hours=-5)))
+    study = optuna.create_study(storage=storage)
+
+    with _mock_storage_datetime(datetime_start):
+        trial = study.ask()
+
+    stored_running_trial = storage.get_trial(trial._trial_id)
+    assert stored_running_trial._datetime_start_utc == datetime_start.astimezone(timezone.utc)
+    assert trial.datetime_start == datetime_start.astimezone().replace(tzinfo=None)
+    assert trial.datetime_start.tzinfo is None
+
+    with _mock_storage_datetime(datetime_complete):
+        study.tell(trial, 1.0)
+
+    frozen_trial = study.trials[0]
+    assert frozen_trial._datetime_start_utc == datetime_start.astimezone(timezone.utc)
+    assert frozen_trial._datetime_complete_utc == datetime_complete.astimezone(timezone.utc)
+    assert frozen_trial.datetime_start == datetime_start.astimezone().replace(tzinfo=None)
+    assert frozen_trial.datetime_complete == datetime_complete.astimezone().replace(tzinfo=None)
+    assert frozen_trial.datetime_start.tzinfo is None
+    assert frozen_trial.datetime_complete.tzinfo is None
 
 
 class TestStorage(StorageTestCase):
