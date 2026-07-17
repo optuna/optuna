@@ -490,10 +490,35 @@ class FrozenTrial(BaseTrial):
             constraint values of trial.
         """
 
+        constraints_dict: dict[str, float] = {}
+
+        # Load constraints from old format (list)
         con = self.system_attrs.get(_CONSTRAINTS_KEY)
-        if con is None:
-            return {}
-        return {str(i): c for i, c in enumerate(con)}
+        if con is not None:
+            for i, c in enumerate(con):
+                constraints_dict[str(i)] = c
+
+        # Load constraints from new format (individual keys)
+        prefix = f"{_CONSTRAINTS_KEY}:"
+        for key, value in self.system_attrs.items():
+            if key.startswith(prefix):
+                constraint_key = key[len(prefix) :]
+                constraints_dict[constraint_key] = value
+
+        return constraints_dict
+
+    def set_constraint(self, key: str, value: float) -> None:
+        """Set a constraint value for the trial.
+
+        Args:
+            key:
+                A constraint name.
+            value:
+                A constraint value. The trial is considered feasible when all constraint values
+                are zero or less.
+        """
+
+        self._system_attrs[f"{_CONSTRAINTS_KEY}:{key}"] = value
 
 
 def create_trial(

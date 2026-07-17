@@ -184,8 +184,8 @@ class Study:
             When optimizing many objectives, a large fraction of trials may become non-dominated
             in general due to the curse of dimensionality in the objective space. If this makes
             post-hoc selection difficult, consider modeling some objectives as constraints.
-            Constraints can be passed via the `constraints_func` argument at the sampler
-            initialization.
+            Constraints can be set within the objective function using
+            :meth:`~optuna.trial.Trial.set_constraint` method.
 
         Returns:
             A list of :class:`~optuna.trial.FrozenTrial` objects. If no trials are

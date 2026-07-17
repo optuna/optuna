@@ -139,3 +139,7 @@ class BaseTrial(abc.ABC):
     @property
     def constraints(self) -> dict[str, float]:
         raise NotImplementedError
+
+    @abc.abstractmethod
+    def set_constraint(self, key: str, value: float) -> None:
+        raise NotImplementedError

@@ -10,6 +10,7 @@ from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
+from optuna.study._constrained_optimization import _CONSTRAINTS_KEY
 from optuna.study.study import create_study
 from optuna.trial import BaseTrial
 from optuna.trial import create_trial
@@ -218,3 +219,79 @@ def test_datetime_start(trial_type: type) -> None:
     old_date_time_start = trial.datetime_start
     time.sleep(0.001)  # Sleep 1ms to avoid faulty assertion on Windows OS.
     assert datetime.datetime.now() != old_date_time_start
+
+
+@parametrize_trial_type
+def test_set_constraint(trial_type: type) -> None:
+    trial = _create_trial(trial_type)
+    trial.set_constraint("cost", 1.5)
+    trial.set_constraint("limit", 2.5)
+
+    constraints = trial.constraints
+    assert constraints["cost"] == 1.5
+    assert constraints["limit"] == 2.5
+
+
+@parametrize_trial_type
+def test_set_constraint_override(trial_type: type) -> None:
+    trial = _create_trial(trial_type)
+    trial.set_constraint("value", 1.0)
+    trial.set_constraint("value", 2.0)  # Override
+
+    constraints = trial.constraints
+    assert constraints["value"] == 2.0
+
+
+def test_constraints_old_format() -> None:
+    trial = create_trial(
+        value=1.0,
+        params={"x": 5.0},
+        distributions={"x": FloatDistribution(-10, 10)},
+        system_attrs={_CONSTRAINTS_KEY: [1.5, -0.5, 2.0]},
+    )
+
+    constraints = trial.constraints
+    assert constraints == {"0": 1.5, "1": -0.5, "2": 2.0}
+
+
+def test_constraints_new_format() -> None:
+    trial = create_trial(
+        value=1.0,
+        params={"x": 5.0},
+        distributions={"x": FloatDistribution(-10, 10)},
+        system_attrs={
+            "constraints:cost": 2.5,
+            "constraints:limit": 10.0,
+        },
+    )
+
+    constraints = trial.constraints
+    assert constraints == {"cost": 2.5, "limit": 10.0}
+
+
+def test_constraints_mixed_format() -> None:
+    trial = create_trial(
+        value=1.0,
+        params={"x": 5.0},
+        distributions={"x": FloatDistribution(-10, 10)},
+        system_attrs={
+            _CONSTRAINTS_KEY: [1.0, 2.0],  # Old format
+            "constraints:cost": 3.0,  # New format
+            "constraints:limit": 4.0,  # New format
+        },
+    )
+
+    constraints = trial.constraints
+    assert constraints == {"0": 1.0, "1": 2.0, "cost": 3.0, "limit": 4.0}
+
+
+def test_constraints_empty() -> None:
+    trial = create_trial(
+        value=1.0,
+        params={"x": 5.0},
+        distributions={"x": FloatDistribution(-10, 10)},
+        system_attrs={},
+    )
+
+    constraints = trial.constraints
+    assert constraints == {}
