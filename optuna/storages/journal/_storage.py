@@ -516,14 +516,18 @@ class JournalStorageReplayResult:
 
         if self._study_exists(study_id, log):
             assert len(log["user_attr"]) == 1
-            self._studies[study_id].user_attrs.update(log["user_attr"])
+            user_attrs = copy.copy(self._studies[study_id].user_attrs)
+            user_attrs.update(log["user_attr"])
+            self._studies[study_id].user_attrs = user_attrs
 
     def _apply_set_study_system_attr(self, log: dict[str, Any]) -> None:
         study_id = log["study_id"]
 
         if self._study_exists(study_id, log):
             assert len(log["system_attr"]) == 1
-            self._studies[study_id].system_attrs.update(log["system_attr"])
+            system_attrs = copy.copy(self._studies[study_id].system_attrs)
+            system_attrs.update(log["system_attr"])
+            self._studies[study_id].system_attrs = system_attrs
 
     def _apply_create_trial(self, log: dict[str, Any]) -> None:
         study_id = log["study_id"]
