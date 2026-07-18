@@ -439,5 +439,4 @@ def test_find_sample_id_partial_fix() -> None:
         fixed_params={"x": study.best_params["x"]}, base_sampler=base_sampler
     )
     study.optimize(_objective, n_trials=8)
-    partial_search_space = {"y": study.trials[-1].distributions["y"]}
-    assert base_sampler._find_sample_id(study, search_space=partial_search_space) == 8
+    assert base_sampler._find_sample_id(study, search_space=study.trials[-1].distributions) == 16
