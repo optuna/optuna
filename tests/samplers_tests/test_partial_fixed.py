@@ -6,8 +6,10 @@ import pytest
 
 import optuna
 from optuna.samplers import BaseSampler
+from optuna.samplers import GPSampler
 from optuna.samplers import PartialFixedSampler
 from optuna.samplers import RandomSampler
+from optuna.samplers import TPESampler
 from optuna.trial import Trial
 
 
@@ -149,3 +151,86 @@ def test_fixed_none_value_sampling() -> None:
 
     for trial in study.trials:
         assert trial.params["x"] is None
+
+
+def _make_study_with_warmup(n_warmup: int = 5) -> optuna.study.Study:
+    def objective(trial: optuna.Trial) -> float:
+        x = trial.suggest_float("x", -5, 5)
+        y = trial.suggest_float("y", -5, 5)
+        return x**2 + y**2
+
+    study = optuna.create_study()
+    study.optimize(objective, n_trials=n_warmup)
+    return study
+
+
+def test_fixed_params_in_search_space_gp_sampler() -> None:
+    """Fixed params must appear in infer_relative_search_space so GPSampler's
+    surrogate can condition on them"""
+    study = _make_study_with_warmup()
+    base_sampler = GPSampler(seed=0)
+
+    partial_sampler = PartialFixedSampler(
+        fixed_params={"x": study.best_params["x"]},
+        base_sampler=base_sampler,
+    )
+    study.sampler = partial_sampler
+
+    dummy_trial = study.ask()
+    frozen = study._storage.get_trial(dummy_trial._trial_id)
+    search_space = partial_sampler.infer_relative_search_space(study, frozen)
+    study.tell(dummy_trial, 0.0)
+
+    assert "x" in search_space, (
+        "Fixed param 'x' must be included in infer_relative_search_space "
+        "so that GPSampler can condition its surrogate on it."
+    )
+    assert "y" in search_space
+
+
+def test_fixed_params_in_search_space_tpe_multivariate() -> None:
+    """Same check for TPESampler(multivariate=True)"""
+    study = _make_study_with_warmup(n_warmup=15)
+    base_sampler = TPESampler(multivariate=True, seed=0)
+
+    partial_sampler = PartialFixedSampler(
+        fixed_params={"x": study.best_params["x"]},
+        base_sampler=base_sampler,
+    )
+    study.sampler = partial_sampler
+
+    dummy_trial = study.ask()
+    frozen = study._storage.get_trial(dummy_trial._trial_id)
+    search_space = partial_sampler.infer_relative_search_space(study, frozen)
+    study.tell(dummy_trial, 0.0)
+
+    assert "x" in search_space, (
+        "Fixed param 'x' must be included in infer_relative_search_space "
+        "so that multivariate TPESampler can condition on it."
+    )
+    assert "y" in search_space
+
+
+def test_sample_relative_always_returns_fixed_value_gp() -> None:
+    """sample_relative must honour the fixed value for fixed params, even when
+    the underlying GP sampler would suggest a different value"""
+    study = _make_study_with_warmup()
+
+    fixed_x = 1.23
+    partial_sampler = PartialFixedSampler(
+        fixed_params={"x": fixed_x},
+        base_sampler=GPSampler(seed=42),
+    )
+    study.sampler = partial_sampler
+
+    def objective(trial: optuna.Trial) -> float:
+        x = trial.suggest_float("x", -5, 5)
+        y = trial.suggest_float("y", -5, 5)
+        return x**2 + y**2
+
+    study.optimize(objective, n_trials=5)
+
+    for trial in study.trials[-5:]:
+        assert trial.params["x"] == pytest.approx(fixed_x), (
+            f"Trial {trial.number}: expected x={fixed_x}, got x={trial.params['x']}"
+        )
