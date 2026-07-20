@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
+from optuna._gp.gp import ConditionalGPRegressor
 from optuna._hypervolume import get_non_dominated_box_bounds
 from optuna.study._multi_objective import _is_pareto_front
 
@@ -172,43 +173,27 @@ class qLogEI(BaseAcquisitionFunc):
         normalized_params_of_running_trials: np.ndarray,
         stabilizing_noise: float = 1e-12,
     ) -> None:
-        self._gpr = gpr
-        self._stabilizing_noise = stabilizing_noise
-        self._threshold = threshold
-        self._X_running = torch.from_numpy(normalized_params_of_running_trials)
-        self._fixed_samples = _sample_from_normal_sobol(
+        fixed_samples = _sample_from_normal_sobol(
             # NOTE(nabe): The number of pending points + the new point, so +1.
             dim=1 + normalized_params_of_running_trials.shape[0],
             n_samples=n_qmc_samples,
             seed=qmc_seed,
         )
-        super().__init__(gpr.length_scales, search_space)
-
-    def _get_posterior_samples(self, x: torch.Tensor) -> torch.Tensor:
-        mean, cov = self._gpr.posterior(x, joint=True)
-        cov.diagonal(dim1=-2, dim2=-1).add_(self._stabilizing_noise)
-        # mean.shape: (q + 1,), cov.shape: (q + 1, q + 1), fixed_samples.shape: (128, q + 1).
-        return mean.unsqueeze(-2) + torch.matmul(
-            self._fixed_samples, torch.linalg.cholesky(cov).transpose(-1, -2)
+        self._cond_gpr = ConditionalGPRegressor(
+            gpr=gpr,
+            X_running=torch.from_numpy(normalized_params_of_running_trials),
+            fixed_samples=fixed_samples,
+            stabilizing_noise=stabilizing_noise,
         )
-
-    def _get_joint_input(self, x: torch.Tensor) -> torch.Tensor:
-        if x.ndim == 1:
-            return torch.cat([self._X_running, x.unsqueeze(0)], dim=0)
-        if x.ndim == 2:
-            # Expand from (Q, D) to (..., Q, D), and then concat to (..., Q+1, D).
-            running = self._X_running.unsqueeze(0).expand(x.shape[0], -1, -1)
-            return torch.cat([running, x.unsqueeze(-2)], dim=-2)
-        raise ValueError(f"{x.ndim=} must be 1 or 2.")
+        self._threshold = threshold
+        super().__init__(gpr.length_scales, search_space)
 
     def eval_acqf(self, x: torch.Tensor) -> torch.Tensor:
         if np.isneginf(self._threshold):
             return torch.zeros(x.shape[:-1], dtype=torch.float64)
 
         # NOTE(nabenabe): See Eq. (10) of https://arxiv.org/pdf/2310.20708
-        joint_x = self._get_joint_input(x)
-        y_post = self._get_posterior_samples(joint_x)
-        log_improvement = y_post.clamp_(min=torch.tensor(_EPS, dtype=torch.float64)).log()
+        log_improvement = (self._cond_gpr.sample(x) - self._threshold).clamp_min_(_EPS).log()
         # Take the max operation along the running candidates direction (the Q-axis).
         # TODO(sawa3030): Consider using fatmax instead of max.
         max_log_improvement_in_q_batch = torch.amax(log_improvement, dim=-1)
