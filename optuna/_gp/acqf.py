@@ -173,6 +173,7 @@ class qLogEI(BaseAcquisitionFunc):
         normalized_params_of_running_trials: np.ndarray,
         stabilizing_noise: float = 1e-12,
     ) -> None:
+        self._threshold = threshold
         fixed_samples = _sample_from_normal_sobol(
             # NOTE(nabe): The number of pending points + the new point, so +1.
             dim=1 + normalized_params_of_running_trials.shape[0],
@@ -185,7 +186,6 @@ class qLogEI(BaseAcquisitionFunc):
             fixed_samples=fixed_samples,
             stabilizing_noise=stabilizing_noise,
         )
-        self._threshold = threshold
         super().__init__(gpr.length_scales, search_space)
 
     def eval_acqf(self, x: torch.Tensor) -> torch.Tensor:
