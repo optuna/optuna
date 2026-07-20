@@ -488,12 +488,7 @@ class JournalStorageReplayResult:
 
         if study_name in [s.study_name for s in self._studies.values()]:
             if self._is_issued_by_this_worker(log):
-                raise DuplicatedStudyError(
-                    f"Another study with name {study_name} already exists. "
-                    "Please specify a different name, or reuse the existing one "
-                    "by setting `load_if_exists` (for Python API) or "
-                    "`--skip-if-exists` flag (for CLI)."
-                )
+                raise DuplicatedStudyError
             return
 
         study_id = self._next_study_id
@@ -521,14 +516,18 @@ class JournalStorageReplayResult:
 
         if self._study_exists(study_id, log):
             assert len(log["user_attr"]) == 1
-            self._studies[study_id].user_attrs.update(log["user_attr"])
+            user_attrs = copy.copy(self._studies[study_id].user_attrs)
+            user_attrs.update(log["user_attr"])
+            self._studies[study_id].user_attrs = user_attrs
 
     def _apply_set_study_system_attr(self, log: dict[str, Any]) -> None:
         study_id = log["study_id"]
 
         if self._study_exists(study_id, log):
             assert len(log["system_attr"]) == 1
-            self._studies[study_id].system_attrs.update(log["system_attr"])
+            system_attrs = copy.copy(self._studies[study_id].system_attrs)
+            system_attrs.update(log["system_attr"])
+            self._studies[study_id].system_attrs = system_attrs
 
     def _apply_create_trial(self, log: dict[str, Any]) -> None:
         study_id = log["study_id"]

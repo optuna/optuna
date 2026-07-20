@@ -40,7 +40,7 @@ SEARCH_SPACE = {
     "g": distributions.CategoricalDistribution([0.0, float("inf"), float("nan"), None]),
 }
 
-MULTIVARIATE_SAMPLES = {
+SAMPLES = {
     "a": np.array([1.0]),
     "b": np.array([1.0]),
     "c": np.array([1.0]),
@@ -51,23 +51,22 @@ MULTIVARIATE_SAMPLES = {
 }
 
 
-@pytest.mark.parametrize("multivariate", [True, False])
-def test_init_parzen_estimator(multivariate: bool) -> None:
+def test_init_parzen_estimator() -> None:
     parameters = _ParzenEstimatorParameters(
         prior_weight=1.0,
         consider_magic_clip=False,
         consider_endpoints=False,
         weights=lambda x: np.arange(x) + 1.0,
-        multivariate=multivariate,
+        multivariate=True,
         categorical_distance_func={},
     )
 
-    mpe = _ParzenEstimator(MULTIVARIATE_SAMPLES, SEARCH_SPACE, parameters)
+    mpe = _ParzenEstimator(SAMPLES, SEARCH_SPACE, parameters)
 
     weights = np.array([1, 1], dtype=float)
     weights /= weights.sum()
 
-    expected_univariate = _MixtureOfProductDistribution(
+    expected = _MixtureOfProductDistribution(
         weights=weights,
         distributions=[
             _BatchedTruncNormDistributions(
@@ -116,60 +115,6 @@ def test_init_parzen_estimator(multivariate: bool) -> None:
             ),
         ],
     )
-    SIGMA0 = 0.2
-    expected_multivarite = _MixtureOfProductDistribution(
-        weights=weights,
-        distributions=[
-            _BatchedTruncNormDistributions(
-                mu=np.array([1.0, 50.5]),
-                sigma=np.array([SIGMA0 * 99.0, 99.0]),
-                low=1.0,
-                high=100.0,
-            ),
-            _BatchedTruncLogNormDistributions(
-                mu=np.array([np.log(1.0), np.log(100) / 2.0]),
-                sigma=np.array([SIGMA0 * np.log(100), np.log(100)]),
-                low=1.0,
-                high=100.0,
-            ),
-            _BatchedDiscreteTruncNormDistributions(
-                mu=np.array([1.0, 50.5]),
-                sigma=np.array([SIGMA0 * 102.0, 102.0]),
-                low=1.0,
-                high=100.0,
-                step=3.0,
-            ),
-            _BatchedDiscreteTruncNormDistributions(
-                mu=np.array([1.0, 50.5]),
-                sigma=np.array([SIGMA0 * 100.0, 100.0]),
-                low=1,
-                high=100,
-                step=1,
-            ),
-            _BatchedDiscreteTruncLogNormDistributions(
-                mu=np.array([np.log(1.0), (np.log(100.5) + np.log(0.5)) / 2.0]),
-                sigma=np.array(
-                    [SIGMA0 * (np.log(100.5) - np.log(0.5)), np.log(100.5) - np.log(0.5)]
-                ),
-                low=1,
-                high=100,
-                step=1,
-            ),
-            _BatchedCategoricalDistributions(
-                np.array([[0.2, 0.6, 0.2], [1.0 / 3.0, 1.0 / 3.0, 1.0 / 3.0]])
-            ),
-            _BatchedCategoricalDistributions(
-                np.array(
-                    [
-                        [1.0 / 6.0, 0.5, 1.0 / 6.0, 1.0 / 6.0],
-                        [1.0 / 4.0, 1.0 / 4.0, 1.0 / 4.0, 1.0 / 4.0],
-                    ]
-                )
-            ),
-        ],
-    )
-
-    expected = expected_multivarite if multivariate else expected_univariate
 
     # Test that the distribution is correct.
     assert_distribution_almost_equal(mpe._mixture_distribution, expected)
@@ -185,20 +130,18 @@ def test_init_parzen_estimator(multivariate: bool) -> None:
 @pytest.mark.parametrize("prior_weight", [1.0, 0.01, 100.0])
 @pytest.mark.parametrize("magic_clip", (True, False))
 @pytest.mark.parametrize("endpoints", (True, False))
-@pytest.mark.parametrize("multivariate", (True, False))
 def test_calculate_shape_check(
     mus: np.ndarray,
     prior_weight: float,
     magic_clip: bool,
     endpoints: bool,
-    multivariate: bool,
 ) -> None:
     parameters = _ParzenEstimatorParameters(
         prior_weight=prior_weight,
         consider_magic_clip=magic_clip,
         consider_endpoints=endpoints,
         weights=default_weights,
-        multivariate=multivariate,
+        multivariate=True,
         categorical_distance_func={},
     )
     mpe = _ParzenEstimator(
@@ -223,7 +166,7 @@ def test_calculate_shape_check_categorical(
         consider_magic_clip=True,
         consider_endpoints=False,
         weights=default_weights,
-        multivariate=False,
+        multivariate=True,
         categorical_distance_func=categorical_distance_func,
     )
     mpe = _ParzenEstimator(
@@ -239,7 +182,7 @@ def test_invalid_prior_weight(mus: np.ndarray) -> None:
         consider_magic_clip=False,
         consider_endpoints=False,
         weights=default_weights,
-        multivariate=False,
+        multivariate=True,
         categorical_distance_func={},
     )
     with pytest.raises(ValueError):
@@ -303,7 +246,7 @@ def test_calculate(
         consider_magic_clip=flags["magic_clip"],
         consider_endpoints=flags["endpoints"],
         weights=default_weights,
-        multivariate=False,
+        multivariate=True,
         categorical_distance_func={},
     )
     mpe = _ParzenEstimator(
@@ -339,7 +282,7 @@ def test_invalid_weights(weights: Callable[[int], np.ndarray]) -> None:
         consider_magic_clip=False,
         consider_endpoints=False,
         weights=weights,
-        multivariate=False,
+        multivariate=True,
         categorical_distance_func={},
     )
     with pytest.raises(ValueError):

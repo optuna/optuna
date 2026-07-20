@@ -4,7 +4,6 @@ from typing import NamedTuple
 from typing import TYPE_CHECKING
 
 from optuna.logging import get_logger
-from optuna.samplers._base import _CONSTRAINTS_KEY
 from optuna.trial import TrialState
 
 
@@ -37,8 +36,7 @@ def _get_intermediate_plot_info(study: Study) -> _IntermediatePlotInfo:
     )
 
     def _satisfies_constraints(trial: FrozenTrial) -> bool:
-        constraints = trial.system_attrs.get(_CONSTRAINTS_KEY)
-        return constraints is None or all([x <= 0.0 for x in constraints])
+        return all(x <= 0.0 for x in trial.constraints.values())
 
     trial_infos = [
         _TrialInfo(

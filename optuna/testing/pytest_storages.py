@@ -930,6 +930,28 @@ class StorageTestCase:
         with pytest.raises(UpdateFinishedTrialError):
             storage.check_trial_is_updatable(trial_id, TrialState.COMPLETE)
 
+    def test_study_user_attrs_concurrent_write(self, storage: BaseStorage) -> None:
+        study_id = storage.create_new_study([StudyDirection.MINIMIZE], study_name=None)
+        storage.set_study_user_attr(study_id, "key", "value")
+        attrs = storage.get_study_user_attrs(study_id)
+        attrs_iter = iter(attrs)
+        next(attrs_iter)
+
+        # Simulate a reader iterating over the attributes while another worker updates them.
+        storage.set_study_user_attr(study_id, "key2", "value2")
+        list(attrs_iter)
+
+    def test_study_system_attrs_concurrent_write(self, storage: BaseStorage) -> None:
+        study_id = storage.create_new_study([StudyDirection.MINIMIZE], study_name=None)
+        storage.set_study_system_attr(study_id, "key", "value")
+        attrs = storage.get_study_system_attrs(study_id)
+        attrs_iter = iter(attrs)
+        next(attrs_iter)
+
+        # Simulate a reader iterating over the attributes while another worker updates them.
+        storage.set_study_system_attr(study_id, "key2", "value2")
+        list(attrs_iter)
+
 
 ALL_STATES = list(TrialState)
 
