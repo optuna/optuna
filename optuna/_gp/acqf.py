@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 from optuna._gp.gp import ConditionalGPRegressor
+from optuna._gp.qmc import _sample_from_normal_sobol
 from optuna._hypervolume import get_non_dominated_box_bounds
 from optuna.study._multi_objective import _is_pareto_front
 
@@ -29,18 +30,6 @@ _INV_SQRT_2PI = 1 / math.sqrt(2 * math.pi)
 _SQRT_HALF_PI = math.sqrt(0.5 * math.pi)
 _LOG_SQRT_2PI = math.log(math.sqrt(2 * math.pi))
 _EPS = 1e-12  # NOTE(nabenabe): grad becomes nan when EPS=0.
-
-
-def _sample_from_normal_sobol(dim: int, n_samples: int, seed: int | None) -> torch.Tensor:
-    # NOTE(nabenabe): Normal Sobol sampling based on BoTorch.
-    # https://github.com/pytorch/botorch/blob/v0.13.0/botorch/sampling/qmc.py#L26-L97
-    # https://github.com/pytorch/botorch/blob/v0.13.0/botorch/utils/sampling.py#L109-L138
-    sobol_samples = torch.quasirandom.SobolEngine(  # type: ignore[no-untyped-call]
-        dimension=dim, scramble=True, seed=seed
-    ).draw(n_samples, dtype=torch.float64)
-    samples = 2.0 * (sobol_samples - 0.5)  # The Sobol sequence in [-1, 1].
-    # Inverse transform to standard normal (values to close to -1 or 1 result in infinity).
-    return torch.erfinv(samples) * float(np.sqrt(2))
 
 
 def logehvi(
@@ -174,16 +163,11 @@ class qLogEI(BaseAcquisitionFunc):
         stabilizing_noise: float = 1e-12,
     ) -> None:
         self._threshold = threshold
-        fixed_samples = _sample_from_normal_sobol(
-            # NOTE(nabe): The number of pending points + the new point, so +1.
-            dim=1 + normalized_params_of_running_trials.shape[0],
-            n_samples=n_qmc_samples,
-            seed=qmc_seed,
-        )
         self._cond_gpr = ConditionalGPRegressor(
             gpr=gpr,
             X_running=torch.from_numpy(normalized_params_of_running_trials),
-            fixed_samples=fixed_samples,
+            n_qmc_samples=n_qmc_samples,
+            qmc_seed=qmc_seed,
             stabilizing_noise=stabilizing_noise,
         )
         super().__init__(gpr.length_scales, search_space)
@@ -193,7 +177,8 @@ class qLogEI(BaseAcquisitionFunc):
             return torch.zeros(x.shape[:-1], dtype=torch.float64)
 
         # NOTE(nabenabe): See Eq. (10) of https://arxiv.org/pdf/2310.20708
-        log_improvement = (self._cond_gpr.sample(x) - self._threshold).clamp_min_(_EPS).log()
+        y_post = self._cond_gpr.sample_joint_posterior(x)
+        log_improvement = (y_post - self._threshold).clamp_min_(_EPS).log()
         # Take the max operation along the running candidates direction (the Q-axis).
         # TODO(sawa3030): Consider using fatmax instead of max.
         max_log_improvement_in_q_batch = torch.amax(log_improvement, dim=-1)

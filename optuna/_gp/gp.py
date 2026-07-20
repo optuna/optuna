@@ -24,6 +24,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
+from optuna._gp.qmc import _sample_from_normal_sobol
 from optuna._gp.scipy_blas_thread_patch import single_blas_thread_if_scipy_v1_15_or_newer
 from optuna._warnings import optuna_warn
 from optuna.logging import get_logger
@@ -392,11 +393,18 @@ class ConditionalGPRegressor:
         self,
         gpr: GPRegressor,
         X_running: torch.Tensor,
-        fixed_samples: torch.Tensor,
+        n_qmc_samples: int,
+        qmc_seed: int,
         stabilizing_noise: float,
     ) -> None:
         self._gpr = gpr
         self._X_running = X_running
+        fixed_samples = _sample_from_normal_sobol(
+            # NOTE(nabe): The number of pending points + the new point, so +1.
+            dim=1 + X_running.shape[0],
+            n_samples=n_qmc_samples,
+            seed=qmc_seed,
+        )
         self._fixed_samples_x = fixed_samples[..., -1]
         self._stabilizing_noise = stabilizing_noise
         with torch.no_grad():
@@ -416,8 +424,8 @@ class ConditionalGPRegressor:
             assert isinstance(cov_Y_Y_chol, torch.Tensor), "MyPy Redefinition"
             self._V_r = _solve_cholesky(cov_Y_Y_chol, cov_fXr_fX, left=False).transpose(-2, -1)
 
-    def sample(self, x: torch.Tensor) -> torch.Tensor:
-        """Return conditional samples for each query point.
+    def sample_joint_posterior(self, x: torch.Tensor) -> torch.Tensor:
+        """Return conditional joint posterior samples for each query point.
 
         For batched ``x``, each batch element is treated as a separate query sharing the same
         running fantasies, rather than as part of a joint posterior over the query points.
