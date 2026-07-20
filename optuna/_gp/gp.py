@@ -399,11 +399,9 @@ class ConditionalGPRegressor:
     ) -> None:
         self._gpr = gpr
         self._X_running = X_running
+        # NOTE(nabe): The number of pending points + the new point, so +1.
         fixed_samples = _sample_from_normal_sobol(
-            # NOTE(nabe): The number of pending points + the new point, so +1.
-            dim=1 + X_running.shape[0],
-            n_samples=n_qmc_samples,
-            seed=qmc_seed,
+            dim=1 + X_running.shape[0], n_samples=n_qmc_samples, seed=qmc_seed
         )
         self._fixed_samples_x = fixed_samples[..., -1]
         self._stabilizing_noise = stabilizing_noise
