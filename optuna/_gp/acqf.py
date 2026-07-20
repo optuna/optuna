@@ -158,7 +158,7 @@ class qLogEI(BaseAcquisitionFunc):
         search_space: SearchSpace,
         threshold: float,
         n_qmc_samples: int,
-        qmc_seed: int | None,
+        qmc_seed: int,
         normalized_params_of_running_trials: np.ndarray,
         stabilizing_noise: float = 1e-12,
     ) -> None:
@@ -308,7 +308,7 @@ class LogEHVI(BaseAcquisitionFunc):
         search_space: SearchSpace,
         Y_train: torch.Tensor,
         n_qmc_samples: int,
-        qmc_seed: int | None,
+        qmc_seed: int,
         normalized_params_of_running_trials: np.ndarray | None = None,
         stabilizing_noise: float = 1e-12,
     ) -> None:
@@ -386,7 +386,7 @@ class ConstrainedLogEHVI(BaseAcquisitionFunc):
         search_space: SearchSpace,
         Y_feasible: torch.Tensor | None,
         n_qmc_samples: int,
-        qmc_seed: int | None,
+        qmc_seed: int,
         constraints_gpr_list: list[GPRegressor],
         constraints_threshold_list: list[float],
         normalized_params_of_running_trials: np.ndarray | None = None,

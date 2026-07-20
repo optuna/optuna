@@ -15,7 +15,7 @@ else:
 _SQRT_2 = math.sqrt(2)
 
 
-def _sample_from_normal_sobol(dim: int, n_samples: int, seed: int | None) -> torch.Tensor:
+def _sample_from_normal_sobol(dim: int, n_samples: int, seed: int) -> torch.Tensor:
     # NOTE(nabenabe): Normal Sobol sampling based on BoTorch.
     # https://github.com/pytorch/botorch/blob/v0.13.0/botorch/sampling/qmc.py#L26-L97
     # https://github.com/pytorch/botorch/blob/v0.13.0/botorch/utils/sampling.py#L109-L138

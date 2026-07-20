@@ -4,11 +4,11 @@ import numpy as np
 import pytest
 import torch
 
-from optuna._gp.acqf import _sample_from_normal_sobol
 from optuna._gp.gp import ConditionalGPRegressor
 from optuna._gp.gp import GPRegressor
 from optuna._gp.gp import warn_and_convert_inf
 import optuna._gp.prior as prior
+from optuna._gp.qmc import _sample_from_normal_sobol
 
 
 @pytest.mark.parametrize(
