@@ -48,6 +48,8 @@ def logehvi(
     Y_post: torch.Tensor,  # (..., n_qmc_samples, n_objectives)
     non_dominated_box_lower_bounds: torch.Tensor,  # (n_boxes, n_objectives)
     non_dominated_box_intervals: torch.Tensor,  # (n_boxes, n_objectives)
+    reduce_n_qmc_samples: bool = True,
+    non_dominated_box_mask: torch.Tensor | None = None,
 ) -> torch.Tensor:  # (..., )
     log_n_qmc_samples = float(np.log(Y_post.shape[-2]))
     # This function calculates Eq. (1) of https://arxiv.org/abs/2006.05078.
@@ -59,9 +61,14 @@ def logehvi(
     # https://github.com/pytorch/botorch/blob/v0.13.0/botorch/acquisition/multi_objective/logei.py#L146-L266
     diff = Y_post.unsqueeze(-2) - non_dominated_box_lower_bounds
     diff.clamp_(min=torch.tensor(_EPS, dtype=torch.float64), max=non_dominated_box_intervals)
+    log_hvi = diff.log().sum(dim=-1)
+    if non_dominated_box_mask is not None:
+        log_hvi = log_hvi.masked_fill(~non_dominated_box_mask, -torch.inf)
     # NOTE(nabenabe): logsumexp with dim=-1 is for the HVI calculation and that with dim=-2 is for
     # expectation of the HVIs over the fixed_samples.
-    return torch.special.logsumexp(diff.log().sum(dim=-1), dim=(-2, -1)) - log_n_qmc_samples
+    if reduce_n_qmc_samples:
+        return torch.special.logsumexp(log_hvi, dim=(-2, -1)) - log_n_qmc_samples
+    return torch.special.logsumexp(log_hvi, dim=-1)
 
 
 def _get_non_dominated_box_bounds_from_observations(
@@ -482,27 +489,64 @@ class qLogEHVI(BaseAcquisitionFunc):
             [conditional_gpr.sample(x) for conditional_gpr in self._conditional_gpr_list], dim=-1
         )
 
+    @staticmethod
+    def _pad_non_dominated_box_bounds(
+        lower_bounds_list: list[torch.Tensor],
+        upper_bounds_list: list[torch.Tensor],
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        n_qmc_samples = len(lower_bounds_list)
+        max_n_boxes = max(lower_bounds.shape[0] for lower_bounds in lower_bounds_list)
+        n_objectives = lower_bounds_list[0].shape[-1]
+        lower_bounds = torch.zeros((n_qmc_samples, max_n_boxes, n_objectives), dtype=torch.float64)
+        intervals = torch.ones((n_qmc_samples, max_n_boxes, n_objectives), dtype=torch.float64)
+        box_mask = torch.zeros((n_qmc_samples, max_n_boxes), dtype=torch.bool)
+
+        for sample_idx, (sample_lower_bounds, sample_upper_bounds) in enumerate(
+            zip(lower_bounds_list, upper_bounds_list)
+        ):
+            n_boxes = sample_lower_bounds.shape[0]
+            lower_bounds[sample_idx, :n_boxes] = sample_lower_bounds
+            intervals[sample_idx, :n_boxes] = (
+                sample_upper_bounds - sample_lower_bounds
+            ).clamp_min(_EPS)
+            box_mask[sample_idx, :n_boxes] = True
+
+        return lower_bounds, intervals, box_mask
+
     def eval_acqf(self, x: torch.Tensor) -> torch.Tensor:
         Y_post = self._get_posterior_samples(x)
         batch_shape = Y_post.shape[:-3]
         n_qmc_samples = Y_post.shape[-3]
         Y_running_post = Y_post[..., :-1, :]
-        Y_candidate_post = Y_post[..., -1:, :]
+        Y_candidate_post = Y_post[..., -1, :]
         log_hvi = torch.empty(batch_shape + (n_qmc_samples,), dtype=torch.float64)
 
+        # print("Batch shape:", batch_shape)
         for batch_idx in np.ndindex(batch_shape) if batch_shape else [()]:
+            lower_bounds_list = []
+            upper_bounds_list = []
             for sample_idx in range(n_qmc_samples):
+                # print(f"Processing batch index: {batch_idx}, sample index: {sample_idx}")
                 observed_Y = torch.cat(
                     [self._Y_train, Y_running_post[batch_idx + (sample_idx,)]], dim=0
                 )
                 lower_bounds, upper_bounds = _get_non_dominated_box_bounds_from_observations(
                     observed_Y
                 )
-                log_hvi[batch_idx + (sample_idx,)] = logehvi(
-                    Y_post=Y_candidate_post[batch_idx + (sample_idx,)],
-                    non_dominated_box_lower_bounds=lower_bounds,
-                    non_dominated_box_intervals=(upper_bounds - lower_bounds).clamp_min(_EPS),
-                )
+                lower_bounds_list.append(lower_bounds)
+                upper_bounds_list.append(upper_bounds)
+
+            padded_lower_bounds, padded_intervals, padded_box_mask = (
+                self._pad_non_dominated_box_bounds(lower_bounds_list, upper_bounds_list)
+            )
+            # print(f"Processing batch index: {batch_idx}")
+            log_hvi[batch_idx] = logehvi(
+                Y_post=Y_candidate_post[batch_idx],
+                non_dominated_box_lower_bounds=padded_lower_bounds,
+                non_dominated_box_intervals=padded_intervals,
+                reduce_n_qmc_samples=False,
+                non_dominated_box_mask=padded_box_mask,
+            )
 
         return torch.special.logsumexp(log_hvi, dim=-1) - math.log(n_qmc_samples)
 
