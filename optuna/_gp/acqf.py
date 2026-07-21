@@ -208,11 +208,8 @@ class qLogEI(BaseAcquisitionFunc):
         # NOTE(nabenabe): See Eq. (10) of https://arxiv.org/pdf/2310.20708
         joint_x = self._get_joint_input(x)
         y_post = self._get_posterior_samples(joint_x)
-        log_improvement = (
-            y_post.sub(self._threshold)
-            .clamp_(min=torch.tensor(_EPS, dtype=torch.float64))
-            .log()
-        )
+        eps = torch.tensor(_EPS, dtype=torch.float64)
+        log_improvement = y_post.sub(self._threshold).clamp_(min=eps).log()
         # Take the max operation along the running candidates direction (the Q-axis).
         # TODO(sawa3030): Consider using fatmax instead of max.
         max_log_improvement_in_q_batch = torch.amax(log_improvement, dim=-1)
