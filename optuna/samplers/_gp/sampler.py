@@ -159,7 +159,8 @@ class GPSampler(BaseSampler):
 
     .. admonition:: Complete solution to the runtime performance issue
 
-        Set ``OMP_NUM_THREADS=1`` BEFORE running your script (or before torch imports).
+        Set ``OMP_NUM_THREADS=1`` BEFORE running your script (or before torch imports), if the
+        runtime of ``GPSampler`` is critical in your application.
 
         .. code-block:: bash
 

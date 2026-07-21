@@ -22,14 +22,12 @@ else:
 @contextmanager
 def limit_threads_in_optimization() -> Generator[None, None, None]:
     """
-    Context manager to limit threading.
+    Context manager to limit threading to resolve a thread oversubscription issue.
 
-    This is a thread oversubscription issue between the underlying libraries. On Linux,
-    ``GPSampler`` can slow down dramatically because NumPy/SciPy routines spawn OpenBLAS
-    threads while PyTorch spawns OpenMP (libgomp) threads, and the two thread pools compete
-    for the same cores. The GP fit and the acquisition-function optimization issue many small
-    NumPy/PyTorch calls, where this contention dominates the runtime rather than the actual
-    computation.
+    On Linux, ``GPSampler`` can slow down dramatically because NumPy/SciPy routines spawn OpenBLAS
+    threads while PyTorch spawns OpenMP (libgomp) threads, and the two thread pools compete for the
+    same cores. The GP fit and the acquisition-function optimization issue many small NumPy/PyTorch
+    calls, where this contention dominates the runtime rather than the actual computation.
 
     Two knobs mitigate this:
 
