@@ -383,7 +383,7 @@ def _get_parallel_coordinate_info(
                 ticktext = [str(v) for v in sorted(vocab.keys(), key=lambda x: vocab[x])]
             offset = 1 if has_missing else 0
             categorical_values = tuple(
-                0 if v is _MISSING_VALUE else vocab[cast(int | str | None, v)] + offset
+                0 if v is _MISSING_VALUE else vocab[cast("int | str | None", v)] + offset
                 for v in values
             )
             if has_missing:

@@ -124,7 +124,7 @@ def _get_parallel_coordinate_plot(info: _ParallelCoordinateInfo) -> "Axes":
     segments = [np.column_stack([x, y]) for x, y in zip(xs, dims_obj_base)]
     lc = LineCollection(segments, cmap=cmap)
     if info.feasibility is not None:
-        lc.set_linestyles(
+        lc.set_linestyle(
             ["solid" if info.feasibility[trial_id] else "dotted" for trial_id in draw_order]
         )
         feasibility_legend = [
