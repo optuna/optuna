@@ -51,7 +51,7 @@ if TYPE_CHECKING:
 
 
 ObjectiveFuncType = Callable[["Trial"], Union[float, Sequence[float]]]
-Direction = Literal["minimize", "maximize"] | StudyDirection
+Direction = Union[Literal["minimize", "maximize"], StudyDirection]
 
 
 _SYSTEM_ATTR_METRIC_NAMES = "study:metric_names"
