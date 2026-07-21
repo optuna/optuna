@@ -107,7 +107,14 @@ def plot_parallel_coordinate(
 
 
 def _get_parallel_coordinate_plot(info: _ParallelCoordinateInfo) -> "go.Figure":
-    layout = go.Layout(title="Parallel Coordinate Plot")
+    layout = go.Layout(
+        title={
+            "text": "Parallel Coordinate Plot",
+            "y": 1,
+            "yanchor": "bottom",
+            "yref": "paper",
+        }
+    )
 
     if len(info.dims_params) == 0 or len(info.dim_objective.values) == 0:
         return go.Figure(data=[], layout=layout)
@@ -204,7 +211,7 @@ def _get_parallel_coordinate_plot(info: _ParallelCoordinateInfo) -> "go.Figure":
             "orientation": "h",
             "x": 1,
             "xanchor": "right",
-            "y": 1.08,
+            "y": 1,
             "yanchor": "bottom",
         },
     )
