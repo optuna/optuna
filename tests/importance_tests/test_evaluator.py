@@ -19,6 +19,7 @@ from optuna.importance import MeanDecreaseImpurityImportanceEvaluator
 from optuna.importance import PedAnovaImportanceEvaluator
 from optuna.samplers import RandomSampler
 from optuna.study import create_study
+from optuna.study.study import Direction
 from optuna.testing.objectives import pruned_objective
 from optuna.trial import create_trial
 from optuna.trial import Trial
@@ -88,7 +89,7 @@ def multi_objective_function(trial: Trial) -> tuple[float, float]:
 
 def get_study(seed: int, n_trials: int, is_multi_obj: bool) -> Study:
     # Assumes that `seed` can be fixed to reproduce identical results.
-    directions = ["minimize", "minimize"] if is_multi_obj else ["minimize"]
+    directions: list[Direction] = ["minimize", "minimize"] if is_multi_obj else ["minimize"]
     study = create_study(sampler=RandomSampler(seed=seed), directions=directions)
     if is_multi_obj:
         study.optimize(multi_objective_function, n_trials=n_trials)

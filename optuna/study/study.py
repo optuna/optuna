@@ -10,6 +10,7 @@ from numbers import Real
 import threading
 from typing import Any
 from typing import cast
+from typing import Literal
 from typing import TYPE_CHECKING
 from typing import Union
 
@@ -50,6 +51,7 @@ if TYPE_CHECKING:
 
 
 ObjectiveFuncType = Callable[["Trial"], Union[float, Sequence[float]]]
+Direction = Literal["minimize", "maximize"] | StudyDirection
 
 
 _SYSTEM_ATTR_METRIC_NAMES = "study:metric_names"
@@ -1205,9 +1207,9 @@ def create_study(
     sampler: "samplers.BaseSampler" | None = None,
     pruner: pruners.BasePruner | None = None,
     study_name: str | None = None,
-    direction: str | StudyDirection | None = None,
+    direction: Direction | None = None,
     load_if_exists: bool = False,
-    directions: Sequence[str | StudyDirection] | None = None,
+    directions: Sequence[Direction] | None = None,
 ) -> Study:
     """Create a new :class:`~optuna.study.Study`.
 

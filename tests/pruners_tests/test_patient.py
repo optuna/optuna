@@ -3,6 +3,7 @@ from __future__ import annotations
 import pytest
 
 import optuna
+from optuna.study.study import Direction
 
 
 def test_patient_pruner_experimental_warning() -> None:
@@ -75,7 +76,7 @@ def test_patient_pruner_intermediate_values_nan() -> None:
 def test_patient_pruner_intermediate_values(
     patience: int,
     min_delta: float,
-    direction: str,
+    direction: Direction,
     intermediates: list[int],
     expected_prune_steps: list[int],
 ) -> None:

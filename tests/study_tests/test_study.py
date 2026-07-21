@@ -38,6 +38,7 @@ from optuna.exceptions import ExperimentalWarning
 from optuna.study import StudyDirection
 from optuna.study._constrained_optimization import _CONSTRAINTS_KEY
 from optuna.study.study import _SYSTEM_ATTR_METRIC_NAMES
+from optuna.study.study import Direction
 from optuna.testing.objectives import fail_objective
 from optuna.testing.objectives import pruned_objective
 from optuna.testing.storages import STORAGE_MODES
@@ -170,13 +171,13 @@ def test_optimize_with_direction() -> None:
     check_study(study)
 
     with pytest.raises(ValueError):
-        create_study(direction="test")
+        create_study(direction="test")  # type: ignore[arg-type]
 
     with pytest.raises(ValueError):
         create_study(direction=["maximize", "minimize"])  # type: ignore [arg-type]
 
     with pytest.raises(ValueError):
-        create_study(directions="minimize")
+        create_study(directions="minimize")  # type: ignore[arg-type]
 
 
 @pytest.mark.parametrize("n_trials", (0, 1, NUM_MINIMAL_TRIALS))
@@ -1199,7 +1200,7 @@ def test_create_study_with_direction_object() -> None:
 
 @pytest.mark.parametrize("n_objectives", [2, 3])
 def test_optimize_with_multi_objectives(n_objectives: int) -> None:
-    directions = ["minimize" for _ in range(n_objectives)]
+    directions: list[Direction] = ["minimize" for _ in range(n_objectives)]
     study = create_study(directions=directions)
 
     def objective(trial: Trial) -> list[float]:
@@ -1283,7 +1284,7 @@ def test_best_trials_constrained_optimization() -> None:
 
 def test_wrong_n_objectives() -> None:
     n_objectives = 2
-    directions = ["minimize" for _ in range(n_objectives)]
+    directions: list[Direction] = ["minimize" for _ in range(n_objectives)]
     study = create_study(directions=directions)
 
     def objective(trial: Trial) -> list[float]:

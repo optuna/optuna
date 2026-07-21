@@ -3,10 +3,13 @@ from __future__ import annotations
 import pytest
 
 import optuna
+from optuna.study.study import Direction
 
 
 @pytest.mark.parametrize("direction_value", [("minimize", 2), ("maximize", 0.5)])
-def test_successive_halving_pruner_intermediate_values(direction_value: tuple[str, float]) -> None:
+def test_successive_halving_pruner_intermediate_values(
+    direction_value: tuple[Direction, float],
+) -> None:
     direction, intermediate_value = direction_value
     pruner = optuna.pruners.SuccessiveHalvingPruner(
         min_resource=1, reduction_factor=2, min_early_stopping_rate=0

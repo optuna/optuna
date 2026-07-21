@@ -12,6 +12,7 @@ import pytest
 import optuna
 from optuna.samplers import _tpe
 from optuna.samplers import TPESampler
+from optuna.study.study import Direction
 
 
 class MockSystemAttr:
@@ -311,7 +312,9 @@ def test_multi_objective_sample_independent_ignored_states() -> None:
 
 @pytest.mark.parametrize("direction0", ["minimize", "maximize"])
 @pytest.mark.parametrize("direction1", ["minimize", "maximize"])
-def test_split_complete_trials_multi_objective(direction0: str, direction1: str) -> None:
+def test_split_complete_trials_multi_objective(
+    direction0: Direction, direction1: Direction
+) -> None:
     study = optuna.create_study(directions=(direction0, direction1))
 
     for values in ([-2.0, -1.0], [3.0, 3.0], [0.0, 1.0], [-1.0, 0.0]):

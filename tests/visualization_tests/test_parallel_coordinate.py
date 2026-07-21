@@ -13,6 +13,7 @@ from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.study import create_study
 from optuna.study import Study
+from optuna.study.study import Direction
 from optuna.testing.objectives import fail_objective
 from optuna.testing.visualization import prepare_study_with_trials
 from optuna.trial import create_trial
@@ -676,7 +677,7 @@ def test_get_parallel_coordinate_info_with_log_scale_and_str_and_numeric_categor
 
 
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])
-def test_color_map(direction: str) -> None:
+def test_color_map(direction: Direction) -> None:
     study = create_study(direction=direction)
     for i in range(3):
         study.add_trial(

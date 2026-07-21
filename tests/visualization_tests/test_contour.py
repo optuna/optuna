@@ -13,6 +13,7 @@ from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.study import create_study
 from optuna.study import Study
+from optuna.study.study import Direction
 from optuna.testing.objectives import fail_objective
 from optuna.testing.visualization import prepare_study_with_trials
 from optuna.trial import create_trial
@@ -102,7 +103,7 @@ def _create_study_mixture_category_types() -> Study:
     return study
 
 
-def _create_study_with_overlapping_params(direction: str) -> Study:
+def _create_study_with_overlapping_params(direction: Direction) -> Study:
     study = create_study(direction=direction)
     distributions = {
         "param_a": FloatDistribution(1.0, 2.0),
@@ -555,7 +556,7 @@ def test_get_contour_info_nonfinite_multiobjective(objective: int, value: float)
 
 
 @pytest.mark.parametrize("direction,expected", (("minimize", 0.0), ("maximize", 1.0)))
-def test_get_contour_info_overlapping_params(direction: str, expected: float) -> None:
+def test_get_contour_info_overlapping_params(direction: Direction, expected: float) -> None:
     study = _create_study_with_overlapping_params(direction)
     info = _get_contour_info(study, params=["param_a", "param_b"])
     assert info == _ContourInfo(
@@ -590,7 +591,7 @@ def test_get_contour_info_overlapping_params(direction: str, expected: float) ->
 
 
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])
-def test_color_map(direction: str) -> None:
+def test_color_map(direction: Direction) -> None:
     study = create_study(direction=direction)
     for i in range(3):
         study.add_trial(

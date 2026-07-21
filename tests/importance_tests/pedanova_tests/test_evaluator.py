@@ -9,6 +9,7 @@ import pytest
 import optuna
 from optuna.importance import PedAnovaImportanceEvaluator
 from optuna.importance._ped_anova.evaluator import _QuantileFilter
+from optuna.study.study import Direction
 from optuna.trial import FrozenTrial
 from tests.importance_tests.test_evaluator import get_study
 
@@ -145,7 +146,7 @@ def test_evaluate_on_local() -> None:
     ],
 )
 def test_get_top_quantile_trials_multi_objective_target_none(
-    directions: list[str],
+    directions: list[Direction],
     values: list[list[float]],
     target_quantile: float,
     region_quantile: float,
