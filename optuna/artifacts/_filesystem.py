@@ -48,7 +48,8 @@ class FileSystemArtifactStore:
     def __init__(self, base_path: str | Path) -> None:
         if isinstance(base_path, str):
             base_path = Path(base_path)
-        # TODO(Shinichi): Check if the base_path is valid directory.
+        if base_path.exists() and not base_path.is_dir():
+            raise ValueError(f"base_path must be a directory: {base_path}")
         self._base_path = base_path
 
     def _get_filepath(self, artifact_id: str) -> Path:

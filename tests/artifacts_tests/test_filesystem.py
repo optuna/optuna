@@ -53,3 +53,12 @@ def test_path_traversal(tmp_path: Path) -> None:
 
         with pytest.raises(ValueError, match="Invalid artifact_id"):
             backend.remove(invalid_id)
+
+
+def test_invalid_base_path(tmp_path: Path) -> None:
+    file_path = tmp_path / "file.txt"
+    file_path.touch()
+
+    with pytest.raises(ValueError, match="base_path must be a directory"):
+        FileSystemArtifactStore(file_path)
+
