@@ -106,6 +106,7 @@ class ScottParzenEstimator:
 
     def pdf(self, samples: np.ndarray) -> np.ndarray:
         assert samples.ndim == 1
+        # NOTE(nabenabe): _MixtureOfProductDistribution requires the shape of ``(n_samples, dim)``.
         return np.exp(self._mixture_distribution.log_pdf(samples[:, np.newaxis]))
 
 
