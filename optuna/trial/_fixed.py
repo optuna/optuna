@@ -229,4 +229,13 @@ class FixedTrial(BaseTrial):
                 are zero or less.
         """
 
-        self._system_attrs[f"{_CONSTRAINTS_KEY}:{key}"] = value
+        constraint_key = f"{_CONSTRAINTS_KEY}:{key}"
+
+        if constraint_key in self._system_attrs:
+            # Do nothing if already set.
+            optuna_warn(
+                f"The constraint value is ignored because this constraint `{key=}` is already set."
+            )
+            return
+
+        self._system_attrs[constraint_key] = value

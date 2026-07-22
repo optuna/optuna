@@ -806,8 +806,18 @@ class Trial(BaseTrial):
                 are zero or less.
         """
 
-        self.storage.set_trial_system_attr(self._trial_id, f"{_CONSTRAINTS_KEY}:{key}", value)
-        self._cached_frozen_trial.system_attrs[f"{_CONSTRAINTS_KEY}:{key}"] = value
+        constraint_key = f"{_CONSTRAINTS_KEY}:{key}"
+
+        system_attrs = self.storage.get_trial_system_attrs(self._trial_id)
+        if constraint_key in system_attrs:
+            # Do nothing if already set.
+            optuna_warn(
+                f"The constraint value is ignored because this constraint `{key=}` is already set."
+            )
+            return
+
+        self.storage.set_trial_system_attr(self._trial_id, constraint_key, value)
+        self._cached_frozen_trial.system_attrs[constraint_key] = value
 
 
 class _LazyTrialSystemAttrs(UserDict):

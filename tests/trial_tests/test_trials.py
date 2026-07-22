@@ -232,14 +232,16 @@ def test_set_constraint(trial_type: type) -> None:
     assert constraints["limit"] == 2.5
 
 
+@pytest.mark.filterwarnings("ignore::UserWarning")
 @parametrize_trial_type
 def test_set_constraint_override(trial_type: type) -> None:
     trial = _create_trial(trial_type)
     trial.set_constraint("value", 1.0)
-    trial.set_constraint("value", 2.0)  # Override
+    assert trial.constraints["value"] == 1.0
 
-    constraints = trial.constraints
-    assert constraints["value"] == 2.0
+    # set_constraint does not perform constraint overrides.
+    trial.set_constraint("value", 2.0)
+    assert trial.constraints["value"] == 1.0
 
 
 def test_constraints_old_format() -> None:
