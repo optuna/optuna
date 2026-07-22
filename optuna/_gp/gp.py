@@ -24,7 +24,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from optuna._gp.qmc import _sample_from_normal_sobol
+from optuna._gp.qmc import sample_from_normal_sobol
 from optuna._gp.scipy_blas_thread_patch import single_blas_thread_if_scipy_v1_15_or_newer
 from optuna._warnings import optuna_warn
 from optuna.logging import get_logger
@@ -401,7 +401,7 @@ class ConditionalGPRegressor:
         self._X_running = X_running
         # fixed_samples is a standard-normal base samples of shape (n_qmc_samples, n_running + 1),
         # with the final column (+1 in dim below) reserved for the queried point.
-        fixed_samples = _sample_from_normal_sobol(
+        fixed_samples = sample_from_normal_sobol(
             dim=X_running.shape[0] + 1, n_samples=n_qmc_samples, seed=qmc_seed
         )
         self._fixed_samples_x = fixed_samples[..., -1]

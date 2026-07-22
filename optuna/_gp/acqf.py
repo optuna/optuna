@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 from optuna._gp.gp import ConditionalGPRegressor
-from optuna._gp.qmc import _sample_from_normal_sobol
+from optuna._gp.qmc import sample_from_normal_sobol
 from optuna._hypervolume import get_non_dominated_box_bounds
 from optuna.study._multi_objective import _is_pareto_front
 
@@ -343,7 +343,7 @@ class LogEHVI(BaseAcquisitionFunc):
                     gpr.posterior(normalized_params_of_running_trials_tensor)[0],
                 )
 
-        self._fixed_samples = _sample_from_normal_sobol(
+        self._fixed_samples = sample_from_normal_sobol(
             dim=Y_train.shape[-1], n_samples=n_qmc_samples, seed=qmc_seed
         )
         self._non_dominated_box_lower_bounds, non_dominated_box_upper_bounds = (

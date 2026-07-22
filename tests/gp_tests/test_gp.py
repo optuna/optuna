@@ -8,7 +8,7 @@ from optuna._gp.gp import ConditionalGPRegressor
 from optuna._gp.gp import GPRegressor
 from optuna._gp.gp import warn_and_convert_inf
 import optuna._gp.prior as prior
-from optuna._gp.qmc import _sample_from_normal_sobol
+from optuna._gp.qmc import sample_from_normal_sobol
 
 
 @pytest.mark.parametrize(
@@ -237,7 +237,7 @@ def test_conditional_gpr_matches_joint(n_running: int, batch_size: int) -> None:
 
     mu, cov = gpr.posterior(joint_x, joint=True)
     cov.diagonal(dim1=-2, dim2=-1).add_(stabilizing_noise)
-    fixed_samples = _sample_from_normal_sobol(
+    fixed_samples = sample_from_normal_sobol(
         dim=n_running + 1, n_samples=n_qmc_samples, seed=qmc_seed
     )
     samples_joint = mu.unsqueeze(-2) + torch.matmul(
