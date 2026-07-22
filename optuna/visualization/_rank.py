@@ -9,7 +9,6 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 from optuna.logging import get_logger
-from optuna.samplers._base import _CONSTRAINTS_KEY
 from optuna.trial import TrialState
 from optuna.visualization._plotly_imports import _imports
 
@@ -188,8 +187,7 @@ def _get_rank_subplot_info(
     infeasible_trial_ids = []
     filtered_ids = []
     for idx, trial in enumerate(trials):
-        constraints = trial.system_attrs.get(_CONSTRAINTS_KEY)
-        if constraints is not None and any([x > 0.0 for x in constraints]):
+        if any(x > 0.0 for x in trial.constraints.values()):
             infeasible_trial_ids.append(idx)
         if x_param in trial.params and y_param in trial.params:
             filtered_ids.append(idx)

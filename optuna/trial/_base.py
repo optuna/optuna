@@ -135,3 +135,7 @@ class BaseTrial(abc.ABC):
     @property
     def number(self) -> int:
         raise NotImplementedError
+
+    @property
+    def constraints(self) -> dict[str, float]:
+        raise NotImplementedError

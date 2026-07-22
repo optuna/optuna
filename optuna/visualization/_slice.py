@@ -10,7 +10,6 @@ from typing import TYPE_CHECKING
 from optuna.distributions import CategoricalChoiceType
 from optuna.distributions import CategoricalDistribution
 from optuna.logging import get_logger
-from optuna.samplers._base import _CONSTRAINTS_KEY
 from optuna.trial import TrialState
 from optuna.visualization._plotly_imports import _imports
 
@@ -88,8 +87,7 @@ def _get_slice_subplot_info(
         plot_info.x.append(t.params[param])
         plot_info.y.append(target(t))
         plot_info.trial_numbers.append(t.number)
-        constraints = t.system_attrs.get(_CONSTRAINTS_KEY)
-        plot_info.constraints.append(constraints is None or all([x <= 0.0 for x in constraints]))
+        plot_info.constraints.append(all(x <= 0.0 for x in t.constraints.values()))
 
     return plot_info
 

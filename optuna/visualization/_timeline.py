@@ -5,7 +5,6 @@ from typing import NamedTuple
 from typing import TYPE_CHECKING
 
 from optuna.logging import get_logger
-from optuna.samplers._base import _CONSTRAINTS_KEY
 from optuna.trial import TrialState
 from optuna.visualization._plotly_imports import _imports
 from optuna.visualization._utils import _make_hovertext
@@ -112,11 +111,7 @@ def _get_timeline_info(study: Study, n_recent_trials: int | None = None) -> _Tim
             if trial.state == TrialState.RUNNING
             else trial.datetime_complete or datetime_start + timedelta_for_small_bar
         )
-        infeasible = (
-            False
-            if _CONSTRAINTS_KEY not in trial.system_attrs
-            else any([x > 0 for x in trial.system_attrs[_CONSTRAINTS_KEY]])
-        )
+        infeasible = any(x > 0 for x in trial.constraints.values())
         if datetime_complete < datetime_start:
             _logger.warning(
                 (
