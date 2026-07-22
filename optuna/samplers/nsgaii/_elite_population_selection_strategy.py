@@ -8,6 +8,7 @@ import numpy as np
 from optuna.samplers.nsgaii._constraints_evaluation import _evaluate_penalty
 from optuna.samplers.nsgaii._constraints_evaluation import _validate_constraints
 from optuna.study import StudyDirection
+from optuna.study._constrained_optimization import _is_constrained_optimization
 from optuna.study._multi_objective import _fast_non_domination_rank
 
 
@@ -44,9 +45,10 @@ class NSGAIIElitePopulationSelectionStrategy:
         Returns:
             A list of trials that are selected as elite population.
         """
-        _validate_constraints(population, is_constrained=self._constraints_func is not None)
+        is_constrained = _is_constrained_optimization(population)
+        _validate_constraints(population, is_constrained=is_constrained)
         population_per_rank = _rank_population(
-            population, study.directions, is_constrained=self._constraints_func is not None
+            population, study.directions, is_constrained=is_constrained
         )
         elite_population: list[FrozenTrial] = []
         for individuals in population_per_rank:

@@ -11,6 +11,12 @@ if TYPE_CHECKING:
 _CONSTRAINTS_KEY = "constraints"
 
 
+def _is_constrained_optimization(trials: Sequence[FrozenTrial]) -> bool:
+    """Return whether the given trials are created in constrained optimization."""
+
+    return any(len(trial.constraints) > 0 for trial in trials)
+
+
 def _get_feasible_trials(trials: Sequence[FrozenTrial]) -> list[FrozenTrial]:
     """Return feasible trials from given trials.
 

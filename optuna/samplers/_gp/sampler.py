@@ -13,6 +13,7 @@ from optuna.samplers._base import _process_constraints_after_trial
 from optuna.samplers._base import BaseSampler
 from optuna.samplers._lazy_random_state import LazyRandomState
 from optuna.study import StudyDirection
+from optuna.study._constrained_optimization import _is_constrained_optimization
 from optuna.study._multi_objective import _is_pareto_front
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
@@ -418,7 +419,7 @@ class GPSampler(BaseSampler):
 
         best_params: np.ndarray | None
         acqf: acqf_module.BaseAcquisitionFunc
-        if self._constraints_func is None:
+        if not _is_constrained_optimization(completed_trials):
             if n_objectives == 1:
                 assert len(gprs_list) == 1
                 if normalized_params_of_running_trials is None:
