@@ -374,6 +374,7 @@ class ConditionalGPRegressor:
 
     We first pre-sample fantasy values at X_running from p(f_Xr | complete trials) and draw
     conditional samples at new points from p(f_x | f_Xr, complete trials).
+    Note that ``sample_joint_posterior`` is a deterministic operation due to the pre-sampling.
 
     Considering p(y_a | y_b) = p(y_x | y_Xr), the posterior of this distribution has:
         mean: mu_a + cov_ab @ inv(cov_bb) @ (y_b - mu_b),
@@ -385,8 +386,7 @@ class ConditionalGPRegressor:
     `a` with `x` and `b` with `r`, then we get the exact formula.
 
     `gpr` is assumed to contain only completed trials; running trials are handled separately
-    through `X_running`. `fixed_samples` must contain standard-normal base samples of shape
-    (n_qmc_samples, n_running + 1), with the final column reserved for the queried point.
+    through `X_running`.
     """
 
     def __init__(
@@ -399,9 +399,10 @@ class ConditionalGPRegressor:
     ) -> None:
         self._gpr = gpr
         self._X_running = X_running
-        # NOTE(nabe): The number of pending points + the new point, so +1.
+        # fixed_samples is a standard-normal base samples of shape (n_qmc_samples, n_running + 1),
+        # with the final column (+1 in dim below) reserved for the queried point.
         fixed_samples = _sample_from_normal_sobol(
-            dim=1 + X_running.shape[0], n_samples=n_qmc_samples, seed=qmc_seed
+            dim=X_running.shape[0] + 1, n_samples=n_qmc_samples, seed=qmc_seed
         )
         self._fixed_samples_x = fixed_samples[..., -1]
         self._stabilizing_noise = stabilizing_noise
