@@ -8,6 +8,8 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
+from optuna._gp.gp import ConditionalGPRegressor
+from optuna._gp.qmc import sample_from_normal_sobol
 from optuna._hypervolume import get_non_dominated_box_bounds
 from optuna.study._multi_objective import _is_pareto_front
 
@@ -28,18 +30,6 @@ _INV_SQRT_2PI = 1 / math.sqrt(2 * math.pi)
 _SQRT_HALF_PI = math.sqrt(0.5 * math.pi)
 _LOG_SQRT_2PI = math.log(math.sqrt(2 * math.pi))
 _EPS = 1e-12  # NOTE(nabenabe): grad becomes nan when EPS=0.
-
-
-def _sample_from_normal_sobol(dim: int, n_samples: int, seed: int | None) -> torch.Tensor:
-    # NOTE(nabenabe): Normal Sobol sampling based on BoTorch.
-    # https://github.com/pytorch/botorch/blob/v0.13.0/botorch/sampling/qmc.py#L26-L97
-    # https://github.com/pytorch/botorch/blob/v0.13.0/botorch/utils/sampling.py#L109-L138
-    sobol_samples = torch.quasirandom.SobolEngine(  # type: ignore[no-untyped-call]
-        dimension=dim, scramble=True, seed=seed
-    ).draw(n_samples, dtype=torch.float64)
-    samples = 2.0 * (sobol_samples - 0.5)  # The Sobol sequence in [-1, 1].
-    # Inverse transform to standard normal (values to close to -1 or 1 result in infinity).
-    return torch.erfinv(samples) * float(np.sqrt(2))
 
 
 def logehvi(
@@ -168,47 +158,27 @@ class qLogEI(BaseAcquisitionFunc):
         search_space: SearchSpace,
         threshold: float,
         n_qmc_samples: int,
-        qmc_seed: int | None,
+        qmc_seed: int,
         normalized_params_of_running_trials: np.ndarray,
         stabilizing_noise: float = 1e-12,
     ) -> None:
-        self._gpr = gpr
-        self._stabilizing_noise = stabilizing_noise
         self._threshold = threshold
-        self._X_running = torch.from_numpy(normalized_params_of_running_trials)
-        self._fixed_samples = _sample_from_normal_sobol(
-            # NOTE(nabe): The number of pending points + the new point, so +1.
-            dim=1 + normalized_params_of_running_trials.shape[0],
-            n_samples=n_qmc_samples,
-            seed=qmc_seed,
+        self._cond_gpr = ConditionalGPRegressor(
+            gpr=gpr,
+            X_running=torch.from_numpy(normalized_params_of_running_trials),
+            n_qmc_samples=n_qmc_samples,
+            qmc_seed=qmc_seed,
+            stabilizing_noise=stabilizing_noise,
         )
         super().__init__(gpr.length_scales, search_space)
-
-    def _get_posterior_samples(self, x: torch.Tensor) -> torch.Tensor:
-        mean, cov = self._gpr.posterior(x, joint=True)
-        cov.diagonal(dim1=-2, dim2=-1).add_(self._stabilizing_noise)
-        # mean.shape: (q + 1,), cov.shape: (q + 1, q + 1), fixed_samples.shape: (128, q + 1).
-        return mean.unsqueeze(-2) + torch.matmul(
-            self._fixed_samples, torch.linalg.cholesky(cov).transpose(-1, -2)
-        )
-
-    def _get_joint_input(self, x: torch.Tensor) -> torch.Tensor:
-        if x.ndim == 1:
-            return torch.cat([self._X_running, x.unsqueeze(0)], dim=0)
-        if x.ndim == 2:
-            # Expand from (Q, D) to (..., Q, D), and then concat to (..., Q+1, D).
-            running = self._X_running.unsqueeze(0).expand(x.shape[0], -1, -1)
-            return torch.cat([running, x.unsqueeze(-2)], dim=-2)
-        raise ValueError(f"{x.ndim=} must be 1 or 2.")
 
     def eval_acqf(self, x: torch.Tensor) -> torch.Tensor:
         if np.isneginf(self._threshold):
             return torch.zeros(x.shape[:-1], dtype=torch.float64)
 
         # NOTE(nabenabe): See Eq. (10) of https://arxiv.org/pdf/2310.20708
-        joint_x = self._get_joint_input(x)
-        y_post = self._get_posterior_samples(joint_x)
-        log_improvement = y_post.clamp_(min=torch.tensor(_EPS, dtype=torch.float64)).log()
+        y_post = self._cond_gpr.sample_joint_posterior(x)
+        log_improvement = (y_post - self._threshold).clamp_min_(_EPS).log()
         # Take the max operation along the running candidates direction (the Q-axis).
         # TODO(sawa3030): Consider using fatmax instead of max.
         max_log_improvement_in_q_batch = torch.amax(log_improvement, dim=-1)
@@ -338,7 +308,7 @@ class LogEHVI(BaseAcquisitionFunc):
         search_space: SearchSpace,
         Y_train: torch.Tensor,
         n_qmc_samples: int,
-        qmc_seed: int | None,
+        qmc_seed: int,
         normalized_params_of_running_trials: np.ndarray | None = None,
         stabilizing_noise: float = 1e-12,
     ) -> None:
@@ -373,7 +343,7 @@ class LogEHVI(BaseAcquisitionFunc):
                     gpr.posterior(normalized_params_of_running_trials_tensor)[0],
                 )
 
-        self._fixed_samples = _sample_from_normal_sobol(
+        self._fixed_samples = sample_from_normal_sobol(
             dim=Y_train.shape[-1], n_samples=n_qmc_samples, seed=qmc_seed
         )
         self._non_dominated_box_lower_bounds, non_dominated_box_upper_bounds = (
@@ -416,7 +386,7 @@ class ConstrainedLogEHVI(BaseAcquisitionFunc):
         search_space: SearchSpace,
         Y_feasible: torch.Tensor | None,
         n_qmc_samples: int,
-        qmc_seed: int | None,
+        qmc_seed: int,
         constraints_gpr_list: list[GPRegressor],
         constraints_threshold_list: list[float],
         normalized_params_of_running_trials: np.ndarray | None = None,
