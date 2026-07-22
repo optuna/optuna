@@ -106,7 +106,7 @@ class ScottParzenEstimator:
 
     def pdf(self, samples: np.ndarray) -> np.ndarray:
         assert samples.ndim == 1
-        return np.exp(self._mixture_distribution.log_pdf(samples[np.newaxis]))
+        return np.exp(self._mixture_distribution.log_pdf(samples[:, np.newaxis]))
 
 
 def _count_numerical_param_in_grid(
