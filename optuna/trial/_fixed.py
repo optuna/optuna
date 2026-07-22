@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime
+import math
 from typing import Any
 from typing import overload
 from typing import TYPE_CHECKING
@@ -230,6 +231,18 @@ class FixedTrial(BaseTrial):
                 A constraint value. The trial is considered feasible when all constraint values
                 are zero or less.
         """
+
+        try:
+            # For convenience, we allow users to set a value that can be cast to `float`.
+            value = float(value)
+        except (TypeError, ValueError):
+            message = (
+                f"The `value` argument is of type '{type(value)}' but supposed to be a float."
+            )
+            raise TypeError(message) from None
+
+        if math.isnan(value):
+            raise ValueError(f"Attempted to set a constraint for {key!r}, but NaN is not allowed.")
 
         constraint_key = f"{_CONSTRAINTS_KEY}:{key}"
 

@@ -232,6 +232,13 @@ def test_set_constraint(trial_type: type) -> None:
     assert constraints["limit"] == 2.5
 
 
+@parametrize_trial_type
+def test_set_constraint_nan(trial_type: type) -> None:
+    trial = _create_trial(trial_type)
+    with pytest.raises(ValueError):
+        trial.set_constraint("constraint", float("nan"))
+
+
 @pytest.mark.filterwarnings("ignore::UserWarning")
 @parametrize_trial_type
 def test_set_constraint_override(trial_type: type) -> None:
