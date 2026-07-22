@@ -214,6 +214,8 @@ class FixedTrial(BaseTrial):
         for key, value in self.system_attrs.items():
             if key.startswith(prefix):
                 constraint_key = key[len(prefix) :]
+                if constraint_key in constraints_dict:
+                    optuna_warn("Overwrite an old format constraint.")
                 constraints_dict[constraint_key] = value
 
         return constraints_dict

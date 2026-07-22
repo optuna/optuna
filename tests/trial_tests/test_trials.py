@@ -271,6 +271,7 @@ def test_constraints_new_format() -> None:
     assert constraints == {"cost": 2.5, "limit": 10.0}
 
 
+@pytest.mark.filterwarnings("ignore::UserWarning")
 def test_constraints_mixed_format() -> None:
     trial = create_trial(
         value=1.0,
@@ -285,6 +286,20 @@ def test_constraints_mixed_format() -> None:
 
     constraints = trial.constraints
     assert constraints == {"0": 1.0, "1": 2.0, "cost": 3.0, "limit": 4.0}
+
+    trial = create_trial(
+        value=1.0,
+        params={"x": 5.0},
+        distributions={"x": FloatDistribution(-10, 10)},
+        system_attrs={
+            _CONSTRAINTS_KEY: [1.0, 2.0],  # Old format
+            "constraints:0": 3.0,  # New format
+        },
+    )
+
+    constraints = trial.constraints
+    # The new format constraint overrides the old format one.
+    assert constraints == {"0": 3.0, "1": 2.0}
 
 
 def test_constraints_empty() -> None:
