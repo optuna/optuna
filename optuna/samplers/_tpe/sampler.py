@@ -13,7 +13,6 @@ import numpy as np
 from optuna import _deprecated
 from optuna._convert_positional_args import convert_positional_args
 from optuna._experimental import warn_experimental_argument
-from optuna._hypervolume import compute_hypervolume
 from optuna._hypervolume.hssp import _solve_hssp
 from optuna._warnings import optuna_warn
 from optuna.logging import get_logger
@@ -28,7 +27,6 @@ from optuna.search_space import IntersectionSearchSpace
 from optuna.search_space.group_decomposed import _GroupDecomposedSearchSpace
 from optuna.search_space.group_decomposed import _SearchSpaceGroup
 from optuna.study._multi_objective import _fast_non_domination_rank
-from optuna.study._multi_objective import _is_pareto_front
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
@@ -299,9 +297,7 @@ class TPESampler(BaseSampler):
                 In the multi-objective case, this argument is only used to compute the weights of
                 bad trials, i.e., trials to construct `g(x)` in the `paper
                 <https://papers.nips.cc/paper/4443-algorithms-for-hyper-parameter-optimization.pdf>`__
-                ). The weights of good trials, i.e., trials to construct `l(x)`, are computed by a
-                rule based on the hypervolume contribution proposed in the `paper of MOTPE
-                <https://doi.org/10.1613/jair.1.13188>`__.
+                ). The weights of good trials, i.e., trials to construct `l(x)`, are uniform.
 
             .. warning::
                 Deprecated in v4.9.0. ``weights`` argument will be removed in the future.
@@ -655,13 +651,11 @@ class TPESampler(BaseSampler):
     ) -> _ParzenEstimator:
         observations = self._get_internal_repr(trials, search_space, study)
         if handle_below and study._is_multi_objective():
-            param_mask_below = [
-                search_space.keys() <= self._get_params(trial, study).keys() for trial in trials
-            ]
-            weights_below = _calculate_weights_below_for_multi_objective(
-                study, trials, self._constraints_func
-            )[param_mask_below]
-            assert np.isfinite(weights_below).all()
+            n_below = 0
+            for trial in trials:
+                if search_space.keys() <= self._get_params(trial, study).keys():
+                    n_below += 1
+            weights_below = np.ones(n_below)
             mpe = self._parzen_estimator_cls(
                 observations, search_space, self._parzen_estimator_parameters, weights_below
             )
@@ -907,48 +901,6 @@ def _split_infeasible_trials(
     n_below = min(n_below, len(trials))
     sorted_trials = sorted(trials, key=_get_infeasible_trial_score)
     return sorted_trials[:n_below], sorted_trials[n_below:]
-
-
-def _calculate_weights_below_for_multi_objective(
-    study: Study,
-    below_trials: list[FrozenTrial],
-    constraints_func: Callable[[FrozenTrial], Sequence[float]] | None,
-) -> np.ndarray:
-    def _feasible(trial: FrozenTrial) -> bool:
-        return constraints_func is None or all(c <= 0 for c in constraints_func(trial))
-
-    is_feasible = np.asarray([_feasible(t) for t in below_trials])
-    weights_below = np.where(is_feasible, 1.0, EPS)  # Assign EPS to infeasible trials.
-    n_below_feasible = np.count_nonzero(is_feasible)
-    if n_below_feasible <= 1:
-        return weights_below
-
-    lvals = np.asarray([t.values for t in below_trials])[is_feasible]
-    lvals *= [-1.0 if d == StudyDirection.MAXIMIZE else 1.0 for d in study.directions]
-    ref_point = _get_reference_point(lvals)
-    on_front = _is_pareto_front(lvals, assume_unique_lexsorted=False)
-    pareto_sols = lvals[on_front]
-    hv = compute_hypervolume(pareto_sols, ref_point, assume_pareto=True)
-    if math.isinf(hv):
-        # TODO(nabenabe): Assign EPS to non-Pareto solutions, and
-        # solutions with finite contrib if hv is inf. Ref: PR#5813.
-        return weights_below
-
-    loo_mat = ~np.eye(pareto_sols.shape[0], dtype=bool)  # Leave-one-out bool matrix.
-    contribs = np.zeros(n_below_feasible, dtype=float)
-    if len(study.directions) <= 3:
-        contribs[on_front] = [
-            hv - compute_hypervolume(pareto_sols[loo], ref_point, assume_pareto=True)
-            for loo in loo_mat
-        ]
-    else:
-        contribs[on_front] = np.prod(ref_point - pareto_sols, axis=-1)
-        limited_sols = np.maximum(pareto_sols, pareto_sols[:, np.newaxis])
-        contribs[on_front] -= [
-            compute_hypervolume(limited_sols[i, loo], ref_point) for i, loo in enumerate(loo_mat)
-        ]
-    weights_below[is_feasible] = np.maximum(contribs / max(np.max(contribs), EPS), EPS)
-    return weights_below
 
 
 @lru_cache(maxsize=1)
