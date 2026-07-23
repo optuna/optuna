@@ -24,7 +24,8 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from optuna._gp.scipy_blas_thread_patch import single_blas_thread_if_scipy_v1_15_or_newer
+from optuna._gp.qmc import sample_from_normal_sobol
+from optuna._gp.thread_limiting import limit_threads_in_optimization
 from optuna._warnings import optuna_warn
 from optuna.logging import get_logger
 
@@ -343,7 +344,7 @@ class GPRegressor:
                 assert not deterministic_objective or raw_noise_var_grad == 0
             return loss.item(), raw_params_tensor.grad.detach().cpu().numpy()  # type: ignore
 
-        with single_blas_thread_if_scipy_v1_15_or_newer():
+        with limit_threads_in_optimization():
             # jac=True means loss_func returns the gradient for gradient descent.
             res = scipy.optimize.minimize(
                 # Too small `gtol` causes instability in loss_func optimization.
@@ -373,6 +374,7 @@ class ConditionalGPRegressor:
 
     We first pre-sample fantasy values at X_running from p(f_Xr | complete trials) and draw
     conditional samples at new points from p(f_x | f_Xr, complete trials).
+    Note that ``sample_joint_posterior`` is a deterministic operation due to the pre-sampling.
 
     Considering p(y_a | y_b) = p(y_x | y_Xr), the posterior of this distribution has:
         mean: mu_a + cov_ab @ inv(cov_bb) @ (y_b - mu_b),
@@ -384,19 +386,24 @@ class ConditionalGPRegressor:
     `a` with `x` and `b` with `r`, then we get the exact formula.
 
     `gpr` is assumed to contain only completed trials; running trials are handled separately
-    through `X_running`. `fixed_samples` must contain standard-normal base samples of shape
-    (n_qmc_samples, n_running + 1), with the final column reserved for the queried point.
+    through `X_running`.
     """
 
     def __init__(
         self,
         gpr: GPRegressor,
         X_running: torch.Tensor,
-        fixed_samples: torch.Tensor,
+        n_qmc_samples: int,
+        qmc_seed: int,
         stabilizing_noise: float,
     ) -> None:
         self._gpr = gpr
         self._X_running = X_running
+        # fixed_samples is a standard-normal base samples of shape (n_qmc_samples, n_running + 1),
+        # with the final column (+1 in dim below) reserved for the queried point.
+        fixed_samples = sample_from_normal_sobol(
+            dim=X_running.shape[0] + 1, n_samples=n_qmc_samples, seed=qmc_seed
+        )
         self._fixed_samples_x = fixed_samples[..., -1]
         self._stabilizing_noise = stabilizing_noise
         with torch.no_grad():
@@ -416,8 +423,8 @@ class ConditionalGPRegressor:
             assert isinstance(cov_Y_Y_chol, torch.Tensor), "MyPy Redefinition"
             self._V_r = _solve_cholesky(cov_Y_Y_chol, cov_fXr_fX, left=False).transpose(-2, -1)
 
-    def sample(self, x: torch.Tensor) -> torch.Tensor:
-        """Return conditional samples for each query point.
+    def sample_joint_posterior(self, x: torch.Tensor) -> torch.Tensor:
+        """Return conditional joint posterior samples for each query point.
 
         For batched ``x``, each batch element is treated as a separate query sharing the same
         running fantasies, rather than as part of a joint posterior over the query points.
