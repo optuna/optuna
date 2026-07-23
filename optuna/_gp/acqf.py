@@ -148,7 +148,6 @@ class qLogEI(BaseAcquisitionFunc):
         stabilizing_noise: float = 1e-12,
     ) -> None:
         self._threshold = threshold
-        self._n_qmc_samples = n_qmc_samples
         self._cond_gpr = ConditionalGPRegressor(
             gpr=gpr,
             X_running=torch.from_numpy(normalized_params_of_running_trials),
