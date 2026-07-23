@@ -507,7 +507,9 @@ class GPSampler(BaseSampler):
                         search_space=internal_search_space,
                         threshold=best_feasible_y,
                         n_qmc_samples=self._n_qmc_samples_qei,
-                        qmc_seed=self._rng.rng.randint(1 << 30),
+                        qmc_seeds=self._rng.rng.randint(
+                            1 << 30, size=len(constr_gpr_list) + 1
+                        ).tolist(),
                         constraints_gpr_list=constr_gpr_list,
                         constraints_threshold_list=constr_threshold_list,
                         normalized_params_of_running_trials=normalized_params_of_running_trials,

@@ -122,7 +122,7 @@ def test_eval_qconstrained_logei(
         search_space=search_space,
         threshold=-np.inf if is_all_infeasible else np.max(Y[is_feasible]),
         n_qmc_samples=32,
-        qmc_seed=42,
+        qmc_seeds=[42, 17, 99, 123][: len(c.T) + 1],
         constraints_gpr_list=[get_gpr(vals) for vals in c.T],
         constraints_threshold_list=[0.0] * len(c.T),
         normalized_params_of_running_trials=np.array([[0.4, 0.6]]),

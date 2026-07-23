@@ -312,7 +312,7 @@ class qConstrainedLogEI(BaseAcquisitionFunc):
         search_space: SearchSpace,
         threshold: float,
         n_qmc_samples: int,
-        qmc_seed: int,
+        qmc_seeds: list[int],
         constraints_gpr_list: list[GPRegressor],
         constraints_threshold_list: list[float],
         normalized_params_of_running_trials: np.ndarray,
@@ -321,12 +321,13 @@ class qConstrainedLogEI(BaseAcquisitionFunc):
         assert (
             len(constraints_gpr_list) == len(constraints_threshold_list) and constraints_gpr_list
         )
+        assert len(qmc_seeds) == len(constraints_gpr_list) + 1
         self._acqf = qLogEI(
             gpr,
             search_space,
             threshold,
             n_qmc_samples,
-            qmc_seed,
+            qmc_seeds[0],
             normalized_params_of_running_trials,
             stabilizing_noise,
         )
@@ -336,11 +337,11 @@ class qConstrainedLogEI(BaseAcquisitionFunc):
                 search_space=search_space,
                 threshold=threshold,
                 n_qmc_samples=n_qmc_samples,
-                qmc_seed=qmc_seed + i + 1,
+                qmc_seed=qmc_seed,
                 normalized_params_of_running_trials=normalized_params_of_running_trials,
                 stabilizing_noise=stabilizing_noise,
             )
-            for i, constraint_gpr in enumerate(constraints_gpr_list)
+            for constraint_gpr, qmc_seed in zip(constraints_gpr_list, qmc_seeds[1:])
         ]
         super().__init__(gpr.length_scales, search_space)
 
