@@ -158,18 +158,14 @@ class qLogEI(BaseAcquisitionFunc):
         )
         super().__init__(gpr.length_scales, search_space)
 
-    def _log_improvement(self, x: torch.Tensor) -> torch.Tensor:
+    def eval_acqf(self, x: torch.Tensor) -> torch.Tensor:
         if np.isneginf(self._threshold):
-            return torch.zeros(
-                x.shape[:-1] + (self._n_qmc_samples, self._cond_gpr._X_running.shape[0] + 1),
-                dtype=torch.float64,
-            )
+            return torch.zeros(x.shape[:-1], dtype=torch.float64)
+
         # NOTE(nabenabe): See Eq. (10) of https://arxiv.org/pdf/2310.20708
         y_post = self._cond_gpr.sample_joint_posterior(x)
-        return (y_post - self._threshold).clamp_min_(_EPS).log()
-
-    def eval_acqf(self, x: torch.Tensor) -> torch.Tensor:
-        return _aggregate_log_acqf_over_q_batch(self._log_improvement(x))
+        log_improvement = (y_post - self._threshold).clamp_min_(_EPS).log()
+        return _aggregate_log_acqf_over_q_batch(log_improvement)
 
 
 class LogPI(BaseAcquisitionFunc):
@@ -237,13 +233,10 @@ class qLogPI(BaseAcquisitionFunc):
         )
         super().__init__(gpr.length_scales, search_space)
 
-    def _log_prob(self, x: torch.Tensor) -> torch.Tensor:
-        return torch.nn.functional.logsigmoid(
-            (self._cond_gpr.sample_joint_posterior(x) - self._threshold) / self._tau
-        )
-
     def eval_acqf(self, x: torch.Tensor) -> torch.Tensor:
-        return _aggregate_log_acqf_over_q_batch(self._log_prob(x))
+        y_post = self._cond_gpr.sample_joint_posterior(x)
+        log_prob = torch.nn.functional.logsigmoid((y_post - self._threshold) / self._tau)
+        return _aggregate_log_acqf_over_q_batch(log_prob)
 
 
 class UCB(BaseAcquisitionFunc):
@@ -352,10 +345,20 @@ class qConstrainedLogEI(BaseAcquisitionFunc):
         super().__init__(gpr.length_scales, search_space)
 
     def eval_acqf(self, x: torch.Tensor) -> torch.Tensor:
-        return _aggregate_log_acqf_over_q_batch(
-            self._acqf._log_improvement(x)
-            + sum(acqf._log_prob(x) for acqf in self._constraints_acqf_list)
+        y_post = self._acqf._cond_gpr.sample_joint_posterior(x)
+        log_improvement = (
+            (y_post - self._acqf._threshold).clamp_min_(_EPS).log()
+            if not np.isneginf(self._acqf._threshold)
+            else torch.zeros_like(y_post, dtype=torch.float64)
         )
+
+        for acqf in self._constraints_acqf_list:
+            log_prob = acqf._cond_gpr.sample_joint_posterior(x)
+            log_improvement += torch.nn.functional.logsigmoid(
+                (log_prob - acqf._threshold) / acqf._tau
+            )
+
+        return _aggregate_log_acqf_over_q_batch(log_improvement)
 
 
 class LogEHVI(BaseAcquisitionFunc):
