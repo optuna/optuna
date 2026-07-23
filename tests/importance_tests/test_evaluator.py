@@ -13,11 +13,11 @@ from optuna.importance import get_param_importances
 from optuna.importance import MeanDecreaseImpurityImportanceEvaluator
 from optuna.importance import PedAnovaImportanceEvaluator
 from optuna.study import create_study
+from optuna.testing.pytest_importance import _get_study
 from optuna.testing.pytest_importance import BasicImportanceEvaluatorTestCase
 from optuna.testing.pytest_importance import ConditionalImportanceEvaluatorTestCase
 from optuna.testing.pytest_importance import MultiObjectiveImportanceEvaluatorTestCase
 from optuna.testing.pytest_importance import NonConditionalImportanceEvaluatorTestCase
-from optuna.testing.pytest_importance import TreeBasedImportanceEvaluatorTestCase
 from optuna.trial import Trial
 
 
@@ -67,10 +67,40 @@ class TestMultiObjectiveImportanceEvaluator(MultiObjectiveImportanceEvaluatorTes
         return request.param
 
 
-class TestTreeBasedImportanceEvaluator(TreeBasedImportanceEvaluatorTestCase):
-    @pytest.fixture(params=TREE_BASED_EVALUATORS)
-    def evaluator(self, request: SubRequest) -> Callable[..., BaseImportanceEvaluator]:
-        return request.param
+@pytest.mark.parametrize("evaluator", TREE_BASED_EVALUATORS)
+def test_n_trees_of_tree_based_evaluator(
+    evaluator: Callable[..., BaseImportanceEvaluator],
+) -> None:
+    study = _get_study(seed=0, n_trials=3, is_multi_obj=False)
+    param_importance = evaluator(n_trees=10, seed=0).evaluate(study)
+    param_importance_different_n_trees = evaluator(n_trees=20, seed=0).evaluate(study)
+
+    assert param_importance != param_importance_different_n_trees
+
+
+@pytest.mark.parametrize("evaluator", TREE_BASED_EVALUATORS)
+def test_max_depth_of_tree_based_evaluator(
+    evaluator: Callable[..., BaseImportanceEvaluator],
+) -> None:
+    study = _get_study(seed=0, n_trials=3, is_multi_obj=False)
+    param_importance = evaluator(max_depth=1, seed=0).evaluate(study)
+    param_importance_different_max_depth = evaluator(max_depth=2, seed=0).evaluate(study)
+
+    assert param_importance != param_importance_different_max_depth
+
+
+@pytest.mark.parametrize("evaluator", TREE_BASED_EVALUATORS)
+def test_importance_evaluator_seed(
+    evaluator: Callable[..., BaseImportanceEvaluator],
+) -> None:
+    study = _get_study(seed=0, n_trials=3, is_multi_obj=False)
+
+    param_importance = evaluator(seed=2).evaluate(study)
+    param_importance_same_seed = evaluator(seed=2).evaluate(study)
+    assert param_importance == param_importance_same_seed
+
+    param_importance_different_seed = evaluator(seed=3).evaluate(study)
+    assert param_importance != param_importance_different_seed
 
 
 def test_get_param_importances_unnormalized_experimental() -> None:
