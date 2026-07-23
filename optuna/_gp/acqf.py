@@ -346,7 +346,7 @@ class qConstrainedLogEI(BaseAcquisitionFunc):
 
     def eval_acqf(self, x: torch.Tensor) -> torch.Tensor:
         y_post = self._acqf._cond_gpr.sample_joint_posterior(x)
-        log_improvement = (
+        log_feasible_improvement = (
             (y_post - self._acqf._threshold).clamp_min_(_EPS).log()
             if not np.isneginf(self._acqf._threshold)
             else torch.zeros_like(y_post, dtype=torch.float64)
@@ -354,11 +354,11 @@ class qConstrainedLogEI(BaseAcquisitionFunc):
 
         for acqf in self._constraints_acqf_list:
             log_prob = acqf._cond_gpr.sample_joint_posterior(x)
-            log_improvement += torch.nn.functional.logsigmoid(
+            log_feasible_improvement += torch.nn.functional.logsigmoid(
                 (log_prob - acqf._threshold) / acqf._tau
             )
 
-        return _aggregate_log_acqf_over_q_batch(log_improvement)
+        return _aggregate_log_acqf_over_q_batch(log_feasible_improvement)
 
 
 class LogEHVI(BaseAcquisitionFunc):
