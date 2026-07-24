@@ -6,12 +6,12 @@ import os
 import pickle
 from typing import Any
 from typing import Callable
-import numpy as np
 from unittest.mock import Mock
 from unittest.mock import patch
 from unittest.mock import PropertyMock
 
 from _pytest.fixtures import SubRequest
+import numpy as np
 import pytest
 
 import optuna
