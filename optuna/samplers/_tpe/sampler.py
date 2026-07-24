@@ -651,10 +651,7 @@ class TPESampler(BaseSampler):
     ) -> _ParzenEstimator:
         observations = self._get_internal_repr(trials, search_space, study)
         if handle_below and study._is_multi_objective():
-            n_below = 0
-            for trial in trials:
-                if search_space.keys() <= self._get_params(trial, study).keys():
-                    n_below += 1
+            n_below = len(next(iter(observations.values()))) if observations else 0
             weights_below = np.ones(n_below)
             mpe = self._parzen_estimator_cls(
                 observations, search_space, self._parzen_estimator_parameters, weights_below
