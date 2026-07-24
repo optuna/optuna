@@ -216,11 +216,7 @@ def test_sampler_reseed_rng(
         original_random_state = sampler.__dict__[rng_name].rng.get_state()
         sampler.reseed_rng()
         random_state = sampler.__dict__[rng_name].rng.get_state()
-        if not isinstance(sampler, optuna.samplers.CmaEsSampler):
-            assert str(original_random_state) != str(random_state)
-        else:
-            # CmaEsSampler has a RandomState that is not reseed by its reseed_rng method.
-            assert str(original_random_state) == str(random_state)
+        assert str(original_random_state) != str(random_state)
 
     had_sampler_name = _extract_attr_name_from_sampler_by_cls(sampler, BaseSampler)
     has_another_sampler = had_sampler_name is not None
