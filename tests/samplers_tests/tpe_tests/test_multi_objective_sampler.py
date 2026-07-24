@@ -346,16 +346,14 @@ def test_split_complete_trials_multi_objective_empty() -> None:
 def test_calculate_weights_below_for_multi_objective() -> None:
     # No sample.
     study = optuna.create_study(directions=["minimize", "minimize"])
-    weights_below = _tpe.sampler._calculate_weights_below_for_multi_objective(study, [], None)
+    weights_below = _tpe.sampler._calculate_weights_below_for_multi_objective(study, [])
     assert len(weights_below) == 0
 
     # One sample.
     study = optuna.create_study(directions=["minimize", "minimize"])
     trial0 = optuna.create_trial(values=[0.2, 0.5])
     study.add_trials([trial0])
-    weights_below = _tpe.sampler._calculate_weights_below_for_multi_objective(
-        study, [trial0], None
-    )
+    weights_below = _tpe.sampler._calculate_weights_below_for_multi_objective(study, [trial0])
     assert len(weights_below) == 1
     assert sum(weights_below) > 0
 
@@ -367,7 +365,6 @@ def test_calculate_weights_below_for_multi_objective() -> None:
     weights_below = _tpe.sampler._calculate_weights_below_for_multi_objective(
         study,
         [trial0, trial1],
-        None,
     )
     assert len(weights_below) == 2
     assert weights_below[0] > weights_below[1]
@@ -381,7 +378,6 @@ def test_calculate_weights_below_for_multi_objective() -> None:
     weights_below = _tpe.sampler._calculate_weights_below_for_multi_objective(
         study,
         [trial0, trial1],
-        None,
     )
     assert len(weights_below) == 2
     assert weights_below[0] == weights_below[1]
@@ -395,7 +391,6 @@ def test_calculate_weights_below_for_multi_objective() -> None:
     weights_below = _tpe.sampler._calculate_weights_below_for_multi_objective(
         study,
         [trial0, trial1],
-        None,
     )
     assert len(weights_below) == 2
     assert weights_below[0] == weights_below[1]
@@ -410,7 +405,6 @@ def test_calculate_weights_below_for_multi_objective() -> None:
     weights_below = _tpe.sampler._calculate_weights_below_for_multi_objective(
         study,
         [trial0, trial1, trial2],
-        None,
     )
     assert len(weights_below) == 3
     assert weights_below[0] > weights_below[1]
@@ -427,7 +421,6 @@ def test_calculate_weights_below_for_multi_objective() -> None:
     weights_below = _tpe.sampler._calculate_weights_below_for_multi_objective(
         study,
         [trial0, trial1, trial2],
-        None,
     )
     assert len(weights_below) == 3
     assert weights_below[0] > weights_below[1]
@@ -444,7 +437,6 @@ def test_calculate_weights_below_for_multi_objective() -> None:
     weights_below = _tpe.sampler._calculate_weights_below_for_multi_objective(
         study,
         [trial0, trial1, trial2],
-        None,
     )
     assert len(weights_below) == 3
     assert not any([np.isnan(w) for w in weights_below])
@@ -452,14 +444,13 @@ def test_calculate_weights_below_for_multi_objective() -> None:
 
     # Three samples with two infeasible trials.
     study = optuna.create_study(directions=["minimize", "minimize"])
-    trial0 = optuna.create_trial(values=[0.3, 0.3], system_attrs={"constraints": 2})
-    trial1 = optuna.create_trial(values=[0.2, 0.8], system_attrs={"constraints": 8})
-    trial2 = optuna.create_trial(values=[0.8, 0.2], system_attrs={"constraints": 0})
+    trial0 = optuna.create_trial(values=[0.3, 0.3], system_attrs={"constraints:c": 2})
+    trial1 = optuna.create_trial(values=[0.2, 0.8], system_attrs={"constraints:c": 8})
+    trial2 = optuna.create_trial(values=[0.8, 0.2], system_attrs={"constraints:c": 0})
     study.add_trials([trial0, trial1, trial2])
     weights_below = _tpe.sampler._calculate_weights_below_for_multi_objective(
         study,
         [trial0, trial1, trial2],
-        lambda trial: [trial.system_attrs["constraints"]],
     )
     assert len(weights_below) == 3
     assert weights_below[0] == _tpe.sampler.EPS

@@ -30,6 +30,7 @@ from optuna.distributions import _convert_old_distribution_to_new_distribution
 from optuna.distributions import BaseDistribution
 from optuna.storages._heartbeat import is_heartbeat_enabled
 from optuna.study._constrained_optimization import _get_feasible_trials
+from optuna.study._constrained_optimization import _is_constrained_optimization
 from optuna.study._multi_objective import _get_pareto_front_trials
 from optuna.study._optimize import _optimize
 from optuna.study._study_direction import StudyDirection
@@ -184,8 +185,8 @@ class Study:
             When optimizing many objectives, a large fraction of trials may become non-dominated
             in general due to the curse of dimensionality in the objective space. If this makes
             post-hoc selection difficult, consider modeling some objectives as constraints.
-            Constraints can be passed via the `constraints_func` argument at the sampler
-            initialization.
+            Constraints can be set within the objective function using
+            :meth:`~optuna.trial.Trial.set_constraint` method.
 
         Returns:
             A list of :class:`~optuna.trial.FrozenTrial` objects. If no trials are
@@ -195,7 +196,7 @@ class Study:
 
         # Check whether the study is constrained optimization.
         trials = self.get_trials(deepcopy=False)
-        is_constrained = any(len(trial.constraints) > 0 for trial in trials)
+        is_constrained = _is_constrained_optimization(trials)
 
         return _get_pareto_front_trials(self, consider_constraint=is_constrained)
 

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from collections.abc import Sequence
 from io import BytesIO
 from typing import Any
 
@@ -9,7 +8,6 @@ import pytest
 
 from optuna.study import create_study
 from optuna.testing.objectives import fail_objective
-from optuna.trial import FrozenTrial
 from optuna.trial import Trial
 import optuna.visualization._intermediate_values
 from optuna.visualization._intermediate_values import _get_intermediate_plot_info
@@ -69,16 +67,13 @@ def test_intermediate_plot_info() -> None:
 
     # Test a study with constraints
     def objective_with_constraints(trial: Trial) -> float:
-        trial.set_user_attr("constraint", [trial.number % 2])
+        trial.set_constraint("constraint", trial.number % 2)
 
         trial.report(1.0, step=0)
         trial.report(2.0, step=1)
         return 0.0
 
-    def constraints(trial: FrozenTrial) -> Sequence[float]:
-        return trial.user_attrs["constraint"]
-
-    study = create_study(sampler=optuna.samplers.NSGAIIISampler(constraints_func=constraints))
+    study = create_study(sampler=optuna.samplers.NSGAIIISampler())
     study.optimize(objective_with_constraints, n_trials=2)
     assert _get_intermediate_plot_info(study) == _IntermediatePlotInfo(
         trial_infos=[

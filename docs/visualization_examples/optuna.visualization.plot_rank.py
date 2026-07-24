@@ -18,16 +18,12 @@ def objective(trial):
     y = trial.suggest_categorical("y", [-1, 0, 1])
 
     c0 = 400 - (x + y) ** 2
-    trial.set_user_attr("constraint", [c0])
+    trial.set_constraint("c0", c0)
 
     return x**2 + y
 
 
-def constraints(trial):
-    return trial.user_attrs["constraint"]
-
-
-sampler = optuna.samplers.TPESampler(seed=10, constraints_func=constraints)
+sampler = optuna.samplers.TPESampler(seed=10)
 study = optuna.create_study(sampler=sampler)
 study.optimize(objective, n_trials=30)
 
