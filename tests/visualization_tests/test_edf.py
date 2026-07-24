@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from io import BytesIO
 from typing import Any
+from typing import Literal
 
 import numpy as np
 import pytest
@@ -10,7 +11,6 @@ import pytest
 import optuna
 from optuna import Study
 from optuna.study import create_study
-from optuna.study.study import Direction
 from optuna.testing.visualization import prepare_study_with_trials
 from optuna.trial import create_trial
 from optuna.visualization import plot_edf as plotly_plot_edf
@@ -60,7 +60,9 @@ def test_target_is_none_and_study_is_multi_obj(plot_edf: Callable[..., Any]) -> 
 
 @parametrized_plot_edf
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])
-def test_edf_plot_no_trials(plot_edf: Callable[..., Any], direction: Direction) -> None:
+def test_edf_plot_no_trials(
+    plot_edf: Callable[..., Any], direction: Literal["minimize", "maximize"]
+) -> None:
     figure = plot_edf(create_study(direction=direction))
     save_static_image(figure)
 
@@ -69,7 +71,9 @@ def test_edf_plot_no_trials(plot_edf: Callable[..., Any], direction: Direction) 
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])
 @pytest.mark.parametrize("num_studies", [0, 1, 2])
 def test_edf_plot_no_trials_studies(
-    plot_edf: Callable[..., Any], direction: Direction, num_studies: int
+    plot_edf: Callable[..., Any],
+    direction: Literal["minimize", "maximize"],
+    num_studies: int,
 ) -> None:
     studies = [create_study(direction=direction) for _ in range(num_studies)]
     figure = plot_edf(studies)
@@ -80,7 +84,9 @@ def test_edf_plot_no_trials_studies(
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])
 @pytest.mark.parametrize("num_studies", [0, 1, 2])
 def test_plot_edf_with_multiple_studies(
-    plot_edf: Callable[..., Any], direction: Direction, num_studies: int
+    plot_edf: Callable[..., Any],
+    direction: Literal["minimize", "maximize"],
+    num_studies: int,
 ) -> None:
     studies = []
     for _ in range(num_studies):

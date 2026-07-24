@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from typing import Literal
 
 import numpy as np
 import pytest
 
 from optuna.samplers import NSGAIISampler
 from optuna.study import create_study
-from optuna.study.study import Direction
 from optuna.trial import FrozenTrial
 from optuna.trial import Trial
 from optuna.visualization._hypervolume_history import _get_hypervolume_history_info
@@ -23,7 +23,9 @@ from optuna.visualization._hypervolume_history import _HypervolumeHistoryInfo
         ["maximize", "maximize"],
     ],
 )
-def test_get_optimization_history_info(directions: Sequence[Direction]) -> None:
+def test_get_optimization_history_info(
+    directions: Sequence[Literal["minimize", "maximize"]],
+) -> None:
     signs = [1 if d == "minimize" else -1 for d in directions]
 
     def objective(trial: Trial) -> Sequence[float]:

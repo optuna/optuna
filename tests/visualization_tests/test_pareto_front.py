@@ -4,6 +4,7 @@ from collections.abc import Callable
 from collections.abc import Sequence
 from io import BytesIO
 from typing import Any
+from typing import Literal
 import warnings
 
 import pytest
@@ -12,7 +13,6 @@ import optuna
 from optuna import create_study
 from optuna import create_trial
 from optuna.distributions import FloatDistribution
-from optuna.study.study import Direction
 from optuna.study.study import Study
 from optuna.trial import FrozenTrial
 from optuna.visualization import plot_pareto_front
@@ -402,7 +402,7 @@ def test_get_pareto_front_plot(
 
 
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])
-def test_color_map(direction: Direction) -> None:
+def test_color_map(direction: Literal["minimize", "maximize"]) -> None:
     study = create_study(directions=[direction, direction])
     for i in range(3):
         study.add_trial(

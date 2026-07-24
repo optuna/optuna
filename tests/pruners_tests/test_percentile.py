@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+from typing import Literal
 import warnings
 
 import pytest
@@ -9,7 +10,6 @@ import optuna
 from optuna.pruners import _percentile
 from optuna.study import Study
 from optuna.study import StudyDirection
-from optuna.study.study import Direction
 from optuna.trial import TrialState
 
 
@@ -66,7 +66,7 @@ def test_percentile_pruner_with_one_trial() -> None:
     "direction_value", [("minimize", [1, 2, 3, 4, 5], 2.1), ("maximize", [1, 2, 3, 4, 5], 3.9)]
 )
 def test_25_percentile_pruner_intermediate_values(
-    direction_value: tuple[Direction, list[float], float],
+    direction_value: tuple[Literal["minimize", "maximize"], list[float], float],
 ) -> None:
     direction, intermediate_values, latest_value = direction_value
     pruner = optuna.pruners.PercentilePruner(25.0, 0, 0)

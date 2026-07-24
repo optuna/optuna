@@ -51,7 +51,6 @@ if TYPE_CHECKING:
 
 
 ObjectiveFuncType = Callable[["Trial"], Union[float, Sequence[float]]]
-Direction = Union[Literal["minimize", "maximize"], StudyDirection]
 
 
 _SYSTEM_ATTR_METRIC_NAMES = "study:metric_names"
@@ -1207,9 +1206,9 @@ def create_study(
     sampler: "samplers.BaseSampler" | None = None,
     pruner: pruners.BasePruner | None = None,
     study_name: str | None = None,
-    direction: Direction | None = None,
+    direction: Union[Literal["minimize", "maximize"], StudyDirection] | None = None,
     load_if_exists: bool = False,
-    directions: Sequence[Direction] | None = None,
+    directions: Sequence[Union[Literal["minimize", "maximize"], StudyDirection]] | None = None,
 ) -> Study:
     """Create a new :class:`~optuna.study.Study`.
 
