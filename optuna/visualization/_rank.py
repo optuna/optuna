@@ -5,6 +5,7 @@ import typing
 from typing import Any
 from typing import NamedTuple
 from typing import TYPE_CHECKING
+from typing import Union
 
 import numpy as np
 
@@ -69,9 +70,9 @@ class _RankPlotInfo(NamedTuple):
 
 def plot_rank(
     study: Study,
-    params: list[str] | None = None,
+    params: Union[list[str], None] = None,
     *,
-    target: Callable[[FrozenTrial], float] | None = None,
+    target: Union[Callable[[FrozenTrial], float], None] = None,
     target_name: str = "Objective Value",
 ) -> "go.Figure":
     """Plot parameter relations as scatter plots with colors indicating ranks of target value.
@@ -115,8 +116,8 @@ def _get_order_with_same_order_averaging(data: np.ndarray) -> np.ndarray:
 
 def _get_rank_info(
     study: Study,
-    params: list[str] | None,
-    target: Callable[[FrozenTrial], float] | None,
+    params: Union[list[str], None],
+    target: Union[Callable[[FrozenTrial], float], None],
     target_name: str,
 ) -> _RankPlotInfo:
     _check_plot_args(study, target, target_name)

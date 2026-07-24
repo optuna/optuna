@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from io import BytesIO
 from typing import Any
+from typing import Union
 
 import pytest
 
@@ -99,8 +100,8 @@ def test_get_terminator_improvement_info_empty(
 )
 def test_get_improvement_info(
     get_error: bool,
-    improvement_evaluator_class: Callable[[], BaseImprovementEvaluator | None],
-    error_evaluator_class: Callable[[], BaseErrorEvaluator | None],
+    improvement_evaluator_class: Callable[[], Union[BaseImprovementEvaluator, None]],
+    error_evaluator_class: Callable[[], Union[BaseErrorEvaluator, None]],
 ) -> None:
     study = _prepare_study_with_cross_validation_scores()
 

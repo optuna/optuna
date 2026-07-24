@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import NamedTuple
 from typing import TYPE_CHECKING
+from typing import Union
 
 import optuna
 from optuna.logging import get_logger
@@ -36,9 +37,9 @@ class _ImportancesInfo(NamedTuple):
 
 def _get_importances_info(
     study: Study,
-    evaluator: BaseImportanceEvaluator | None,
-    params: list[str] | None,
-    target: Callable[[FrozenTrial], float] | None,
+    evaluator: Union[BaseImportanceEvaluator, None],
+    params: Union[list[str], None],
+    target: Union[Callable[[FrozenTrial], float], None],
     target_name: str,
 ) -> _ImportancesInfo:
     _check_plot_args(study, target, target_name)
@@ -75,9 +76,9 @@ def _get_importances_info(
 
 def _get_importances_infos(
     study: Study,
-    evaluator: BaseImportanceEvaluator | None,
-    params: list[str] | None,
-    target: Callable[[FrozenTrial], float] | None,
+    evaluator: Union[BaseImportanceEvaluator, None],
+    params: Union[list[str], None],
+    target: Union[Callable[[FrozenTrial], float], None],
     target_name: str,
 ) -> tuple[_ImportancesInfo, ...]:
     metric_names = study.metric_names
@@ -117,10 +118,10 @@ def _get_importances_infos(
 
 def plot_param_importances(
     study: Study,
-    evaluator: BaseImportanceEvaluator | None = None,
-    params: list[str] | None = None,
+    evaluator: Union[BaseImportanceEvaluator, None] = None,
+    params: Union[list[str], None] = None,
     *,
-    target: Callable[[FrozenTrial], float] | None = None,
+    target: Union[Callable[[FrozenTrial], float], None] = None,
     target_name: str = "Objective Value",
 ) -> "go.Figure":
     """Plot hyperparameter importances (:class:`~optuna.importance.PedAnovaImportanceEvaluator` by

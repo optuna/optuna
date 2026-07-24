@@ -5,6 +5,7 @@ from io import BytesIO
 import math
 from typing import Any
 from typing import Literal
+from typing import Union
 
 import numpy as np
 import pytest
@@ -199,7 +200,7 @@ def test_plot_parallel_coordinate_customized_target_name() -> None:
 def test_plot_parallel_coordinate(
     plot_parallel_coordinate: Callable[..., Any],
     specific_create_study: Callable[[], Study],
-    params: list[str] | None,
+    params: Union[list[str], None],
 ) -> None:
     study = specific_create_study()
     figure = plot_parallel_coordinate(study, params=params)

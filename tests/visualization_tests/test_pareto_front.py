@@ -5,6 +5,7 @@ from collections.abc import Sequence
 from io import BytesIO
 from typing import Any
 from typing import Literal
+from typing import Union
 import warnings
 
 import pytest
@@ -47,7 +48,7 @@ def test_get_pareto_front_info_infer_n_targets() -> None:
 
 
 def create_study_2d(
-    constraints_func: Callable[[FrozenTrial], Sequence[float]] | None = None,
+    constraints_func: Union[Callable[[FrozenTrial], Sequence[float]], None] = None,
 ) -> Study:
     sampler = optuna.samplers.TPESampler(seed=0, constraints_func=constraints_func)
     study = optuna.create_study(directions=["minimize", "minimize"], sampler=sampler)

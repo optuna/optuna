@@ -5,6 +5,7 @@ from collections.abc import Sequence
 import json
 from typing import Any
 from typing import cast
+from typing import Union
 
 import numpy as np
 
@@ -47,8 +48,8 @@ if is_available():
 
 
 def _check_plot_args(
-    study: Study | Sequence[Study],
-    target: Callable[[FrozenTrial], float] | None,
+    study: Union[Study, Sequence[Study]],
+    target: Union[Callable[[FrozenTrial], float], None],
     target_name: str,
 ) -> None:
     studies: Sequence[Study]
@@ -124,7 +125,7 @@ def _get_skipped_trial_numbers(
 
 def _filter_nonfinite(
     trials: list[FrozenTrial],
-    target: Callable[[FrozenTrial], float] | None = None,
+    target: Union[Callable[[FrozenTrial], float], None] = None,
     with_message: bool = True,
 ) -> list[FrozenTrial]:
     # For multi-objective optimization target must be specified to select
@@ -166,7 +167,9 @@ def _filter_nonfinite(
     return filtered_trials
 
 
-def _is_reverse_scale(study: Study, target: Callable[[FrozenTrial], float] | None) -> bool:
+def _is_reverse_scale(
+    study: Study, target: Union[Callable[[FrozenTrial], float], None]
+) -> bool:
     return target is not None or study.direction == StudyDirection.MINIMIZE
 
 

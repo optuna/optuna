@@ -5,6 +5,7 @@ from collections.abc import Sequence
 from io import BytesIO
 from typing import Any
 from typing import Literal
+from typing import Union
 
 import pytest
 
@@ -104,7 +105,7 @@ def test_plot_slice_customized_target_name(plot_slice: Callable[..., Sequence]) 
 def test_plot_slice(
     plot_slice: Callable[..., Any],
     specific_create_study: Callable[[], Study],
-    params: list[str] | None,
+    params: Union[list[str], None],
 ) -> None:
     study = specific_create_study()
     figure = plot_slice(study, params=params)
@@ -137,7 +138,7 @@ def test_target_is_none_and_study_is_multi_obj() -> None:
     ],
 )
 def test_get_slice_plot_info_empty(
-    specific_create_study: Callable[[], Study], params: list[str] | None
+    specific_create_study: Callable[[], Study], params: Union[list[str], None]
 ) -> None:
     study = specific_create_study()
     info = _get_slice_plot_info(study, params=params, target=None, target_name="Objective Value")
@@ -161,7 +162,7 @@ def test_get_slice_plot_info_non_exist_param_error() -> None:
         None,
     ],
 )
-def test_get_slice_plot_info_params(params: list[str] | None) -> None:
+def test_get_slice_plot_info_params(params: Union[list[str], None]) -> None:
     study = prepare_study_with_trials()
     params = ["param_a", "param_b", "param_c", "param_d"] if params is None else params
     expected_subplot_infos = {

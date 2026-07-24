@@ -4,6 +4,7 @@ from collections.abc import Callable
 from io import BytesIO
 from typing import Any
 from typing import Literal
+from typing import Union
 
 import numpy as np
 import pytest
@@ -33,7 +34,7 @@ if plt_imports.is_successful():
 parametrized_plot_edf = pytest.mark.parametrize("plot_edf", [plotly_plot_edf, plt_plot_edf])
 
 
-def save_static_image(figure: go.Figure | Axes | np.ndarray) -> None:
+def save_static_image(figure: Union[go.Figure, Axes, np.ndarray]) -> None:
     if isinstance(figure, go.Figure):
         figure.write_image(BytesIO())
     else:
@@ -108,7 +109,9 @@ def test_plot_edf_with_target(plot_edf: Callable[..., Any]) -> None:
 
 @parametrized_plot_edf
 @pytest.mark.parametrize("target_name", [None, "Target Name"])
-def test_plot_edf_with_target_name(plot_edf: Callable[..., Any], target_name: str | None) -> None:
+def test_plot_edf_with_target_name(
+    plot_edf: Callable[..., Any], target_name: Union[str, None]
+) -> None:
     study = create_study()
     study.optimize(lambda t: t.suggest_float("x", 0, 5), n_trials=10)
     if target_name is None:

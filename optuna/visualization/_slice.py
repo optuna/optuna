@@ -6,6 +6,7 @@ from typing import Any
 from typing import cast
 from typing import NamedTuple
 from typing import TYPE_CHECKING
+from typing import Union
 
 from optuna.distributions import CategoricalChoiceType
 from optuna.distributions import CategoricalDistribution
@@ -41,7 +42,7 @@ class _SliceSubplotInfo(NamedTuple):
     is_log: bool
     is_numerical: bool
     constraints: list[bool]
-    x_labels: tuple[CategoricalChoiceType, ...] | None
+    x_labels: Union[tuple[CategoricalChoiceType, ...], None]
 
 
 class _SlicePlotInfo(NamedTuple):
@@ -58,10 +59,10 @@ class _PlotValues(NamedTuple):
 def _get_slice_subplot_info(
     trials: list[FrozenTrial],
     param: str,
-    target: Callable[[FrozenTrial], float] | None,
+    target: Union[Callable[[FrozenTrial], float], None],
     log_scale: bool,
     numerical: bool,
-    x_labels: tuple[CategoricalChoiceType, ...] | None,
+    x_labels: Union[tuple[CategoricalChoiceType, ...], None],
 ) -> _SliceSubplotInfo:
     if target is None:
 
@@ -94,8 +95,8 @@ def _get_slice_subplot_info(
 
 def _get_slice_plot_info(
     study: Study,
-    params: list[str] | None,
-    target: Callable[[FrozenTrial], float] | None,
+    params: Union[list[str], None],
+    target: Union[Callable[[FrozenTrial], float], None],
     target_name: str,
 ) -> _SlicePlotInfo:
     _check_plot_args(study, target, target_name)
@@ -147,9 +148,9 @@ def _get_slice_plot_info(
 
 def plot_slice(
     study: Study,
-    params: list[str] | None = None,
+    params: Union[list[str], None] = None,
     *,
-    target: Callable[[FrozenTrial], float] | None = None,
+    target: Union[Callable[[FrozenTrial], float], None] = None,
     target_name: str = "Objective Value",
 ) -> "go.Figure":
     """Plot the parameter relationship as slice plot in a study.
@@ -310,8 +311,8 @@ def _get_categorical_plot_values(
 
 
 def _get_categorical_labels(
-    x_labels: tuple[CategoricalChoiceType, ...] | None,
-) -> list[str] | None:
+    x_labels: Union[tuple[CategoricalChoiceType, ...], None],
+) -> Union[list[str], None]:
     if x_labels is None:
         return None
     return [repr(x_label) for x_label in x_labels]

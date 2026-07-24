@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import NamedTuple
 from typing import TYPE_CHECKING
+from typing import Union
 
 import tqdm
 
@@ -35,15 +36,15 @@ OPACITY = 0.25
 class _ImprovementInfo(NamedTuple):
     trial_numbers: list[int]
     improvements: list[float]
-    errors: list[float] | None
+    errors: Union[list[float], None]
 
 
 @experimental_func("3.2.0")
 def plot_terminator_improvement(
     study: Study,
     plot_error: bool = False,
-    improvement_evaluator: BaseImprovementEvaluator | None = None,
-    error_evaluator: BaseErrorEvaluator | None = None,
+    improvement_evaluator: Union[BaseImprovementEvaluator, None] = None,
+    error_evaluator: Union[BaseErrorEvaluator, None] = None,
     min_n_trials: int = DEFAULT_MIN_N_TRIALS,
 ) -> "go.Figure":
     """Plot the potentials for future objective improvement.
@@ -87,8 +88,8 @@ def plot_terminator_improvement(
 def _get_improvement_info(
     study: Study,
     get_error: bool = False,
-    improvement_evaluator: BaseImprovementEvaluator | None = None,
-    error_evaluator: BaseErrorEvaluator | None = None,
+    improvement_evaluator: Union[BaseImprovementEvaluator, None] = None,
+    error_evaluator: Union[BaseErrorEvaluator, None] = None,
 ) -> _ImprovementInfo:
     if study._is_multi_objective():
         raise ValueError("This function does not support multi-objective optimization study.")
@@ -157,7 +158,7 @@ def _get_improvement_scatter(
 
 def _get_error_scatter(
     trial_numbers: list[int],
-    errors: list[float] | None,
+    errors: Union[list[float], None],
 ) -> "go.Scatter":
     if errors is None:
         return go.Scatter()
