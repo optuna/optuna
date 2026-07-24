@@ -7,7 +7,9 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 import optuna
+from optuna import _deprecated
 from optuna._experimental import warn_experimental_argument
+from optuna._warnings import optuna_warn
 from optuna.samplers._base import _INDEPENDENT_SAMPLING_WARNING_TEMPLATE
 from optuna.samplers._base import _process_constraints_after_trial
 from optuna.samplers._base import BaseSampler
@@ -202,10 +204,11 @@ class GPSampler(BaseSampler):
             The function won't be called when trials fail or are pruned, but this behavior is
             subject to change in future releases.
 
-            .. note::
-                Added in v4.2.0 as an experimental feature. The interface may change in newer
-                versions without prior notice. See
-                https://github.com/optuna/optuna/releases/tag/v4.2.0.
+            .. warning::
+                Deprecated in v5.0.0. This feature will be removed in the future. The removal of
+                this feature is currently scheduled for v7.0.0, but this schedule is subject to
+                change. Use :meth:`~optuna.trial.Trial.set_constraint` instead.
+                See https://github.com/optuna/optuna/releases/tag/v5.0.0.
         warn_independent_sampling:
             If this is :obj:`True`, a warning message is emitted when
             the value of a parameter is sampled by using an independent sampler,
@@ -248,7 +251,10 @@ class GPSampler(BaseSampler):
         self._warn_independent_sampling = warn_independent_sampling
 
         if constraints_func is not None:
-            warn_experimental_argument("constraints_func")
+            msg = _deprecated._DEPRECATION_WARNING_TEMPLATE.format(
+                name="`constraints_func`", d_ver="5.0.0", r_ver="7.0.0"
+            )
+            optuna_warn(f"{msg} Use `optuna.trial.Trial.set_constraint` instead.", FutureWarning)
         if deterministic_objective:
             warn_experimental_argument("deterministic_objective")
 

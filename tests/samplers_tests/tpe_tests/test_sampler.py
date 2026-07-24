@@ -33,8 +33,8 @@ def test_hyperopt_parameters_deprecation_warning() -> None:
         TPESampler.hyperopt_parameters()
 
 
-def test_constraints_func_experimental_warning() -> None:
-    with pytest.warns(optuna.exceptions.ExperimentalWarning):
+def test_constraints_func_deprecation_warning() -> None:
+    with pytest.warns(FutureWarning):
         optuna.samplers.TPESampler(constraints_func=lambda _: (0,))
 
 
@@ -699,7 +699,9 @@ def test_constrained_sample_independent_zero_startup() -> None:
     study = optuna.create_study()
     dist = optuna.distributions.FloatDistribution(1.0, 100.0)
     trial = frozen_trial_factory(30)
-    sampler = TPESampler(n_startup_trials=0, seed=2, constraints_func=lambda _: (0,))
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", FutureWarning)
+        sampler = TPESampler(n_startup_trials=0, seed=2, constraints_func=lambda _: (0,))
     sampler.sample_independent(study, trial, "param-a", dist)
 
 

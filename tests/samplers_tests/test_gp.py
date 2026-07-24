@@ -62,7 +62,7 @@ def test_constraints_func(constraint_value: float, n_objectives: int) -> None:
         return (constraint_value + trial.number,)
 
     with warnings.catch_warnings():
-        warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
+        warnings.simplefilter("ignore", FutureWarning)
         sampler = GPSampler(n_startup_trials=2, constraints_func=constraints_func)
 
     def objective(trial: optuna.Trial) -> float | tuple[float, float]:
@@ -90,7 +90,7 @@ def test_constraints_func_nan(n_objectives: int) -> None:
         return (float("nan"),)
 
     with warnings.catch_warnings():
-        warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
+        warnings.simplefilter("ignore", FutureWarning)
         sampler = GPSampler(n_startup_trials=2, constraints_func=constraints_func)
 
     def objective(
