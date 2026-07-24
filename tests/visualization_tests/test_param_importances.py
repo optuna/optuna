@@ -3,7 +3,6 @@ from __future__ import annotations
 from collections.abc import Callable
 from io import BytesIO
 from typing import Any
-from typing import Union
 
 import pytest
 
@@ -106,7 +105,7 @@ def test_plot_param_importances_multiobjective_all_objectives_displayed(
 def test_plot_param_importances(
     plot_param_importances: Callable[..., Any],
     specific_create_study: Callable[[], Study],
-    params: Union[list[str], None],
+    params: list[str] | None,
 ) -> None:
     study = specific_create_study()
     figure = plot_param_importances(study, params=params)
@@ -130,7 +129,7 @@ def test_plot_param_importances(
     ],
 )
 def test_get_param_importances_info_empty(
-    specific_create_study: Callable[[], Study], params: Union[list[str], None]
+    specific_create_study: Callable[[], Study], params: list[str] | None
 ) -> None:
     study = specific_create_study()
     info = _get_importances_info(

@@ -4,7 +4,6 @@ from collections.abc import Callable
 from io import BytesIO
 import math
 from typing import Any
-from typing import Union
 
 import numpy as np
 import pytest
@@ -176,7 +175,7 @@ def _get_nested_list_shape(nested_list: list[list[Any]]) -> tuple[int, int]:
 def test_plot_rank(
     plot_rank: Callable[..., Any],
     specific_create_study: Callable[[], Study],
-    params: Union[list[str], None],
+    params: list[str] | None,
 ) -> None:
     study = specific_create_study()
     figure = plot_rank(study, params=params)
@@ -206,7 +205,7 @@ def test_target_is_none_and_study_is_multi_obj() -> None:
     ],
 )
 def test_get_rank_info_empty(
-    specific_create_study: Callable[[], Study], params: Union[list[str], None]
+    specific_create_study: Callable[[], Study], params: list[str] | None
 ) -> None:
     study = specific_create_study()
     info = _get_rank_info(study, params=params, target=None, target_name="Objective Value")
@@ -276,7 +275,7 @@ def test_get_rank_info_2_params() -> None:
         None,
     ],
 )
-def test_get_rank_info_more_than_2_params(params: Union[list[str], None]) -> None:
+def test_get_rank_info_more_than_2_params(params: list[str] | None) -> None:
     study = prepare_study_with_trials()
     n_params = len(params) if params is not None else 4
     info = _get_rank_info(study, params=params, target=None, target_name="Objective Value")
