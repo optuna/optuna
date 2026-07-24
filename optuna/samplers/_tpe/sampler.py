@@ -13,7 +13,6 @@ import numpy as np
 from optuna import _deprecated
 from optuna._convert_positional_args import convert_positional_args
 from optuna._experimental import warn_experimental_argument
-from optuna._hypervolume import compute_hypervolume
 from optuna._hypervolume.hssp import _solve_hssp
 from optuna._warnings import optuna_warn
 from optuna.logging import get_logger
@@ -28,7 +27,6 @@ from optuna.search_space import IntersectionSearchSpace
 from optuna.search_space.group_decomposed import _GroupDecomposedSearchSpace
 from optuna.search_space.group_decomposed import _SearchSpaceGroup
 from optuna.study._multi_objective import _fast_non_domination_rank
-from optuna.study._multi_objective import _is_pareto_front
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
@@ -53,6 +51,10 @@ _SYSTEM_ATTR_MAX_LENGTH = 2045
 
 def default_gamma(x: int) -> int:
     return min(math.ceil(0.1 * x), 25)
+
+
+def default_gamma_multiobjective(x: int) -> int:
+    return math.ceil(0.1 * x)
 
 
 def hyperopt_default_gamma(x: int) -> int:
@@ -151,10 +153,6 @@ class TPESampler(BaseSampler):
         :class:`~optuna.samplers.TPESampler`, which became much faster in v4.0.0, c.f. `our article
         <https://medium.com/optuna/significant-speed-up-of-multi-objective-tpesampler-in-optuna-v4-0-0-2bacdcd1d99b>`__,
         can handle multi-objective optimization with many trials as well.
-        Please note that :class:`~optuna.samplers.NSGAIISampler` will be used by default for
-        multi-objective optimization, so if users would like to use
-        :class:`~optuna.samplers.TPESampler` for multi-objective optimization, ``sampler`` must be
-        explicitly specified when study is created.
 
     Args:
         n_startup_trials:
@@ -166,11 +164,14 @@ class TPESampler(BaseSampler):
             Seed for random number generator.
         multivariate:
             If this is :obj:`True`, the multivariate TPE is used when suggesting parameters.
-            The multivariate TPE is reported to outperform the independent TPE. See `BOHB: Robust
-            and Efficient Hyperparameter Optimization at Scale
+            The multivariate TPE is reported to outperform the independent TPE in single-objective
+            optimization. See `BOHB: Robust and Efficient Hyperparameter Optimization at Scale
             <http://proceedings.mlr.press/v80/falkner18a.html>`__ and `our article
             <https://medium.com/optuna/multivariate-tpe-makes-optuna-even-more-powerful-63c4bfbaebe2>`__
             for more details.
+            If this is :obj:`None`, the value is automatically determined based on the number of
+            objectives: :obj:`True` for single-objective optimization and :obj:`False` for
+            multi-objective optimization.
         group:
             If this and ``multivariate`` are :obj:`True`, the multivariate TPE with the group
             decomposed search space is used when suggesting parameters.
@@ -296,9 +297,7 @@ class TPESampler(BaseSampler):
                 In the multi-objective case, this argument is only used to compute the weights of
                 bad trials, i.e., trials to construct `g(x)` in the `paper
                 <https://papers.nips.cc/paper/4443-algorithms-for-hyper-parameter-optimization.pdf>`__
-                ). The weights of good trials, i.e., trials to construct `l(x)`, are computed by a
-                rule based on the hypervolume contribution proposed in the `paper of MOTPE
-                <https://doi.org/10.1613/jair.1.13188>`__.
+                ). The weights of good trials, i.e., trials to construct `l(x)`, are uniform.
 
             .. warning::
                 Deprecated in v4.9.0. ``weights`` argument will be removed in the future.
@@ -360,7 +359,7 @@ class TPESampler(BaseSampler):
         gamma: Callable[[int], int] | None = None,
         weights: Callable[[int], np.ndarray] | None = None,
         seed: int | None = None,
-        multivariate: bool = True,
+        multivariate: bool | None = None,
         group: bool = False,
         warn_independent_sampling: bool | None = None,
         constant_liar: bool = True,
@@ -381,7 +380,7 @@ class TPESampler(BaseSampler):
         consider_endpoints = _warn_if_deprecated_argument(
             "`consider_endpoints`", consider_endpoints, False, "4.9.0", "6.0.0"
         )
-        gamma = _warn_if_deprecated_argument("`gamma`", gamma, default_gamma, "4.9.0", "6.0.0")
+        gamma = _warn_if_deprecated_argument("`gamma`", gamma, None, "4.9.0", "6.0.0")
         weights = _warn_if_deprecated_argument(
             "`weights`", weights, default_weights, "4.9.0", "6.0.0"
         )
@@ -397,7 +396,9 @@ class TPESampler(BaseSampler):
             consider_magic_clip=consider_magic_clip,
             consider_endpoints=consider_endpoints,
             weights=weights,
-            multivariate=multivariate,
+            # The ``multivariate`` field remains only for historical reasons and is unused,
+            # so any value is fine here.
+            multivariate=True,
             categorical_distance_func=categorical_distance_func or {},
         )
 
@@ -409,7 +410,7 @@ class TPESampler(BaseSampler):
         self._rng = LazyRandomState(seed)
         self._random_sampler = RandomSampler(seed=seed)
 
-        self._multivariate = multivariate
+        self._multivariate: bool | None = multivariate
         self._group = group
         self._group_decomposed_search_space: _GroupDecomposedSearchSpace | None = None
         self._search_space_group: _SearchSpaceGroup | None = None
@@ -420,7 +421,7 @@ class TPESampler(BaseSampler):
         self._parzen_estimator_cls = _ParzenEstimator
 
         if group:
-            if not multivariate:
+            if multivariate is False:
                 raise ValueError(
                     "``group`` option can only be enabled when ``multivariate`` is enabled."
                 )
@@ -434,14 +435,32 @@ class TPESampler(BaseSampler):
         self._rng.rng.seed()
         self._random_sampler.reseed_rng()
 
+    def _is_multivariate(self, study: Study) -> bool:
+        if self._multivariate is not None:
+            return self._multivariate
+        if self._group:
+            # ``group`` can only be enabled with the multivariate TPE.
+            if study._is_multi_objective():
+                optuna_warn(
+                    "``multivariate`` defaults to False for multi-objective optimization, but"
+                    " it is treated as True because ``group`` can only be enabled with the"
+                    " multivariate TPE. Set ``multivariate=True`` explicitly to suppress this"
+                    " warning."
+                )
+            return True
+        # By default, the multivariate TPE is used for single-objective optimization and
+        # the independent TPE is used for multi-objective optimization.
+        return not study._is_multi_objective()
+
     def infer_relative_search_space(
         self, study: Study, trial: FrozenTrial
     ) -> dict[str, BaseDistribution]:
-        if not self._multivariate:
+        multivariate = self._is_multivariate(study)
+        if not multivariate:
             return {}
 
         search_space: dict[str, BaseDistribution] = {}
-        use_trial_cache = self._multivariate or not self._constant_liar
+        use_trial_cache = multivariate or not self._constant_liar
 
         if self._group:
             assert self._group_decomposed_search_space is not None
@@ -525,7 +544,7 @@ class TPESampler(BaseSampler):
                 study, trial, param_name, param_distribution
             )
 
-        if self._warn_independent_sampling and self._multivariate:
+        if self._warn_independent_sampling and self._is_multivariate(study):
             # Avoid independent warning at the first sampling of `param_name`.
             if any(param_name in trial.params for trial in trials):
                 _logger.warning(
@@ -543,8 +562,8 @@ class TPESampler(BaseSampler):
 
         return self._sample(study, trial, {param_name: param_distribution})[param_name]
 
-    def _get_params(self, trial: FrozenTrial) -> dict[str, Any]:
-        if trial.state.is_finished() or not self._multivariate:
+    def _get_params(self, trial: FrozenTrial, study: Study) -> dict[str, Any]:
+        if trial.state.is_finished() or not self._is_multivariate(study):
             # NOTE(not522): If not multivariate, `relative_params` does not exist and
             # `system_attrs` access will be unnecessary, so we skip it.
             return trial.params
@@ -567,11 +586,11 @@ class TPESampler(BaseSampler):
         return params
 
     def _get_internal_repr(
-        self, trials: list[FrozenTrial], search_space: dict[str, BaseDistribution]
+        self, trials: list[FrozenTrial], search_space: dict[str, BaseDistribution], study: Study
     ) -> dict[str, np.ndarray]:
         values: dict[str, list[float]] = {param_name: [] for param_name in search_space}
         for trial in trials:
-            params = self._get_params(trial)
+            params = self._get_params(trial, study)
             if search_space.keys() <= params.keys():
                 for param_name, distribution in search_space.items():
                     param = params[param_name]
@@ -593,7 +612,13 @@ class TPESampler(BaseSampler):
             trials = [t for t in trials if trial.number != t.number]
 
         # We divide data into below and above.
+        if self._gamma is None:
+            if len(study.directions) <= 1:
+                self._gamma = default_gamma
+            else:
+                self._gamma = default_gamma_multiobjective
         n = sum(trial.state != TrialState.RUNNING for trial in trials)  # Ignore running trials.
+
         below_trials, above_trials = _split_trials(
             study,
             trials,
@@ -624,15 +649,13 @@ class TPESampler(BaseSampler):
         trials: list[FrozenTrial],
         handle_below: bool,
     ) -> _ParzenEstimator:
-        observations = self._get_internal_repr(trials, search_space)
+        observations = self._get_internal_repr(trials, search_space, study)
         if handle_below and study._is_multi_objective():
-            param_mask_below = [
-                search_space.keys() <= self._get_params(trial).keys() for trial in trials
-            ]
-            weights_below = _calculate_weights_below_for_multi_objective(
-                study, trials, self._constraints_func
-            )[param_mask_below]
-            assert np.isfinite(weights_below).all()
+            n_below = 0
+            for trial in trials:
+                if search_space.keys() <= self._get_params(trial, study).keys():
+                    n_below += 1
+            weights_below = np.ones(n_below)
             mpe = self._parzen_estimator_cls(
                 observations, search_space, self._parzen_estimator_parameters, weights_below
             )
@@ -878,48 +901,6 @@ def _split_infeasible_trials(
     n_below = min(n_below, len(trials))
     sorted_trials = sorted(trials, key=_get_infeasible_trial_score)
     return sorted_trials[:n_below], sorted_trials[n_below:]
-
-
-def _calculate_weights_below_for_multi_objective(
-    study: Study,
-    below_trials: list[FrozenTrial],
-    constraints_func: Callable[[FrozenTrial], Sequence[float]] | None,
-) -> np.ndarray:
-    def _feasible(trial: FrozenTrial) -> bool:
-        return constraints_func is None or all(c <= 0 for c in constraints_func(trial))
-
-    is_feasible = np.asarray([_feasible(t) for t in below_trials])
-    weights_below = np.where(is_feasible, 1.0, EPS)  # Assign EPS to infeasible trials.
-    n_below_feasible = np.count_nonzero(is_feasible)
-    if n_below_feasible <= 1:
-        return weights_below
-
-    lvals = np.asarray([t.values for t in below_trials])[is_feasible]
-    lvals *= [-1.0 if d == StudyDirection.MAXIMIZE else 1.0 for d in study.directions]
-    ref_point = _get_reference_point(lvals)
-    on_front = _is_pareto_front(lvals, assume_unique_lexsorted=False)
-    pareto_sols = lvals[on_front]
-    hv = compute_hypervolume(pareto_sols, ref_point, assume_pareto=True)
-    if math.isinf(hv):
-        # TODO(nabenabe): Assign EPS to non-Pareto solutions, and
-        # solutions with finite contrib if hv is inf. Ref: PR#5813.
-        return weights_below
-
-    loo_mat = ~np.eye(pareto_sols.shape[0], dtype=bool)  # Leave-one-out bool matrix.
-    contribs = np.zeros(n_below_feasible, dtype=float)
-    if len(study.directions) <= 3:
-        contribs[on_front] = [
-            hv - compute_hypervolume(pareto_sols[loo], ref_point, assume_pareto=True)
-            for loo in loo_mat
-        ]
-    else:
-        contribs[on_front] = np.prod(ref_point - pareto_sols, axis=-1)
-        limited_sols = np.maximum(pareto_sols, pareto_sols[:, np.newaxis])
-        contribs[on_front] -= [
-            compute_hypervolume(limited_sols[i, loo], ref_point) for i, loo in enumerate(loo_mat)
-        ]
-    weights_below[is_feasible] = np.maximum(contribs / max(np.max(contribs), EPS), EPS)
-    return weights_below
 
 
 @lru_cache(maxsize=1)

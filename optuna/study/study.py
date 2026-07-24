@@ -1246,9 +1246,8 @@ def create_study(
 
         sampler:
             A sampler object that implements background algorithm for value suggestion.
-            If :obj:`None` is specified, :class:`~optuna.samplers.TPESampler` is used during
-            single-objective optimization and :class:`~optuna.samplers.NSGAIISampler` during
-            multi-objective optimization. See also :class:`~optuna.samplers`.
+            If :obj:`None` is specified, :class:`~optuna.samplers.TPESampler` is used
+            as the default. See also :class:`~optuna.samplers`.
         pruner:
             A pruner object that decides early stopping of unpromising trials. If :obj:`None`
             is specified, :class:`~optuna.pruners.MedianPruner` is used as the default. See
@@ -1334,9 +1333,6 @@ def create_study(
                 "Python API) or `--skip-if-exists` flag (for CLI).\n"
                 "Use `optuna.study.get_all_study_names(storage)` to list all the used names."
             )
-
-    if sampler is None and len(direction_objects) > 1:
-        sampler = samplers.NSGAIISampler()
 
     study_name = storage.get_study_name_from_id(study_id)
     study = Study(study_name=study_name, storage=storage, sampler=sampler, pruner=pruner)
@@ -1430,8 +1426,6 @@ def load_study(
         )
 
     study = Study(study_name=study_name, storage=storage, sampler=sampler, pruner=pruner)
-    if sampler is None and len(study.directions) > 1:
-        study.sampler = samplers.NSGAIISampler()
     return study
 
 

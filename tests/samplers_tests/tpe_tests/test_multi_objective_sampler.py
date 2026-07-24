@@ -6,7 +6,6 @@ from unittest.mock import patch
 from unittest.mock import PropertyMock
 import warnings
 
-import numpy as np
 import pytest
 
 import optuna
@@ -80,7 +79,7 @@ def test_multi_objective_sample_independent_prior() -> None:
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", FutureWarning)
-        sampler = TPESampler(prior_weight=0.5, seed=0)
+        sampler = TPESampler(prior_weight=0.1, seed=0)
     assert suggest(sampler, study, trial, dist, past_trials) != suggestion
 
 
@@ -341,130 +340,6 @@ def test_split_complete_trials_multi_objective(direction0: str, direction1: str)
 def test_split_complete_trials_multi_objective_empty() -> None:
     study = optuna.create_study(directions=("minimize", "minimize"))
     assert _tpe.sampler._split_complete_trials_multi_objective([], study, 0) == ([], [])
-
-
-def test_calculate_weights_below_for_multi_objective() -> None:
-    # No sample.
-    study = optuna.create_study(directions=["minimize", "minimize"])
-    weights_below = _tpe.sampler._calculate_weights_below_for_multi_objective(study, [], None)
-    assert len(weights_below) == 0
-
-    # One sample.
-    study = optuna.create_study(directions=["minimize", "minimize"])
-    trial0 = optuna.create_trial(values=[0.2, 0.5])
-    study.add_trials([trial0])
-    weights_below = _tpe.sampler._calculate_weights_below_for_multi_objective(
-        study, [trial0], None
-    )
-    assert len(weights_below) == 1
-    assert sum(weights_below) > 0
-
-    # Two samples.
-    study = optuna.create_study(directions=["minimize", "minimize"])
-    trial0 = optuna.create_trial(values=[0.2, 0.5])
-    trial1 = optuna.create_trial(values=[0.9, 0.4])
-    study.add_trials([trial0, trial1])
-    weights_below = _tpe.sampler._calculate_weights_below_for_multi_objective(
-        study,
-        [trial0, trial1],
-        None,
-    )
-    assert len(weights_below) == 2
-    assert weights_below[0] > weights_below[1]
-    assert sum(weights_below) > 0
-
-    # Two equally contributed samples.
-    study = optuna.create_study(directions=["minimize", "minimize"])
-    trial0 = optuna.create_trial(values=[0.2, 0.8])
-    trial1 = optuna.create_trial(values=[0.8, 0.2])
-    study.add_trials([trial0, trial1])
-    weights_below = _tpe.sampler._calculate_weights_below_for_multi_objective(
-        study,
-        [trial0, trial1],
-        None,
-    )
-    assert len(weights_below) == 2
-    assert weights_below[0] == weights_below[1]
-    assert sum(weights_below) > 0
-
-    # Duplicated samples.
-    study = optuna.create_study(directions=["minimize", "minimize"])
-    trial0 = optuna.create_trial(values=[0.2, 0.8])
-    trial1 = optuna.create_trial(values=[0.2, 0.8])
-    study.add_trials([trial0, trial1])
-    weights_below = _tpe.sampler._calculate_weights_below_for_multi_objective(
-        study,
-        [trial0, trial1],
-        None,
-    )
-    assert len(weights_below) == 2
-    assert weights_below[0] == weights_below[1]
-    assert sum(weights_below) > 0
-
-    # Three samples.
-    study = optuna.create_study(directions=["minimize", "minimize"])
-    trial0 = optuna.create_trial(values=[0.3, 0.3])
-    trial1 = optuna.create_trial(values=[0.2, 0.8])
-    trial2 = optuna.create_trial(values=[0.8, 0.2])
-    study.add_trials([trial0, trial1, trial2])
-    weights_below = _tpe.sampler._calculate_weights_below_for_multi_objective(
-        study,
-        [trial0, trial1, trial2],
-        None,
-    )
-    assert len(weights_below) == 3
-    assert weights_below[0] > weights_below[1]
-    assert weights_below[0] > weights_below[2]
-    assert weights_below[1] == weights_below[2]
-    assert sum(weights_below) > 0
-
-    # Zero/negative objective values.
-    study = optuna.create_study(directions=["minimize", "minimize"])
-    trial0 = optuna.create_trial(values=[-0.3, -0.3])
-    trial1 = optuna.create_trial(values=[0.0, -0.8])
-    trial2 = optuna.create_trial(values=[-0.8, 0.0])
-    study.add_trials([trial0, trial1, trial2])
-    weights_below = _tpe.sampler._calculate_weights_below_for_multi_objective(
-        study,
-        [trial0, trial1, trial2],
-        None,
-    )
-    assert len(weights_below) == 3
-    assert weights_below[0] > weights_below[1]
-    assert weights_below[0] > weights_below[2]
-    assert np.isclose(weights_below[1], weights_below[2])
-    assert sum(weights_below) > 0
-
-    # +/-inf objective values.
-    study = optuna.create_study(directions=["minimize", "minimize"])
-    trial0 = optuna.create_trial(values=[-float("inf"), -float("inf")])
-    trial1 = optuna.create_trial(values=[0.0, -float("inf")])
-    trial2 = optuna.create_trial(values=[-float("inf"), 0.0])
-    study.add_trials([trial0, trial1, trial2])
-    weights_below = _tpe.sampler._calculate_weights_below_for_multi_objective(
-        study,
-        [trial0, trial1, trial2],
-        None,
-    )
-    assert len(weights_below) == 3
-    assert not any([np.isnan(w) for w in weights_below])
-    assert sum(weights_below) > 0
-
-    # Three samples with two infeasible trials.
-    study = optuna.create_study(directions=["minimize", "minimize"])
-    trial0 = optuna.create_trial(values=[0.3, 0.3], system_attrs={"constraints": 2})
-    trial1 = optuna.create_trial(values=[0.2, 0.8], system_attrs={"constraints": 8})
-    trial2 = optuna.create_trial(values=[0.8, 0.2], system_attrs={"constraints": 0})
-    study.add_trials([trial0, trial1, trial2])
-    weights_below = _tpe.sampler._calculate_weights_below_for_multi_objective(
-        study,
-        [trial0, trial1, trial2],
-        lambda trial: [trial.system_attrs["constraints"]],
-    )
-    assert len(weights_below) == 3
-    assert weights_below[0] == _tpe.sampler.EPS
-    assert weights_below[1] == _tpe.sampler.EPS
-    assert weights_below[2] > 0
 
 
 def frozen_trial_factory(
