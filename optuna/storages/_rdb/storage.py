@@ -544,8 +544,8 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                 study_id=study_id,
                 number=None,
                 state=temp_state,
-                datetime_start=template_trial.datetime_start,
-                datetime_complete=template_trial.datetime_complete,
+                datetime_start=template_trial._datetime_start_utc,
+                datetime_complete=template_trial._datetime_complete_utc,
             )
 
         session.add(trial)

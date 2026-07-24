@@ -40,6 +40,47 @@ def test_eq_ne() -> None:
     assert trial != trial_other
 
 
+def test_datetime_is_normalized_on_initialization() -> None:
+    datetime_start = datetime.datetime.fromisoformat("2020-01-02T03:04:05+09:00")
+    datetime_complete = datetime.datetime.fromisoformat("2020-01-02T01:02:03-05:00")
+    trial = FrozenTrial(
+        number=0,
+        state=TrialState.COMPLETE,
+        value=1.0,
+        datetime_start=datetime_start,
+        datetime_complete=datetime_complete,
+        params={},
+        distributions={},
+        user_attrs={},
+        system_attrs={},
+        intermediate_values={},
+        trial_id=0,
+    )
+
+    assert trial._datetime_start_utc == datetime_start.astimezone(datetime.timezone.utc)
+    assert trial._datetime_complete_utc == datetime_complete.astimezone(datetime.timezone.utc)
+    assert trial.datetime_start == datetime_start.astimezone().replace(tzinfo=None)
+    assert trial.datetime_complete == datetime_complete.astimezone().replace(tzinfo=None)
+    assert trial.datetime_start.tzinfo is None
+    assert trial.datetime_complete.tzinfo is None
+
+
+def test_datetime_is_normalized_on_assignment() -> None:
+    datetime_start = datetime.datetime.fromisoformat("2020-01-02T03:04:05+09:00")
+    datetime_complete = datetime.datetime.fromisoformat("2020-01-02T01:02:03-05:00")
+    trial = _create_trial()
+
+    trial.datetime_start = datetime_start
+    trial.datetime_complete = datetime_complete
+
+    assert trial._datetime_start_utc == datetime_start.astimezone(datetime.timezone.utc)
+    assert trial._datetime_complete_utc == datetime_complete.astimezone(datetime.timezone.utc)
+    assert trial.datetime_start == datetime_start.astimezone().replace(tzinfo=None)
+    assert trial.datetime_complete == datetime_complete.astimezone().replace(tzinfo=None)
+    assert trial.datetime_start.tzinfo is None
+    assert trial.datetime_complete.tzinfo is None
+
+
 def test_lt() -> None:
     trial = _create_trial()
 

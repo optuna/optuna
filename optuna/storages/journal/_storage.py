@@ -4,7 +4,8 @@ from collections.abc import Container
 from collections.abc import Iterable
 from collections.abc import Sequence
 import copy
-import datetime
+from datetime import datetime
+from datetime import timezone
 import enum
 import pickle
 import threading
@@ -231,7 +232,7 @@ class JournalStorage(BaseStorage):
     def create_new_trial(self, study_id: int, template_trial: FrozenTrial | None = None) -> int:
         log: dict[str, Any] = {
             "study_id": study_id,
-            "datetime_start": datetime.datetime.now().isoformat(timespec="microseconds"),
+            "datetime_start": datetime.now(timezone.utc).isoformat(timespec="microseconds"),
         }
 
         if template_trial:
@@ -242,14 +243,14 @@ class JournalStorage(BaseStorage):
             else:
                 log["value"] = template_trial.value
                 log["values"] = None
-            if template_trial.datetime_start:
-                log["datetime_start"] = template_trial.datetime_start.isoformat(
+            if template_trial._datetime_start_utc:
+                log["datetime_start"] = template_trial._datetime_start_utc.isoformat(
                     timespec="microseconds"
                 )
             else:
                 log["datetime_start"] = None
-            if template_trial.datetime_complete:
-                log["datetime_complete"] = template_trial.datetime_complete.isoformat(
+            if template_trial._datetime_complete_utc:
+                log["datetime_complete"] = template_trial._datetime_complete_utc.isoformat(
                     timespec="microseconds"
                 )
 
@@ -313,9 +314,11 @@ class JournalStorage(BaseStorage):
         }
 
         if state == TrialState.RUNNING:
-            log["datetime_start"] = datetime.datetime.now().isoformat(timespec="microseconds")
+            log["datetime_start"] = datetime.now(timezone.utc).isoformat(timespec="microseconds")
         elif state.is_finished():
-            log["datetime_complete"] = datetime.datetime.now().isoformat(timespec="microseconds")
+            log["datetime_complete"] = datetime.now(timezone.utc).isoformat(
+                timespec="microseconds"
+            )
 
         with self._thread_lock:
             if state == TrialState.RUNNING:
@@ -542,12 +545,15 @@ class JournalStorageReplayResult:
         params = {}
         if "params" in log:
             params = {k: distributions[k].to_external_repr(p) for k, p in log["params"].items()}
+        # New logs contain UTC-aware datetimes. Datetimes in legacy logs are timezone-naive and
+        # are interpreted as local time in the environment where the log is replayed by the
+        # FrozenTrial setters.
         if log["datetime_start"] is not None:
-            datetime_start = datetime.datetime.fromisoformat(log["datetime_start"])
+            datetime_start = datetime.fromisoformat(log["datetime_start"])
         else:
             datetime_start = None
         if "datetime_complete" in log:
-            datetime_complete = datetime.datetime.fromisoformat(log["datetime_complete"])
+            datetime_complete = datetime.fromisoformat(log["datetime_complete"])
         else:
             datetime_complete = None
 
@@ -619,12 +625,15 @@ class JournalStorageReplayResult:
             return
 
         trial = copy.copy(self._trials[trial_id])
+        # New logs contain UTC-aware datetimes. Datetimes in legacy logs are timezone-naive and
+        # are interpreted as local time in the environment where the log is replayed by the
+        # FrozenTrial setters.
         if state == TrialState.RUNNING:
-            trial.datetime_start = datetime.datetime.fromisoformat(log["datetime_start"])
+            trial.datetime_start = datetime.fromisoformat(log["datetime_start"])
             if self._is_issued_by_this_worker(log):
                 self._worker_id_to_owned_trial_id[self.worker_id] = trial_id
         if state.is_finished():
-            trial.datetime_complete = datetime.datetime.fromisoformat(log["datetime_complete"])
+            trial.datetime_complete = datetime.fromisoformat(log["datetime_complete"])
         trial.state = state
         if log["values"] is not None:
             trial.values = log["values"]

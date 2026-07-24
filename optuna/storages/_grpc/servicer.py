@@ -29,7 +29,6 @@ else:
 
 
 _logger = logging.get_logger(__name__)
-DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S.%f"
 
 
 class OptunaStorageProxyService(api_pb2_grpc.StorageServiceServicer):
@@ -381,10 +380,14 @@ def _to_proto_trial(trial: FrozenTrial) -> api_pb2.Trial:
         state=_to_proto_trial_state(trial.state),
         values=trial.values,
         datetime_start=(
-            trial.datetime_start.strftime(DATETIME_FORMAT) if trial.datetime_start else ""
+            trial._datetime_start_utc.isoformat(timespec="microseconds")
+            if trial._datetime_start_utc
+            else ""
         ),
         datetime_complete=(
-            trial.datetime_complete.strftime(DATETIME_FORMAT) if trial.datetime_complete else ""
+            trial._datetime_complete_utc.isoformat(timespec="microseconds")
+            if trial._datetime_complete_utc
+            else ""
         ),
         distributions={
             key: distribution_to_json(distribution)
@@ -398,13 +401,9 @@ def _to_proto_trial(trial: FrozenTrial) -> api_pb2.Trial:
 
 
 def _from_proto_trial(trial: api_pb2.Trial) -> FrozenTrial:
-    datetime_start = (
-        datetime.strptime(trial.datetime_start, DATETIME_FORMAT) if trial.datetime_start else None
-    )
+    datetime_start = datetime.fromisoformat(trial.datetime_start) if trial.datetime_start else None
     datetime_complete = (
-        datetime.strptime(trial.datetime_complete, DATETIME_FORMAT)
-        if trial.datetime_complete
-        else None
+        datetime.fromisoformat(trial.datetime_complete) if trial.datetime_complete else None
     )
     distributions = {
         key: json_to_distribution(value) for key, value in trial.distributions.items()
