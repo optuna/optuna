@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 import random
+from typing import Literal
 from unittest.mock import patch
 from unittest.mock import PropertyMock
 import warnings
@@ -311,7 +312,10 @@ def test_multi_objective_sample_independent_ignored_states() -> None:
 
 @pytest.mark.parametrize("direction0", ["minimize", "maximize"])
 @pytest.mark.parametrize("direction1", ["minimize", "maximize"])
-def test_split_complete_trials_multi_objective(direction0: str, direction1: str) -> None:
+def test_split_complete_trials_multi_objective(
+    direction0: Literal["minimize", "maximize"],
+    direction1: Literal["minimize", "maximize"],
+) -> None:
     study = optuna.create_study(directions=(direction0, direction1))
 
     for values in ([-2.0, -1.0], [3.0, 3.0], [0.0, 1.0], [-1.0, 0.0]):

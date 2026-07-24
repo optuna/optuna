@@ -5,6 +5,7 @@ from collections.abc import Sequence
 from typing import Any
 from typing import NamedTuple
 from typing import TYPE_CHECKING
+from typing import Union
 
 import optuna
 from optuna import _deprecated
@@ -40,11 +41,11 @@ class _ParetoFrontInfo(NamedTuple):
 def plot_pareto_front(
     study: Study,
     *,
-    target_names: list[str] | None = None,
+    target_names: Union[list[str], None] = None,
     include_dominated_trials: bool = True,
-    axis_order: list[int] | None = None,
-    constraints_func: Callable[[FrozenTrial], Sequence[float]] | None = None,
-    targets: Callable[[FrozenTrial], Sequence[float]] | None = None,
+    axis_order: Union[list[int], None] = None,
+    constraints_func: Union[Callable[[FrozenTrial], Sequence[float]], None] = None,
+    targets: Union[Callable[[FrozenTrial], Sequence[float]], None] = None,
 ) -> "go.Figure":
     """Plot the Pareto front of a study.
 
@@ -179,11 +180,11 @@ def _get_pareto_front_plot(info: _ParetoFrontInfo) -> "go.Figure":
 
 def _get_pareto_front_info(
     study: Study,
-    target_names: list[str] | None = None,
+    target_names: Union[list[str], None] = None,
     include_dominated_trials: bool = True,
-    axis_order: list[int] | None = None,
-    constraints_func: Callable[[FrozenTrial], Sequence[float]] | None = None,
-    targets: Callable[[FrozenTrial], Sequence[float]] | None = None,
+    axis_order: Union[list[int], None] = None,
+    constraints_func: Union[Callable[[FrozenTrial], Sequence[float]], None] = None,
+    targets: Union[Callable[[FrozenTrial], Sequence[float]], None] = None,
 ) -> _ParetoFrontInfo:
     if axis_order is not None:
         msg = _deprecated._DEPRECATION_WARNING_TEMPLATE.format(
@@ -263,7 +264,7 @@ def _get_pareto_front_info(
 
     def _infer_n_targets(
         trials_with_values: Sequence[tuple[FrozenTrial, Sequence[float]]],
-    ) -> int | None:
+    ) -> Union[int, None]:
         if len(trials_with_values) > 0:
             return len(trials_with_values[0][1])
         return None

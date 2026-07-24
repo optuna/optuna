@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from typing import Any
+from typing import Literal
 
 import numpy as np
 import pytest
@@ -88,7 +89,9 @@ def multi_objective_function(trial: Trial) -> tuple[float, float]:
 
 def get_study(seed: int, n_trials: int, is_multi_obj: bool) -> Study:
     # Assumes that `seed` can be fixed to reproduce identical results.
-    directions = ["minimize", "minimize"] if is_multi_obj else ["minimize"]
+    directions: list[Literal["minimize", "maximize"]] = (
+        ["minimize", "minimize"] if is_multi_obj else ["minimize"]
+    )
     study = create_study(sampler=RandomSampler(seed=seed), directions=directions)
     if is_multi_obj:
         study.optimize(multi_objective_function, n_trials=n_trials)

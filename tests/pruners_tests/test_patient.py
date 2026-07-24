@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Literal
+
 import pytest
 
 import optuna
@@ -75,7 +77,7 @@ def test_patient_pruner_intermediate_values_nan() -> None:
 def test_patient_pruner_intermediate_values(
     patience: int,
     min_delta: float,
-    direction: str,
+    direction: Literal["minimize", "maximize"],
     intermediates: list[int],
     expected_prune_steps: list[int],
 ) -> None:

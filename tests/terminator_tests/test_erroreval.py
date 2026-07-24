@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+from typing import Literal
 
 import pytest
 
@@ -23,7 +24,7 @@ def _create_trial(value: float, cv_scores: list[float]) -> FrozenTrial:
 
 
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])
-def test_cross_validation_evaluator(direction: str) -> None:
+def test_cross_validation_evaluator(direction: Literal["minimize", "maximize"]) -> None:
     study = create_study(direction=direction)
     sign = 1 if direction == "minimize" else -1
     study.add_trials(
@@ -43,7 +44,9 @@ def test_cross_validation_evaluator(direction: str) -> None:
 
 
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])
-def test_cross_validation_evaluator_without_cv_scores(direction: str) -> None:
+def test_cross_validation_evaluator_without_cv_scores(
+    direction: Literal["minimize", "maximize"],
+) -> None:
     study = create_study(direction=direction)
     study.add_trial(
         # Note that the CV score is not reported with the system attr.
@@ -56,7 +59,7 @@ def test_cross_validation_evaluator_without_cv_scores(direction: str) -> None:
 
 
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])
-def test_report_cross_validation_scores(direction: str) -> None:
+def test_report_cross_validation_scores(direction: Literal["minimize", "maximize"]) -> None:
     scores = [1.0, 2.0]
 
     study = create_study(direction=direction)
@@ -68,7 +71,9 @@ def test_report_cross_validation_scores(direction: str) -> None:
 
 
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])
-def test_report_cross_validation_scores_with_illegal_scores_length(direction: str) -> None:
+def test_report_cross_validation_scores_with_illegal_scores_length(
+    direction: Literal["minimize", "maximize"],
+) -> None:
     scores = [1.0]
 
     study = create_study(direction=direction)
@@ -78,7 +83,7 @@ def test_report_cross_validation_scores_with_illegal_scores_length(direction: st
 
 
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])
-def test_static_evaluator(direction: str) -> None:
+def test_static_evaluator(direction: Literal["minimize", "maximize"]) -> None:
     study = create_study(direction=direction)
     study.add_trials(
         [

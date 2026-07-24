@@ -1,12 +1,16 @@
+from typing import Literal
+from typing import Union
+
 from optuna import Study
 from optuna.distributions import FloatDistribution
 from optuna.study import create_study
+from optuna.study import StudyDirection
 from optuna.trial import create_trial
 
 
 def prepare_study_with_trials(
     n_objectives: int = 1,
-    direction: str = "minimize",
+    direction: Union[Literal["minimize", "maximize"], StudyDirection] = "minimize",
     value_for_first_trial: float = 0.0,
 ) -> Study:
     """Return a dummy study object for tests.

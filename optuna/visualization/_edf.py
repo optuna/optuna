@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import cast
 from typing import NamedTuple
 from typing import TYPE_CHECKING
+from typing import Union
 
 import numpy as np
 
@@ -40,9 +41,9 @@ class _EDFInfo(NamedTuple):
 
 
 def plot_edf(
-    study: Study | Sequence[Study],
+    study: Union[Study, Sequence[Study]],
     *,
-    target: Callable[[FrozenTrial], float] | None = None,
+    target: Union[Callable[[FrozenTrial], float], None] = None,
     target_name: str = "Objective Value",
 ) -> "go.Figure":
     """Plot the objective value EDF (empirical distribution function) of a study.
@@ -103,8 +104,8 @@ def plot_edf(
 
 
 def _get_edf_info(
-    study: Study | Sequence[Study],
-    target: Callable[[FrozenTrial], float] | None = None,
+    study: Union[Study, Sequence[Study]],
+    target: Union[Callable[[FrozenTrial], float], None] = None,
     target_name: str = "Objective Value",
 ) -> _EDFInfo:
     if isinstance(study, Study):

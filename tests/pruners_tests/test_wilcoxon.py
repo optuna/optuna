@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Literal
+
 import pytest
 
 import optuna
@@ -98,7 +100,7 @@ def test_wilcoxon_pruner_normal(
 def test_wilcoxon_pruner_warn_bad_best_trial(
     best_intermediate_values: dict[int, float],
     intermediate_values: dict[int, float],
-    direction: str,
+    direction: Literal["minimize", "maximize"],
 ) -> None:
     pruner = optuna.pruners.WilcoxonPruner()
     study = optuna.study.create_study(direction=direction, pruner=pruner)

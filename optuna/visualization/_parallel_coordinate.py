@@ -5,6 +5,7 @@ import math
 from typing import cast
 from typing import NamedTuple
 from typing import TYPE_CHECKING
+from typing import Union
 
 import numpy as np
 
@@ -42,7 +43,7 @@ class _DimensionInfo(NamedTuple):
     range: tuple[float, float]
     is_log: bool
     is_cat: bool
-    tickvals: list[int | float]
+    tickvals: list[Union[int, float]]
     ticktext: list[str]
 
 
@@ -55,9 +56,9 @@ class _ParallelCoordinateInfo(NamedTuple):
 
 def plot_parallel_coordinate(
     study: Study,
-    params: list[str] | None = None,
+    params: Union[list[str], None] = None,
     *,
-    target: Callable[[FrozenTrial], float] | None = None,
+    target: Union[Callable[[FrozenTrial], float], None] = None,
     target_name: str = "Objective Value",
 ) -> "go.Figure":
     """Plot the high-dimensional parameter relationships in a study.
@@ -123,8 +124,8 @@ def _get_parallel_coordinate_plot(info: _ParallelCoordinateInfo) -> "go.Figure":
 
 def _get_parallel_coordinate_info(
     study: Study,
-    params: list[str] | None = None,
-    target: Callable[[FrozenTrial], float] | None = None,
+    params: Union[list[str], None] = None,
+    target: Union[Callable[[FrozenTrial], float], None] = None,
     target_name: str = "Objective Value",
 ) -> _ParallelCoordinateInfo:
     _check_plot_args(study, target, target_name)
@@ -198,7 +199,7 @@ def _get_parallel_coordinate_info(
             values = [math.log10(v) for v in values]
             min_value = min(values)
             max_value = max(values)
-            tickvals: list[int | float] = list(
+            tickvals: list[Union[int, float]] = list(
                 range(math.ceil(min_value), math.floor(max_value) + 1)
             )
             if min_value not in tickvals:
@@ -215,7 +216,7 @@ def _get_parallel_coordinate_info(
                 ticktext=[f"{math.pow(10, x):.3g}" for x in tickvals],
             )
         elif is_categorical:
-            vocab: defaultdict[int | str, int] = defaultdict(lambda: len(vocab))
+            vocab: defaultdict[Union[int, str], int] = defaultdict(lambda: len(vocab))
 
             ticktext: list[str]
             if _is_numerical(trials, p_name):

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from copy import deepcopy
+from typing import Literal
 
 import numpy as np
 import pytest
@@ -145,7 +146,7 @@ def test_evaluate_on_local() -> None:
     ],
 )
 def test_get_top_quantile_trials_multi_objective_target_none(
-    directions: list[str],
+    directions: list[Literal["minimize", "maximize"]],
     values: list[list[float]],
     target_quantile: float,
     region_quantile: float,

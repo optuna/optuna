@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from typing import Literal
 
 import numpy as np
 import pytest
@@ -22,7 +23,9 @@ from optuna.visualization._hypervolume_history import _HypervolumeHistoryInfo
         ["maximize", "maximize"],
     ],
 )
-def test_get_optimization_history_info(directions: str) -> None:
+def test_get_optimization_history_info(
+    directions: Sequence[Literal["minimize", "maximize"]],
+) -> None:
     signs = [1 if d == "minimize" else -1 for d in directions]
 
     def objective(trial: Trial) -> Sequence[float]:
