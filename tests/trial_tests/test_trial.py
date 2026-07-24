@@ -742,18 +742,6 @@ def test_lazy_trial_system_attrs(storage_mode: str) -> None:
         assert set(system_attrs.items()) == {("int", 0), ("str", "A")}
 
 
-@pytest.mark.filterwarnings("ignore::FutureWarning")
-@pytest.mark.parametrize("positional_args_names", [[], ["step"], ["step", "log"]])
-def test_suggest_int_positional_args(positional_args_names: list[str]) -> None:
-    # If log is specified as positional, step must also be provided as positional.
-    study = optuna.create_study()
-    trial = study.ask()
-    kwargs = dict(step=1, log=False)
-    args = [kwargs[name] for name in positional_args_names]
-    # No error should not be raised even if the coding style is old.
-    trial.suggest_int("x", -1, 1, *args)
-
-
 def test_before_trial() -> None:
     n_calls = 0
     n_trials = 3

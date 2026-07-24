@@ -10,7 +10,6 @@ import optuna
 from optuna import distributions
 from optuna import logging
 from optuna import pruners
-from optuna._convert_positional_args import convert_positional_args
 from optuna._deprecated import deprecated_func
 from optuna._warnings import optuna_warn
 from optuna.distributions import BaseDistribution
@@ -19,7 +18,6 @@ from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
 from optuna.study._constrained_optimization import _CONSTRAINTS_KEY
-from optuna.trial._base import _SUGGEST_INT_POSITIONAL_ARGS
 from optuna.trial._base import BaseTrial
 
 
@@ -244,11 +242,6 @@ class Trial(BaseTrial):
 
         return self.suggest_float(name, low, high, step=q)
 
-    @convert_positional_args(
-        previous_positional_arg_names=_SUGGEST_INT_POSITIONAL_ARGS,
-        deprecated_version="3.5.0",
-        removed_version="5.0.0",
-    )
     def suggest_int(
         self, name: str, low: int, high: int, *, step: int = 1, log: bool = False
     ) -> int:
