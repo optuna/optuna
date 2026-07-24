@@ -16,6 +16,8 @@ import pytest
 import optuna
 from optuna import create_trial
 from optuna._transform import _SearchSpaceTransform
+from optuna.distributions import IntDistribution
+from optuna.study import StudyDirection
 from optuna.testing.storages import StorageSupplier
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
@@ -443,6 +445,40 @@ def test_call_after_trial_of_base_sampler() -> None:
     ) as mock_object:
         study.optimize(lambda _: 1.0, n_trials=1)
         assert mock_object.call_count == 1
+
+
+@pytest.mark.parametrize(
+    ("with_margin", "asked_params"),
+    [
+        (False, np.array([0.25])),
+        (True, np.array([1.0 / 6.0])),
+    ],
+)
+def test_sample_relative_int_uses_equal_width_bins(
+    with_margin: bool, asked_params: np.ndarray
+) -> None:
+    sampler = optuna.samplers.CmaEsSampler(with_margin=with_margin, n_startup_trials=0)
+    study = Mock()
+    study.direction = StudyDirection.MINIMIZE
+    study._is_multi_objective = Mock(return_value=False)
+    study._storage = Mock()
+    trial = Mock()
+    trial._trial_id = 0
+    trial.number = 0
+    optimizer = Mock()
+    optimizer.dim = 1
+    optimizer.generation = 0
+    optimizer.population_size = 2
+    optimizer.ask.return_value = asked_params
+    optimizer._rng = Mock()
+
+    with (
+        patch.object(sampler, "_get_trials", return_value=[]),
+        patch.object(sampler, "_restore_optimizer", return_value=optimizer),
+    ):
+        params = sampler.sample_relative(study, trial, {"x": IntDistribution(0, 3)})
+
+    assert params == {"x": 1}
 
 
 def test_is_compatible_search_space() -> None:

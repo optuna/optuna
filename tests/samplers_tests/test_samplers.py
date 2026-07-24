@@ -6,7 +6,10 @@ import os
 import pickle
 from typing import Any
 from typing import Callable
+import numpy as np
+from unittest.mock import Mock
 from unittest.mock import patch
+from unittest.mock import PropertyMock
 
 from _pytest.fixtures import SubRequest
 import pytest
@@ -87,6 +90,18 @@ def run_optimize(
     study = optuna.create_study(sampler=sampler)
     study.optimize(objective, n_trials=15)
     sequence_dict[k] = list(study.trials[-1].params.values())
+
+
+def test_random_sampler_sample_independent_uses_equal_width_bins_for_int() -> None:
+    sampler = optuna.samplers.RandomSampler(seed=0)
+    distribution = IntDistribution(0, 3)
+    rng = Mock()
+    rng.uniform.return_value = np.array([0.5])
+
+    with patch.object(type(sampler._rng), "rng", new_callable=PropertyMock, return_value=rng):
+        value = sampler.sample_independent(Mock(), Mock(), "x", distribution)
+
+    assert value == 1
 
 
 class TestBasicSampler(BasicSamplerTestCase):
