@@ -12,13 +12,11 @@ from optuna.importance import FanovaImportanceEvaluator
 from optuna.importance import get_param_importances
 from optuna.importance import MeanDecreaseImpurityImportanceEvaluator
 from optuna.importance import PedAnovaImportanceEvaluator
-from optuna.study import create_study
 from optuna.testing.pytest_importance import _get_study
 from optuna.testing.pytest_importance import BasicImportanceEvaluatorTestCase
 from optuna.testing.pytest_importance import ConditionalImportanceEvaluatorTestCase
 from optuna.testing.pytest_importance import MultiObjectiveImportanceEvaluatorTestCase
 from optuna.testing.pytest_importance import NonConditionalImportanceEvaluatorTestCase
-from optuna.trial import Trial
 
 
 def _mean_decrease_impurity_evaluator(
@@ -62,7 +60,7 @@ class TestNonConditionalImportanceEvaluator(NonConditionalImportanceEvaluatorTes
 
 
 class TestMultiObjectiveImportanceEvaluator(MultiObjectiveImportanceEvaluatorTestCase):
-    @pytest.fixture(params=ALL_EVALUATORS[2:])
+    @pytest.fixture(params=[pytest.param(_ped_anova_evaluator, id="PedAnovaImportanceEvaluator")])
     def evaluator(self, request: SubRequest) -> Callable[..., BaseImportanceEvaluator]:
         return request.param
 
@@ -104,11 +102,6 @@ def test_importance_evaluator_seed(
 
 
 def test_get_param_importances_unnormalized_experimental() -> None:
-    def objective(trial: Trial) -> float:
-        x1 = trial.suggest_float("x1", 0.1, 3)
-        return x1**2
-
-    study = create_study()
-    study.optimize(objective, n_trials=4)
+    study = _get_study(seed=0, n_trials=3, is_multi_obj=False)
     with pytest.warns(ExperimentalWarning):
         get_param_importances(study, normalize=False)

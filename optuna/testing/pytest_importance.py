@@ -98,10 +98,13 @@ class BasicImportanceEvaluatorTestCase(_BaseImportanceEvaluatorTestCase):
         study = create_study()
         study.optimize(objective, n_trials=3)
 
+        # None of the trials with `x2` are completed.
         with pytest.raises(ValueError):
             get_param_importances(study, evaluator=evaluator(), params=["x2"])
+        # None of the trials with `x2` are completed. Adding "x1" should not matter.
         with pytest.raises(ValueError):
             get_param_importances(study, evaluator=evaluator(), params=["x1", "x2"])
+        # None of the trials contain `x3`.
         with pytest.raises(ValueError):
             get_param_importances(study, evaluator=evaluator(), params=["x3"])
 
