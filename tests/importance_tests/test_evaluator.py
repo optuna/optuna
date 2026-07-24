@@ -50,7 +50,7 @@ class TestBasicImportanceEvaluator(BasicImportanceEvaluatorTestCase):
 
 
 class TestConditionalImportanceEvaluator(ConditionalImportanceEvaluatorTestCase):
-    @pytest.fixture(params=ALL_EVALUATORS[2:])
+    @pytest.fixture(params=[pytest.param(_ped_anova_evaluator, id="PedAnovaImportanceEvaluator")])
     def evaluator(self, request: SubRequest) -> Callable[..., BaseImportanceEvaluator]:
         return request.param
 
