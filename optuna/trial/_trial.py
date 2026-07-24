@@ -20,6 +20,7 @@ from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
 from optuna.study._constrained_optimization import _CONSTRAINTS_KEY
+from optuna.study._constrained_optimization import _get_constraints_from_system_attrs
 from optuna.trial._base import _SUGGEST_INT_POSITIONAL_ARGS
 from optuna.trial._base import BaseTrial
 
@@ -779,24 +780,7 @@ class Trial(BaseTrial):
         """
 
         system_attrs = self.storage.get_trial_system_attrs(self._trial_id)
-        constraints_dict: dict[str, float] = {}
-
-        # Load constraints from old format (list)
-        con = system_attrs.get(_CONSTRAINTS_KEY)
-        if con is not None:
-            for i, c in enumerate(con):
-                constraints_dict[str(i)] = c
-
-        # Load constraints from new format (individual keys)
-        prefix = f"{_CONSTRAINTS_KEY}:"
-        for key, value in system_attrs.items():
-            if key.startswith(prefix):
-                constraint_key = key[len(prefix) :]
-                if constraint_key in constraints_dict:
-                    optuna_warn("Overwrite an old format constraint.")
-                constraints_dict[constraint_key] = value
-
-        return constraints_dict
+        return _get_constraints_from_system_attrs(system_attrs)
 
     def set_constraint(self, key: str, value: float) -> None:
         """Set a constraint value for the trial.
