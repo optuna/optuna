@@ -296,9 +296,8 @@ def _untransform_numerical_param(
             else:
                 param = int(trans_param)
         else:
-            param = int(
-                np.clip(np.round((trans_param - d.low) / d.step) * d.step + d.low, d.low, d.high)
-            )
+            offset = trans_param - (d.low - 0.5 * d.step)
+            param = int(np.clip(math.floor(offset / d.step) * d.step + d.low, d.low, d.high))
     else:
         assert False, "Should not reach. Unexpected distribution."
 
