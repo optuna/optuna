@@ -83,9 +83,11 @@ class GPSampler(BaseSampler):
     - log expected improvement (logEI) for single-objective optimization,
     - log expected hypervolume improvement (logEHVI) for Multi-objective optimization,
     - the summation of logEI and the logarithm of the feasible probability with the independent
-      assumption of each constraint for (black-box inequality) constrained optimization, and
+      assumption of each constraint for (black-box inequality) constrained optimization,
     - MC-based batch log expected improvement (qLogEI) for single-objective optimization with
-      running trials.
+      running trials, and
+    - MC-based batch constrained log expected improvement (qConstrainedLogEI) for
+      single-objective constrained optimization with running trials.
 
     Note that We adopt a sequential greedy selection for batch candidates instead of joint
     optimization.
@@ -491,14 +493,27 @@ class GPSampler(BaseSampler):
                 )
                 i_opt = np.argmax(y_with_neginf)
                 best_feasible_y = y_with_neginf[i_opt]
-                acqf = acqf_module.ConstrainedLogEI(
-                    gpr=gprs_list[0],
-                    search_space=internal_search_space,
-                    threshold=best_feasible_y,
-                    constraints_gpr_list=constr_gpr_list,
-                    constraints_threshold_list=constr_threshold_list,
-                    normalized_params_of_running_trials=normalized_params_of_running_trials,
-                )
+                if normalized_params_of_running_trials is None:
+                    acqf = acqf_module.ConstrainedLogEI(
+                        gpr=gprs_list[0],
+                        search_space=internal_search_space,
+                        threshold=best_feasible_y,
+                        constraints_gpr_list=constr_gpr_list,
+                        constraints_threshold_list=constr_threshold_list,
+                    )
+                else:
+                    acqf = acqf_module.qConstrainedLogEI(
+                        gpr=gprs_list[0],
+                        search_space=internal_search_space,
+                        threshold=best_feasible_y,
+                        n_qmc_samples=self._n_qmc_samples_qei,
+                        qmc_seeds=self._rng.rng.randint(
+                            1 << 30, size=len(constr_gpr_list) + 1
+                        ).tolist(),
+                        constraints_gpr_list=constr_gpr_list,
+                        constraints_threshold_list=constr_threshold_list,
+                        normalized_params_of_running_trials=normalized_params_of_running_trials,
+                    )
                 assert normalized_params.shape[:-1] == y_with_neginf.shape
                 best_params = (
                     None if np.isneginf(best_feasible_y) else normalized_params[i_opt, np.newaxis]
