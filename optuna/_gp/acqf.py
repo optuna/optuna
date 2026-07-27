@@ -82,7 +82,7 @@ def logei(mean: torch.Tensor, var: torch.Tensor, f0: float) -> torch.Tensor:
     return standard_logei((mean - f0) / (sigma := var.sqrt_())) + sigma.log()
 
 
-def _aggregate_log_acqf_over_q_batch(log_acqf: torch.Tensor) -> torch.Tensor:
+def _compute_mean_max_utility(log_acqf: torch.Tensor) -> torch.Tensor:
     # Take the max over the q-batch axis, then the mean over the fixed sample axis in log space.
     # TODO(sawa3030): Consider using fatmax instead of max.
     max_log_acqf_in_q_batch = torch.amax(log_acqf, dim=-1)
@@ -164,7 +164,7 @@ class qLogEI(BaseAcquisitionFunc):
         # NOTE(nabenabe): See Eq. (10) of https://arxiv.org/pdf/2310.20708
         y_post = self._cond_gpr.sample_joint_posterior(x)
         log_improvement = (y_post - self._threshold).clamp_min_(_EPS).log()
-        return _aggregate_log_acqf_over_q_batch(log_improvement)
+        return _compute_mean_max_utility(log_improvement)
 
 
 class LogPI(BaseAcquisitionFunc):
@@ -235,7 +235,7 @@ class qLogPI(BaseAcquisitionFunc):
     def eval_acqf(self, x: torch.Tensor) -> torch.Tensor:
         y_post = self._cond_gpr.sample_joint_posterior(x)
         log_prob = torch.nn.functional.logsigmoid((y_post - self._threshold) / self._tau)
-        return _aggregate_log_acqf_over_q_batch(log_prob)
+        return _compute_mean_max_utility(log_prob)
 
 
 class UCB(BaseAcquisitionFunc):
@@ -358,7 +358,7 @@ class qConstrainedLogEI(BaseAcquisitionFunc):
                 (log_prob - acqf._threshold) / acqf._tau
             )
 
-        return _aggregate_log_acqf_over_q_batch(log_feasible_improvement)
+        return _compute_mean_max_utility(log_feasible_improvement)
 
 
 class LogEHVI(BaseAcquisitionFunc):
