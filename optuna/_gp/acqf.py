@@ -456,35 +456,40 @@ class qLogEHVI(BaseAcquisitionFunc):
         search_space: SearchSpace,
         Y_train: torch.Tensor,
         n_qmc_samples: int,
-        qmc_seed: int | None,
+        qmc_seed: int,
         normalized_params_of_running_trials: np.ndarray,
         stabilizing_noise: float = 1e-12,
     ) -> None:
-        self._gpr_list = gpr_list
-        self._stabilizing_noise = stabilizing_noise
         self._Y_train = Y_train
-        self._X_running = torch.from_numpy(normalized_params_of_running_trials)
-        n_running = normalized_params_of_running_trials.shape[0]
-        self._fixed_samples = _sample_from_normal_sobol(
-            dim=(n_running + 1) * Y_train.shape[-1],
-            n_samples=n_qmc_samples,
-            seed=qmc_seed,
-        ).reshape(n_qmc_samples, n_running + 1, Y_train.shape[-1])
-        self._conditional_gpr_list = [
+        self._cond_gpr_list = [
             ConditionalGPRegressor(
                 gpr=gpr,
-                X_running=self._X_running,
-                fixed_samples=self._fixed_samples[..., i],
+                X_running=torch.from_numpy(normalized_params_of_running_trials),
+                n_qmc_samples=n_qmc_samples,
+                qmc_seed=qmc_seed + i,
                 stabilizing_noise=stabilizing_noise,
             )
             for i, gpr in enumerate(gpr_list)
         ]
-        super().__init__(np.mean([gpr.length_scales for gpr in gpr_list], axis=0), search_space)
-
-    def _get_posterior_samples(self, x: torch.Tensor) -> torch.Tensor:
-        return torch.stack(
-            [conditional_gpr.sample(x) for conditional_gpr in self._conditional_gpr_list], dim=-1
+        fantasy_samples = torch.stack(
+            [cond_gpr._fantasy_samples for cond_gpr in self._cond_gpr_list],
+            dim=-1,
         )
+        lower_bounds_list = []
+        upper_bounds_list = []
+        for sample_idx in range(fantasy_samples.shape[0]):
+            observed_Y = torch.cat([self._Y_train, fantasy_samples[sample_idx]], dim=0)
+            lower_bounds, upper_bounds = _get_non_dominated_box_bounds_from_observations(
+                observed_Y
+            )
+            lower_bounds_list.append(lower_bounds)
+            upper_bounds_list.append(upper_bounds)
+        (
+            self._non_dominated_box_lower_bounds,
+            self._non_dominated_box_intervals,
+            self._non_dominated_box_mask,
+        ) = self._pad_non_dominated_box_bounds(lower_bounds_list, upper_bounds_list)
+        super().__init__(np.mean([gpr.length_scales for gpr in gpr_list], axis=0), search_space)
 
     @staticmethod
     def _pad_non_dominated_box_bounds(
@@ -511,41 +516,15 @@ class qLogEHVI(BaseAcquisitionFunc):
         return lower_bounds, intervals, box_mask
 
     def eval_acqf(self, x: torch.Tensor) -> torch.Tensor:
-        Y_post = self._get_posterior_samples(x)
-        batch_shape = Y_post.shape[:-3]
-        n_qmc_samples = Y_post.shape[-3]
-        Y_running_post = Y_post[..., :-1, :]
-        Y_candidate_post = Y_post[..., -1, :]
-        log_hvi = torch.empty(batch_shape + (n_qmc_samples,), dtype=torch.float64)
-
-        # print("Batch shape:", batch_shape)
-        for batch_idx in np.ndindex(batch_shape) if batch_shape else [()]:
-            lower_bounds_list = []
-            upper_bounds_list = []
-            for sample_idx in range(n_qmc_samples):
-                # print(f"Processing batch index: {batch_idx}, sample index: {sample_idx}")
-                observed_Y = torch.cat(
-                    [self._Y_train, Y_running_post[batch_idx + (sample_idx,)]], dim=0
-                )
-                lower_bounds, upper_bounds = _get_non_dominated_box_bounds_from_observations(
-                    observed_Y
-                )
-                lower_bounds_list.append(lower_bounds)
-                upper_bounds_list.append(upper_bounds)
-
-            padded_lower_bounds, padded_intervals, padded_box_mask = (
-                self._pad_non_dominated_box_bounds(lower_bounds_list, upper_bounds_list)
-            )
-            # print(f"Processing batch index: {batch_idx}")
-            log_hvi[batch_idx] = logehvi(
-                Y_post=Y_candidate_post[batch_idx],
-                non_dominated_box_lower_bounds=padded_lower_bounds,
-                non_dominated_box_intervals=padded_intervals,
-                reduce_n_qmc_samples=False,
-                non_dominated_box_mask=padded_box_mask,
-            )
-
-        return torch.special.logsumexp(log_hvi, dim=-1) - math.log(n_qmc_samples)
+        Y_candidate_post = torch.stack(
+            [cond_gpr.sample_joint_posterior(x) for cond_gpr in self._cond_gpr_list], dim=-1
+        )[..., -1, :]
+        return logehvi(
+            Y_post=Y_candidate_post,
+            non_dominated_box_lower_bounds=self._non_dominated_box_lower_bounds,
+            non_dominated_box_intervals=self._non_dominated_box_intervals,
+            non_dominated_box_mask=self._non_dominated_box_mask,
+        )
 
 
 class ConstrainedLogEHVI(BaseAcquisitionFunc):
