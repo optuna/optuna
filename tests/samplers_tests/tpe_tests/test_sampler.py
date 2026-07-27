@@ -791,7 +791,6 @@ def test_split_trials(direction: str, constant_liar: bool, constraints: bool) ->
             study,
             trials,
             n_below,
-            constraints,
         )
 
         below_trial_numbers = [trial.number for trial in below_trials]
@@ -847,9 +846,7 @@ def test_split_trials_for_multiobjective_constant_liar(directions: list[str]) ->
     # NOTE(nabenabe0928): Running trials (#16 -- #20) must come at the end.
     ground_truth += [n_completed_trials + i for i in range(n_running_trials)]
     for n_below in range(1, len(finished_trials) + 1):
-        below_trials, above_trials = _tpe.sampler._split_trials(
-            study, trials, n_below, constraints_enabled=False
-        )
+        below_trials, above_trials = _tpe.sampler._split_trials(study, trials, n_below)
         below_trial_numbers = [trial.number for trial in below_trials]
         assert below_trial_numbers == sorted(ground_truth[:n_below])
         above_trial_numbers = [trial.number for trial in above_trials]

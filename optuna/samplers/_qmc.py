@@ -38,6 +38,10 @@ _threading_lock = threading.Lock()
 class QMCSampler(BaseSampler):
     """A Quasi Monte Carlo Sampler that generates low-discrepancy sequences.
 
+    .. note::
+        This sampler requires ``scipy``.
+        You can install this dependency with ``pip install scipy``.
+
     Quasi Monte Carlo (QMC) sequences are designed to have lower discrepancies than
     standard random sequences. They are known to perform better than the standard
     random sequences in hyperparameter optimization.

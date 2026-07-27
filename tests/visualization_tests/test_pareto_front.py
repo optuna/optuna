@@ -13,7 +13,9 @@ from optuna import create_study
 from optuna import create_trial
 from optuna.distributions import FloatDistribution
 from optuna.study.study import Study
+from optuna.trial import BaseTrial
 from optuna.trial import FrozenTrial
+from optuna.trial import Trial
 from optuna.visualization import plot_pareto_front
 import optuna.visualization._pareto_front
 from optuna.visualization._pareto_front import _get_pareto_front_info
@@ -46,16 +48,24 @@ def test_get_pareto_front_info_infer_n_targets() -> None:
 
 
 def create_study_2d(
-    constraints_func: Callable[[FrozenTrial], Sequence[float]] | None = None,
+    constraints_func: Callable[[Trial], Sequence[float]] | None = None,
 ) -> Study:
-    sampler = optuna.samplers.TPESampler(seed=0, constraints_func=constraints_func)
+    sampler = optuna.samplers.TPESampler(seed=0)
     study = optuna.create_study(directions=["minimize", "minimize"], sampler=sampler)
+
+    def objective(t: optuna.trial.Trial) -> tuple[int, int]:
+        x = t.suggest_int("x", 0, 2)
+        y = t.suggest_int("y", 0, 2)
+        if constraints_func is not None:
+            for i, c in enumerate(constraints_func(t)):
+                t.set_constraint(f"constraint_{i}", c)
+        return x, y
 
     study.enqueue_trial({"x": 1, "y": 2})
     study.enqueue_trial({"x": 1, "y": 1})
     study.enqueue_trial({"x": 0, "y": 2})
     study.enqueue_trial({"x": 1, "y": 0})
-    study.optimize(lambda t: [t.suggest_int("x", 0, 2), t.suggest_int("y", 0, 2)], n_trials=4)
+    study.optimize(objective, n_trials=4)
     return study
 
 
@@ -138,7 +148,7 @@ def test_get_pareto_front_info_constrained(
         )
 
     # (x, y) = (1, 0) is infeasible; others are feasible.
-    def constraints_func(t: FrozenTrial) -> Sequence[float]:
+    def constraints_func(t: BaseTrial) -> Sequence[float]:
         return [1.0] if t.params["x"] == 1 and t.params["y"] == 0 else [-1.0]
 
     if use_study_with_constraints:
@@ -193,7 +203,7 @@ def test_get_pareto_front_info_all_infeasible(
         )
 
     # all trials are infeasible.
-    def constraints_func(t: FrozenTrial) -> Sequence[float]:
+    def constraints_func(t: BaseTrial) -> Sequence[float]:
         return [1.0]
 
     if use_study_with_constraints:
