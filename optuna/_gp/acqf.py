@@ -82,12 +82,12 @@ def logei(mean: torch.Tensor, var: torch.Tensor, f0: float) -> torch.Tensor:
     return standard_logei((mean - f0) / (sigma := var.sqrt_())) + sigma.log()
 
 
-def _compute_mean_max_utility(log_acqf: torch.Tensor) -> torch.Tensor:
+def _compute_mean_max_utility(log_util_vals: torch.Tensor) -> torch.Tensor:
     # Take the max over the q-batch axis, then the mean over the fixed sample axis in log space.
     # TODO(sawa3030): Consider using fatmax instead of max.
-    max_log_acqf_in_q_batch = torch.amax(log_acqf, dim=-1)
-    return torch.special.logsumexp(max_log_acqf_in_q_batch, dim=-1) - math.log(
-        max_log_acqf_in_q_batch.shape[-1]
+    max_log_util_vals_in_q_batch = torch.amax(log_util_vals, dim=-1)
+    return torch.special.logsumexp(max_log_util_vals_in_q_batch, dim=-1) - math.log(
+        max_log_util_vals_in_q_batch.shape[-1]
     )
 
 
