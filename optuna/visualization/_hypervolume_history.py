@@ -8,7 +8,6 @@ import numpy as np
 from optuna._experimental import experimental_func
 from optuna._hypervolume import compute_hypervolume
 from optuna.logging import get_logger
-from optuna.samplers._base import _CONSTRAINTS_KEY
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import TrialState
 from optuna.visualization._plotly_imports import _imports
@@ -107,13 +106,10 @@ def _get_hypervolume_history_info(
     for trial in completed_trials:
         trial_numbers.append(trial.number)
 
-        has_constraints = _CONSTRAINTS_KEY in trial.system_attrs
-        if has_constraints:
-            constraints_values = trial.system_attrs[_CONSTRAINTS_KEY]
-            if any(map(lambda x: x > 0.0, constraints_values)):
-                # The trial is infeasible.
-                hypervolume_values.append(hypervolume)
-                continue
+        if any(x > 0.0 for x in trial.constraints.values()):
+            # The trial is infeasible.
+            hypervolume_values.append(hypervolume)
+            continue
 
         values_normalized = (signs * trial.values)[np.newaxis, :]
         if best_trials_values_normalized is not None:

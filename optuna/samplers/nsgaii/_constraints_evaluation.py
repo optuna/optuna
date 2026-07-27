@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 from optuna._warnings import optuna_warn
-from optuna.samplers._base import _CONSTRAINTS_KEY
 from optuna.study._multi_objective import _dominates
 from optuna.trial import TrialState
 
@@ -30,38 +29,35 @@ def _constrained_dominates(
     3) Trial x and y are feasible and trial x dominates trial y.
     """
 
-    constraints0 = trial0.system_attrs.get(_CONSTRAINTS_KEY)
-    constraints1 = trial1.system_attrs.get(_CONSTRAINTS_KEY)
+    constraints0 = trial0.constraints
+    constraints1 = trial1.constraints
 
-    if constraints0 is None:
+    if len(constraints0) == 0:
         optuna_warn(
             f"Trial {trial0.number} does not have constraint values."
             " It will be dominated by the other trials."
         )
 
-    if constraints1 is None:
+    if len(constraints1) == 0:
         optuna_warn(
             f"Trial {trial1.number} does not have constraint values."
             " It will be dominated by the other trials."
         )
 
-    if constraints0 is None and constraints1 is None:
+    if len(constraints0) == 0 and len(constraints1) == 0:
         # Neither Trial x nor y has constraints values
         return _dominates(trial0, trial1, directions)
 
-    if constraints0 is not None and constraints1 is None:
+    if len(constraints0) > 0 and len(constraints1) == 0:
         # Trial x has constraint values, but y doesn't.
         return True
 
-    if constraints0 is None and constraints1 is not None:
+    if len(constraints0) == 0 and len(constraints1) > 0:
         # If Trial y has constraint values, but x doesn't.
         return False
 
-    assert isinstance(constraints0, (list, tuple))
-    assert isinstance(constraints1, (list, tuple))
-
-    if len(constraints0) != len(constraints1):
-        raise ValueError("Trials with different numbers of constraints cannot be compared.")
+    if constraints0.keys() != constraints1.keys():
+        raise ValueError("Trials with different constraint keys cannot be compared.")
 
     if trial0.state != TrialState.COMPLETE:
         return False
@@ -69,8 +65,8 @@ def _constrained_dominates(
     if trial1.state != TrialState.COMPLETE:
         return True
 
-    satisfy_constraints0 = all(v <= 0 for v in constraints0)
-    satisfy_constraints1 = all(v <= 0 for v in constraints1)
+    satisfy_constraints0 = all(v <= 0 for v in constraints0.values())
+    satisfy_constraints1 = all(v <= 0 for v in constraints1.values())
 
     if satisfy_constraints0 and satisfy_constraints1:
         # Both trials satisfy the constraints.
@@ -85,8 +81,8 @@ def _constrained_dominates(
         return False
 
     # Both trials violate the constraints.
-    violation0 = sum(v for v in constraints0 if v > 0)
-    violation1 = sum(v for v in constraints1 if v > 0)
+    violation0 = sum(v for v in constraints0.values() if v > 0)
+    violation1 = sum(v for v in constraints1.values() if v > 0)
     return violation0 < violation1
 
 
@@ -99,11 +95,11 @@ def _evaluate_penalty(population: Sequence[FrozenTrial]) -> np.ndarray:
 
     penalty: list[float] = []
     for trial in population:
-        constraints = trial.system_attrs.get(_CONSTRAINTS_KEY)
-        if constraints is None:
+        constraints = trial.constraints
+        if len(constraints) == 0:
             penalty.append(np.nan)
         else:
-            penalty.append(sum(v for v in constraints if v > 0))
+            penalty.append(sum(v for v in constraints.values() if v > 0))
     return np.array(penalty)
 
 
@@ -115,18 +111,16 @@ def _validate_constraints(
     if not is_constrained:
         return
 
-    num_constraints = max(
-        [len(t.system_attrs.get(_CONSTRAINTS_KEY, [])) for t in population], default=0
-    )
+    num_constraints = max([len(t.constraints) for t in population], default=0)
     for _trial in population:
-        _constraints = _trial.system_attrs.get(_CONSTRAINTS_KEY)
-        if _constraints is None:
+        _constraints = _trial.constraints
+        if len(_constraints) == 0:
             optuna_warn(
                 f"Trial {_trial.number} does not have constraint values."
                 " It will be dominated by the other trials."
             )
             continue
-        if np.any(np.isnan(np.array(_constraints))):
+        if np.any(np.isnan(list(_constraints.values()))):
             raise ValueError("NaN is not acceptable as constraint value.")
         elif len(_constraints) != num_constraints:
             raise ValueError("Trials with different numbers of constraints cannot be compared.")

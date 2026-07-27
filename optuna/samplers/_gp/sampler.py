@@ -8,7 +8,6 @@ import numpy as np
 
 import optuna
 from optuna._experimental import warn_experimental_argument
-from optuna.samplers._base import _CONSTRAINTS_KEY
 from optuna.samplers._base import _INDEPENDENT_SAMPLING_WARNING_TEMPLATE
 from optuna.samplers._base import _process_constraints_after_trial
 from optuna.samplers._base import BaseSampler
@@ -64,6 +63,10 @@ def _standardize_values(values: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.
 
 class GPSampler(BaseSampler):
     """Sampler using Gaussian process-based Bayesian optimization.
+
+    .. note::
+        This sampler requires ``scipy`` and ``torch`` (the CPU version is sufficient).
+        You can install these dependencies with ``pip install scipy torch``.
 
     This sampler fits a Gaussian process (GP) to the objective function and optimizes
     the acquisition function to suggest the next parameters.
@@ -142,9 +145,30 @@ class GPSampler(BaseSampler):
     We use line search instead of rounding the results from the continuous optimization since EI
     typically yields a high value between one grid and its adjacent grid.
 
-    .. note::
-        This sampler requires ``scipy`` and ``torch``.
-        You can install these dependencies with ``pip install scipy torch``.
+    .. admonition:: Linux runtime performance note
+
+        If you feel ``GPSampler`` laggy on Linux, it may be due to thread oversubscription.
+        Essentially, OpenBLAS threads in NumPy and OpenMP threads in PyTorch compete,
+        slowing down the throughput. It is a compounding issue rather than two separate
+        ones: the two thread pools eat up each other's threads on the same cores.
+
+        This sampler mitigates it automatically by limiting PyTorch intra-op threads to 1,
+        and, on SciPy v1.15+, also limiting ``OPENBLAS_NUM_THREADS`` to 1.
+        (`SciPy Issue #22438 <https://github.com/scipy/scipy/issues/22438>`__)
+
+        This oversubscription has not been observed on macOS, which uses Apple Accelerate
+        with dynamic threading.
+
+    .. admonition:: Complete solution to the runtime performance issue
+
+        Set ``OMP_NUM_THREADS=1`` BEFORE running your script (or before torch imports), if the
+        runtime of ``GPSampler`` is critical in your application.
+
+        .. code-block:: bash
+
+            OMP_NUM_THREADS=1 python your_script.py
+
+        Setting it at runtime has no effect because torch reads this variable during import.
 
     Args:
         seed:
@@ -492,7 +516,9 @@ class GPSampler(BaseSampler):
                         search_space=internal_search_space,
                         threshold=best_feasible_y,
                         n_qmc_samples=self._n_qmc_samples_qei,
-                        qmc_seed=self._rng.rng.randint(1 << 30),
+                        qmc_seeds=self._rng.rng.randint(
+                            1 << 30, size=len(constr_gpr_list) + 1
+                        ).tolist(),
                         constraints_gpr_list=constr_gpr_list,
                         constraints_threshold_list=constr_threshold_list,
                         normalized_params_of_running_trials=normalized_params_of_running_trials,
@@ -569,10 +595,7 @@ class GPSampler(BaseSampler):
 def _get_constraint_vals_and_feasibility(
     study: Study, trials: list[FrozenTrial]
 ) -> tuple[np.ndarray, np.ndarray]:
-    _constraint_vals = [
-        study._storage.get_trial_system_attrs(trial._trial_id).get(_CONSTRAINTS_KEY, ())
-        for trial in trials
-    ]
+    _constraint_vals = [list(trial.constraints.values()) for trial in trials]
     if any(len(_constraint_vals[0]) != len(c) for c in _constraint_vals):
         raise ValueError("The number of constraints must be the same for all trials.")
 

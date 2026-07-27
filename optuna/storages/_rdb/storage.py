@@ -307,12 +307,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                 session.add(models.StudyModel(study_name=study_name, directions=direction_models))
 
         except sqlalchemy_exc.IntegrityError:
-            raise optuna.exceptions.DuplicatedStudyError(
-                f"Another study with name '{study_name}' already exists. "
-                "Please specify a different name, or reuse the existing one "
-                "by setting `load_if_exists` (for Python API) or "
-                "`--skip-if-exists` flag (for CLI)."
-            )
+            raise optuna.exceptions.DuplicatedStudyError
 
         _logger.info(f"A new study created in RDB with name: {study_name}")
 

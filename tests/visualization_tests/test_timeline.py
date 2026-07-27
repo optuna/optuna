@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 import pytest
 
 import optuna
-from optuna.samplers._base import _CONSTRAINTS_KEY
+from optuna.study._constrained_optimization import _CONSTRAINTS_KEY
 from optuna.trial import TrialState
 from optuna.visualization import plot_timeline as plotly_plot_timeline
 from optuna.visualization._plotly_imports import _imports as plotly_imports

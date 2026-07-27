@@ -103,13 +103,17 @@ class InMemoryStorage(BaseStorage):
         with self._lock:
             self._check_study_id(study_id)
 
-            self._studies[study_id].user_attrs[key] = value
+            user_attrs = copy.copy(self._studies[study_id].user_attrs)
+            user_attrs[key] = value
+            self._studies[study_id].user_attrs = user_attrs
 
     def set_study_system_attr(self, study_id: int, key: str, value: JSONSerializable) -> None:
         with self._lock:
             self._check_study_id(study_id)
 
-            self._studies[study_id].system_attrs[key] = value
+            system_attrs = copy.copy(self._studies[study_id].system_attrs)
+            system_attrs[key] = value
+            self._studies[study_id].system_attrs = system_attrs
 
     def get_study_id_from_name(self, study_name: str) -> int:
         with self._lock:

@@ -39,8 +39,8 @@ def get_gp_sampler(
 sampler_class_with_seed: dict[str, Callable[[int], BaseSampler]] = {
     "RandomSampler": lambda seed: optuna.samplers.RandomSampler(seed=seed),
     "TPESampler": lambda seed: optuna.samplers.TPESampler(seed=seed),
-    "multivariate TPESampler": lambda seed: optuna.samplers.TPESampler(
-        multivariate=True, seed=seed
+    "univariate TPESampler": lambda seed: optuna.samplers.TPESampler(
+        multivariate=False, seed=seed
     ),
     "CmaEsSampler": lambda seed: optuna.samplers.CmaEsSampler(seed=seed),
     "separable CmaEsSampler": lambda seed: optuna.samplers.CmaEsSampler(
@@ -94,7 +94,7 @@ class TestBasicSampler(BasicSamplerTestCase):
         params=[
             optuna.samplers.RandomSampler,
             lambda: optuna.samplers.TPESampler(n_startup_trials=0),
-            lambda: optuna.samplers.TPESampler(n_startup_trials=0, multivariate=True),
+            lambda: optuna.samplers.TPESampler(n_startup_trials=0, multivariate=False),
             lambda: optuna.samplers.CmaEsSampler(n_startup_trials=0),
             lambda: optuna.samplers.CmaEsSampler(n_startup_trials=0, use_separable_cma=True),
             optuna.samplers.NSGAIISampler,
@@ -176,7 +176,7 @@ def unset_seed_in_test(request: SubRequest) -> None:
         (optuna.samplers.RandomSampler, True, False),
         (lambda: optuna.samplers.TPESampler(n_startup_trials=0), True, True),
         (
-            lambda: optuna.samplers.TPESampler(n_startup_trials=0, multivariate=True),
+            lambda: optuna.samplers.TPESampler(n_startup_trials=0, multivariate=False),
             True,
             True,
         ),

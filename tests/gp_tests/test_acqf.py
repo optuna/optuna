@@ -92,6 +92,21 @@ def test_eval_qlogei(x: np.ndarray, search_space: SearchSpace) -> None:
 
 
 @parametrized_x
+def test_eval_qlogpi(x: np.ndarray, search_space: SearchSpace) -> None:
+    Y = np.array([1.0, 2.0, 3.0])
+    acqf = acqf_module.qLogPI(
+        gpr=get_gpr(Y),
+        search_space=search_space,
+        threshold=np.max(Y),
+        n_qmc_samples=32,
+        qmc_seed=42,
+        normalized_params_of_running_trials=np.array([[0.4, 0.6]]),
+        stabilizing_noise=0.0,
+    )
+    verify_eval_acqf(x, acqf)
+
+
+@parametrized_x
 @parametrized_additional_values
 def test_eval_qconstrained_logei(
     x: np.ndarray,
@@ -107,7 +122,7 @@ def test_eval_qconstrained_logei(
         search_space=search_space,
         threshold=-np.inf if is_all_infeasible else np.max(Y[is_feasible]),
         n_qmc_samples=32,
-        qmc_seed=42,
+        qmc_seeds=[42, 17, 99, 123][: len(c.T) + 1],
         constraints_gpr_list=[get_gpr(vals) for vals in c.T],
         constraints_threshold_list=[0.0] * len(c.T),
         normalized_params_of_running_trials=np.array([[0.4, 0.6]]),

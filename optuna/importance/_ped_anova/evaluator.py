@@ -6,8 +6,6 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from optuna._deprecated import _DEPRECATION_WARNING_TEMPLATE
-from optuna._experimental import experimental_class
 from optuna._warnings import optuna_warn
 from optuna.importance._base import _sort_dict_by_importance
 from optuna.importance._base import BaseImportanceEvaluator
@@ -50,7 +48,6 @@ class _QuantileFilter:
         return [t for t, should_keep in zip(trials, should_keep_trials) if should_keep]
 
 
-@experimental_class("3.6.0")
 class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
     """PED-ANOVA importance evaluator.
 
@@ -130,18 +127,6 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
             trials achieve top-50% performance. If ``region_quantile=1.0``, the importance is
             computed in the whole search space.
 
-        baseline_quantile:
-            Compute the importance of achieving top-``baseline_quantile`` quantile objective value.
-            For example, ``baseline_quantile=0.1`` means that the importances give the information
-            of which parameters were important to achieve the top-10% performance during
-            optimization.
-
-            .. warning::
-                Deprecated in v4.7.0. This feature will be removed in the future. The removal of
-                this feature is currently scheduled for v5.0.0, but this schedule is subject to
-                change. ``baseline_quantile`` is currently ignored. Use ``target_quantile``
-                instead. See https://github.com/optuna/optuna/releases/tag/v4.7.0.
-
         evaluate_on_local:
             Whether we measure the importance in the local or global space.
             If :obj:`True`, the importances imply how importance each parameter is during
@@ -176,19 +161,11 @@ class PedAnovaImportanceEvaluator(BaseImportanceEvaluator):
         *,
         target_quantile: float = 0.1,  # gamma' in the original paper
         region_quantile: float = 1.0,  # gamma in the original paper
-        baseline_quantile: float | None = None,
         evaluate_on_local: bool = True,
     ) -> None:
         assert 0.0 < target_quantile < region_quantile <= 1.0, (
             "condition 0.0 < `target_quantile` < `region_quantile` <= 1.0 must be satisfied"
         )
-        if baseline_quantile is not None:
-            msg = _DEPRECATION_WARNING_TEMPLATE.format(
-                name="`baseline_quantile`", d_ver="4.7.0", r_ver="5.0.0"
-            )
-            optuna_warn(
-                f"{msg} `baseline_quantile` is currently ignored. Use `target_quantile` instead.",
-            )
         if region_quantile != 1.0 and not evaluate_on_local:
             optuna_warn("If `evaluate_on_local` is False, `region_quantile` has no effect.")
 

@@ -184,34 +184,23 @@ class _ParzenEstimator:
         mus = observations
 
         def compute_sigmas() -> np.ndarray:
-            if parameters.multivariate:
-                SIGMA0_MAGNITUDE = 0.2
-                sigma = (
-                    SIGMA0_MAGNITUDE
-                    * max(len(observations), 1) ** (-1.0 / (len(self._search_space) + 4))
-                    * (high - low)
-                )
-                sigmas = np.full(shape=(len(observations),), fill_value=sigma)
-            else:
-                sorted_indices = np.argsort(mus)
-                sorted_mus = mus[sorted_indices]
-                sorted_mus_with_endpoints = np.empty(len(mus) + 2, dtype=float)
-                sorted_mus_with_endpoints[0] = low
-                sorted_mus_with_endpoints[1:-1] = sorted_mus
-                sorted_mus_with_endpoints[-1] = high
+            sorted_indices = np.argsort(mus)
+            sorted_mus = mus[sorted_indices]
+            sorted_mus_with_endpoints = np.empty(len(mus) + 2, dtype=float)
+            sorted_mus_with_endpoints[0] = low
+            sorted_mus_with_endpoints[1:-1] = sorted_mus
+            sorted_mus_with_endpoints[-1] = high
 
-                sorted_sigmas = np.maximum(
-                    sorted_mus_with_endpoints[1:-1] - sorted_mus_with_endpoints[0:-2],
-                    sorted_mus_with_endpoints[2:] - sorted_mus_with_endpoints[1:-1],
-                )
+            sorted_sigmas = np.maximum(
+                sorted_mus_with_endpoints[1:-1] - sorted_mus_with_endpoints[0:-2],
+                sorted_mus_with_endpoints[2:] - sorted_mus_with_endpoints[1:-1],
+            )
 
-                if not parameters.consider_endpoints and sorted_mus_with_endpoints.shape[0] >= 4:
-                    sorted_sigmas[0] = sorted_mus_with_endpoints[2] - sorted_mus_with_endpoints[1]
-                    sorted_sigmas[-1] = (
-                        sorted_mus_with_endpoints[-2] - sorted_mus_with_endpoints[-3]
-                    )
+            if not parameters.consider_endpoints and sorted_mus_with_endpoints.shape[0] >= 4:
+                sorted_sigmas[0] = sorted_mus_with_endpoints[2] - sorted_mus_with_endpoints[1]
+                sorted_sigmas[-1] = sorted_mus_with_endpoints[-2] - sorted_mus_with_endpoints[-3]
 
-                sigmas = sorted_sigmas[np.argsort(sorted_indices)]
+            sigmas = sorted_sigmas[np.argsort(sorted_indices)]
 
             # We adjust the range of the 'sigmas' according to the 'consider_magic_clip' flag.
             maxsigma = high - low

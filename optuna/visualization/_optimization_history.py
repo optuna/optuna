@@ -9,7 +9,6 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 from optuna.logging import get_logger
-from optuna.samplers._base import _CONSTRAINTS_KEY
 from optuna.study import Study
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
@@ -71,8 +70,7 @@ def _get_optimization_history_info_list(
                 values.append(float("nan"))
                 value_states.append(_ValueState.Incomplete)
                 continue
-            constraints = trial.system_attrs.get(_CONSTRAINTS_KEY)
-            if constraints is None or all([x <= 0.0 for x in constraints]):
+            if all(x <= 0.0 for x in trial.constraints.values()):
                 value_states.append(_ValueState.Feasible)
             else:
                 value_states.append(_ValueState.Infeasible)

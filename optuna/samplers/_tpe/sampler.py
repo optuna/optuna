@@ -17,7 +17,6 @@ from optuna._hypervolume import compute_hypervolume
 from optuna._hypervolume.hssp import _solve_hssp
 from optuna._warnings import optuna_warn
 from optuna.logging import get_logger
-from optuna.samplers._base import _CONSTRAINTS_KEY
 from optuna.samplers._base import _INDEPENDENT_SAMPLING_WARNING_TEMPLATE
 from optuna.samplers._base import _process_constraints_after_trial
 from optuna.samplers._base import BaseSampler
@@ -172,11 +171,6 @@ class TPESampler(BaseSampler):
             <http://proceedings.mlr.press/v80/falkner18a.html>`__ and `our article
             <https://medium.com/optuna/multivariate-tpe-makes-optuna-even-more-powerful-63c4bfbaebe2>`__
             for more details.
-
-            .. note::
-                Added in v2.2.0 as an experimental feature. The interface may change in newer
-                versions without prior notice. See
-                https://github.com/optuna/optuna/releases/tag/v2.2.0.
         group:
             If this and ``multivariate`` are :obj:`True`, the multivariate TPE with the group
             decomposed search space is used when suggesting parameters.
@@ -366,7 +360,7 @@ class TPESampler(BaseSampler):
         gamma: Callable[[int], int] | None = None,
         weights: Callable[[int], np.ndarray] | None = None,
         seed: int | None = None,
-        multivariate: bool = False,
+        multivariate: bool = True,
         group: bool = False,
         warn_independent_sampling: bool | None = None,
         constant_liar: bool = True,
@@ -424,9 +418,6 @@ class TPESampler(BaseSampler):
         self._constraints_func = constraints_func
         # NOTE(nabenabe0928): Users can overwrite _ParzenEstimator to customize the TPE behavior.
         self._parzen_estimator_cls = _ParzenEstimator
-
-        if multivariate:
-            warn_experimental_argument("multivariate")
 
         if group:
             if not multivariate:
@@ -869,8 +860,8 @@ def _split_pruned_trials(
 
 
 def _get_infeasible_trial_score(trial: FrozenTrial) -> float:
-    constraint = trial.system_attrs.get(_CONSTRAINTS_KEY)
-    if constraint is None:
+    constraint = trial.constraints
+    if len(constraint) == 0:
         optuna_warn(
             f"Trial {trial.number} does not have constraint values."
             " It will be treated as a lower priority than other trials."
@@ -878,7 +869,7 @@ def _get_infeasible_trial_score(trial: FrozenTrial) -> float:
         return float("inf")
     else:
         # Violation values of infeasible dimensions are summed up.
-        return sum(v for v in constraint if v > 0)
+        return sum(v for v in constraint.values() if v > 0)
 
 
 def _split_infeasible_trials(

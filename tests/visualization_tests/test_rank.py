@@ -11,9 +11,9 @@ import pytest
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
-from optuna.samplers._base import _CONSTRAINTS_KEY
 from optuna.study import create_study
 from optuna.study import Study
+from optuna.study._constrained_optimization import _CONSTRAINTS_KEY
 from optuna.testing.objectives import fail_objective
 from optuna.testing.visualization import prepare_study_with_trials
 from optuna.trial import create_trial

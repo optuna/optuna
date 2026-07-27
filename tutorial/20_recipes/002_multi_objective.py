@@ -127,13 +127,11 @@ print("Number of finished trials: ", len(study.trials))
 
 
 ###################################################################################################
-# Note that the following sections requires the installation of `Plotly <https://plotly.com/python>`__ for visualization
-# and `scikit-learn <https://scikit-learn.org/stable>`__ for hyperparameter importance calculation:
+# Note that the following sections requires the installation of `Plotly <https://plotly.com/python>`__ for visualization:
 #
 # .. code-block:: console
 #
 #     $ pip install plotly
-#     $ pip install scikit-learn
 #     $ pip install nbformat  # Required if you are running this tutorial in Jupyter Notebook.
 #
 # Check trials on Pareto front visually.

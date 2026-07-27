@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any
 from typing import TYPE_CHECKING
 
-from optuna.samplers._base import _CONSTRAINTS_KEY
+from optuna.study._constrained_optimization import _CONSTRAINTS_KEY
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
