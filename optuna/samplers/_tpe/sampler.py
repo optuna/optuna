@@ -230,10 +230,11 @@ class TPESampler(BaseSampler):
             The function won't be called when trials fail or they are pruned, but this behavior is
             subject to change in the future releases.
 
-            .. note::
-                Added in v3.0.0 as an experimental feature. The interface may change in newer
-                versions without prior notice.
-                See https://github.com/optuna/optuna/releases/tag/v3.0.0.
+            .. warning::
+                Deprecated in v5.0.0. This feature will be removed in the future. The removal of
+                this feature is currently scheduled for v7.0.0, but this schedule is subject to
+                change. Use :meth:`~optuna.trial.Trial.set_constraint` instead.
+                See https://github.com/optuna/optuna/releases/tag/v5.0.0.
         consider_prior:
             Enhance the stability of Parzen estimator by imposing a Gaussian prior when
             :obj:`True`. The prior is only effective if the sampling distribution is
@@ -428,7 +429,10 @@ class TPESampler(BaseSampler):
             self._group_decomposed_search_space = _GroupDecomposedSearchSpace(True)
 
         if constraints_func is not None:
-            warn_experimental_argument("constraints_func")
+            msg = _deprecated._DEPRECATION_WARNING_TEMPLATE.format(
+                name="`constraints_func`", d_ver="5.0.0", r_ver="7.0.0"
+            )
+            optuna_warn(f"{msg} Use `optuna.trial.Trial.set_constraint` instead.", FutureWarning)
 
     def reseed_rng(self) -> None:
         self._rng.rng.seed()
