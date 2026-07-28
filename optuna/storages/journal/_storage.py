@@ -313,9 +313,13 @@ class JournalStorage(BaseStorage):
         }
 
         if state == TrialState.RUNNING:
-            log["datetime_start"] = datetime.now(tz=timezone.utc).isoformat(timespec="microseconds")
+            log["datetime_start"] = datetime.now(tz=timezone.utc).isoformat(
+                timespec="microseconds"
+            )
         elif state.is_finished():
-            log["datetime_complete"] = datetime.now(tz=timezone.utc).isoformat(timespec="microseconds")
+            log["datetime_complete"] = datetime.now(tz=timezone.utc).isoformat(
+                timespec="microseconds"
+            )
 
         with self._thread_lock:
             if state == TrialState.RUNNING:
@@ -543,11 +547,15 @@ class JournalStorageReplayResult:
         if "params" in log:
             params = {k: distributions[k].to_external_repr(p) for k, p in log["params"].items()}
         if log["datetime_start"] is not None:
-            datetime_start = datetime.fromisoformat(log["datetime_start"]).astimezone().replace(tzinfo=None)
+            datetime_start = (
+                datetime.fromisoformat(log["datetime_start"]).astimezone().replace(tzinfo=None)
+            )
         else:
             datetime_start = None
         if "datetime_complete" in log:
-            datetime_complete = datetime.fromisoformat(log["datetime_complete"]).astimezone().replace(tzinfo=None)
+            datetime_complete = (
+                datetime.fromisoformat(log["datetime_complete"]).astimezone().replace(tzinfo=None)
+            )
         else:
             datetime_complete = None
 
@@ -620,11 +628,15 @@ class JournalStorageReplayResult:
 
         trial = copy.copy(self._trials[trial_id])
         if state == TrialState.RUNNING:
-            trial.datetime_start = datetime.fromisoformat(log["datetime_start"]).astimezone().replace(tzinfo=None)
+            trial.datetime_start = (
+                datetime.fromisoformat(log["datetime_start"]).astimezone().replace(tzinfo=None)
+            )
             if self._is_issued_by_this_worker(log):
                 self._worker_id_to_owned_trial_id[self.worker_id] = trial_id
         if state.is_finished():
-            trial.datetime_complete = datetime.fromisoformat(log["datetime_complete"]).astimezone().replace(tzinfo=None)
+            trial.datetime_complete = (
+                datetime.fromisoformat(log["datetime_complete"]).astimezone().replace(tzinfo=None)
+            )
         trial.state = state
         if log["values"] is not None:
             trial.values = log["values"]
