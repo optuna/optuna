@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
 from io import BytesIO
 import math
 
@@ -12,7 +11,6 @@ from optuna import TrialPruned
 from optuna.study import create_study
 from optuna.testing.objectives import fail_objective
 from optuna.testing.objectives import pruned_objective
-from optuna.trial import FrozenTrial
 from optuna.trial import Trial
 from optuna.visualization._optimization_history import _get_optimization_history_info_list
 from optuna.visualization._optimization_history import _get_optimization_history_plot
@@ -196,20 +194,17 @@ def test_get_optimization_history_info_list_with_infeasible(direction: str) -> N
 
     def objective(trial: Trial) -> float:
         if trial.number == 0:
-            trial.set_user_attr("constraint", [0])
+            trial.set_constraint("constraint", 0.0)
             return 1.0
         elif trial.number == 1:
-            trial.set_user_attr("constraint", [0])
+            trial.set_constraint("constraint", 0.0)
             return 2.0
         elif trial.number == 2:
-            trial.set_user_attr("constraint", [1])
+            trial.set_constraint("constraint", 1.0)
             return 3.0
         return 0.0
 
-    def constraints_func(trial: FrozenTrial) -> Sequence[float]:
-        return trial.user_attrs["constraint"]
-
-    sampler = samplers.TPESampler(constraints_func=constraints_func)
+    sampler = samplers.TPESampler()
     study = create_study(sampler=sampler, direction=direction)
     study.optimize(objective, n_trials=3)
     info_list = _get_optimization_history_info_list(

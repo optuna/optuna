@@ -7,12 +7,15 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 import optuna
+from optuna import _deprecated
 from optuna._experimental import warn_experimental_argument
+from optuna._warnings import optuna_warn
 from optuna.samplers._base import _INDEPENDENT_SAMPLING_WARNING_TEMPLATE
 from optuna.samplers._base import _process_constraints_after_trial
 from optuna.samplers._base import BaseSampler
 from optuna.samplers._lazy_random_state import LazyRandomState
 from optuna.study import StudyDirection
+from optuna.study._constrained_optimization import _is_constrained_optimization
 from optuna.study._multi_objective import _is_pareto_front
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
@@ -143,6 +146,31 @@ class GPSampler(BaseSampler):
     We use line search instead of rounding the results from the continuous optimization since EI
     typically yields a high value between one grid and its adjacent grid.
 
+    .. admonition:: Linux runtime performance note
+
+        If you feel ``GPSampler`` laggy on Linux, it may be due to thread oversubscription.
+        Essentially, OpenBLAS threads in NumPy and OpenMP threads in PyTorch compete,
+        slowing down the throughput. It is a compounding issue rather than two separate
+        ones: the two thread pools eat up each other's threads on the same cores.
+
+        This sampler mitigates it automatically by limiting PyTorch intra-op threads to 1,
+        and, on SciPy v1.15+, also limiting ``OPENBLAS_NUM_THREADS`` to 1.
+        (`SciPy Issue #22438 <https://github.com/scipy/scipy/issues/22438>`__)
+
+        This oversubscription has not been observed on macOS, which uses Apple Accelerate
+        with dynamic threading.
+
+    .. admonition:: Complete solution to the runtime performance issue
+
+        Set ``OMP_NUM_THREADS=1`` BEFORE running your script (or before torch imports), if the
+        runtime of ``GPSampler`` is critical in your application.
+
+        .. code-block:: bash
+
+            OMP_NUM_THREADS=1 python your_script.py
+
+        Setting it at runtime has no effect because torch reads this variable during import.
+
     Args:
         seed:
             Random seed to initialize internal random number generator.
@@ -176,10 +204,11 @@ class GPSampler(BaseSampler):
             The function won't be called when trials fail or are pruned, but this behavior is
             subject to change in future releases.
 
-            .. note::
-                Added in v4.2.0 as an experimental feature. The interface may change in newer
-                versions without prior notice. See
-                https://github.com/optuna/optuna/releases/tag/v4.2.0.
+            .. warning::
+                Deprecated in v5.0.0. This feature will be removed in the future. The removal of
+                this feature is currently scheduled for v7.0.0, but this schedule is subject to
+                change. Use :meth:`~optuna.trial.Trial.set_constraint` instead.
+                See https://github.com/optuna/optuna/releases/tag/v5.0.0.
         warn_independent_sampling:
             If this is :obj:`True`, a warning message is emitted when
             the value of a parameter is sampled by using an independent sampler,
@@ -222,7 +251,10 @@ class GPSampler(BaseSampler):
         self._warn_independent_sampling = warn_independent_sampling
 
         if constraints_func is not None:
-            warn_experimental_argument("constraints_func")
+            msg = _deprecated._DEPRECATION_WARNING_TEMPLATE.format(
+                name="`constraints_func`", d_ver="5.0.0", r_ver="7.0.0"
+            )
+            optuna_warn(f"{msg} Use `optuna.trial.Trial.set_constraint` instead.", FutureWarning)
         if deterministic_objective:
             warn_experimental_argument("deterministic_objective")
 
@@ -418,7 +450,7 @@ class GPSampler(BaseSampler):
 
         best_params: np.ndarray | None
         acqf: acqf_module.BaseAcquisitionFunc
-        if self._constraints_func is None:
+        if not _is_constrained_optimization(completed_trials):
             if n_objectives == 1:
                 assert len(gprs_list) == 1
                 if normalized_params_of_running_trials is None:
