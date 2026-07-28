@@ -478,7 +478,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
             if template_trial:
                 frozen = copy.deepcopy(template_trial)
                 frozen.number = trial.number
-                frozen.datetime_start = _utc_to_local_naive_datetime(trial.datetime_start)
+                frozen.datetime_start = _naive_utc_to_naive_local(trial.datetime_start)
                 frozen._trial_id = trial.trial_id
                 return frozen
             return FrozenTrial(
@@ -486,7 +486,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                 state=trial.state,
                 value=None,
                 values=None,
-                datetime_start=_utc_to_local_naive_datetime(trial.datetime_start),
+                datetime_start=_naive_utc_to_naive_local(trial.datetime_start),
                 datetime_complete=None,
                 params={},
                 distributions={},
@@ -544,8 +544,8 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                 study_id=study_id,
                 number=None,
                 state=temp_state,
-                datetime_start=_utc_to_local_naive_datetime(template_trial.datetime_start),
-                datetime_complete=_utc_to_local_naive_datetime(template_trial.datetime_complete),
+                datetime_start=_naive_utc_to_naive_local(template_trial.datetime_start),
+                datetime_complete=_naive_utc_to_naive_local(template_trial.datetime_complete),
             )
 
         session.add(trial)
@@ -940,8 +940,8 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
             state=trial.state,
             value=None,
             values=values,
-            datetime_start=_utc_to_local_naive_datetime(trial.datetime_start),
-            datetime_complete=_utc_to_local_naive_datetime(trial.datetime_complete),
+            datetime_start=_naive_utc_to_naive_local(trial.datetime_start),
+            datetime_complete=_naive_utc_to_naive_local(trial.datetime_complete),
             params={
                 p.param_name: distributions.json_to_distribution(
                     p.distribution_json
@@ -1241,7 +1241,7 @@ def escape_alembic_config_value(value: str) -> str:
     return value.replace("%", "%%")
 
 
-def _utc_to_local_naive_datetime(dt: datetime | None) -> datetime | None:
+def _naive_utc_to_naive_local(dt: datetime | None) -> datetime | None:
     if dt is None:
         return None
     return dt.astimezone().replace(tzinfo=None)
