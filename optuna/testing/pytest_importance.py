@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from typing import Literal
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -40,7 +41,9 @@ def _multi_objective_function(trial: Trial) -> tuple[float, float]:
 
 def _get_study(seed: int, n_trials: int, is_multi_obj: bool) -> Study:
     # Assumes that `seed` can be fixed to reproduce identical results.
-    directions = ["minimize", "minimize"] if is_multi_obj else ["minimize"]
+    directions: list[Literal["minimize", "maximize"]] = (
+        ["minimize", "minimize"] if is_multi_obj else ["minimize"]
+    )
     study = create_study(sampler=RandomSampler(seed=seed), directions=directions)
     if is_multi_obj:
         study.optimize(_multi_objective_function, n_trials=n_trials)

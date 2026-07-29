@@ -4,6 +4,7 @@ from collections.abc import Callable
 from collections.abc import Sequence
 from io import BytesIO
 from typing import Any
+from typing import Literal
 
 import pytest
 
@@ -431,7 +432,7 @@ def test_get_slice_plot_info_nonfinite_multiobjective(objective: int, value: flo
 
 
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])
-def test_color_map(direction: str) -> None:
+def test_color_map(direction: Literal["minimize", "maximize"]) -> None:
     study = create_study(direction=direction)
     for i in range(3):
         study.add_trial(
