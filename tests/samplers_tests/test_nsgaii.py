@@ -180,7 +180,7 @@ def test_constraints_func(constraint_value: float) -> None:
         return (constraint_value + trial.number,)
 
     with warnings.catch_warnings():
-        warnings.simplefilter("ignore", FutureWarning)
+        warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
         sampler = NSGAIISampler(population_size=2, constraints_func=constraints_func)
 
     study = optuna.create_study(directions=["minimize"] * n_objectives, sampler=sampler)
@@ -204,7 +204,7 @@ def test_constraints_func_nan() -> None:
         return (float("nan"),)
 
     with warnings.catch_warnings():
-        warnings.simplefilter("ignore", FutureWarning)
+        warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
         sampler = NSGAIISampler(population_size=2, constraints_func=constraints_func)
 
     study = optuna.create_study(directions=["minimize"] * n_objectives, sampler=sampler)
@@ -547,8 +547,8 @@ def test_crowding_distance_sort(values: list[list[float]]) -> None:
     assert sorted_dist == sorted(sorted_dist, reverse=True)
 
 
-def test_constraints_func_deprecation_warning() -> None:
-    with pytest.warns(FutureWarning):
+def test_constraints_func_experimental_warning() -> None:
+    with pytest.warns(optuna.exceptions.ExperimentalWarning):
         NSGAIISampler(constraints_func=lambda _: [0])
 
 
