@@ -4,7 +4,6 @@ import math
 from typing import Any
 from typing import NamedTuple
 from typing import TYPE_CHECKING
-from typing import Union
 
 import numpy as np
 
@@ -45,8 +44,8 @@ class _AxisInfo(NamedTuple):
     range: tuple[float, float]
     is_log: bool
     is_cat: bool
-    indices: list[Union[str, int, float]]
-    values: list[Union[str, float, None]]
+    indices: list[str | int | float]
+    values: list[str | float | None]
 
 
 class _SubContourInfo(NamedTuple):
@@ -70,9 +69,9 @@ class _PlotValues(NamedTuple):
 
 def plot_contour(
     study: Study,
-    params: Union[list[str], None] = None,
+    params: list[str] | None = None,
     *,
-    target: Union[Callable[[FrozenTrial], float], None] = None,
+    target: Callable[[FrozenTrial], float] | None = None,
     target_name: str = "Objective Value",
 ) -> "go.Figure":
     """Plot the parameter relationship as contour plot in a study.
@@ -259,8 +258,8 @@ def _create_scatter(x: list[Any], y: list[Any], is_feasible: bool) -> Scatter:
 
 def _get_contour_info(
     study: Study,
-    params: Union[list[str], None] = None,
-    target: Union[Callable[[FrozenTrial], float], None] = None,
+    params: list[str] | None = None,
+    target: Callable[[FrozenTrial], float] | None = None,
     target_name: str = "Objective Value",
 ) -> _ContourInfo:
     _check_plot_args(study, target, target_name)
@@ -313,7 +312,7 @@ def _get_contour_subplot_info(
     trials: list[FrozenTrial],
     x_param: str,
     y_param: str,
-    target: Union[Callable[[FrozenTrial], float], None],
+    target: Callable[[FrozenTrial], float] | None,
 ) -> _SubContourInfo:
     xaxis = _get_axis_info(trials, x_param)
     yaxis = _get_axis_info(trials, y_param)
@@ -370,7 +369,7 @@ def _satisfy_constraints(trial: FrozenTrial) -> bool:
 
 
 def _get_axis_info(trials: list[FrozenTrial], param_name: str) -> _AxisInfo:
-    values: list[Union[str, float, None]]
+    values: list[str | float | None]
     if _is_numerical(trials, param_name):
         values = [t.params.get(param_name) for t in trials]
     else:

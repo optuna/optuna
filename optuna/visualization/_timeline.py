@@ -3,7 +3,6 @@ from __future__ import annotations
 import datetime
 from typing import NamedTuple
 from typing import TYPE_CHECKING
-from typing import Union
 
 from optuna.logging import get_logger
 from optuna.trial import TrialState
@@ -34,7 +33,7 @@ class _TimelineInfo(NamedTuple):
     bars: list[_TimelineBarInfo]
 
 
-def plot_timeline(study: Study, n_recent_trials: Union[int, None] = None) -> "go.Figure":
+def plot_timeline(study: Study, n_recent_trials: int | None = None) -> "go.Figure":
     """Plot the timeline of a study.
 
     Args:
@@ -79,9 +78,7 @@ def _get_max_datetime_complete(study: Study) -> datetime.datetime:
     )
 
 
-def _is_running_trials_in_study(
-    study: Study, max_run_duration: Union[datetime.timedelta, None]
-) -> bool:
+def _is_running_trials_in_study(study: Study, max_run_duration: datetime.timedelta | None) -> bool:
     running_trials = study.get_trials(states=(TrialState.RUNNING,), deepcopy=False)
     if max_run_duration is None:
         return len(running_trials) > 0
@@ -97,7 +94,7 @@ def _is_running_trials_in_study(
     )
 
 
-def _get_timeline_info(study: Study, n_recent_trials: Union[int, None] = None) -> _TimelineInfo:
+def _get_timeline_info(study: Study, n_recent_trials: int | None = None) -> _TimelineInfo:
     bars = []
 
     max_datetime = _get_max_datetime_complete(study)
