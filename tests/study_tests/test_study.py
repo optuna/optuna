@@ -434,6 +434,16 @@ def test_load_study_study_name_none(storage_mode: str) -> None:
             load_study(study_name=None, storage=storage)
 
 
+def test_create_study_default_sampler() -> None:
+    # Single-objective
+    study = create_study()
+    assert isinstance(study.sampler, optuna.samplers.TPESampler)
+
+    # Multi-objective
+    study = create_study(directions=["minimize", "maximize"])
+    assert isinstance(study.sampler, optuna.samplers.TPESampler)
+
+
 def test_load_study_default_sampler() -> None:
     storage = optuna.storages.InMemoryStorage()
 
@@ -447,7 +457,7 @@ def test_load_study_default_sampler() -> None:
     study_name = str(uuid.uuid4())
     create_study(storage=storage, study_name=study_name, directions=["minimize", "maximize"])
     loaded_study = load_study(study_name=study_name, storage=storage)
-    assert isinstance(loaded_study.sampler, optuna.samplers.NSGAIISampler)
+    assert isinstance(loaded_study.sampler, optuna.samplers.TPESampler)
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
