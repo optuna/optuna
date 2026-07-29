@@ -166,7 +166,7 @@ class qLogEI(BaseAcquisitionFunc):
         super().__init__(gpr.length_scales, search_space)
 
     def compute_per_sample_log_utilility(self, x: torch.Tensor) -> torch.Tensor:
-        if not np.isneginf(self._threshold):
+        if np.isneginf(self._threshold):
             return_tensor_shape = x.shape[:-1] + self._per_sample_log_util_shape
             return torch.zeros(return_tensor_shape, dtype=torch.float64)
         # NOTE(nabenabe): See Eq. (10) of https://arxiv.org/pdf/2310.20708
@@ -174,8 +174,6 @@ class qLogEI(BaseAcquisitionFunc):
         return (y_post - self._threshold).clamp_min_(_EPS).log()
 
     def eval_acqf(self, x: torch.Tensor) -> torch.Tensor:
-        if np.isneginf(self._threshold):
-            return torch.zeros(x.shape[:-1], dtype=torch.float64)
         return _compute_mean_max_utility(self.compute_per_sample_log_utilility(x))
 
 
