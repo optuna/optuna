@@ -230,10 +230,11 @@ class TPESampler(BaseSampler):
             The function won't be called when trials fail or they are pruned, but this behavior is
             subject to change in the future releases.
 
-            .. note::
-                Added in v3.0.0 as an experimental feature. The interface may change in newer
-                versions without prior notice.
-                See https://github.com/optuna/optuna/releases/tag/v3.0.0.
+            .. warning::
+                Deprecated in v5.0.0. This feature will be removed in the future. The removal of
+                this feature is currently scheduled for v7.0.0, but this schedule is subject to
+                change. Use :meth:`~optuna.trial.Trial.set_constraint` instead.
+                See https://github.com/optuna/optuna/releases/tag/v5.0.0.
         consider_prior:
             Enhance the stability of Parzen estimator by imposing a Gaussian prior when
             :obj:`True`. The prior is only effective if the sampling distribution is
@@ -428,7 +429,10 @@ class TPESampler(BaseSampler):
             self._group_decomposed_search_space = _GroupDecomposedSearchSpace(True)
 
         if constraints_func is not None:
-            warn_experimental_argument("constraints_func")
+            msg = _deprecated._DEPRECATION_WARNING_TEMPLATE.format(
+                name="`constraints_func`", d_ver="5.0.0", r_ver="7.0.0"
+            )
+            optuna_warn(f"{msg} Use `optuna.trial.Trial.set_constraint` instead.", FutureWarning)
 
     def reseed_rng(self) -> None:
         self._rng.rng.seed()
@@ -598,7 +602,6 @@ class TPESampler(BaseSampler):
             study,
             trials,
             self._gamma(n),
-            self._constraints_func is not None,
         )
 
         mpe_below = self._build_parzen_estimator(
@@ -629,9 +632,9 @@ class TPESampler(BaseSampler):
             param_mask_below = [
                 search_space.keys() <= self._get_params(trial).keys() for trial in trials
             ]
-            weights_below = _calculate_weights_below_for_multi_objective(
-                study, trials, self._constraints_func
-            )[param_mask_below]
+            weights_below = _calculate_weights_below_for_multi_objective(study, trials)[
+                param_mask_below
+            ]
             assert np.isfinite(weights_below).all()
             mpe = self._parzen_estimator_cls(
                 observations, search_space, self._parzen_estimator_parameters, weights_below
@@ -743,7 +746,7 @@ def _get_reference_point(loss_vals: np.ndarray) -> np.ndarray:
 
 
 def _split_trials(
-    study: Study, trials: list[FrozenTrial], n_below: int, constraints_enabled: bool
+    study: Study, trials: list[FrozenTrial], n_below: int
 ) -> tuple[list[FrozenTrial], list[FrozenTrial]]:
     complete_trials = []
     pruned_trials = []
@@ -755,7 +758,7 @@ def _split_trials(
             # We should check if the trial is RUNNING before the feasibility check
             # because its constraint values have not yet been set.
             running_trials.append(trial)
-        elif constraints_enabled and _get_infeasible_trial_score(trial) > 0:
+        elif _get_infeasible_trial_score(trial) > 0:
             infeasible_trials.append(trial)
         elif trial.state == TrialState.COMPLETE:
             complete_trials.append(trial)
@@ -860,16 +863,7 @@ def _split_pruned_trials(
 
 
 def _get_infeasible_trial_score(trial: FrozenTrial) -> float:
-    constraint = trial.constraints
-    if len(constraint) == 0:
-        optuna_warn(
-            f"Trial {trial.number} does not have constraint values."
-            " It will be treated as a lower priority than other trials."
-        )
-        return float("inf")
-    else:
-        # Violation values of infeasible dimensions are summed up.
-        return sum(v for v in constraint.values() if v > 0)
+    return sum(v for v in trial.constraints.values() if v > 0)
 
 
 def _split_infeasible_trials(
@@ -883,10 +877,9 @@ def _split_infeasible_trials(
 def _calculate_weights_below_for_multi_objective(
     study: Study,
     below_trials: list[FrozenTrial],
-    constraints_func: Callable[[FrozenTrial], Sequence[float]] | None,
 ) -> np.ndarray:
     def _feasible(trial: FrozenTrial) -> bool:
-        return constraints_func is None or all(c <= 0 for c in constraints_func(trial))
+        return all(c <= 0 for c in trial.constraints.values())
 
     is_feasible = np.asarray([_feasible(t) for t in below_trials])
     weights_below = np.where(is_feasible, 1.0, EPS)  # Assign EPS to infeasible trials.
