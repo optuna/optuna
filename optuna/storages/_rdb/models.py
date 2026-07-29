@@ -193,7 +193,12 @@ class TrialModel(BaseModel):
     def datetime_start(self) -> datetime.datetime | None:
         if self._datetime_start_utc is None:
             return None
-        return self._datetime_start_utc.replace(tzinfo=datetime.timezone.utc)
+
+        return (
+            self._datetime_start_utc.replace(tzinfo=datetime.timezone.utc)
+            .astimezone()
+            .replace(tzinfo=None)
+        )
 
     @datetime_start.setter
     def datetime_start(self, value: datetime.datetime | None) -> None:
@@ -206,7 +211,11 @@ class TrialModel(BaseModel):
     def datetime_complete(self) -> datetime.datetime | None:
         if self._datetime_complete_utc is None:
             return None
-        return self._datetime_complete_utc.replace(tzinfo=datetime.timezone.utc)
+        return (
+            self._datetime_complete_utc.replace(tzinfo=datetime.timezone.utc)
+            .astimezone()
+            .replace(tzinfo=None)
+        )
 
     @datetime_complete.setter
     def datetime_complete(self, value: datetime.datetime | None) -> None:
