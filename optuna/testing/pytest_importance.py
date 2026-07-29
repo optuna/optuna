@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
 from typing import Literal
+from typing import TYPE_CHECKING
 
 import numpy as np
 import pytest

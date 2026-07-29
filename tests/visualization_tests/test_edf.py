@@ -108,9 +108,7 @@ def test_plot_edf_with_target(plot_edf: Callable[..., Any]) -> None:
 
 @parametrized_plot_edf
 @pytest.mark.parametrize("target_name", [None, "Target Name"])
-def test_plot_edf_with_target_name(
-    plot_edf: Callable[..., Any], target_name: str | None
-) -> None:
+def test_plot_edf_with_target_name(plot_edf: Callable[..., Any], target_name: str | None) -> None:
     study = create_study()
     study.optimize(lambda t: t.suggest_float("x", 0, 5), n_trials=10)
     if target_name is None:
