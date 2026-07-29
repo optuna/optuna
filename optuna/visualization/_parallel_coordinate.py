@@ -50,13 +50,13 @@ class _DimensionInfo(NamedTuple):
 
 
 class _ParallelCoordinateInfo(NamedTuple):
-    dim_objective: _DimensionInfo
+    dims_objectives: list[_DimensionInfo]
     dims_params: list[_DimensionInfo]
     reverse_scale: bool
     colorbar_title: str
-    color_values: tuple[float, ...] | None = None
+    color_values: tuple[float, ...] = ()
     is_rank_color: bool = False
-    draw_order: tuple[int, ...] | None = None
+    draw_order: tuple[int, ...] = ()
     feasibility: tuple[bool, ...] | None = None
 
 
@@ -116,25 +116,18 @@ def _get_parallel_coordinate_plot(info: _ParallelCoordinateInfo) -> "go.Figure":
         }
     )
 
-    if len(info.dims_params) == 0 or len(info.dim_objective.values) == 0:
+    # _get_parallel_coordinate_info always provides at least one objective dimension.
+    if len(info.dims_params) == 0 or len(info.dims_objectives[0].values) == 0:
         return go.Figure(data=[], layout=layout)
 
-    dimensions = [info.dim_objective] + info.dims_params
-    draw_order = (
-        info.draw_order
-        if info.draw_order is not None
-        else tuple(range(len(info.dim_objective.values)))
-    )
-    color_values = (
-        info.color_values if info.color_values is not None else info.dim_objective.values
-    )
-    color_min, color_max = _get_color_range(color_values, info.is_rank_color)
+    dimensions = info.dims_objectives + info.dims_params
+    color_min, color_max = _get_color_range(info.color_values, info.is_rank_color)
 
     normalized_dimensions = [_normalize_dimension(dim) for dim in dimensions]
-    colors = _get_line_colors(color_values, color_min, color_max, info.reverse_scale)
+    colors = _get_line_colors(info.color_values, color_min, color_max, info.reverse_scale)
     x_values = list(range(len(dimensions)))
     traces: list[go.Scatter] = []
-    for trial_id in draw_order:
+    for trial_id in info.draw_order:
         is_feasible = info.feasibility is None or info.feasibility[trial_id]
         traces.append(
             go.Scatter(
@@ -158,7 +151,7 @@ def _get_parallel_coordinate_plot(info: _ParallelCoordinateInfo) -> "go.Figure":
 
     colorbar: dict[str, Any] = {"title": info.colorbar_title}
     if info.is_rank_color:
-        colorbar["tickvals"] = list(range(int(max(color_values)) + 1))
+        colorbar["tickvals"] = list(range(int(max(info.color_values)) + 1))
     if info.feasibility is not None:
         traces.extend(_get_feasibility_legend_traces())
     traces.append(
@@ -180,7 +173,6 @@ def _get_parallel_coordinate_plot(info: _ParallelCoordinateInfo) -> "go.Figure":
         )
     )
 
-    annotations = _get_axis_annotations(dimensions)
     shapes = [
         {
             "type": "line",
@@ -203,7 +195,7 @@ def _get_parallel_coordinate_plot(info: _ParallelCoordinateInfo) -> "go.Figure":
             "zeroline": False,
         },
         yaxis={"range": (-0.08, 1.08), "visible": False, "fixedrange": True},
-        annotations=annotations,
+        annotations=_get_axis_annotations(dimensions),
         shapes=shapes,
         hovermode="closest",
         plot_bgcolor="white",
@@ -300,8 +292,8 @@ def _get_parallel_coordinate_info(
             dtype=np.float64,
         )
         ranks = _fast_non_domination_rank(loss_values)
-        color_values: tuple[float, ...] | None = tuple(float(rank) for rank in ranks)
-        draw_order: tuple[int, ...] | None = tuple(np.argsort(ranks)[::-1].tolist())
+        color_values = tuple(float(rank) for rank in ranks)
+        draw_order = tuple(np.argsort(ranks)[::-1].tolist())
         colorbar_title = "Pareto Rank"
         reverse_scale = True
     else:
@@ -314,20 +306,20 @@ def _get_parallel_coordinate_info(
 
         objectives = [target(t) for t in trials]
         objective_dims = [_build_numerical_dimension(target_name, objectives)]
-        color_values = None
-        draw_order = None
+        color_values = tuple(objectives)
+        draw_order = tuple(range(len(trials)))
         colorbar_title = target_name
         reverse_scale = _is_reverse_scale(study, target if has_custom_target else None)
 
     # The value of (0, 0) is a dummy range. It is ignored when we plot.
-    dim_objective = (
-        objective_dims[0] if objective_dims else _build_numerical_dimension(target_name, [])
+    dims_objectives = (
+        objective_dims if objective_dims else [_build_numerical_dimension(target_name, [])]
     )
 
     if len(trials) == 0:
         _logger.warning("Your study does not have any completed trials.")
         return _ParallelCoordinateInfo(
-            dim_objective=dim_objective,
+            dims_objectives=dims_objectives,
             dims_params=[],
             reverse_scale=reverse_scale,
             colorbar_title=colorbar_title,
@@ -340,7 +332,7 @@ def _get_parallel_coordinate_info(
 
     numeric_cat_params_indices: list[int] = []
     dims = []
-    for dim_index, p_name in enumerate(sorted_params, start=len(objective_dims)):
+    for dim_index, p_name in enumerate(sorted_params, start=len(dims_objectives)):
         values = [t.params.get(p_name, _MISSING_VALUE) for t in trials]
         is_categorical = False
         for t in trials:
@@ -440,7 +432,7 @@ def _get_parallel_coordinate_info(
 
     plot_dims = dims
     if numeric_cat_params_indices:
-        dims = objective_dims + plot_dims
+        dims = dims_objectives + plot_dims
         # np.lexsort consumes the sort keys the order from back to front.
         # So the values of parameters have to be reversed the order.
         idx = np.lexsort([dims[index].values for index in numeric_cat_params_indices][::-1])
@@ -460,22 +452,19 @@ def _get_parallel_coordinate_info(
                     has_missing=dim.has_missing,
                 )
             )
-        objective_dims = updated_dims[: len(objective_dims)]
-        dim_objective = objective_dims[0]
-        plot_dims = updated_dims[len(objective_dims) :]
-        if color_values is not None:
-            color_values = tuple(np.asarray(color_values)[idx])
+        dims_objectives = updated_dims[: len(dims_objectives)]
+        plot_dims = updated_dims[len(dims_objectives) :]
+        color_values = tuple(np.asarray(color_values)[idx])
         if feasibility is not None:
             feasibility = tuple(bool(value) for value in np.asarray(feasibility)[idx])
-        if draw_order is not None:
-            assert color_values is not None
+        if is_multi_objective:
             draw_order = tuple(
                 sorted(range(len(trials)), key=color_values.__getitem__, reverse=True)
             )
 
     return _ParallelCoordinateInfo(
-        dim_objective=dim_objective,
-        dims_params=objective_dims[1:] + plot_dims,
+        dims_objectives=dims_objectives,
+        dims_params=plot_dims,
         reverse_scale=reverse_scale,
         colorbar_title=colorbar_title,
         color_values=color_values,

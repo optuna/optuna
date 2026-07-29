@@ -72,34 +72,33 @@ def plot_parallel_coordinate(
 
 
 def _get_parallel_coordinate_plot(info: _ParallelCoordinateInfo) -> "Axes":
-    reversescale = info.reverse_scale
+    # _get_parallel_coordinate_info always provides at least one objective dimension.
+    plot_dimensions = info.dims_objectives[1:] + info.dims_params
+    first_objective_dim = info.dims_objectives[0]
+    dimensions = info.dims_objectives + info.dims_params
 
     # Set up the graph style.
     fig, ax = plt.subplots()
-    cmap = plt.get_cmap("Blues_r" if reversescale else "Blues")
+    cmap = plt.get_cmap("Blues_r" if info.reverse_scale else "Blues")
     ax.set_title("Parallel Coordinate Plot", y=1.03)
     ax.spines["top"].set_visible(False)
     ax.spines["bottom"].set_visible(False)
 
     # Prepare data for plotting.
-    if len(info.dims_params) == 0 or len(info.dim_objective.values) == 0:
+    if len(plot_dimensions) == 0 or len(first_objective_dim.values) == 0:
         return ax
 
-    obj_min = info.dim_objective.range[0]
-    obj_max = info.dim_objective.range[1]
+    obj_min = first_objective_dim.range[0]
+    obj_max = first_objective_dim.range[1]
     objective_is_constant = obj_min == obj_max
     if objective_is_constant:
         padding = abs(obj_min) * 0.05 if obj_min != 0.0 else 0.5
         obj_min -= padding
         obj_max += padding
     obj_w = obj_max - obj_min
-    draw_order = (
-        info.draw_order
-        if info.draw_order is not None
-        else tuple(range(len(info.dim_objective.values)))
-    )
-    dims_obj_base = [[info.dim_objective.values[i]] for i in draw_order]
-    for dim in info.dims_params:
+    draw_order = info.draw_order
+    dims_obj_base = [[first_objective_dim.values[i]] for i in draw_order]
+    for dim in plot_dimensions:
         p_min = dim.range[0]
         p_max = dim.range[1]
         p_w = p_max - p_min
@@ -115,11 +114,11 @@ def _get_parallel_coordinate_plot(info: _ParallelCoordinateInfo) -> "Axes":
 
     # Draw multiple line plots and axes.
     # Ref: https://stackoverflow.com/a/50029441
-    n_params = len(info.dims_params)
+    n_params = len(plot_dimensions)
     ax.set_xlim(0, n_params)
     ax.set_ylim(obj_min, obj_max)
     if objective_is_constant:
-        ax.set_yticks([info.dim_objective.range[0]])
+        ax.set_yticks([first_objective_dim.range[0]])
     xs = [range(n_params + 1) for _ in range(len(dims_obj_base))]
     segments = [np.column_stack([x, y]) for x, y in zip(xs, dims_obj_base)]
     lc = LineCollection(segments, cmap=cmap)
@@ -142,10 +141,7 @@ def _get_parallel_coordinate_plot(info: _ParallelCoordinateInfo) -> "Axes":
             ncol=len(legend_handles),
             frameon=False,
         )
-    color_values = (
-        info.color_values if info.color_values is not None else info.dim_objective.values
-    )
-    color_values = tuple(np.asarray(color_values)[list(draw_order)])
+    color_values = tuple(np.asarray(info.color_values)[list(info.draw_order)])
     lc.set_array(np.asarray(color_values))
     if info.is_rank_color:
         max_rank = int(max(color_values))
@@ -154,10 +150,10 @@ def _get_parallel_coordinate_plot(info: _ParallelCoordinateInfo) -> "Axes":
     if info.is_rank_color:
         axcb.set_ticks(list(range(int(max(color_values)) + 1)))
     axcb.set_label(info.colorbar_title)
-    var_names = [info.dim_objective.label] + [dim.label for dim in info.dims_params]
+    var_names = [dim.label for dim in dimensions]
     plt.xticks(range(n_params + 1), var_names, rotation=330)
 
-    for i, dim in enumerate(info.dims_params):
+    for i, dim in enumerate(plot_dimensions):
         ax2 = ax.twinx()
         if dim.is_log and not dim.has_missing:
             ax2.set_ylim(np.power(10, dim.range[0]), np.power(10, dim.range[1]))
