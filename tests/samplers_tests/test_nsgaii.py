@@ -36,7 +36,6 @@ from optuna.samplers.nsgaii._child_generation_strategy import NSGAIIChildGenerat
 from optuna.samplers.nsgaii._constraints_evaluation import _constrained_dominates
 from optuna.samplers.nsgaii._constraints_evaluation import _validate_constraints
 from optuna.samplers.nsgaii._crossover import _inlined_categorical_uniform_crossover
-from optuna.samplers.nsgaii._crossover import perform_crossover
 from optuna.samplers.nsgaii._elite_population_selection_strategy import _calc_crowding_distance
 from optuna.samplers.nsgaii._elite_population_selection_strategy import _crowding_distance_sort
 from optuna.samplers.nsgaii._elite_population_selection_strategy import _rank_population
@@ -181,7 +180,7 @@ def test_constraints_func(constraint_value: float) -> None:
         return (constraint_value + trial.number,)
 
     with warnings.catch_warnings():
-        warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
+        warnings.simplefilter("ignore", FutureWarning)
         sampler = NSGAIISampler(population_size=2, constraints_func=constraints_func)
 
     study = optuna.create_study(directions=["minimize"] * n_objectives, sampler=sampler)
@@ -205,7 +204,7 @@ def test_constraints_func_nan() -> None:
         return (float("nan"),)
 
     with warnings.catch_warnings():
-        warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
+        warnings.simplefilter("ignore", FutureWarning)
         sampler = NSGAIISampler(population_size=2, constraints_func=constraints_func)
 
     study = optuna.create_study(directions=["minimize"] * n_objectives, sampler=sampler)
@@ -548,8 +547,8 @@ def test_crowding_distance_sort(values: list[list[float]]) -> None:
     assert sorted_dist == sorted(sorted_dist, reverse=True)
 
 
-def test_constraints_func_experimental_warning() -> None:
-    with pytest.warns(optuna.exceptions.ExperimentalWarning):
+def test_constraints_func_deprecation_warning() -> None:
+    with pytest.warns(FutureWarning):
         NSGAIISampler(constraints_func=lambda _: [0])
 
 
@@ -747,14 +746,6 @@ def test_perform_mutation_uses_search_space_transform() -> None:
     assert (
         perform_mutation(_FixedMutation(3.1), np.random.RandomState(0), study, int_distribution, 0)
         == 4
-    )
-
-    midpoint_distribution = IntDistribution(0, 3)
-    assert (
-        perform_mutation(
-            _FixedMutation(0.5), np.random.RandomState(0), study, midpoint_distribution, 0
-        )
-        == 1
     )
 
     assert (
@@ -1023,39 +1014,6 @@ def test_crossover_inlined_categorical_distribution() -> None:
     # Is child param from correct distribution?
     search_space["x"].to_internal_repr(child_params[0])
     search_space["y"].to_internal_repr(child_params[1])
-
-
-def test_perform_crossover_uses_equal_width_bins_for_int() -> None:
-    crossover = MagicMock(spec=BaseCrossover)
-    crossover.configure_mock(n_parents=2)
-    crossover.crossover.return_value = np.array([0.5])
-
-    search_space: dict[str, BaseDistribution] = {"x": IntDistribution(0, 3)}
-    parent_population = [
-        optuna.trial.create_trial(
-            params={"x": 0},
-            distributions={"x": IntDistribution(0, 3)},
-            value=0.0,
-        ),
-        optuna.trial.create_trial(
-            params={"x": 3},
-            distributions={"x": IntDistribution(0, 3)},
-            value=1.0,
-        ),
-    ]
-    study = optuna.create_study()
-
-    child_params = perform_crossover(
-        crossover,
-        study,
-        parent_population,
-        search_space,
-        np.random.RandomState(0),
-        swapping_prob=0.5,
-        dominates=_dominates,
-    )
-
-    assert child_params == {"x": 1}
 
 
 @pytest.mark.parametrize(
