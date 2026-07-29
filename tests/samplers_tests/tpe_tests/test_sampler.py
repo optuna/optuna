@@ -1102,7 +1102,7 @@ def test_multivariate_default_value(
 ) -> None:
     sampler = TPESampler(multivariate=multivariate, n_startup_trials=0)
     if multiobjective:
-        directions = ["minimize", "minimize"]
+        directions: list[Literal["minimize", "maximize"]] = ["minimize", "minimize"]
         values = [0.0, 0.0]
     else:
         directions = ["minimize"]
@@ -1126,7 +1126,7 @@ def test_group_with_default_multivariate(multiobjective: bool) -> None:
 
     # ``group=True`` enables the multivariate TPE even for multi-objective optimization.
     if multiobjective:
-        directions = ["minimize", "minimize"]
+        directions: list[Literal["minimize", "maximize"]] = ["minimize", "minimize"]
         values = [0.0, 0.0]
     else:
         directions = ["minimize"]
