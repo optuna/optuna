@@ -62,11 +62,11 @@ def logehvi(
     return torch.special.logsumexp(log_hvi, dim=(-2, -1)) - log_n_qmc_samples
 
 
-def _get_non_dominated_box_bound(
+def _get_non_dominated_box_bounds(
     Y: torch.Tensor,
 ) -> tuple[torch.Tensor, torch.Tensor]:
     # NOTE(nabenabe): Y is to be maximized, loss_vals is to be minimized.
-    loss_vals = -Y.detach().cpu().numpy()
+    loss_vals = -Y.numpy()
     pareto_sols = loss_vals[_is_pareto_front(loss_vals, assume_unique_lexsorted=False)]
     ref_point = np.max(loss_vals, axis=0)
     ref_point = np.nextafter(np.maximum(1.1 * ref_point, 0.9 * ref_point), np.inf)
@@ -415,7 +415,7 @@ class LogEHVI(BaseAcquisitionFunc):
             dim=Y_train.shape[-1], n_samples=n_qmc_samples, seed=qmc_seed
         )
         self._non_dominated_box_lower_bounds, non_dominated_box_upper_bounds = (
-            _get_non_dominated_box_bound(Y_train)
+            _get_non_dominated_box_bounds(Y_train)
         )
         self._non_dominated_box_intervals = (
             non_dominated_box_upper_bounds - self._non_dominated_box_lower_bounds
@@ -477,7 +477,7 @@ class qLogEHVI(BaseAcquisitionFunc):
         upper_bounds_list = []
         for sample_idx in range(fantasy_samples.shape[0]):
             observed_Y = torch.cat([self._Y_train, fantasy_samples[sample_idx]], dim=0)
-            lower_bounds, upper_bounds = _get_non_dominated_box_bound(observed_Y)
+            lower_bounds, upper_bounds = _get_non_dominated_box_bounds(observed_Y)
             lower_bounds_list.append(lower_bounds)
             upper_bounds_list.append(upper_bounds)
         (
