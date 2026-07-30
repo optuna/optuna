@@ -42,7 +42,6 @@ def logehvi(
     Y_post: torch.Tensor,  # (..., n_qmc_samples, n_objectives)
     non_dominated_box_lower_bounds: torch.Tensor,  # (n_boxes, n_objectives)
     non_dominated_box_intervals: torch.Tensor,  # (n_boxes, n_objectives)
-    reduce_n_qmc_samples: bool = True,
     non_dominated_box_mask: torch.Tensor | None = None,
 ) -> torch.Tensor:  # (..., )
     log_n_qmc_samples = float(np.log(Y_post.shape[-2]))
@@ -60,9 +59,7 @@ def logehvi(
         log_hvi = log_hvi.masked_fill(~non_dominated_box_mask, -torch.inf)
     # NOTE(nabenabe): logsumexp with dim=-1 is for the HVI calculation and that with dim=-2 is for
     # expectation of the HVIs over the fixed_samples.
-    if reduce_n_qmc_samples:
-        return torch.special.logsumexp(log_hvi, dim=(-2, -1)) - log_n_qmc_samples
-    return torch.special.logsumexp(log_hvi, dim=-1)
+    return torch.special.logsumexp(log_hvi, dim=(-2, -1)) - log_n_qmc_samples
 
 
 def _get_non_dominated_box_bound(
