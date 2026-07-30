@@ -65,7 +65,7 @@ def logehvi(
     return torch.special.logsumexp(log_hvi, dim=-1)
 
 
-def _get_non_dominated_box_bounds_from_observations(
+def _get_non_dominated_box_bound(
     Y: torch.Tensor,
 ) -> tuple[torch.Tensor, torch.Tensor]:
     # NOTE(nabenabe): Y is to be maximized, loss_vals is to be minimized.
@@ -418,7 +418,7 @@ class LogEHVI(BaseAcquisitionFunc):
             dim=Y_train.shape[-1], n_samples=n_qmc_samples, seed=qmc_seed
         )
         self._non_dominated_box_lower_bounds, non_dominated_box_upper_bounds = (
-            _get_non_dominated_box_bounds_from_observations(Y_train)
+            _get_non_dominated_box_bound(Y_train)
         )
         self._non_dominated_box_intervals = (
             non_dominated_box_upper_bounds - self._non_dominated_box_lower_bounds
@@ -480,9 +480,7 @@ class qLogEHVI(BaseAcquisitionFunc):
         upper_bounds_list = []
         for sample_idx in range(fantasy_samples.shape[0]):
             observed_Y = torch.cat([self._Y_train, fantasy_samples[sample_idx]], dim=0)
-            lower_bounds, upper_bounds = _get_non_dominated_box_bounds_from_observations(
-                observed_Y
-            )
+            lower_bounds, upper_bounds = _get_non_dominated_box_bound(observed_Y)
             lower_bounds_list.append(lower_bounds)
             upper_bounds_list.append(upper_bounds)
         (
