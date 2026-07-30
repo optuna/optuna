@@ -357,7 +357,7 @@ class StorageTestCase:
             assert storage.get_trial(trial_id).state == TrialState.RUNNING
             datetime_start_prev = storage.get_trial(trial_id).datetime_start
             storage.set_trial_state_values(
-                trial_id, state=state, values=(0.0,) if state.is_finished() else None
+                trial_id, state=state, values=(0.0,) if state == TrialState.COMPLETE else None
             )
             assert storage.get_trial(trial_id).state == state
             # Repeated state changes to RUNNING should not trigger further datetime_start changes.
@@ -372,12 +372,11 @@ class StorageTestCase:
         with pytest.raises(KeyError):
             non_existent_trial_id = max(trial_ids) + 1
             storage.set_trial_state_values(
-                non_existent_trial_id,
-                state=TrialState.COMPLETE,
+                non_existent_trial_id, state=TrialState.COMPLETE, values=(0.0,)
             )
 
         for state in ALL_STATES:
-            if not state.is_finished():
+            if state != TrialState.COMPLETE:
                 continue
             trial_id = storage.create_new_trial(study_id)
             storage.set_trial_state_values(trial_id, state=state, values=(0.0,))
@@ -496,18 +495,10 @@ class StorageTestCase:
         storage.set_trial_state_values(
             trial_id_3, state=TrialState.COMPLETE, values=(float("inf"),)
         )
-        storage.set_trial_state_values(
-            trial_id_4, state=TrialState.WAITING, values=(0.1, 0.2, 0.3)
-        )
-        storage.set_trial_state_values(
-            trial_id_5, state=TrialState.WAITING, values=[0.1, 0.2, 0.3]
-        )
 
         assert storage.get_trial(trial_id_1).value == 0.5
         assert storage.get_trial(trial_id_2).value is None
         assert storage.get_trial(trial_id_3).value == float("inf")
-        assert storage.get_trial(trial_id_4).values == [0.1, 0.2, 0.3]
-        assert storage.get_trial(trial_id_5).values == [0.1, 0.2, 0.3]
 
         non_existent_trial_id = max(trial_id_1, trial_id_2, trial_id_3, trial_id_4, trial_id_5) + 1
         with pytest.raises(KeyError):

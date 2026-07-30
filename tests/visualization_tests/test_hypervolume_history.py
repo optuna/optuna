@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from typing import Literal
 
 import numpy as np
 import pytest
 
 from optuna.samplers import NSGAIISampler
 from optuna.study import create_study
-from optuna.trial import FrozenTrial
 from optuna.trial import Trial
 from optuna.visualization._hypervolume_history import _get_hypervolume_history_info
 from optuna.visualization._hypervolume_history import _HypervolumeHistoryInfo
@@ -22,7 +22,9 @@ from optuna.visualization._hypervolume_history import _HypervolumeHistoryInfo
         ["maximize", "maximize"],
     ],
 )
-def test_get_optimization_history_info(directions: str) -> None:
+def test_get_optimization_history_info(
+    directions: Sequence[Literal["minimize", "maximize"]],
+) -> None:
     signs = [1 if d == "minimize" else -1 for d in directions]
 
     def objective(trial: Trial) -> Sequence[float]:
@@ -40,15 +42,15 @@ def test_get_optimization_history_info(directions: str) -> None:
             return 0.0, 0.0  # dominates all
 
         values = impl(trial)
+        # Set constraint: trial 2 is infeasible
+        if trial.number == 2:
+            trial.set_constraint("constraint", 1.0)
+        else:
+            trial.set_constraint("constraint", 0.0)
+
         return signs[0] * values[0], signs[1] * values[1]
 
-    def constraints(trial: FrozenTrial) -> Sequence[float]:
-        if trial.number == 2:
-            return (1,)  # infeasible
-
-        return (0,)  # feasible
-
-    sampler = NSGAIISampler(constraints_func=constraints)
+    sampler = NSGAIISampler()
     study = create_study(directions=directions, sampler=sampler)
     study.optimize(objective, n_trials=6)
 

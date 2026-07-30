@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from copy import deepcopy
+from typing import Literal
 
 import numpy as np
 import pytest
@@ -9,8 +10,8 @@ import pytest
 import optuna
 from optuna.importance import PedAnovaImportanceEvaluator
 from optuna.importance._ped_anova.evaluator import _QuantileFilter
+from optuna.testing.pytest_importance import _get_study
 from optuna.trial import FrozenTrial
-from tests.importance_tests.test_evaluator import get_study
 
 
 _VALUES = list([[float(i)] for i in range(10)])[::-1]
@@ -57,7 +58,7 @@ def test_filter(
 @pytest.mark.parametrize("n_trials", [0, 1, 2])
 def test_n_trials_less_than_two(n_trials: int) -> None:
     evaluator = PedAnovaImportanceEvaluator()
-    study = get_study(seed=0, n_trials=n_trials, is_multi_obj=False)
+    study = _get_study(seed=0, n_trials=n_trials, is_multi_obj=False)
     param_importance = list(evaluator.evaluate(study).values())
     n_params = len(param_importance)
     if n_trials < 2:
@@ -67,7 +68,7 @@ def test_n_trials_less_than_two(n_trials: int) -> None:
 
 
 def test_direction() -> None:
-    study_minimize = get_study(seed=0, n_trials=20, is_multi_obj=False)
+    study_minimize = _get_study(seed=0, n_trials=20, is_multi_obj=False)
     study_maximize = optuna.create_study(direction="maximize")
     study_maximize.add_trials(study_minimize.trials)
 
@@ -76,21 +77,21 @@ def test_direction() -> None:
 
 
 def test_target_quantile() -> None:
-    study = get_study(seed=0, n_trials=20, is_multi_obj=False)
+    study = _get_study(seed=0, n_trials=20, is_multi_obj=False)
     default_evaluator = PedAnovaImportanceEvaluator(target_quantile=0.1)
     evaluator = PedAnovaImportanceEvaluator(target_quantile=0.3)
     assert evaluator.evaluate(study) != default_evaluator.evaluate(study)
 
 
 def test_region_quantile_less_than_one() -> None:
-    study = get_study(seed=0, n_trials=20, is_multi_obj=False)
+    study = _get_study(seed=0, n_trials=20, is_multi_obj=False)
     default_evaluator = PedAnovaImportanceEvaluator(region_quantile=1.0)
     evaluator = PedAnovaImportanceEvaluator(region_quantile=0.5)
     assert evaluator.evaluate(study) != default_evaluator.evaluate(study)
 
 
 def test_evaluate_on_local() -> None:
-    study = get_study(seed=0, n_trials=20, is_multi_obj=False)
+    study = _get_study(seed=0, n_trials=20, is_multi_obj=False)
     default_evaluator = PedAnovaImportanceEvaluator(evaluate_on_local=True)
     global_evaluator = PedAnovaImportanceEvaluator(evaluate_on_local=False)
     assert global_evaluator.evaluate(study) != default_evaluator.evaluate(study)
@@ -145,7 +146,7 @@ def test_evaluate_on_local() -> None:
     ],
 )
 def test_get_top_quantile_trials_multi_objective_target_none(
-    directions: list[str],
+    directions: list[Literal["minimize", "maximize"]],
     values: list[list[float]],
     target_quantile: float,
     region_quantile: float,

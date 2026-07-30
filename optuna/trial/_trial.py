@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections import UserDict
 import copy
+import math
 from typing import Any
 from typing import overload
 from typing import TYPE_CHECKING
@@ -19,6 +20,7 @@ from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
 from optuna.study._constrained_optimization import _CONSTRAINTS_KEY
+from optuna.study._constrained_optimization import _get_constraints_from_system_attrs
 from optuna.trial._base import _SUGGEST_INT_POSITIONAL_ARGS
 from optuna.trial._base import BaseTrial
 
@@ -777,10 +779,44 @@ class Trial(BaseTrial):
             constraint values of trial.
         """
 
-        con = self.storage.get_trial_system_attrs(self._trial_id).get(_CONSTRAINTS_KEY)
-        if con is None:
-            return {}
-        return {str(i): c for i, c in enumerate(con)}
+        system_attrs = self.storage.get_trial_system_attrs(self._trial_id)
+        return _get_constraints_from_system_attrs(system_attrs)
+
+    def set_constraint(self, key: str, value: float) -> None:
+        """Set a constraint value for the trial.
+
+        Args:
+            key:
+                A constraint name.
+            value:
+                A constraint value. The trial is considered feasible when all constraint values
+                are zero or less.
+        """
+
+        try:
+            # For convenience, we allow users to set a value that can be cast to `float`.
+            value = float(value)
+        except (TypeError, ValueError):
+            message = (
+                f"The `value` argument is of type '{type(value)}' but supposed to be a float."
+            )
+            raise TypeError(message) from None
+
+        if math.isnan(value):
+            raise ValueError(f"Attempted to set a constraint for {key!r}, but NaN is not allowed.")
+
+        constraint_key = f"{_CONSTRAINTS_KEY}:{key}"
+
+        system_attrs = self.storage.get_trial_system_attrs(self._trial_id)
+        if constraint_key in system_attrs:
+            # Do nothing if already set.
+            optuna_warn(
+                f"The constraint value is ignored because this constraint `{key=}` is already set."
+            )
+            return
+
+        self.storage.set_trial_system_attr(self._trial_id, constraint_key, value)
+        self._cached_frozen_trial.system_attrs[constraint_key] = value
 
 
 class _LazyTrialSystemAttrs(UserDict):

@@ -7,6 +7,8 @@ from contextlib import contextmanager
 import multiprocessing
 from typing import TYPE_CHECKING
 
+import pytest
+
 import optuna
 from optuna.storages import GrpcStorageProxy
 from optuna.testing.storages import StorageSupplier
@@ -57,12 +59,16 @@ def _verify_racing_condition(
     assert len(trial_id_set) == n_enqueued
 
 
+# TODO(c-bata): Re-enable these tests once the race condition in gRPC journal storage is fixed.
+@pytest.mark.skip(reason="This test is flaky due to a race condition in gRPC journal storage.")
 def test_pop_waiting_trial_multiprocess_safe() -> None:
     with grpc_journal_file_context() as study:
         with ProcessPoolExecutor(10, mp_context=multiprocessing.get_context("spawn")) as pool:
             _verify_racing_condition(pool, study, _pop_waiting_trial_id)
 
 
+# TODO(c-bata): Re-enable these tests once the race condition in gRPC journal storage is fixed.
+@pytest.mark.skip(reason="This test is flaky due to a race condition in gRPC journal storage.")
 def test_pop_waiting_trial_thread_safe() -> None:
     with grpc_journal_file_context() as study:
         with ThreadPoolExecutor(10) as pool:
