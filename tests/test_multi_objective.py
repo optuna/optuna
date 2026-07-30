@@ -1,18 +1,19 @@
 from __future__ import annotations
 
+from typing import Literal
 from typing import TYPE_CHECKING
 
 import pytest
 
 from optuna import create_study
 from optuna import trial
+from optuna.study import StudyDirection
 from optuna.study._multi_objective import _get_pareto_front_trials_by_trials
 
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
-    from optuna.study import StudyDirection
     from optuna.trial import FrozenTrial
 
 
@@ -44,7 +45,9 @@ def assert_is_output_equal_to_ans(
     ],
 )
 def test_get_pareto_front_trials(
-    directions: list[str], values_set: list[list[int]], ans_set: list[set[tuple[int]]]
+    directions: Sequence[Literal["minimize", "maximize"]],
+    values_set: list[list[int]],
+    ans_set: list[set[tuple[int]]],
 ) -> None:
     study = create_study(directions=directions)
     assert_is_output_equal_to_ans(study.trials, study.directions, set())
@@ -71,7 +74,9 @@ def test_get_pareto_front_trials(
     ],
 )
 def test_get_pareto_front_trials_with_constraint(
-    directions: list[str], values_set: list[list[int]], ans_set: list[set[tuple[int]]]
+    directions: Sequence[Literal["minimize", "maximize"]],
+    values_set: list[list[int]],
+    ans_set: list[set[tuple[int]]],
 ) -> None:
     study = create_study(directions=directions)
     trials = [

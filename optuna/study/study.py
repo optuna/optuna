@@ -10,6 +10,7 @@ from numbers import Real
 import threading
 from typing import Any
 from typing import cast
+from typing import Literal
 from typing import TYPE_CHECKING
 from typing import Union
 
@@ -1206,9 +1207,9 @@ def create_study(
     sampler: "samplers.BaseSampler" | None = None,
     pruner: pruners.BasePruner | None = None,
     study_name: str | None = None,
-    direction: str | StudyDirection | None = None,
+    direction: Literal["minimize", "maximize"] | StudyDirection | None = None,
     load_if_exists: bool = False,
-    directions: Sequence[str | StudyDirection] | None = None,
+    directions: Sequence[Literal["minimize", "maximize"] | StudyDirection] | None = None,
 ) -> Study:
     """Create a new :class:`~optuna.study.Study`.
 
@@ -1247,9 +1248,8 @@ def create_study(
 
         sampler:
             A sampler object that implements background algorithm for value suggestion.
-            If :obj:`None` is specified, :class:`~optuna.samplers.TPESampler` is used during
-            single-objective optimization and :class:`~optuna.samplers.NSGAIISampler` during
-            multi-objective optimization. See also :class:`~optuna.samplers`.
+            If :obj:`None` is specified, :class:`~optuna.samplers.TPESampler` is used
+            as the default. See also :class:`~optuna.samplers`.
         pruner:
             A pruner object that decides early stopping of unpromising trials. If :obj:`None`
             is specified, :class:`~optuna.pruners.MedianPruner` is used as the default. See
@@ -1335,9 +1335,6 @@ def create_study(
                 "Python API) or `--skip-if-exists` flag (for CLI).\n"
                 "Use `optuna.study.get_all_study_names(storage)` to list all the used names."
             )
-
-    if sampler is None and len(direction_objects) > 1:
-        sampler = samplers.NSGAIISampler()
 
     study_name = storage.get_study_name_from_id(study_id)
     study = Study(study_name=study_name, storage=storage, sampler=sampler, pruner=pruner)
@@ -1431,8 +1428,6 @@ def load_study(
         )
 
     study = Study(study_name=study_name, storage=storage, sampler=sampler, pruner=pruner)
-    if sampler is None and len(study.directions) > 1:
-        study.sampler = samplers.NSGAIISampler()
     return study
 
 

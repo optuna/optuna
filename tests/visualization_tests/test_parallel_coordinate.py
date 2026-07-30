@@ -4,6 +4,7 @@ from collections.abc import Callable
 from io import BytesIO
 import math
 from typing import Any
+from typing import Literal
 
 import numpy as np
 import pytest
@@ -676,7 +677,7 @@ def test_get_parallel_coordinate_info_with_log_scale_and_str_and_numeric_categor
 
 
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])
-def test_color_map(direction: str) -> None:
+def test_color_map(direction: Literal["minimize", "maximize"]) -> None:
     study = create_study(direction=direction)
     for i in range(3):
         study.add_trial(
