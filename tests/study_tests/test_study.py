@@ -10,6 +10,7 @@ import pickle
 import threading
 import time
 from typing import Any
+from typing import Literal
 from typing import Sequence
 from unittest.mock import MagicMock
 from unittest.mock import Mock
@@ -170,13 +171,13 @@ def test_optimize_with_direction() -> None:
     check_study(study)
 
     with pytest.raises(ValueError):
-        create_study(direction="test")
+        create_study(direction="test")  # type: ignore[arg-type]
 
     with pytest.raises(ValueError):
         create_study(direction=["maximize", "minimize"])  # type: ignore [arg-type]
 
     with pytest.raises(ValueError):
-        create_study(directions="minimize")
+        create_study(directions="minimize")  # type: ignore[arg-type]
 
 
 @pytest.mark.parametrize("n_trials", (0, 1, NUM_MINIMAL_TRIALS))
@@ -434,6 +435,16 @@ def test_load_study_study_name_none(storage_mode: str) -> None:
             load_study(study_name=None, storage=storage)
 
 
+def test_create_study_default_sampler() -> None:
+    # Single-objective
+    study = create_study()
+    assert isinstance(study.sampler, optuna.samplers.TPESampler)
+
+    # Multi-objective
+    study = create_study(directions=["minimize", "maximize"])
+    assert isinstance(study.sampler, optuna.samplers.TPESampler)
+
+
 def test_load_study_default_sampler() -> None:
     storage = optuna.storages.InMemoryStorage()
 
@@ -447,7 +458,7 @@ def test_load_study_default_sampler() -> None:
     study_name = str(uuid.uuid4())
     create_study(storage=storage, study_name=study_name, directions=["minimize", "maximize"])
     loaded_study = load_study(study_name=study_name, storage=storage)
-    assert isinstance(loaded_study.sampler, optuna.samplers.NSGAIISampler)
+    assert isinstance(loaded_study.sampler, optuna.samplers.TPESampler)
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
@@ -1199,7 +1210,7 @@ def test_create_study_with_direction_object() -> None:
 
 @pytest.mark.parametrize("n_objectives", [2, 3])
 def test_optimize_with_multi_objectives(n_objectives: int) -> None:
-    directions = ["minimize" for _ in range(n_objectives)]
+    directions: list[Literal["minimize", "maximize"]] = ["minimize" for _ in range(n_objectives)]
     study = create_study(directions=directions)
 
     def objective(trial: Trial) -> list[float]:
@@ -1283,7 +1294,7 @@ def test_best_trials_constrained_optimization() -> None:
 
 def test_wrong_n_objectives() -> None:
     n_objectives = 2
-    directions = ["minimize" for _ in range(n_objectives)]
+    directions: list[Literal["minimize", "maximize"]] = ["minimize" for _ in range(n_objectives)]
     study = create_study(directions=directions)
 
     def objective(trial: Trial) -> list[float]:
