@@ -345,13 +345,18 @@ class qConstrainedLogEI(BaseAcquisitionFunc):
             qLogPI(
                 gpr=constraint_gpr,
                 search_space=search_space,
-                threshold=threshold,
+                threshold=constraint_threshold,
                 n_qmc_samples=n_qmc_samples,
                 qmc_seed=qmc_seed + i + 1,
                 normalized_params_of_running_trials=normalized_params_of_running_trials,
                 stabilizing_noise=stabilizing_noise,
             )
-            for i, constraint_gpr in enumerate(constraints_gpr_list)
+            for i, (constraint_gpr, constraint_threshold) in enumerate(
+                zip(
+                    constraints_gpr_list,
+                    constraints_threshold_list,
+                )
+            )
         ]
         super().__init__(gpr.length_scales, search_space)
 
