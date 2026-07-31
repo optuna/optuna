@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime
 import enum
 import math
 from typing import Any
@@ -178,8 +179,52 @@ class TrialModel(BaseModel):
     number = _Column(Integer)
     study_id = _Column(Integer, ForeignKey("studies.study_id"), index=True)
     state = _Column(Enum(TrialState), nullable=False)
-    datetime_start = _Column(DateTime)
-    datetime_complete = _Column(DateTime)
+
+    # Trial datetimes are stored as naive UTC and converted to naive local time when constructing
+    # FrozenTrial objects.
+    #
+    # Unlike JournalStorage, which stores aware UTC datetimes, RDBStorage intentionally uses naive
+    # UTC. Timezone-aware column types would require a schema migration where supported and are not
+    # portable across all supported database backends.
+    _datetime_start_utc = _Column("datetime_start", DateTime)
+    _datetime_complete_utc = _Column("datetime_complete", DateTime)
+
+    @property
+    def datetime_start(self) -> datetime.datetime | None:
+        if self._datetime_start_utc is None:
+            return None
+
+        return (
+            self._datetime_start_utc.replace(tzinfo=datetime.timezone.utc)
+            .astimezone()
+            .replace(tzinfo=None)
+        )
+
+    @datetime_start.setter
+    def datetime_start(self, value: datetime.datetime | None) -> None:
+        if value is None:
+            self._datetime_start_utc = None
+        else:
+            self._datetime_start_utc = value.astimezone(datetime.timezone.utc).replace(tzinfo=None)
+
+    @property
+    def datetime_complete(self) -> datetime.datetime | None:
+        if self._datetime_complete_utc is None:
+            return None
+        return (
+            self._datetime_complete_utc.replace(tzinfo=datetime.timezone.utc)
+            .astimezone()
+            .replace(tzinfo=None)
+        )
+
+    @datetime_complete.setter
+    def datetime_complete(self, value: datetime.datetime | None) -> None:
+        if value is None:
+            self._datetime_complete_utc = None
+        else:
+            self._datetime_complete_utc = value.astimezone(datetime.timezone.utc).replace(
+                tzinfo=None
+            )
 
     study = orm.relationship(
         StudyModel, backref=orm.backref("trials", cascade="all, delete-orphan")
