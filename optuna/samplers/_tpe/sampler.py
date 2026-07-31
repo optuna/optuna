@@ -37,7 +37,6 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
 
     from optuna.distributions import BaseDistribution
-    from optuna.distributions import CategoricalChoiceType
     from optuna.study import Study
 
 
@@ -119,11 +118,6 @@ class TPESampler(BaseSampler):
     background of constrained optimization for TPE in general. Notably, the Optuna algorithm
     differs from the one proposed in the second paper. OptunaHub provides
     `c-TPE proposed by the second paper <https://hub.optuna.org/samplers/ctpe/>`__.
-
-    For the `categorical_distance_func`, please refer to the following paper:
-
-    - `Tree-Structured Parzen Estimator Can Solve Black-Box Combinatorial Optimization More
-      Efficiently <https://arxiv.org/abs/2507.08053>`__
 
     Please also check our articles:
 
@@ -315,21 +309,6 @@ class TPESampler(BaseSampler):
                 the future. The removal of this feature is currently scheduled for v6.0.0,
                 but this schedule is subject to change.
                 See https://github.com/optuna/optuna/releases/tag/v4.9.0.
-        categorical_distance_func:
-            A dictionary of distance functions for categorical parameters. The key is the name of
-            the categorical parameter and the value is a distance function that takes two
-            :class:`~optuna.distributions.CategoricalChoiceType` s and returns a :obj:`float`
-            value. The distance function must return a non-negative value.
-
-            While categorical choices are handled equally by default, this option allows users to
-            specify prior knowledge on the structure of categorical parameters. When specified,
-            categorical choices closer to current best choices are more likely to be sampled.
-
-            .. warning::
-                Deprecated in v4.9.0. ``categorical_distance_func`` argument will be removed in
-                the future. The removal of this feature is currently scheduled for v5.0.0,
-                but this schedule is subject to change.
-                See https://github.com/optuna/optuna/releases/tag/v4.9.0.
     """
 
     @convert_positional_args(
@@ -365,9 +344,6 @@ class TPESampler(BaseSampler):
         warn_independent_sampling: bool | None = None,
         constant_liar: bool = True,
         constraints_func: Callable[[FrozenTrial], Sequence[float]] | None = None,
-        categorical_distance_func: (
-            dict[str, Callable[[CategoricalChoiceType, CategoricalChoiceType], float]] | None
-        ) = None,
     ) -> None:
         consider_prior = _warn_if_deprecated_argument(
             "`consider_prior`", consider_prior, True, "4.3.0", "6.0.0"
@@ -388,9 +364,6 @@ class TPESampler(BaseSampler):
         warn_independent_sampling = _warn_if_deprecated_argument(
             "`warn_independent_sampling`", warn_independent_sampling, False, "4.9.0", "6.0.0"
         )
-        categorical_distance_func = _warn_if_deprecated_argument(
-            "`categorical_distance_func`", categorical_distance_func, None, "4.9.0", "5.0.0"
-        )
 
         self._parzen_estimator_parameters = _ParzenEstimatorParameters(
             prior_weight=prior_weight,
@@ -400,7 +373,6 @@ class TPESampler(BaseSampler):
             # The ``multivariate`` field remains only for historical reasons and is unused,
             # so any value is fine here.
             multivariate=True,
-            categorical_distance_func=categorical_distance_func or {},
         )
 
         self._n_startup_trials = n_startup_trials

@@ -6,7 +6,6 @@ from typing import NamedTuple
 import numpy as np
 
 from optuna.distributions import BaseDistribution
-from optuna.distributions import CategoricalChoiceType
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
@@ -30,9 +29,6 @@ class _ParzenEstimatorParameters(NamedTuple):
     consider_endpoints: bool
     weights: Callable[[int], np.ndarray]
     multivariate: bool
-    categorical_distance_func: dict[
-        str, Callable[[CategoricalChoiceType, CategoricalChoiceType], float]
-    ]
 
 
 class _ParzenEstimator:
@@ -149,17 +145,7 @@ class _ParzenEstimator:
             fill_value=parameters.prior_weight / n_kernels,
         )
         observed_indices = observations.astype(int)
-        if param_name in parameters.categorical_distance_func:
-            # TODO(nabenabe0928): Think about how to handle combinatorial explosion.
-            # The time complexity is O(n_choices * used_indices.size), so n_choices cannot be huge.
-            used_indices, rev_indices = np.unique(observed_indices, return_inverse=True)
-            dist_func = parameters.categorical_distance_func[param_name]
-            dists = np.array([[dist_func(choices[i], c) for c in choices] for i in used_indices])
-            coef = np.log(n_kernels / parameters.prior_weight) * np.log(n_choices) / np.log(6)
-            cat_weights = np.exp(-((dists / np.max(dists, axis=1)[:, np.newaxis]) ** 2) * coef)
-            weights[: len(observed_indices)] = cat_weights[rev_indices]
-        else:
-            weights[np.arange(len(observed_indices)), observed_indices] += 1
+        weights[np.arange(len(observed_indices)), observed_indices] += 1
 
         row_sums = weights.sum(axis=1, keepdims=True)
         weights /= np.where(row_sums == 0, 1, row_sums)
