@@ -4,11 +4,11 @@ import numpy as np
 import pytest
 import torch
 
-from optuna._gp.acqf import _sample_from_normal_sobol
 from optuna._gp.gp import ConditionalGPRegressor
 from optuna._gp.gp import GPRegressor
 from optuna._gp.gp import warn_and_convert_inf
 import optuna._gp.prior as prior
+from optuna._gp.qmc import sample_from_normal_sobol
 
 
 @pytest.mark.parametrize(
@@ -225,12 +225,21 @@ def test_conditional_gpr_matches_joint(n_running: int, batch_size: int) -> None:
         joint_x = torch.cat(
             [X_running.unsqueeze(0).expand(batch_size, -1, -1), x_new.unsqueeze(1)], dim=1
         )
-    fixed_samples = _sample_from_normal_sobol(dim=n_running + 1, n_samples=n_qmc_samples, seed=42)
-    cond_gpr = ConditionalGPRegressor(gpr, X_running, fixed_samples, stabilizing_noise)
-    samples_cond = cond_gpr.sample(x_new)
+    qmc_seed = 42
+    cond_gpr = ConditionalGPRegressor(
+        gpr,
+        X_running=X_running,
+        n_qmc_samples=n_qmc_samples,
+        qmc_seed=qmc_seed,
+        stabilizing_noise=stabilizing_noise,
+    )
+    samples_cond = cond_gpr.sample_joint_posterior(x_new)
 
     mu, cov = gpr.posterior(joint_x, joint=True)
     cov.diagonal(dim1=-2, dim2=-1).add_(stabilizing_noise)
+    fixed_samples = sample_from_normal_sobol(
+        dim=n_running + 1, n_samples=n_qmc_samples, seed=qmc_seed
+    )
     samples_joint = mu.unsqueeze(-2) + torch.matmul(
         fixed_samples, torch.linalg.cholesky(cov).transpose(-1, -2)
     )

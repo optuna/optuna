@@ -8,6 +8,7 @@ from optuna.samplers.nsgaii._crossover import perform_crossover
 from optuna.samplers.nsgaii._crossovers._base import BaseCrossover
 from optuna.samplers.nsgaii._mutation import perform_mutation
 from optuna.samplers.nsgaii._mutations._base import BaseMutation
+from optuna.study._constrained_optimization import _is_constrained_optimization
 from optuna.study._multi_objective import _dominates
 
 
@@ -79,7 +80,10 @@ class NSGAIIChildGenerationStrategy:
         Returns:
             A dictionary containing the parameter names and parameter's values.
         """
-        dominates = _dominates if self._constraints_func is None else _constrained_dominates
+        if _is_constrained_optimization(parent_population):
+            dominates = _constrained_dominates
+        else:
+            dominates = _dominates
         # We choose a child based on the specified crossover method.
         if self._rng.rng.rand() < self._crossover_prob:
             child_params = perform_crossover(

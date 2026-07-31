@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from optuna._gp.scipy_blas_thread_patch import single_blas_thread_if_scipy_v1_15_or_newer
+from optuna._gp.thread_limiting import limit_threads_in_optimization
 from optuna.logging import get_logger
 
 
@@ -70,7 +70,7 @@ def _gradient_ascent_batched(
         # Let the scaled acqf be g(x) and the acqf be f(sx), then dg/dx = df/dx * s.
         return neg_fvals_, grads[:, continuous_indices] * lengthscales
 
-    with single_blas_thread_if_scipy_v1_15_or_newer():
+    with limit_threads_in_optimization():
         scaled_cont_xs_opt, neg_fvals_opt, n_iterations = batched_lbfgsb.batched_lbfgsb(
             func_and_grad=negative_acqf_with_grad,
             x0_batched=initial_params_batched[:, continuous_indices] / lengthscales,

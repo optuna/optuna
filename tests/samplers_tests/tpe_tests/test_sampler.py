@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 import random
+from typing import Literal
 from unittest.mock import Mock
 from unittest.mock import patch
 import warnings
@@ -33,8 +34,8 @@ def test_hyperopt_parameters_deprecation_warning() -> None:
         TPESampler.hyperopt_parameters()
 
 
-def test_constraints_func_experimental_warning() -> None:
-    with pytest.warns(optuna.exceptions.ExperimentalWarning):
+def test_constraints_func_deprecation_warning() -> None:
+    with pytest.warns(FutureWarning):
         optuna.samplers.TPESampler(constraints_func=lambda _: (0,))
 
 
@@ -699,14 +700,18 @@ def test_constrained_sample_independent_zero_startup() -> None:
     study = optuna.create_study()
     dist = optuna.distributions.FloatDistribution(1.0, 100.0)
     trial = frozen_trial_factory(30)
-    sampler = TPESampler(n_startup_trials=0, seed=2, constraints_func=lambda _: (0,))
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", FutureWarning)
+        sampler = TPESampler(n_startup_trials=0, seed=2, constraints_func=lambda _: (0,))
     sampler.sample_independent(study, trial, "param-a", dist)
 
 
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])
 @pytest.mark.parametrize("constant_liar", [True, False])
 @pytest.mark.parametrize("constraints", [True, False])
-def test_split_trials(direction: str, constant_liar: bool, constraints: bool) -> None:
+def test_split_trials(
+    direction: Literal["minimize", "maximize"], constant_liar: bool, constraints: bool
+) -> None:
     study = optuna.create_study(direction=direction)
 
     for value in [-float("inf"), 0, 1, float("inf")]:
@@ -791,7 +796,6 @@ def test_split_trials(direction: str, constant_liar: bool, constraints: bool) ->
             study,
             trials,
             n_below,
-            constraints,
         )
 
         below_trial_numbers = [trial.number for trial in below_trials]
@@ -803,7 +807,9 @@ def test_split_trials(direction: str, constant_liar: bool, constraints: bool) ->
 @pytest.mark.parametrize(
     "directions", [["minimize", "minimize"], ["maximize", "maximize"], ["minimize", "maximize"]]
 )
-def test_split_trials_for_multiobjective_constant_liar(directions: list[str]) -> None:
+def test_split_trials_for_multiobjective_constant_liar(
+    directions: list[Literal["minimize", "maximize"]],
+) -> None:
     study = optuna.create_study(directions=directions)
     # 16 Trials (#0 -- #15) that should be sorted by non-dominated sort and HSSP.
     for obj1 in [-float("inf"), 0, 1, float("inf")]:
@@ -847,9 +853,7 @@ def test_split_trials_for_multiobjective_constant_liar(directions: list[str]) ->
     # NOTE(nabenabe0928): Running trials (#16 -- #20) must come at the end.
     ground_truth += [n_completed_trials + i for i in range(n_running_trials)]
     for n_below in range(1, len(finished_trials) + 1):
-        below_trials, above_trials = _tpe.sampler._split_trials(
-            study, trials, n_below, constraints_enabled=False
-        )
+        below_trials, above_trials = _tpe.sampler._split_trials(study, trials, n_below)
         below_trial_numbers = [trial.number for trial in below_trials]
         assert below_trial_numbers == sorted(ground_truth[:n_below])
         above_trial_numbers = [trial.number for trial in above_trials]
@@ -857,7 +861,9 @@ def test_split_trials_for_multiobjective_constant_liar(directions: list[str]) ->
 
 
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])
-def test_split_complete_trials_single_objective(direction: str) -> None:
+def test_split_complete_trials_single_objective(
+    direction: Literal["minimize", "maximize"],
+) -> None:
     study = optuna.create_study(direction=direction)
 
     for value in [-float("inf"), 0, 1, float("inf")]:
@@ -886,7 +892,7 @@ def test_split_complete_trials_single_objective_empty() -> None:
 
 
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])
-def test_split_pruned_trials(direction: str) -> None:
+def test_split_pruned_trials(direction: Literal["minimize", "maximize"]) -> None:
     study = optuna.create_study(direction=direction)
 
     for step in [2, 1]:
@@ -924,7 +930,7 @@ def test_split_pruned_trials_empty() -> None:
 
 
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])
-def test_split_infeasible_trials(direction: str) -> None:
+def test_split_infeasible_trials(direction: Literal["minimize", "maximize"]) -> None:
     study = optuna.create_study(direction=direction)
 
     for value in [1, 2, float("inf")]:
@@ -1080,6 +1086,72 @@ def test_invalid_multivariate_and_group() -> None:
         _ = TPESampler(multivariate=False, group=True)
 
 
+@pytest.mark.parametrize(
+    ("multivariate", "multiobjective", "expected_multivariate"),
+    [
+        (None, False, True),
+        (None, True, False),
+        (True, False, True),
+        (True, True, True),
+        (False, False, False),
+        (False, True, False),
+    ],
+)
+def test_multivariate_default_value(
+    multivariate: bool | None, multiobjective: bool, expected_multivariate: bool
+) -> None:
+    sampler = TPESampler(multivariate=multivariate, n_startup_trials=0)
+    if multiobjective:
+        directions: list[Literal["minimize", "maximize"]] = ["minimize", "minimize"]
+        values = [0.0, 0.0]
+    else:
+        directions = ["minimize"]
+        values = [0.0]
+    study = optuna.create_study(sampler=sampler, directions=directions)
+
+    for _ in range(2):
+        trial = study.ask()
+        trial.suggest_float("x", 0, 10)
+        trial.suggest_float("y", 0, 10)
+        study.tell(trial, values)
+
+    search_space = sampler.infer_relative_search_space(study, study.trials[-1])
+    assert (len(search_space) > 0) == expected_multivariate
+
+
+@pytest.mark.parametrize("multiobjective", [True, False])
+def test_group_with_default_multivariate(multiobjective: bool) -> None:
+    with pytest.warns(optuna.exceptions.ExperimentalWarning):
+        sampler = TPESampler(group=True, n_startup_trials=0)
+
+    # ``group=True`` enables the multivariate TPE even for multi-objective optimization.
+    if multiobjective:
+        directions: list[Literal["minimize", "maximize"]] = ["minimize", "minimize"]
+        values = [0.0, 0.0]
+    else:
+        directions = ["minimize"]
+        values = [0.0]
+    study = optuna.create_study(sampler=sampler, directions=directions)
+
+    def run_trials() -> None:
+        for _ in range(2):
+            trial = study.ask()
+            trial.suggest_float("x", 0, 10)
+            trial.suggest_float("y", 0, 10)
+            study.tell(trial, values)
+
+    if multiobjective:
+        # A warning is emitted because ``multivariate=False``, the default value for
+        # multi-objective optimization, is overridden by ``group=True``.
+        with pytest.warns(UserWarning):
+            run_trials()
+    else:
+        run_trials()
+
+    search_space = sampler.infer_relative_search_space(study, study.trials[-1])
+    assert set(search_space.keys()) == {"x", "y"}
+
+
 def test_group_experimental_warning() -> None:
     with pytest.warns(optuna.exceptions.ExperimentalWarning):
         _ = TPESampler(multivariate=True, group=True)
@@ -1090,7 +1162,9 @@ def test_group_experimental_warning() -> None:
 def test_constant_liar_with_running_trial(multivariate: bool, multiobjective: bool) -> None:
     sampler = TPESampler(multivariate=multivariate, constant_liar=True, n_startup_trials=0)
 
-    directions = ["minimize"] * 2 if multiobjective else ["minimize"]
+    directions: list[Literal["minimize", "maximize"]] = (
+        ["minimize"] * 2 if multiobjective else ["minimize"]
+    )
     study = optuna.create_study(sampler=sampler, directions=directions)
 
     # Add a complete trial.

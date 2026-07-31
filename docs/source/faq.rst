@@ -473,8 +473,9 @@ The following example is a benchmark of Binh and Korn function, a multi-objectiv
         c0 = (x - 5) ** 2 + y ** 2 - 25
         c1 = -((x - 8) ** 2) - (y + 3) ** 2 + 7.7
 
-        # Store the constraints as user attributes so that they can be restored after optimization.
-        trial.set_user_attr("constraint", (c0, c1))
+        # Set constraints
+        trial.set_constraint("c0", c0)
+        trial.set_constraint("c1", c1)
 
         v0 = 4 * x ** 2 + 4 * y ** 2
         v1 = (x - 5) ** 2 + (y - 5) ** 2
@@ -482,11 +483,7 @@ The following example is a benchmark of Binh and Korn function, a multi-objectiv
         return v0, v1
 
 
-    def constraints(trial):
-        return trial.user_attrs["constraint"]
-
-
-    sampler = optuna.samplers.NSGAIISampler(constraints_func=constraints)
+    sampler = optuna.samplers.NSGAIISampler()
     study = optuna.create_study(
         directions=["minimize", "minimize"],
         sampler=sampler,
@@ -502,7 +499,7 @@ The following example is a benchmark of Binh and Korn function, a multi-objectiv
     for trial in trials:
         print(f"  Trial#{trial.number}")
         print(
-            f"    Values: Values={trial.values}, Constraint={trial.user_attrs['constraint'][0]}"
+            f"    Values: Values={trial.values}, Constraint={trial.constraints}"
         )
         print(f"    Params: {trial.params}")
 

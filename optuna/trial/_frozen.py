@@ -483,10 +483,41 @@ class FrozenTrial(BaseTrial):
             constraint values of trial.
         """
 
-        con = self.system_attrs.get(_CONSTRAINTS_KEY)
-        if con is None:
-            return {}
-        return {str(i): c for i, c in enumerate(con)}
+        return _get_constraints_from_system_attrs(self.system_attrs)
+
+    def set_constraint(self, key: str, value: float) -> None:
+        """Set a constraint value for the trial.
+
+        Args:
+            key:
+                A constraint name.
+            value:
+                A constraint value. The trial is considered feasible when all constraint values
+                are zero or less.
+        """
+
+        try:
+            # For convenience, we allow users to set a value that can be cast to `float`.
+            value = float(value)
+        except (TypeError, ValueError):
+            message = (
+                f"The `value` argument is of type '{type(value)}' but supposed to be a float."
+            )
+            raise TypeError(message) from None
+
+        if math.isnan(value):
+            raise ValueError(f"Attempted to set a constraint for {key!r}, but NaN is not allowed.")
+
+        constraint_key = f"{_CONSTRAINTS_KEY}:{key}"
+
+        if constraint_key in self._system_attrs:
+            # Do nothing if already set.
+            optuna_warn(
+                f"The constraint value is ignored because this constraint `{key=}` is already set."
+            )
+            return
+
+        self._system_attrs[constraint_key] = value
 
 
 def create_trial(
