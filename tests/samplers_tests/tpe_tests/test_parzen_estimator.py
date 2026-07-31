@@ -6,7 +6,6 @@ import numpy as np
 import pytest
 
 from optuna import distributions
-from optuna.distributions import CategoricalChoiceType
 from optuna.samplers._tpe.parzen_estimator import _ParzenEstimator
 from optuna.samplers._tpe.parzen_estimator import _ParzenEstimatorParameters
 from optuna.samplers._tpe.probability_distributions import _BatchedCategoricalDistributions
