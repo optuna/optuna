@@ -221,6 +221,24 @@ def test_constraints_func_nan() -> None:
     assert len(trials[0].constraints) == 0  # No constraints are set.
 
 
+def test_set_constraint_with_different_keys() -> None:
+    n_trials = 8
+
+    def objective(trial: optuna.Trial) -> Sequence[float]:
+        x = trial.suggest_float("x", 0, 1)
+        y = trial.suggest_float("y", 0, 1)
+        if trial.number % 3 == 1:
+            trial.set_constraint("a", x - 0.5)
+        elif trial.number % 3 == 2:
+            trial.set_constraint("b", y - 0.5)
+            trial.set_constraint("c", x + y - 1)
+        return x, y
+
+    sampler = NSGAIISampler(population_size=2)
+    study = optuna.create_study(directions=["minimize", "minimize"], sampler=sampler)
+    study.optimize(objective, n_trials=n_trials)
+
+
 @pytest.mark.parametrize("direction1", [StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE])
 @pytest.mark.parametrize("direction2", [StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE])
 @pytest.mark.parametrize(
@@ -369,6 +387,52 @@ def test_constrained_dominates_infeasible_vs_infeasible(
                 assert not _constrained_dominates(t2, t1, directions)
 
 
+def _create_frozen_trial_with_keyed_constraints(
+    number: int, values: Sequence[float], constraints: dict[str, float]
+) -> FrozenTrial:
+    trial = _create_frozen_trial(number=number, values=values)
+    for key, value in constraints.items():
+        trial.set_constraint(key, value)
+    return trial
+
+
+@pytest.mark.parametrize("direction", [StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE])
+def test_constrained_dominates_different_constraint_keys(direction: StudyDirection) -> None:
+    directions = [direction]
+
+    # A feasible trial dominates an infeasible trial even if their constraint keys differ,
+    # regardless of the values.
+    for values1, values2 in [([0], [1]), ([1], [0])]:
+        t1 = _create_frozen_trial_with_keyed_constraints(0, values1, {"a": -1})
+        t2 = _create_frozen_trial_with_keyed_constraints(1, values2, {"b": 1})
+        assert _constrained_dominates(t1, t2, directions)
+        assert not _constrained_dominates(t2, t1, directions)
+
+        # A trial without constraints is treated as feasible.
+        t1 = _create_frozen_trial(number=0, values=values1)
+        t2 = _create_frozen_trial_with_keyed_constraints(1, values2, {"b": 1})
+        assert _constrained_dominates(t1, t2, directions)
+        assert not _constrained_dominates(t2, t1, directions)
+
+    # When both trials are feasible, the domination is determined by the values.
+    t1 = _create_frozen_trial_with_keyed_constraints(0, [0], {"a": -1})
+    t2 = _create_frozen_trial_with_keyed_constraints(1, [1], {"b": -1, "c": 0})
+    if direction == StudyDirection.MINIMIZE:
+        better, worse = t1, t2
+    else:
+        better, worse = t2, t1
+    assert _constrained_dominates(better, worse, directions)
+    assert not _constrained_dominates(worse, better, directions)
+
+    # When both trials are infeasible, the trial with the smaller total violation dominates
+    # the other, regardless of the values.
+    for values1, values2 in [([0], [1]), ([1], [0])]:
+        t1 = _create_frozen_trial_with_keyed_constraints(0, values1, {"a": 1})
+        t2 = _create_frozen_trial_with_keyed_constraints(1, values2, {"b": 1, "c": 1})
+        assert _constrained_dominates(t1, t2, directions)
+        assert not _constrained_dominates(t2, t1, directions)
+
+
 def _assert_population_per_rank(
     trials: list[FrozenTrial],
     direction: list[StudyDirection],
@@ -428,24 +492,6 @@ def test_validate_constraints() -> None:
     with pytest.raises(ValueError):
         _validate_constraints(
             [_create_frozen_trial(number=0, values=[1], constraints=[0, float("nan")])],
-            is_constrained=True,
-        )
-
-    # Different numbers of constraints are not allowed.
-    with pytest.raises(ValueError):
-        _validate_constraints(
-            [
-                _create_frozen_trial(number=0, values=[1], constraints=[]),
-                _create_frozen_trial(number=1, values=[1], constraints=[0]),
-            ],
-            is_constrained=True,
-        )
-    with pytest.raises(ValueError):
-        _validate_constraints(
-            [
-                _create_frozen_trial(number=0, values=[1], constraints=[0]),
-                _create_frozen_trial(number=1, values=[1], constraints=[0, 1]),
-            ],
             is_constrained=True,
         )
 

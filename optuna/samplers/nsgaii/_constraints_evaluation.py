@@ -31,9 +31,6 @@ def _constrained_dominates(
     constraints0 = trial0.constraints
     constraints1 = trial1.constraints
 
-    if constraints0.keys() != constraints1.keys():
-        raise ValueError("Trials with different constraint keys cannot be compared.")
-
     if trial0.state != TrialState.COMPLETE:
         return False
 
@@ -82,10 +79,7 @@ def _validate_constraints(
     if not is_constrained:
         return
 
-    num_constraints = max([len(t.constraints) for t in population], default=0)
     for _trial in population:
         _constraints = _trial.constraints
         if np.any(np.isnan(list(_constraints.values()))):
             raise ValueError("NaN is not acceptable as constraint value.")
-        elif len(_constraints) != num_constraints:
-            raise ValueError("Trials with different numbers of constraints cannot be compared.")
