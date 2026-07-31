@@ -42,7 +42,6 @@ def plot_pareto_front(
     *,
     target_names: list[str] | None = None,
     include_dominated_trials: bool = True,
-    axis_order: list[int] | None = None,
     constraints_func: Callable[[FrozenTrial], Sequence[float]] | None = None,
     targets: Callable[[FrozenTrial], Sequence[float]] | None = None,
 ) -> "go.Figure":
@@ -62,14 +61,6 @@ def plot_pareto_front(
             ``target_name`` must be specified.
         include_dominated_trials:
             A flag to include all dominated trial's objective values.
-        axis_order:
-            A list of indices indicating the axis order. If :obj:`None` is specified,
-            default order is used. ``axis_order`` and ``targets`` cannot be used at the same time.
-
-            .. warning::
-                Deprecated in v3.0.0. This feature will be removed in the future. The removal of
-                this feature is currently scheduled for v5.0.0, but this schedule is subject to
-                change. See https://github.com/optuna/optuna/releases/tag/v3.0.0.
         constraints_func:
             An optional function that computes the objective constraints. It must take a
             :class:`~optuna.trial.FrozenTrial` and return the constraints. The return value must
@@ -89,7 +80,6 @@ def plot_pareto_front(
         targets:
             A function that returns targets values to display.
             The argument to this function is :class:`~optuna.trial.FrozenTrial`.
-            ``axis_order`` and ``targets`` cannot be used at the same time.
             If ``study.n_objectives`` is neither 2 nor 3, ``targets`` must be specified.
 
             .. note::
@@ -104,7 +94,7 @@ def plot_pareto_front(
     _imports.check()
 
     info = _get_pareto_front_info(
-        study, target_names, include_dominated_trials, axis_order, constraints_func, targets
+        study, target_names, include_dominated_trials, constraints_func, targets
     )
     return _get_pareto_front_plot(info)
 
@@ -181,27 +171,14 @@ def _get_pareto_front_info(
     study: Study,
     target_names: list[str] | None = None,
     include_dominated_trials: bool = True,
-    axis_order: list[int] | None = None,
     constraints_func: Callable[[FrozenTrial], Sequence[float]] | None = None,
     targets: Callable[[FrozenTrial], Sequence[float]] | None = None,
 ) -> _ParetoFrontInfo:
-    if axis_order is not None:
-        msg = _deprecated._DEPRECATION_WARNING_TEMPLATE.format(
-            name="`axis_order`", d_ver="3.0.0", r_ver="5.0.0"
-        )
-        optuna_warn(msg, FutureWarning)
-
     if constraints_func is not None:
         msg = _deprecated._DEPRECATION_WARNING_TEMPLATE.format(
             name="`constraints_func`", d_ver="4.0.0", r_ver="6.0.0"
         )
         optuna_warn(msg, FutureWarning)
-
-    if targets is not None and axis_order is not None:
-        raise ValueError(
-            "Using both `targets` and `axis_order` is not supported. "
-            "Use either `targets` or `axis_order`."
-        )
 
     feasible_trials = []
     infeasible_trials = []
@@ -298,27 +275,7 @@ def _get_pareto_front_info(
     elif len(target_names) != n_targets:
         raise ValueError(f"The length of `target_names` is supposed to be {n_targets}.")
 
-    if axis_order is None:
-        axis_order = list(range(n_targets))
-    else:
-        if len(axis_order) != n_targets:
-            raise ValueError(
-                f"Size of `axis_order` {axis_order}. Expect: {n_targets}, "
-                f"Actual: {len(axis_order)}."
-            )
-        if len(set(axis_order)) != n_targets:
-            raise ValueError(f"Elements of given `axis_order` {axis_order} are not unique!.")
-        if max(axis_order) > n_targets - 1:
-            raise ValueError(
-                f"Given `axis_order` {axis_order} contains invalid index {max(axis_order)} "
-                f"higher than {n_targets - 1}."
-            )
-        if min(axis_order) < 0:
-            raise ValueError(
-                f"Given `axis_order` {axis_order} contains invalid index {min(axis_order)} "
-                "lower than 0."
-            )
-
+    axis_order = list(range(n_targets))
     return _ParetoFrontInfo(
         n_targets=n_targets,
         target_names=target_names,

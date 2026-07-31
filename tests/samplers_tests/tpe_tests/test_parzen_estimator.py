@@ -6,7 +6,6 @@ import numpy as np
 import pytest
 
 from optuna import distributions
-from optuna.distributions import CategoricalChoiceType
 from optuna.samplers._tpe.parzen_estimator import _ParzenEstimator
 from optuna.samplers._tpe.parzen_estimator import _ParzenEstimatorParameters
 from optuna.samplers._tpe.probability_distributions import _BatchedCategoricalDistributions
@@ -58,7 +57,6 @@ def test_init_parzen_estimator() -> None:
         consider_endpoints=False,
         weights=lambda x: np.arange(x) + 1.0,
         multivariate=True,
-        categorical_distance_func={},
     )
 
     mpe = _ParzenEstimator(SAMPLES, SEARCH_SPACE, parameters)
@@ -142,7 +140,6 @@ def test_calculate_shape_check(
         consider_endpoints=endpoints,
         weights=default_weights,
         multivariate=True,
-        categorical_distance_func={},
     )
     mpe = _ParzenEstimator(
         {"a": mus}, {"a": distributions.FloatDistribution(-1.0, 1.0)}, parameters
@@ -152,14 +149,9 @@ def test_calculate_shape_check(
 
 @pytest.mark.parametrize("mus", (np.asarray([]), np.asarray([0.4]), np.asarray([-0.4, 0.4])))
 @pytest.mark.parametrize("prior_weight", [1.0, 0.01, 100.0])
-@pytest.mark.parametrize("categorical_distance_func", ({}, {"c": lambda x, y: abs(x - y)}))
 def test_calculate_shape_check_categorical(
     mus: np.ndarray,
     prior_weight: float,
-    categorical_distance_func: dict[
-        str,
-        Callable[[CategoricalChoiceType, CategoricalChoiceType], float],
-    ],
 ) -> None:
     parameters = _ParzenEstimatorParameters(
         prior_weight=prior_weight,
@@ -167,7 +159,6 @@ def test_calculate_shape_check_categorical(
         consider_endpoints=False,
         weights=default_weights,
         multivariate=True,
-        categorical_distance_func=categorical_distance_func,
     )
     mpe = _ParzenEstimator(
         {"c": mus}, {"c": distributions.CategoricalDistribution([0.0, 1.0, 2.0])}, parameters
@@ -183,7 +174,6 @@ def test_invalid_prior_weight(mus: np.ndarray) -> None:
         consider_endpoints=False,
         weights=default_weights,
         multivariate=True,
-        categorical_distance_func={},
     )
     with pytest.raises(ValueError):
         _ParzenEstimator({"a": mus}, {"a": distributions.FloatDistribution(-1.0, 1.0)}, parameters)
@@ -247,7 +237,6 @@ def test_calculate(
         consider_endpoints=flags["endpoints"],
         weights=default_weights,
         multivariate=True,
-        categorical_distance_func={},
     )
     mpe = _ParzenEstimator(
         {"a": mus}, {"a": distributions.FloatDistribution(-1.0, 1.0)}, parameters
@@ -283,7 +272,6 @@ def test_invalid_weights(weights: Callable[[int], np.ndarray]) -> None:
         consider_endpoints=False,
         weights=weights,
         multivariate=True,
-        categorical_distance_func={},
     )
     with pytest.raises(ValueError):
         _ParzenEstimator(
