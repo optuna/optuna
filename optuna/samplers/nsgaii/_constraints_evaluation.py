@@ -62,7 +62,7 @@ def _constrained_dominates(
 
 
 def _evaluate_penalty(population: Sequence[FrozenTrial]) -> np.ndarray:
-    """Evaluate feasibility of trials in population.
+    """Evaluate penalty values of trials in population.
     Returns:
         A list of penalty values of trials in population, where a trial with constraint values of
         zero or less is feasible.
