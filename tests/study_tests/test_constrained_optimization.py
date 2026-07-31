@@ -7,7 +7,9 @@ def test_get_feasible_trials() -> None:
     trials = []
     trials.append(create_trial(value=0.0, system_attrs={_CONSTRAINTS_KEY: [0.0]}))
     trials.append(create_trial(value=0.0, system_attrs={_CONSTRAINTS_KEY: [1.0]}))
+    # A trial without constraint values is considered feasible.
     trials.append(create_trial(value=0.0))
     feasible_trials = _get_feasible_trials(trials)
-    assert len(feasible_trials) == 1
+    assert len(feasible_trials) == 2
     assert feasible_trials[0] == trials[0]
+    assert feasible_trials[1] == trials[2]

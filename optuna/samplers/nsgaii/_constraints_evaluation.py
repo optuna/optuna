@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from optuna._warnings import optuna_warn
 from optuna.study._multi_objective import _dominates
 from optuna.trial import TrialState
 
@@ -31,33 +30,6 @@ def _constrained_dominates(
 
     constraints0 = trial0.constraints
     constraints1 = trial1.constraints
-
-    if len(constraints0) == 0:
-        optuna_warn(
-            f"Trial {trial0.number} does not have constraint values."
-            " It will be dominated by the other trials."
-        )
-
-    if len(constraints1) == 0:
-        optuna_warn(
-            f"Trial {trial1.number} does not have constraint values."
-            " It will be dominated by the other trials."
-        )
-
-    if len(constraints0) == 0 and len(constraints1) == 0:
-        # Neither Trial x nor y has constraints values
-        return _dominates(trial0, trial1, directions)
-
-    if len(constraints0) > 0 and len(constraints1) == 0:
-        # Trial x has constraint values, but y doesn't.
-        return True
-
-    if len(constraints0) == 0 and len(constraints1) > 0:
-        # If Trial y has constraint values, but x doesn't.
-        return False
-
-    if constraints0.keys() != constraints1.keys():
-        raise ValueError("Trials with different constraint keys cannot be compared.")
 
     if trial0.state != TrialState.COMPLETE:
         return False
@@ -87,19 +59,15 @@ def _constrained_dominates(
 
 
 def _evaluate_penalty(population: Sequence[FrozenTrial]) -> np.ndarray:
-    """Evaluate feasibility of trials in population.
+    """Evaluate penalty values of trials in population.
     Returns:
-        A list of feasibility status T/F/None of trials in population, where T/F means
-        feasible/infeasible and None means that the trial does not have constraint values.
+        A list of penalty values of trials in population, where a trial with constraint values of
+        zero or less is feasible.
     """
 
     penalty: list[float] = []
     for trial in population:
-        constraints = trial.constraints
-        if len(constraints) == 0:
-            penalty.append(np.nan)
-        else:
-            penalty.append(sum(v for v in constraints.values() if v > 0))
+        penalty.append(sum(v for v in trial.constraints.values() if v > 0))
     return np.array(penalty)
 
 
@@ -111,16 +79,7 @@ def _validate_constraints(
     if not is_constrained:
         return
 
-    num_constraints = max([len(t.constraints) for t in population], default=0)
     for _trial in population:
         _constraints = _trial.constraints
-        if len(_constraints) == 0:
-            optuna_warn(
-                f"Trial {_trial.number} does not have constraint values."
-                " It will be dominated by the other trials."
-            )
-            continue
         if np.any(np.isnan(list(_constraints.values()))):
             raise ValueError("NaN is not acceptable as constraint value.")
-        elif len(_constraints) != num_constraints:
-            raise ValueError("Trials with different numbers of constraints cannot be compared.")
