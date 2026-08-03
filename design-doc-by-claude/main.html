@@ -1,0 +1,860 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RBF kernel + Hvarfner prior for GPSampler — session memo</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --bg-raised: #f6f7f9;
+    --bg-panel: #ffffff;
+    --text: #1a1d21;
+    --text-muted: #55606b;
+    --border: #dde1e6;
+    --accent: #6a4fb3;
+    --accent-soft: #efeaf9;
+    --warn-bg: #fff4e5;
+    --warn-border: #e0a339;
+    --warn-text: #6b4400;
+    --code-bg: #f1f2f5;
+    --code-text: #22262b;
+    --callout-bg: #f8f7fc;
+    --callout-border: #b9a8e0;
+    --bug-bg: #fdf2f2;
+    --bug-border: #d98c8c;
+    --table-head-bg: #f0f1f4;
+    --link: #5b3fa0;
+    --figure-panel: #fafafa;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --bg-raised: #1b1e24;
+      --bg-panel: #1b1e24;
+      --text: #e6e8eb;
+      --text-muted: #9aa4ae;
+      --border: #33373f;
+      --accent: #a893e0;
+      --accent-soft: #26213a;
+      --warn-bg: #3a2b0f;
+      --warn-border: #b3812f;
+      --warn-text: #ffd699;
+      --code-bg: #1e2127;
+      --code-text: #dbe1e8;
+      --callout-bg: #201d2c;
+      --callout-border: #6a5a9c;
+      --bug-bg: #2a1a1a;
+      --bug-border: #a05a5a;
+      --table-head-bg: #22252b;
+      --link: #c3b2ef;
+      --figure-panel: #f4f4f4;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --bg: #14161a;
+    --bg-raised: #1b1e24;
+    --bg-panel: #1b1e24;
+    --text: #e6e8eb;
+    --text-muted: #9aa4ae;
+    --border: #33373f;
+    --accent: #a893e0;
+    --accent-soft: #26213a;
+    --warn-bg: #3a2b0f;
+    --warn-border: #b3812f;
+    --warn-text: #ffd699;
+    --code-bg: #1e2127;
+    --code-text: #dbe1e8;
+    --callout-bg: #201d2c;
+    --callout-border: #6a5a9c;
+    --bug-bg: #2a1a1a;
+    --bug-border: #a05a5a;
+    --table-head-bg: #22252b;
+    --link: #c3b2ef;
+    --figure-panel: #f4f4f4;
+  }
+
+  :root[data-theme="light"] {
+    --bg: #ffffff;
+    --bg-raised: #f6f7f9;
+    --bg-panel: #ffffff;
+    --text: #1a1d21;
+    --text-muted: #55606b;
+    --border: #dde1e6;
+    --accent: #6a4fb3;
+    --accent-soft: #efeaf9;
+    --warn-bg: #fff4e5;
+    --warn-border: #e0a339;
+    --warn-text: #6b4400;
+    --code-bg: #f1f2f5;
+    --code-text: #22262b;
+    --callout-bg: #f8f7fc;
+    --callout-border: #b9a8e0;
+    --bug-bg: #fdf2f2;
+    --bug-border: #d98c8c;
+    --table-head-bg: #f0f1f4;
+    --link: #5b3fa0;
+    --figure-panel: #fafafa;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--text);
+  }
+
+  body {
+    font-family: -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.55;
+    font-size: 16px;
+    padding: 2.5rem 1.25rem 6rem;
+  }
+
+  .page {
+    max-width: 1140px;
+    margin: 0 auto;
+  }
+
+  header.masthead {
+    margin-bottom: 1.75rem;
+  }
+
+  h1 {
+    font-size: 1.9rem;
+    margin: 0 0 0.35rem;
+    letter-spacing: -0.01em;
+  }
+
+  .subtitle {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    font-family: "SF Mono", "Menlo", "Consolas", monospace;
+  }
+
+  .subtitle code {
+    background: none;
+    padding: 0;
+    color: var(--text-muted);
+  }
+
+  nav.toc {
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    margin: 1.5rem 0 2rem;
+  }
+
+  nav.toc .toc-title {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    margin-bottom: 0.6rem;
+    font-weight: 600;
+  }
+
+  nav.toc ol {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.35rem 1.5rem;
+  }
+
+  nav.toc a {
+    color: var(--text);
+    text-decoration: none;
+    font-size: 0.92rem;
+  }
+
+  nav.toc a:hover {
+    color: var(--accent);
+    text-decoration: underline;
+  }
+
+  section {
+    margin: 2.75rem 0;
+    scroll-margin-top: 1rem;
+  }
+
+  section h2 {
+    font-size: 1.35rem;
+    margin: 0 0 0.9rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid var(--border);
+    letter-spacing: -0.005em;
+  }
+
+  section h2 .num {
+    color: var(--text-muted);
+    font-weight: 400;
+    margin-right: 0.4rem;
+  }
+
+  h3 {
+    font-size: 1.05rem;
+    margin: 1.4rem 0 0.5rem;
+  }
+
+  p { margin: 0.7rem 0; }
+
+  ul, ol.plain { margin: 0.6rem 0; padding-left: 1.4rem; }
+  li { margin: 0.3rem 0; }
+
+  code {
+    font-family: "SF Mono", "Menlo", "Consolas", monospace;
+    background: var(--code-bg);
+    color: var(--code-text);
+    padding: 0.12em 0.35em;
+    border-radius: 4px;
+    font-size: 0.88em;
+  }
+
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem 1.1rem;
+    overflow-x: auto;
+    margin: 0.8rem 0;
+  }
+
+  pre code {
+    background: none;
+    padding: 0;
+    font-size: 0.87rem;
+    line-height: 1.5;
+    color: var(--code-text);
+  }
+
+  .table-wrap {
+    overflow-x: auto;
+    margin: 1rem 0;
+  }
+
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    min-width: 560px;
+    font-size: 0.9rem;
+  }
+
+  th, td {
+    border: 1px solid var(--border);
+    padding: 0.55rem 0.8rem;
+    text-align: left;
+    white-space: nowrap;
+  }
+
+  th {
+    background: var(--table-head-bg);
+    font-weight: 600;
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--text-muted);
+  }
+
+  td code, th code {
+    white-space: nowrap;
+  }
+
+  /* Warning banner */
+  .warning {
+    background: var(--warn-bg);
+    border: 1.5px solid var(--warn-border);
+    border-radius: 10px;
+    padding: 1.1rem 1.3rem;
+    margin: 1.1rem 0;
+    color: var(--warn-text);
+    font-size: 1rem;
+  }
+
+  .warning strong {
+    display: block;
+    font-size: 1.02rem;
+    margin-bottom: 0.35rem;
+  }
+
+  /* Callout cards for decisions / bugs */
+  .card-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    margin-top: 1rem;
+  }
+
+  .card {
+    background: var(--callout-bg);
+    border: 1px solid var(--callout-border);
+    border-left: 4px solid var(--callout-border);
+    border-radius: 8px;
+    padding: 1rem 1.3rem;
+  }
+
+  .card.flagged {
+    border-left-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent) inset;
+  }
+
+  .card-tag {
+    display: inline-block;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 700;
+    color: var(--accent);
+    background: var(--accent-soft);
+    border-radius: 999px;
+    padding: 0.15rem 0.6rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .card h4 {
+    margin: 0 0 0.4rem;
+    font-size: 1rem;
+  }
+
+  .card p, .card ul { margin: 0.5rem 0; font-size: 0.94rem; }
+
+  .bug-card {
+    background: var(--bug-bg);
+    border: 1px solid var(--bug-border);
+    border-left: 4px solid var(--bug-border);
+    border-radius: 8px;
+    padding: 1rem 1.3rem;
+  }
+
+  .bug-card h4 { margin: 0 0 0.4rem; font-size: 1rem; }
+
+  /* Figures */
+  figure {
+    margin: 1.2rem 0;
+  }
+
+  .figure-panel {
+    background: var(--figure-panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem;
+  }
+
+  .figure-panel img {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  figcaption {
+    margin-top: 0.6rem;
+    font-size: 0.88rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+    max-width: 900px;
+  }
+
+  figcaption .cap-label {
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  /* 2x2 matrix */
+  .matrix {
+    display: grid;
+    grid-template-columns: auto 1fr 1fr;
+    gap: 0.4rem;
+    max-width: 560px;
+    margin: 1.1rem 0;
+    font-size: 0.92rem;
+  }
+
+  .matrix .corner { }
+  .matrix .col-head, .matrix .row-head {
+    font-weight: 600;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 0.4rem;
+  }
+  .matrix .row-head {
+    justify-content: flex-end;
+    padding-right: 0.7rem;
+  }
+  .matrix .cell {
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.7rem;
+    text-align: center;
+    font-family: "SF Mono", "Menlo", "Consolas", monospace;
+    font-size: 0.85rem;
+  }
+
+  /* bounds flip diagram */
+  .flip-diagram {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem 1.3rem;
+    margin: 1rem 0;
+    font-family: "SF Mono", "Menlo", "Consolas", monospace;
+    font-size: 0.88rem;
+  }
+
+  .flip-box {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.5rem 0.9rem;
+  }
+
+  .flip-arrow {
+    color: var(--accent);
+    font-size: 1.2rem;
+    font-weight: 700;
+  }
+
+  .flip-note {
+    color: var(--text-muted);
+    font-family: -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    font-size: 0.85rem;
+  }
+
+  .note-line {
+    color: var(--text-muted);
+    font-size: 0.93rem;
+  }
+
+  a { color: var(--link); }
+
+  hr.sep {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 2.5rem 0;
+  }
+
+  .back-to-top {
+    font-size: 0.8rem;
+  }
+
+  @media (max-width: 640px) {
+    nav.toc ol { grid-template-columns: 1fr; }
+    .matrix { grid-template-columns: auto 1fr 1fr; font-size: 0.8rem; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="masthead">
+    <h1>RBF kernel + Hvarfner prior for GPSampler</h1>
+    <div class="subtitle">Session memo — 2026-08-03 — branch <code>2026-08-03-rbf-hvarfner-prior</code></div>
+  </header>
+
+  <nav class="toc" aria-label="Table of contents">
+    <div class="toc-title">Contents</div>
+    <ol>
+      <li><a href="#tldr">1. TL;DR</a></li>
+      <li><a href="#goal">2. The goal</a></li>
+      <li><a href="#decisions">3. Decisions to review</a></li>
+      <li><a href="#bugs">4. Two bugs in the scaffolding commit</a></li>
+      <li><a href="#kernel">5. Piece 1: the RBF kernel</a></li>
+      <li><a href="#bounds">6. Piece 2: box constraints through L-BFGS-B</a></li>
+      <li><a href="#prior">7. Piece 3: the prior</a></li>
+      <li><a href="#sweep">8. How to run the sweep</a></li>
+      <li><a href="#verification">9. Verification</a></li>
+      <li><a href="#next">10. Next steps</a></li>
+    </ol>
+  </nav>
+
+  <section id="tldr">
+    <h2><span class="num">1</span>TL;DR</h2>
+    <p>Both <code>TODO(claude)</code> markers in <code>optuna/_gp/gp.py</code> are resolved. Delivered:</p>
+    <ul>
+      <li><code>RBFKernel</code> implemented (was a <code>raise</code> stub).</li>
+      <li>Kernel-hyperparameter box constraints enforced by L-BFGS-B <code>bounds=</code>, not by <code>assert</code>.</li>
+      <li><code>hvarfner_log_prior</code> + <code>HVARFNER_KERNEL_PARAM_BOUNDS</code> added to <code>optuna/_gp/prior.py</code>.</li>
+      <li><code>kernel_type</code> + <code>kernel_param_bounds</code> threaded through <code>GPSampler</code>.</li>
+      <li>2 latent bugs in the <code>f0c7c188a "Add essentials"</code> scaffolding commit fixed.</li>
+    </ul>
+
+    <p>Patch: <code>/Users/shuhei.watanabe/private/optuna/2026-08-03-rbf-hvarfner-prior.patch</code> (27.6 kB,
+    verified with <code>git apply --check</code> against <code>f0c7c188a</code>).<br>
+    Worktree kept: <code>.claude/worktrees/2026-08-03-rbf-hvarfner-prior</code>.<br>
+    Diffstat: 5 files changed, 355 insertions, 19 deletions. Changed lines per file —
+    <code>optuna/_gp/gp.py</code> 112, <code>optuna/_gp/prior.py</code> 61,
+    <code>optuna/samplers/_gp/sampler.py</code> 6, <code>tests/gp_tests/test_gp.py</code> 194,
+    <code>tests/gp_tests/test_acqf.py</code> 1.</p>
+
+    <div class="warning">
+      <strong>There are NO benchmark results yet.</strong>
+      The bbob sweep in <code>context.md</code> has not been run. The only numbers in this memo come
+      from a 30-trial smoke test on a toy quadratic, whose sole purpose was to confirm all four arms
+      execute and the constraints hold. Do not read them as evidence about kernel or prior quality.
+    </div>
+  </section>
+
+  <section id="goal">
+    <h2><span class="num">2</span>The goal</h2>
+    <p>Benchmark GPSampler over {RBF, Matern 5/2} x {Optuna heuristic prior, Hvarfner prior}, because
+    Hvarfner et al. (2023), "Vanilla Bayesian Optimization Performs Great in High Dimensions", report
+    RBF beating Matern 5/2 under their prior. All four cells are now runnable.</p>
+
+    <div class="matrix">
+      <div class="corner"></div>
+      <div class="col-head">Optuna heuristic prior</div>
+      <div class="col-head">Hvarfner prior</div>
+      <div class="row-head">RBF</div>
+      <div class="cell">runnable</div>
+      <div class="cell">runnable</div>
+      <div class="row-head">Matern 5/2</div>
+      <div class="cell">runnable</div>
+      <div class="cell">runnable</div>
+    </div>
+
+    <p>What makes the Hvarfner prior principled rather than tuned: its log-normal mode on the
+    lengthscale scales as <code>sqrt(2) + 0.5*log(D)</code>, i.e. it grows with dimension,
+    counteracting the concentration of pairwise distances in high D. Optuna's default prior has no
+    D dependence.</p>
+  </section>
+
+  <section id="decisions">
+    <h2><span class="num">3</span>Decisions to review</h2>
+
+    <div class="card-grid">
+      <div class="card flagged">
+        <span class="card-tag">Needs your call</span>
+        <h4>3.1 <code>kernel_scale</code> is fixed to 1.0 under the Hvarfner prior</h4>
+        <p>Your snippet's comment said "kernel_scale: not used (fixed to 1.0 in Hvarfner prior)". Two
+        readings: (i) literally fixed, (ii) merely unpenalized by the prior while MLL still fits it.
+        I implemented (i) via <code>kernel_scale=(1.0, 1.0)</code> in
+        <code>HVARFNER_KERNEL_PARAM_BOUNDS</code>, which the L-BFGS-B bounds enforce exactly.
+        Defensible because Optuna standardizes <code>y</code>. To switch to (ii), change that one
+        field to <code>(0.0, math.inf)</code> in <code>optuna/_gp/prior.py</code>. This materially
+        changes benchmark results, so decide before the sweep.</p>
+      </div>
+
+      <div class="card">
+        <h4>3.2 The <code>noise_var</code> lower bound rides on <code>minimum_noise</code>, not on a raw L-BFGS-B bound</h4>
+        <p>Your rule said the constraints must be handled by L-BFGS-B rather than by assertion. The
+        lengthscale and <code>kernel_scale</code> constraints are genuine <code>bounds=</code>
+        entries. <code>noise_var</code> is different: the parametrization is
+        <code>noise_var = minimum_noise + exp(raw)</code>, so a lower bound at exactly 1e-4 would
+        need <code>log(0) = -inf</code> as the raw bound. Instead <code>_fit_kernel_params</code>
+        raises <code>minimum_noise = max(minimum_noise, kernel_param_bounds.noise_var[0])</code>,
+        which enforces the bound by construction. Extra payoff: with
+        <code>deterministic_objective=True</code> the noise is pinned to <code>minimum_noise</code>,
+        so a pure raw bound would have silently violated the 1e-4 floor; this version does not. No
+        assertion is involved on any optimizer iterate. A config-time assert does fire if a
+        <code>noise_var</code> <em>upper</em> bound is <= <code>minimum_noise</code>, since the
+        parametrization cannot represent it.</p>
+      </div>
+
+      <div class="card">
+        <h4>3.3 <code>_log_prior</code> and <code>_kernel_param_bounds</code> are two separate sampler attributes, deliberately</h4>
+        <p>Bundling them into one object would have changed the
+        <code>log_prior: Callable[[GPRegressor], Tensor]</code> type at every call site including
+        <code>optuna/terminator/improvement/emmr.py</code> and <code>.../evaluator.py</code>, which
+        is too invasive for a prototyping hook. The pairing requirement is a <code>NOTE</code>
+        comment at <code>optuna/samplers/_gp/sampler.py:248</code>. A style reviewer flagged the
+        lack of enforcement; worth revisiting if this becomes a real PR.</p>
+      </div>
+
+      <div class="card">
+        <h4>3.4 No log-Jacobian correction on the prior</h4>
+        <p><code>hvarfner_log_prior</code> is evaluated on the natural lengthscale while L-BFGS-B
+        optimizes <code>log(inverse_squared_lengthscales)</code>. Strictly, a change-of-variables
+        MAP would add a log-Jacobian term. Omitted, because both GPyTorch (which evaluates priors on
+        the constrained value) and Optuna's existing <code>default_log_prior</code> (Gamma on
+        <code>kernel_scale</code> while optimizing its log) do the same. So the four benchmark arms
+        stay mutually consistent. Recording it because it is a real, deliberate approximation.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="bugs">
+    <h2><span class="num">4</span>Two bugs in the scaffolding commit</h2>
+
+    <div class="card-grid">
+      <div class="bug-card">
+        <h4>4.1 <code>fit_kernel_params</code> raised <code>NameError</code> on every call</h4>
+        <p>In <code>_default_gpr()</code> the scaffolding passed
+        <code>kernel_type=KernelChoiceType</code> — the type alias itself, not a value. The alias is
+        defined only under <code>if TYPE_CHECKING:</code>, so at runtime the name does not exist.
+        <code>_default_gpr()</code> is called unconditionally at the top of
+        <code>fit_kernel_params</code>, so this was not a latent edge case. Fixed to
+        <code>kernel_type=kernel_type</code>.</p>
+      </div>
+
+      <div class="bug-card">
+        <h4>4.2 The objective GP never received <code>kernel_type</code></h4>
+        <p>The scaffolding added the argument to the <em>constraints</em> GP fit only. The fit at
+        <code>optuna/samplers/_gp/sampler.py:443</code> — the one that drives single- and
+        multi-objective sampling — omitted it, so it silently used the <code>"matern"</code> default.
+        The whole RBF arm of the benchmark would have been Matern 5/2 with an RBF label. Both this
+        and <code>kernel_param_bounds</code> are now passed at both call sites.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="kernel">
+    <h2><span class="num">5</span>Piece 1: the RBF kernel</h2>
+    <p>Code as delivered, <code>optuna/_gp/gp.py:153</code>:</p>
+
+    <pre><code>class RBFKernel(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx: Any, squared_distance: torch.Tensor) -> torch.Tensor:
+        val = torch.exp(-0.5 * squared_distance)
+        ctx.save_for_backward(-0.5 * val)
+        return val
+
+    @staticmethod
+    def backward(ctx: Any, grad: torch.Tensor) -> torch.Tensor:
+        (deriv,) = ctx.saved_tensors
+        return deriv * grad</code></pre>
+
+    <ul>
+      <li><code>exp(-0.5 * d^2)</code>, the GPyTorch/BoTorch convention, so
+      <code>squared_distance = r^2</code> means the same thing it already means for
+      <code>Matern52Kernel</code> (whose <code>sqrt5d = sqrt(5 * squared_distance)</code> implies
+      <code>r^2</code> too). Lengthscales therefore remain comparable across the two benchmark
+      arms.</li>
+      <li>The reason it is a <code>torch.autograd.Function</code> at all is mechanical, not
+      numerical: <code>kernel()</code> dispatches through <code>self._kernel_cls.apply(sqdist)</code>,
+      so the class has to expose <code>.apply</code> to be swappable with <code>Matern52Kernel</code>.
+      Unlike Matern 5/2, RBF needs no manual derivative for correctness — <code>exp</code> is smooth
+      at 0 — but saving <code>-0.5 * val</code> keeps the two classes symmetric.</li>
+    </ul>
+
+    <figure>
+      <div class="figure-panel">
+        <img src="kernels.svg" alt="Kernel value and derivative w.r.t. squared distance for RBF and Matern 5/2">
+      </div>
+      <figcaption>
+        <span class="cap-label">Kernel value (left) and derivative w.r.t. <code>d^2</code> (right),
+        with the values at <code>d^2 = 0</code> marked.</span> The right panel is why
+        <code>Matern52Kernel</code> saves its
+        derivative manually. Matern's <code>sqrt(5*d^2)</code> has unbounded slope as
+        <code>d^2 -&gt; 0</code>, so PyTorch autodiff yields <code>nan</code> there, while the true
+        derivative is <code>-5/6</code>. RBF's is <code>-1/2</code> and needs no such care. Both
+        kernels equal 1 at <code>d^2 = 0</code>, which is why <code>kernel(x, x) = kernel_scale</code>
+        still holds.
+      </figcaption>
+    </figure>
+  </section>
+
+  <section id="bounds">
+    <h2><span class="num">6</span>Piece 2: box constraints through L-BFGS-B</h2>
+
+    <p>The problem: your draft snippet used
+    <code>assert torch.all(lengthscales &gt;= 2.5e-2) and torch.all(noise_var &gt;= 1e-4)</code>. The
+    Hvarfner prior is only defined on that truncated domain, so the optimizer must never propose
+    points outside it.</p>
+
+    <p>New: <code>prior.KernelParamBounds</code>, a frozen dataclass of <code>(min, max)</code> pairs
+    on the <strong>natural</strong> parameters (<code>lengthscale</code>, <code>kernel_scale</code>,
+    <code>noise_var</code>), with <code>(0.0, inf)</code> meaning unconstrained and
+    <code>__post_init__</code> asserting <code>0 &lt;= min &lt;= max</code>.
+    <code>gp._get_raw_param_bounds</code> converts to the raw log space that L-BFGS-B actually
+    searches, and the result goes to
+    <code>scipy.optimize.minimize(..., method="l-bfgs-b", bounds=scipy.optimize.Bounds(lo, hi))</code>.</p>
+
+    <h3>The conversion</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>natural param</th><th>raw param optimized</th><th>raw lower</th><th>raw upper</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>lengthscale</code> in <code>[a, b]</code></td>
+            <td><code>log(inverse_squared_lengthscales)</code></td>
+            <td><code>-2*log(b)</code></td>
+            <td><code>-2*log(a)</code></td>
+          </tr>
+          <tr>
+            <td><code>kernel_scale</code> in <code>[a, b]</code></td>
+            <td><code>log(kernel_scale)</code></td>
+            <td><code>log(a)</code></td>
+            <td><code>log(b)</code></td>
+          </tr>
+          <tr>
+            <td><code>noise_var</code> in <code>[a, b]</code></td>
+            <td><code>log(noise_var - minimum_noise)</code></td>
+            <td><code>-inf</code> (see 3.2)</td>
+            <td><code>log(b - minimum_noise)</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Note the <strong>ends swap</strong> for the lengthscale:
+    <code>inverse_squared_lengthscales = lengthscale**-2</code> is monotonically decreasing, so the
+    lengthscale's <em>upper</em> bound becomes the raw <em>lower</em> bound. A sign/end error here
+    would be silent — it would just constrain the wrong direction — which is why there is a
+    dedicated <code>test_get_raw_param_bounds</code> plus two fitting tests that check the natural
+    parameters land in range without reusing the conversion formula.</p>
+
+    <div class="flip-diagram">
+      <div class="flip-box">l &isin; [0.025, &infin;)</div>
+      <div class="flip-arrow">&#8594;<br>flip</div>
+      <div class="flip-box">raw &isin; (&minus;&infin;, 7.37]</div>
+      <div class="flip-note">lower bound on l becomes the upper bound on raw, and l's open upper end (&infin;) becomes raw's open lower end (&minus;&infin;)</div>
+    </div>
+
+    <h3>Three further details</h3>
+    <ul>
+      <li><code>_log_or_inf</code> handles the domain ends (<code>log(0) = -inf</code>,
+      <code>log(inf) = inf</code>) that <code>math.log</code> rejects.</li>
+      <li>Initial raw params are <code>np.clip</code>ped into the bounds, so a <code>gpr_cache</code>
+      fitted under looser bounds (e.g. you switch prior mid-study) stays feasible.</li>
+      <li><code>HVARFNER_KERNEL_PARAM_BOUNDS = KernelParamBounds(lengthscale=(2.5e-2, inf),
+      kernel_scale=(1.0, 1.0), noise_var=(1e-4, inf))</code>.</li>
+    </ul>
+  </section>
+
+  <section id="prior">
+    <h2><span class="num">7</span>Piece 3: the prior</h2>
+    <p>Code as delivered, <code>optuna/_gp/prior.py</code>:</p>
+
+    <pre><code>def hvarfner_log_prior(gpr: gp.GPRegressor) -> torch.Tensor:
+    lengthscales = torch.rsqrt(gpr.inverse_squared_lengthscales)
+    mu = math.sqrt(2.0) + 0.5 * math.log(lengthscales.shape[-1])
+    return _log_lognormal_prior(lengthscales, mu=mu, var=3.0).sum() + _log_lognormal_prior(
+        gpr.noise_var, mu=-4.0, var=1.0
+    )</code></pre>
+
+    <ul>
+      <li>Your snippet took <code>lengthscales</code> as an argument; the codebase's prior signature
+      is <code>Callable[[GPRegressor], Tensor]</code>, so it now derives them via
+      <code>torch.rsqrt(gpr.inverse_squared_lengthscales)</code>. <code>rsqrt</code> on the live
+      tensor keeps the autograd path to the raw parameters intact — <code>gpr.length_scales</code>
+      (the existing property) would NOT work here, because it returns a detached NumPy array.</li>
+      <li>The <code>assert</code> from your snippet is gone; that domain is now the L-BFGS-B box
+      (Section 6).</li>
+      <li><code>_log_lognormal_prior</code> is your function verbatim, omitting constants.</li>
+    </ul>
+
+    <figure>
+      <div class="figure-panel">
+        <img src="priors.svg" alt="Normalized density over lengthscale for D=2,5,10,50 under Hvarfner prior vs Optuna default">
+      </div>
+      <figcaption>
+        <span class="cap-label">Normalized density over the lengthscale for D=2,5,10,50 against
+        Optuna's D-independent default, with the 0.025 bound marked.</span>
+        (1) The Hvarfner mode marches right as D grows (0.29 -&gt; 1.45 for D=2 -&gt; 50) while
+        Optuna's default sits at l=1 regardless of D. (2) <code>var=3.0</code> in log space makes
+        Hvarfner far broader / weaker than Optuna's sharply peaked default, so MLL has more freedom
+        under it. Densities are numerically normalized over the plotted range for comparability,
+        since both priors are implemented up to a constant.
+      </figcaption>
+    </figure>
+  </section>
+
+  <section id="sweep">
+    <h2><span class="num">8</span>How to run the sweep</h2>
+    <p>Fills the <code>sampler._log_prior = ...  # TODO</code> line in your <code>context.md</code> script:</p>
+
+    <pre><code>from optuna._gp import prior
+
+sampler = optuna.samplers.GPSampler(seed=seed)
+sampler._kernel_type = trial.suggest_categorical("kernel_type", ["rbf", "matern"])
+if prior_type == "hvarfner":
+    sampler._log_prior = prior.hvarfner_log_prior
+    sampler._kernel_param_bounds = prior.HVARFNER_KERNEL_PARAM_BOUNDS
+# prior_type == "optuna" needs no change; the defaults are
+# prior.default_log_prior + prior.DEFAULT_KERNEL_PARAM_BOUNDS.</code></pre>
+  </section>
+
+  <section id="verification">
+    <h2><span class="num">9</span>Verification</h2>
+    <ul>
+      <li><code>ruff check .</code> and <code>ruff format . --check</code>: clean.</li>
+      <li><code>mypy .</code>: only 2 errors, both pre-existing on <code>f0c7c188a</code> and
+      unrelated (<code>optuna/storages/journal/_redis.py:96</code>,
+      <code>optuna/visualization/matplotlib/_rank.py:106</code>). Confirmed pre-existing by
+      re-running mypy on a stashed tree.</li>
+      <li><code>pytest tests/gp_tests/ tests/samplers_tests/test_gp.py</code>: 358 passed, 1 skipped.</li>
+    </ul>
+
+    <h3>Tests added to <code>tests/gp_tests/test_gp.py</code> (+194 lines)</h3>
+    <ul>
+      <li><code>test_kernel_value_and_derivative_w_r_t_squared_distance</code> — both kernels' value
+      AND their <code>backward</code> gradient compared against an independent reference formula's
+      autodiff, for <code>d^2 in {1e-8, 0.1, 1, 10}</code>. This is how the manual derivative is
+      verified.</li>
+      <li><code>test_kernel_value_and_derivative_at_zero_squared_distance</code> — the
+      <code>d^2 = 0</code> limit separately, against the analytic <code>-1/2</code> (RBF) and
+      <code>-5/6</code> (Matern), because the naive reference is <code>nan</code> there. Worth
+      noting: my first draft folded <code>d^2 = 0</code> into the reference comparison and the
+      Matern case failed on <code>nan</code> — exactly the condition the manual derivative exists
+      to handle.</li>
+      <li><code>test_kernel_matrix_is_positive_definite</code> — both kernels; also pins
+      <code>kernel(x, x) == kernel_scale</code>.</li>
+      <li><code>test_get_raw_param_bounds</code> — the conversion, incl. infinite ends and the
+      lengthscale flip.</li>
+      <li><code>test_fit_kernel_params_respects_hvarfner_bounds</code> — post-fit natural params
+      inside the box, both kernels, both <code>deterministic_objective</code> values.</li>
+      <li><code>test_fit_kernel_params_with_fixed_bounds</code> — <code>min == max</code> pins
+      lengthscale and kernel_scale even when the loss gradient pushes outside, i.e. L-BFGS-B really
+      is honoring <code>bounds=</code>.</li>
+      <li><code>test_hvarfner_log_prior_peaks_at_the_mode</code> — density ordering around
+      <code>exp(mu - var)</code>.</li>
+      <li>Existing <code>test_fit_kernel_params</code>, <code>test_posterior</code>,
+      <code>test_append_running_data</code>, <code>test_conditional_gpr_matches_joint</code> are now
+      parametrized over <code>["matern", "rbf"]</code>.</li>
+    </ul>
+
+    <p class="note-line">API compatibility note (matters for upstreaming): <code>fit_kernel_params</code>
+    keeps <code>kernel_type="matern"</code> and now
+    <code>kernel_param_bounds=DEFAULT_KERNEL_PARAM_BOUNDS</code> as defaults, so the
+    <code>optuna/terminator/</code> call sites are untouched. <code>GPRegressor.__init__</code> takes
+    <code>kernel_type</code> as a <em>required</em> argument (your scaffolding's choice, preserved),
+    which is why the 6 test construction sites were updated rather than given a default.</p>
+
+    <h3>Smoke test — 30 trials, 4 float params + 1 categorical, toy quadratic</h3>
+    <p class="note-line">NOT a benchmark result.</p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>prior</th><th>kernel</th><th>best</th><th>lengthscale range</th><th>kernel_scale</th><th>noise_var</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>optuna</td><td>matern</td><td>0.0711</td><td>1.17 - 4.90</td><td>2.65</td><td>1.7e-06</td></tr>
+          <tr><td>optuna</td><td>rbf</td><td>0.0234</td><td>0.76 - 4.67</td><td>3.08</td><td>1.0e-06</td></tr>
+          <tr><td>hvarfner</td><td>matern</td><td>0.0708</td><td>0.59 - 12.96</td><td>1.0000</td><td>7.5e-04</td></tr>
+          <tr><td>hvarfner</td><td>rbf</td><td>0.0638</td><td>0.36 - 7.05</td><td>1.0000</td><td>4.1e-04</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>The only signal to take from it: all four arms run, <code>kernel_scale</code> is exactly 1.0
+    under Hvarfner, <code>noise_var &gt;= 1e-4</code> holds, and the Hvarfner arms do fit visibly
+    longer lengthscales.</p>
+  </section>
+
+  <section id="next">
+    <h2><span class="num">10</span>Next steps</h2>
+    <ol class="plain">
+      <li>Decide 3.1 (<code>kernel_scale</code>) before running the sweep.</li>
+      <li>Run the bbob sweep from <code>context.md</code>.</li>
+      <li>If upstreaming: revisit 3.3 (coupling), and decide whether <code>KernelParamBounds</code>
+      belongs in <code>prior.py</code> (current) or <code>gp.py</code>.</li>
+    </ol>
+  </section>
+
+</div>
+</body>
+</html>
