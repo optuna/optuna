@@ -23,10 +23,13 @@ def run_gp_sampler(trial: optuna.Trial) -> float:
         assert False
     # prior_type == "optuna" needs no change; the defaults are
     # prior.default_log_prior + prior.DEFAULT_KERNEL_PARAM_BOUNDS.
+    original_verbosity = optuna.logging.get_verbosity()
+    optuna.logging.set_verbosity(optuna.logging.CRITICAL)
     study = optuna.create_study(sampler=sampler)
     study.optimize(problem, n_trials=200)
     trials = study.get_trials(deepcopy=False)
     trial.set_user_attr("values", [t.value for t in trials])
+    optuna.logging.set_verbosity(original_verbosity)
     return 0.0  # placeholder
 
 
