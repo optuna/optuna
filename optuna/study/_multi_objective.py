@@ -54,19 +54,14 @@ def _fast_non_domination_rank(
     The fast non-dominated sort algorithm assigns a rank to each trial based on the dominance
     relationship of the trials, determined by the objective values and the penalty values. The
     algorithm is based on `the constrained NSGA-II algorithm
-    <https://doi.org/10.1109/4235.99601>`__, but the handling of the case when penalty
-    values are None is different. The algorithm assigns the rank according to the following
-    rules:
+    <https://doi.org/10.1109/4235.99601>`__. The algorithm assigns the rank according to the
+    following rules:
 
     1. Feasible trials: First, the algorithm assigns the rank to feasible trials, whose penalty
         values are less than or equal to 0, according to unconstrained version of fast non-
         dominated sort.
     2. Infeasible trials: Next, the algorithm assigns the rank from the minimum penalty value of to
         the maximum penalty value.
-    3. Trials with no penalty information (constraints value is None): Finally, The algorithm
-        assigns the rank to trials with no penalty information according to unconstrained version
-        of fast non-dominated sort. Note that only this step is different from the original
-        constrained NSGA-II algorithm.
     Plus, the algorithm terminates whenever the number of sorted trials reaches n_below.
 
     Args:
@@ -100,9 +95,8 @@ def _fast_non_domination_rank(
         )
 
     ranks = np.full(len(loss_values), -1, dtype=int)
-    is_penalty_nan = np.isnan(penalty)
-    is_feasible = np.logical_and(~is_penalty_nan, penalty <= 0)
-    is_infeasible = np.logical_and(~is_penalty_nan, penalty > 0)
+    is_feasible = penalty <= 0
+    is_infeasible = penalty > 0
 
     # First, we calculate the domination rank for feasible trials.
     ranks[is_feasible] = _calculate_nondomination_rank(loss_values[is_feasible], n_below=n_below)
@@ -112,13 +106,6 @@ def _fast_non_domination_rank(
     top_rank_infeasible = np.max(ranks[is_feasible], initial=-1) + 1
     ranks[is_infeasible] = top_rank_infeasible + _calculate_nondomination_rank(
         penalty[is_infeasible][:, np.newaxis], n_below=n_below
-    )
-    n_below -= int(np.count_nonzero(is_infeasible))
-
-    # Third, we calculate the domination rank for trials with no penalty information.
-    top_rank_penalty_nan = np.max(ranks[~is_penalty_nan], initial=-1) + 1
-    ranks[is_penalty_nan] = top_rank_penalty_nan + _calculate_nondomination_rank(
-        loss_values[is_penalty_nan], n_below=n_below
     )
     assert np.all(ranks != -1), "All the rank must be updated."
     return ranks
