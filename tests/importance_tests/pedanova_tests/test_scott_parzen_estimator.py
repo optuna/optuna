@@ -27,7 +27,6 @@ pe_parameters = _ParzenEstimatorParameters(
     consider_endpoints=False,
     weights=lambda x: np.empty(0),
     multivariate=True,
-    categorical_distance_func={},
 )
 
 

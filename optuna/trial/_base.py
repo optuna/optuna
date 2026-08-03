@@ -16,9 +16,6 @@ if TYPE_CHECKING:
     from optuna.distributions import CategoricalChoiceType
 
 
-_SUGGEST_INT_POSITIONAL_ARGS = ["self", "name", "low", "high", "step", "log"]
-
-
 class BaseTrial(abc.ABC):
     """Base class for trials.
 
