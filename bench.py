@@ -12,7 +12,7 @@ def run_gp_sampler(trial: optuna.Trial) -> float:
     function_id = trial.suggest_int("function_id", 1, 24)
     dimension = trial.suggest_categorical("dimension", [2, 5, 10])
     seed = trial.suggest_int("seed", 0, 9)
-    problem = bbob.Problem(function_id, dimension, seed + 1)
+    problem = bbob.Problem(function_id=function_id, dimension=dimension)
     prior_type = trial.suggest_categorical("prior_type", ["optuna", "hvarfner"])
     sampler = optuna.samplers.GPSampler(seed=seed)
     sampler._kernel_type = trial.suggest_categorical("kernel_type", ["rbf", "matern"])
