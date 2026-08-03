@@ -245,6 +245,9 @@ class GPSampler(BaseSampler):
         self._log_prior: Callable[[gp.GPRegressor], torch.Tensor] = prior.default_log_prior
         self._kernel_type: gp.KernelChoiceType = "matern"
         self._minimum_noise: float = prior.DEFAULT_MINIMUM_NOISE_VAR
+        # NOTE(nabenabe): `_log_prior` and `_kernel_param_bounds` must be replaced together, e.g.
+        # `prior.hvarfner_log_prior` with `prior.HVARFNER_KERNEL_PARAM_BOUNDS`.
+        self._kernel_param_bounds: prior.KernelParamBounds = prior.DEFAULT_KERNEL_PARAM_BOUNDS
         # We cache the kernel parameters for initial values of fitting the next time.
         # TODO(nabenabe): Make the cache lists system_attrs to make GPSampler stateless.
         self._gprs_cache_list: list[gp.GPRegressor] | None = None
@@ -347,6 +350,7 @@ class GPSampler(BaseSampler):
                 gpr_cache=cache,
                 deterministic_objective=self._deterministic,
                 kernel_type=self._kernel_type,
+                kernel_param_bounds=self._kernel_param_bounds,
             )
             constraints_gprs.append(gpr)
 
@@ -448,6 +452,8 @@ class GPSampler(BaseSampler):
                     minimum_noise=self._minimum_noise,
                     gpr_cache=cache,
                     deterministic_objective=self._deterministic,
+                    kernel_type=self._kernel_type,
+                    kernel_param_bounds=self._kernel_param_bounds,
                 )
             )
         self._gprs_cache_list = gprs_list

@@ -30,6 +30,7 @@ def get_gpr(y_train: np.ndarray) -> GPRegressor:
         inverse_squared_lengthscales=torch.tensor([2.0, 3.0], dtype=torch.float64),
         kernel_scale=torch.tensor(4.0, dtype=torch.float64),
         noise_var=torch.tensor(0.1, dtype=torch.float64),
+        kernel_type="matern",
     )
     gpr._cache_matrix()
     return gpr

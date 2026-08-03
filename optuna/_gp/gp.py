@@ -5,7 +5,7 @@ y_train: Observed objective values with the shape of (len(trials), 1).
 x: (Possibly batched) parameter value(s) to evaluate with the shape of (..., len(params)).
 cov_fX_fX: Kernel matrix X = V[f(X)] with the shape of (len(trials), len(trials)).
 cov_fx_fX: Kernel matrix Cov[f(x), f(X)] with the shape of (..., len(trials)).
-cov_fx_fx: Kernel scalar value x = V[f(x)]. This value is constant for the Matern 5/2 kernel.
+cov_fx_fx: Kernel scalar value x = V[f(x)]. This value is constant for the supported kernels.
 cov_Y_Y_inv:
     The inverse of the covariance matrix (V[f(X) + noise_var])^-1 with the shape of
     (len(trials), len(trials)).
@@ -19,11 +19,14 @@ is_categorical:
 
 from __future__ import annotations
 
+import math
 from typing import Any
 from typing import TYPE_CHECKING
 
 import numpy as np
 
+from optuna._gp.prior import DEFAULT_KERNEL_PARAM_BOUNDS
+from optuna._gp.prior import KernelParamBounds
 from optuna._gp.qmc import sample_from_normal_sobol
 from optuna._gp.thread_limiting import limit_threads_in_optimization
 from optuna._warnings import optuna_warn
@@ -148,14 +151,72 @@ class Matern52Kernel(torch.autograd.Function):
 
 
 class RBFKernel(torch.autograd.Function):
-    # TODO(claude): Implement here.
     @staticmethod
     def forward(ctx: Any, squared_distance: torch.Tensor) -> torch.Tensor:
-        raise
+        """
+        This method calculates `exp(-0.5 * squared_distance)`.
+
+        Although automatic differentiation by PyTorch works fine for this kernel, we manually
+        save the derivative, i.e., `-0.5 * exp(-0.5 * squared_distance)`, so that this class
+        can be used interchangeably with `Matern52Kernel`.
+
+        Notice that the derivative of this function is taken w.r.t. d**2, but not w.r.t. d.
+        """
+        val = torch.exp(-0.5 * squared_distance)
+        ctx.save_for_backward(-0.5 * val)
+        return val
 
     @staticmethod
     def backward(ctx: Any, grad: torch.Tensor) -> torch.Tensor:
-        raise
+        """
+        Let x be squared_distance, f(x) be forward(ctx, x), and g(f) be a provided function, then
+        deriv := df/dx, grad := dg/df, and deriv * grad = df/dx * dg/df = dg/dx.
+        """
+        (deriv,) = ctx.saved_tensors
+        return deriv * grad
+
+
+def _log_or_inf(value: float) -> float:
+    # `math.log` raises for 0.0 and does not accept `inf` as an unbounded marker, so we handle the
+    # bound values at the both ends of the domain here.
+    assert value >= 0.0, "The kernel parameter bounds must be non-negative."
+    return -math.inf if value == 0.0 else math.log(value)
+
+
+def _get_raw_param_bounds(
+    kernel_param_bounds: KernelParamBounds, n_params: int, minimum_noise: float
+) -> tuple[np.ndarray, np.ndarray]:
+    """Convert the bounds on the kernel parameters into those on the raw (log) parameters.
+
+    The raw parameters optimized by L-BFGS-B are, in this order,
+    ``log(inverse_squared_lengthscales)``, ``log(kernel_scale)``, and
+    ``log(noise_var - minimum_noise)``.
+    Since ``inverse_squared_lengthscales = lengthscale ** -2`` is monotonically decreasing in
+    ``lengthscale``, the lower and the upper bounds are swapped for the lengthscales.
+
+    Note that ``noise_var`` needs no raw lower bound because ``minimum_noise`` was already raised
+    to its lower bound by the caller, and ``noise_var = minimum_noise + exp(raw)`` is hence
+    guaranteed to satisfy it.
+    """
+    lengthscale_min, lengthscale_max = kernel_param_bounds.lengthscale
+    kernel_scale_min, kernel_scale_max = kernel_param_bounds.kernel_scale
+    noise_var_min, noise_var_max = kernel_param_bounds.noise_var
+    assert minimum_noise >= noise_var_min, "The caller must raise minimum_noise to noise_var_min."
+    # `noise_var = minimum_noise + exp(raw)` cannot represent `noise_var <= minimum_noise`.
+    assert noise_var_max > minimum_noise, (
+        f"The upper bound of noise_var must be greater than {minimum_noise=}, but got "
+        f"{noise_var_max}. Use `deterministic_objective=True` to fix noise_var instead."
+    )
+    # log(inverse_squared_lengthscales) = log(lengthscale ** -2) = -2 * log(lengthscale).
+    lower_bounds = np.array(
+        [-2.0 * _log_or_inf(lengthscale_max)] * n_params
+        + [_log_or_inf(kernel_scale_min), -math.inf]
+    )
+    upper_bounds = np.array(
+        [-2.0 * _log_or_inf(lengthscale_min)] * n_params
+        + [_log_or_inf(kernel_scale_max), _log_or_inf(noise_var_max - minimum_noise)]
+    )
+    return lower_bounds, upper_bounds
 
 
 class GPRegressor:
@@ -186,12 +247,13 @@ class GPRegressor:
         self.inverse_squared_lengthscales = inverse_squared_lengthscales
         self.kernel_scale = kernel_scale
         self.noise_var = noise_var
+        self._kernel_cls: type[torch.autograd.Function]
         if kernel_type == "matern":
             self._kernel_cls = Matern52Kernel
         elif kernel_type == "rbf":
             self._kernel_cls = RBFKernel
         else:
-            assert False
+            assert False, f"Got an unknown {kernel_type=}."
 
     @property
     def length_scales(self) -> np.ndarray:
@@ -233,9 +295,10 @@ class GPRegressor:
         shapes of (..., n_A, len(params)) and (..., n_B, len(params)).
 
         If x1 and x2 have the shape of (len(params), ), kernel(x1, x2) is computed as:
-            kernel_scale * Matern52Kernel.apply(
+            kernel_scale * kernel_cls.apply(
                 sqd(x1, x2) @ inverse_squared_lengthscales
             )
+        where kernel_cls is either Matern52Kernel or RBFKernel depending on kernel_type.
         where if x1[i] is continuous, sqd(x1, x2)[i] = (x1[i] - x2[i]) ** 2 and if x1[i] is
         categorical, sqd(x1, x2)[i] = int(x1[i] != x2[i]).
         Note that the distance for categorical parameters is the Hamming distance.
@@ -329,24 +392,38 @@ class GPRegressor:
         minimum_noise: float,
         deterministic_objective: bool,
         gtol: float,
+        kernel_param_bounds: KernelParamBounds = DEFAULT_KERNEL_PARAM_BOUNDS,
     ) -> GPRegressor:
         n_params = self._X_train.shape[1]
+        # `noise_var = minimum_noise + exp(raw_noise_var)` already guarantees the positivity of
+        # `noise_var - minimum_noise`, so we simply tighten `minimum_noise` for the lower bound.
+        minimum_noise = max(minimum_noise, kernel_param_bounds.noise_var[0])
 
         # We apply log transform to enforce the positivity of the kernel parameters.
         # Note that we cannot just use the constraint because of the numerical instability
         # of the marginal log likelihood.
         # We also enforce the noise parameter to be greater than `minimum_noise` to avoid
         # pathological behavior of maximum likelihood estimation.
-        # TODO(claude): We handle box constraints here.
-        initial_raw_params = np.concatenate(
-            [
-                np.log(self.inverse_squared_lengthscales.detach().cpu().numpy()),
+        raw_lower_bounds, raw_upper_bounds = _get_raw_param_bounds(
+            kernel_param_bounds, n_params=n_params, minimum_noise=minimum_noise
+        )
+        # The initial values must be clipped because `gpr_cache` may have been fitted with looser
+        # bounds, e.g. when a user switches the prior in the middle of an optimization.
+        initial_raw_params = np.clip(
+            np.concatenate(
                 [
-                    np.log(self.kernel_scale.item()),
-                    # We add 0.01 * minimum_noise to initial noise_var to avoid instability.
-                    np.log(self.noise_var.item() - 0.99 * minimum_noise),
-                ],
-            ]
+                    np.log(self.inverse_squared_lengthscales.detach().cpu().numpy()),
+                    [
+                        np.log(self.kernel_scale.item()),
+                        # We add 0.01 * minimum_noise to initial noise_var to avoid instability.
+                        np.log(
+                            max(self.noise_var.item() - 0.99 * minimum_noise, 1e-2 * minimum_noise)
+                        ),
+                    ],
+                ]
+            ),
+            raw_lower_bounds,
+            raw_upper_bounds,
         )
 
         def loss_func(raw_params: np.ndarray) -> tuple[float, np.ndarray]:
@@ -374,6 +451,7 @@ class GPRegressor:
                 initial_raw_params,
                 jac=True,
                 method="l-bfgs-b",
+                bounds=scipy.optimize.Bounds(raw_lower_bounds, raw_upper_bounds),
                 options={"gtol": gtol},
             )
         if not res.success:
@@ -481,6 +559,7 @@ def fit_kernel_params(
     gpr_cache: GPRegressor | None = None,
     gtol: float = 1e-2,
     kernel_type: KernelChoiceType = "matern",
+    kernel_param_bounds: KernelParamBounds = DEFAULT_KERNEL_PARAM_BOUNDS,
 ) -> GPRegressor:
     default_kernel_params = torch.ones(X.shape[1] + 2, dtype=torch.float64)
     # TODO: Move this function into a method of `GPRegressor`
@@ -493,7 +572,7 @@ def fit_kernel_params(
             inverse_squared_lengthscales=default_kernel_params[:-2].clone(),
             kernel_scale=default_kernel_params[-2].clone(),
             noise_var=default_kernel_params[-1].clone(),
-            kernel_type=KernelChoiceType,
+            kernel_type=kernel_type,
         )
 
     default_gpr_cache = _default_gpr()
@@ -519,6 +598,7 @@ def fit_kernel_params(
                 minimum_noise=minimum_noise,
                 deterministic_objective=deterministic_objective,
                 gtol=gtol,
+                kernel_param_bounds=kernel_param_bounds,
             )
         except RuntimeError as e:
             error = e
