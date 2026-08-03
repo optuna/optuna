@@ -32,9 +32,12 @@ from optuna.logging import get_logger
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+    from typing import Literal
 
     import scipy
     import torch
+
+    KernelChoiceType = Literal["rbf", "matern"]
 else:
     from optuna._imports import _LazyImport
 
@@ -144,6 +147,17 @@ class Matern52Kernel(torch.autograd.Function):
         return deriv * grad
 
 
+class RBFKernel(torch.autograd.Function):
+    # TODO(claude): Implement here.
+    @staticmethod
+    def forward(ctx: Any, squared_distance: torch.Tensor) -> torch.Tensor:
+        raise
+
+    @staticmethod
+    def backward(ctx: Any, grad: torch.Tensor) -> torch.Tensor:
+        raise
+
+
 class GPRegressor:
     def __init__(
         self,
@@ -153,6 +167,7 @@ class GPRegressor:
         inverse_squared_lengthscales: torch.Tensor,  # (len(params), )
         kernel_scale: torch.Tensor,  # Scalar
         noise_var: torch.Tensor,  # Scalar
+        kernel_type: KernelChoiceType,
     ) -> None:
         assert len(X_train.shape) == 2 and len(y_train.shape) == 1
         self._is_categorical = is_categorical
@@ -171,6 +186,12 @@ class GPRegressor:
         self.inverse_squared_lengthscales = inverse_squared_lengthscales
         self.kernel_scale = kernel_scale
         self.noise_var = noise_var
+        if kernel_type == "matern":
+            self._kernel_cls = Matern52Kernel
+        elif kernel_type == "rbf":
+            self._kernel_cls = RBFKernel
+        else:
+            assert False
 
     @property
     def length_scales(self) -> np.ndarray:
@@ -232,7 +253,7 @@ class GPRegressor:
                     torch.float64
                 )
         sqdist = sqd.matmul(self.inverse_squared_lengthscales)
-        return Matern52Kernel.apply(sqdist) * self.kernel_scale  # type: ignore
+        return self._kernel_cls.apply(sqdist) * self.kernel_scale  # type: ignore
 
     def posterior(self, x: torch.Tensor, joint: bool = False) -> tuple[torch.Tensor, torch.Tensor]:
         """
@@ -316,6 +337,7 @@ class GPRegressor:
         # of the marginal log likelihood.
         # We also enforce the noise parameter to be greater than `minimum_noise` to avoid
         # pathological behavior of maximum likelihood estimation.
+        # TODO(claude): We handle box constraints here.
         initial_raw_params = np.concatenate(
             [
                 np.log(self.inverse_squared_lengthscales.detach().cpu().numpy()),
@@ -458,6 +480,7 @@ def fit_kernel_params(
     deterministic_objective: bool,
     gpr_cache: GPRegressor | None = None,
     gtol: float = 1e-2,
+    kernel_type: KernelChoiceType = "matern",
 ) -> GPRegressor:
     default_kernel_params = torch.ones(X.shape[1] + 2, dtype=torch.float64)
     # TODO: Move this function into a method of `GPRegressor`
@@ -470,6 +493,7 @@ def fit_kernel_params(
             inverse_squared_lengthscales=default_kernel_params[:-2].clone(),
             kernel_scale=default_kernel_params[-2].clone(),
             noise_var=default_kernel_params[-1].clone(),
+            kernel_type=KernelChoiceType,
         )
 
     default_gpr_cache = _default_gpr()
@@ -489,6 +513,7 @@ def fit_kernel_params(
                 inverse_squared_lengthscales=gpr_cache_to_use.inverse_squared_lengthscales,
                 kernel_scale=gpr_cache_to_use.kernel_scale,
                 noise_var=gpr_cache_to_use.noise_var,
+                kernel_type=kernel_type,
             )._fit_kernel_params(
                 log_prior=log_prior,
                 minimum_noise=minimum_noise,
