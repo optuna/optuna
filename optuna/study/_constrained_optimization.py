@@ -23,10 +23,6 @@ def _is_constrained_optimization(trials: Sequence[FrozenTrial]) -> bool:
 def _get_feasible_trials(trials: Sequence[FrozenTrial]) -> list[FrozenTrial]:
     """Return feasible trials from given trials.
 
-    This function assumes that the trials were created in constrained optimization.
-    Therefore, if there is no violation value in the trial, it is considered infeasible.
-
-
     Returns:
         A list of feasible trials.
     """
@@ -34,7 +30,7 @@ def _get_feasible_trials(trials: Sequence[FrozenTrial]) -> list[FrozenTrial]:
     feasible_trials = []
     for trial in trials:
         constraints = trial.constraints.values()
-        if len(constraints) > 0 and all(x <= 0.0 for x in constraints):
+        if all(x <= 0.0 for x in constraints):
             feasible_trials.append(trial)
     return feasible_trials
 
