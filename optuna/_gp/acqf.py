@@ -515,7 +515,7 @@ class qLogEHVI(BaseAcquisitionFunc):
 
         return lower_bounds, intervals, box_mask
 
-    def compute_per_sample_log_utilility(self, x: torch.Tensor) -> torch.Tensor:
+    def compute_per_sample_log_utility(self, x: torch.Tensor) -> torch.Tensor:
         Y_candidate_post = torch.stack(
             [cond_gpr.sample_joint_posterior(x) for cond_gpr in self._cond_gpr_list], dim=-1
         )[..., -1, :]
@@ -527,7 +527,7 @@ class qLogEHVI(BaseAcquisitionFunc):
         )
 
     def eval_acqf(self, x: torch.Tensor) -> torch.Tensor:
-        log_util_vals = self.compute_per_sample_log_utilility(x)
+        log_util_vals = self.compute_per_sample_log_utility(x)
         return torch.special.logsumexp(log_util_vals, dim=-1) - math.log(log_util_vals.shape[-1])
 
 
