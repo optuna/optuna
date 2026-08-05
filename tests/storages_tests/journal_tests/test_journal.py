@@ -7,6 +7,7 @@ import pathlib
 import pickle
 from types import TracebackType
 from typing import Any
+from typing import cast
 from typing import IO
 from unittest import mock
 
@@ -112,6 +113,58 @@ def test_concurrent_append_logs_for_multi_threads(
 
         assert len(list(storage.read_logs(0))) == num_records
         assert all(record == r for r in storage.read_logs(0))
+
+
+def test_read_logs_caches_offset_after_incomplete_skipped_log_1() -> None:
+    what_to_write_1 = (
+        b'{"op_code":0,"worker_id":"worker-0"}\n'
+        + b'{"op_code":0,"worker_id":"worker-1"}\n'
+        + b'{"op_code":0,"work'
+    )
+    what_to_write_2 = b'er_id":"worker-2"}\n' + b'{"op_code":0,"worker_id":"worker-3"}\n'
+    with NamedTemporaryFilePool() as file:
+        file = cast(IO[bytes], file)
+        file.write(what_to_write_1)
+        file.flush()
+        file.close()
+
+        file_backend = journal.JournalFileBackend(file.name)
+        assert list(file_backend.read_logs(0)) == [
+            {"op_code": 0, "worker_id": "worker-0"},
+            {"op_code": 0, "worker_id": "worker-1"},
+        ]
+
+        with open(file.name, "ab") as f:
+            f.write(what_to_write_2)
+
+        assert list(file_backend.read_logs(2)) == [
+            {"op_code": 0, "worker_id": "worker-2"},
+            {"op_code": 0, "worker_id": "worker-3"},
+        ]
+
+
+def test_read_logs_caches_offset_after_incomplete_skipped_log_2() -> None:
+    what_to_write_1 = (
+        b'{"op_code":0,"worker_id":"worker-0"}\n'
+        + b'{"op_code":0,"worker_id":"worker-1"}\n'
+        + b'{"op_code":0,"work'
+    )
+    what_to_write_2 = b'er_id":"worker-2"}\n' + b'{"op_code":0,"worker_id":"worker-3"}\n'
+    with NamedTemporaryFilePool() as file:
+        file = cast(IO[bytes], file)
+        file.write(what_to_write_1)
+        file.flush()
+        file.close()
+
+        file_backend = journal.JournalFileBackend(file.name)
+        assert list(file_backend.read_logs(3)) == []
+
+        with open(file.name, "ab") as f:
+            f.write(what_to_write_2)
+
+        assert list(file_backend.read_logs(3)) == [
+            {"op_code": 0, "worker_id": "worker-3"},
+        ]
 
 
 def pop_waiting_trial(file_path: str, study_name: str) -> int | None:
