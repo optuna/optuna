@@ -50,9 +50,8 @@ import logging
 _logger = logging.getLogger(__name__)
 
 EPS = 1e-10
-# NOTE(nabe): Do NOT use 1 << 31 to avoid overflow. Multi-objective and constrained optimizations
-# use qmc_seed + buffer. Since buffer is sufficiently small (like ~30), using `1 << 30` guarantees
-# no overflow.
+# NOTE(nabe): Multi-objective and constrained optimization may derive QMC seeds by adding small
+# (like ~30) offsets to a base seed. Use `1 << 30` as a conservative upper bound.
 _MAX_QMC_SEED_VALUE = 1 << 30
 
 _RELATIVE_PARAMS_KEY = "gp:relative_params"
@@ -453,6 +452,12 @@ class GPSampler(BaseSampler):
                 )
             )
         self._gprs_cache_list = gprs_list
+
+        print(_MAX_QMC_SEED_VALUE)
+        print(self._rng.rng.randint(_MAX_QMC_SEED_VALUE))
+        print(self._rng.rng.randint(_MAX_QMC_SEED_VALUE))
+        print(self._rng.rng.randint(_MAX_QMC_SEED_VALUE))
+        print(self._rng.rng.randint(_MAX_QMC_SEED_VALUE))
 
         best_params: np.ndarray | None
         acqf: acqf_module.BaseAcquisitionFunc
