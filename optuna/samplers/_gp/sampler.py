@@ -453,12 +453,6 @@ class GPSampler(BaseSampler):
             )
         self._gprs_cache_list = gprs_list
 
-        print(_MAX_QMC_SEED_VALUE)
-        print(self._rng.rng.randint(_MAX_QMC_SEED_VALUE))
-        print(self._rng.rng.randint(_MAX_QMC_SEED_VALUE))
-        print(self._rng.rng.randint(_MAX_QMC_SEED_VALUE))
-        print(self._rng.rng.randint(_MAX_QMC_SEED_VALUE))
-
         best_params: np.ndarray | None
         acqf: acqf_module.BaseAcquisitionFunc
         if not _is_constrained_optimization(completed_trials):
