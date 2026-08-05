@@ -23,7 +23,7 @@ if TYPE_CHECKING:
     from optuna._gp.search_space import SearchSpace
 
     class PerSampleLogUtilityType(Protocol):
-        def compute_per_sample_log_utilility(self, x: torch.Tensor) -> torch.Tensor:
+        def compute_per_sample_log_utility(self, x: torch.Tensor) -> torch.Tensor:
             raise NotImplementedError
 else:
     from optuna._imports import _LazyImport
@@ -180,7 +180,7 @@ class qLogEI(BaseAcquisitionFunc):
         self._per_sample_log_util_shape = (n_qmc_samples, n_running + 1)
         super().__init__(gpr.length_scales, search_space)
 
-    def compute_per_sample_log_utilility(self, x: torch.Tensor) -> torch.Tensor:
+    def compute_per_sample_log_utility(self, x: torch.Tensor) -> torch.Tensor:
         if np.isneginf(self._threshold):
             return_tensor_shape = x.shape[:-1] + self._per_sample_log_util_shape
             return torch.zeros(return_tensor_shape, dtype=torch.float64)
@@ -189,7 +189,7 @@ class qLogEI(BaseAcquisitionFunc):
         return (y_post - self._threshold).clamp_min_(_EPS).log()
 
     def eval_acqf(self, x: torch.Tensor) -> torch.Tensor:
-        return _compute_mean_max_utility(self.compute_per_sample_log_utilility(x))
+        return _compute_mean_max_utility(self.compute_per_sample_log_utility(x))
 
 
 class LogPI(BaseAcquisitionFunc):
@@ -257,12 +257,12 @@ class qLogPI(BaseAcquisitionFunc):
         )
         super().__init__(gpr.length_scales, search_space)
 
-    def compute_per_sample_log_utilility(self, x: torch.Tensor) -> torch.Tensor:
+    def compute_per_sample_log_utility(self, x: torch.Tensor) -> torch.Tensor:
         y_post = self._cond_gpr.sample_joint_posterior(x)
         return torch.nn.functional.logsigmoid((y_post - self._threshold) / self._tau)
 
     def eval_acqf(self, x: torch.Tensor) -> torch.Tensor:
-        return _compute_mean_max_utility(self.compute_per_sample_log_utilility(x))
+        return _compute_mean_max_utility(self.compute_per_sample_log_utility(x))
 
 
 class UCB(BaseAcquisitionFunc):
@@ -376,8 +376,8 @@ class qConstrainedLogEI(BaseAcquisitionFunc):
         super().__init__(gpr.length_scales, search_space)
 
     def eval_acqf(self, x: torch.Tensor) -> torch.Tensor:
-        log_feasible_improvement = self._acqf.compute_per_sample_log_utilility(x) + sum(
-            acqf.compute_per_sample_log_utilility(x) for acqf in self._constraints_acqf_list
+        log_feasible_improvement = self._acqf.compute_per_sample_log_utility(x) + sum(
+            acqf.compute_per_sample_log_utility(x) for acqf in self._constraints_acqf_list
         )
         return _compute_mean_max_utility(log_feasible_improvement)
 
