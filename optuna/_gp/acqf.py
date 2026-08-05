@@ -261,6 +261,9 @@ class qLogPI(BaseAcquisitionFunc):
         y_post = self._cond_gpr.sample_joint_posterior(x)
         return torch.nn.functional.logsigmoid((y_post - self._threshold) / self._tau)
 
+    def get_fantasy_feasibility(self) -> torch.Tensor:
+        return self._cond_gpr._fantasy_samples >= self._threshold
+
     def eval_acqf(self, x: torch.Tensor) -> torch.Tensor:
         return _compute_mean_max_utility(self.compute_per_sample_log_utilility(x))
 
@@ -581,3 +584,95 @@ class ConstrainedLogEHVI(BaseAcquisitionFunc):
         if self._acqf is None:
             return cast("torch.Tensor", constraints_acqf_values)
         return constraints_acqf_values + self._acqf.eval_acqf(x)
+
+
+class qConstrainedLogEHVI(BaseAcquisitionFunc):
+    def __init__(
+        self,
+        gpr_list: list[GPRegressor],
+        search_space: SearchSpace,
+        Y_feasible: torch.Tensor | None,
+        n_qmc_samples: int,
+        qmc_seed: int,
+        constraints_gpr_list: list[GPRegressor],
+        constraints_threshold_list: list[float],
+        normalized_params_of_running_trials: np.ndarray,
+        stabilizing_noise: float = 1e-12,
+        tau: float = 1e-2,
+    ) -> None:
+        assert (
+            len(constraints_gpr_list) == len(constraints_threshold_list) and constraints_gpr_list
+        )
+        self._constraints_acqf_list: list[qLogPI] = [
+            qLogPI(
+                gpr=constraint_gpr,
+                search_space=search_space,
+                threshold=constraint_threshold,
+                n_qmc_samples=n_qmc_samples,
+                qmc_seed=qmc_seed + len(gpr_list) + i,
+                normalized_params_of_running_trials=normalized_params_of_running_trials,
+                stabilizing_noise=stabilizing_noise,
+                tau=tau,
+            )
+            for i, (constraint_gpr, constraint_threshold) in enumerate(
+                zip(constraints_gpr_list, constraints_threshold_list)
+            )
+        ]
+        self._acqf: qLogEHVI | None = None
+        if Y_feasible is not None:
+            self._acqf = qLogEHVI(
+                gpr_list=gpr_list,
+                search_space=search_space,
+                Y_train=Y_feasible,
+                n_qmc_samples=n_qmc_samples,
+                qmc_seed=qmc_seed,
+                normalized_params_of_running_trials=normalized_params_of_running_trials,
+                stabilizing_noise=stabilizing_noise,
+            )
+            objective_fantasy_samples = torch.stack(
+                [cond_gpr._fantasy_samples for cond_gpr in self._acqf._cond_gpr_list], dim=-1
+            )
+            feasible_running = torch.all(
+                torch.stack(
+                    [acqf.get_fantasy_feasibility() for acqf in self._constraints_acqf_list],
+                    dim=-1,
+                ),
+                dim=-1,
+            )
+            lower_bounds_list = []
+            upper_bounds_list = []
+            for sample_idx in range(n_qmc_samples):
+                observed_Y = torch.cat(
+                    [
+                        Y_feasible,
+                        objective_fantasy_samples[sample_idx, feasible_running[sample_idx]],
+                    ],
+                    dim=0,
+                )
+                lower_bounds, upper_bounds = _get_non_dominated_box_bounds(observed_Y)
+                lower_bounds_list.append(lower_bounds)
+                upper_bounds_list.append(upper_bounds)
+            (
+                self._acqf._non_dominated_box_lower_bounds,
+                self._acqf._non_dominated_box_intervals,
+                self._acqf._non_dominated_box_mask,
+            ) = qLogEHVI._pad_non_dominated_box_bounds(lower_bounds_list, upper_bounds_list)
+        super().__init__(np.mean([gpr.length_scales for gpr in gpr_list], axis=0), search_space)
+
+    def eval_acqf(self, x: torch.Tensor) -> torch.Tensor:
+        constraint_log_feasibility = cast(
+            "torch.Tensor",
+            sum(
+                acqf.compute_per_sample_log_utilility(x)[..., -1]
+                for acqf in self._constraints_acqf_list
+            ),
+        )
+        log_feasible_improvement = (
+            self._acqf.compute_per_sample_log_utilility(x) + constraint_log_feasibility
+            if self._acqf is not None
+            else constraint_log_feasibility
+        )
+
+        return torch.special.logsumexp(log_feasible_improvement, dim=-1) - math.log(
+            log_feasible_improvement.shape[-1]
+        )

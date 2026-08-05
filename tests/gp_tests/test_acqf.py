@@ -199,14 +199,14 @@ def test_qlogehvi_precomputes_fantasy_box_decomposition(
 ) -> None:
     n_qmc_samples = 16
     call_count = 0
-    original = acqf_module._get_non_dominated_box_bounds_from_observations
+    original = acqf_module._get_non_dominated_box_bounds
 
     def wrapped(y: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         nonlocal call_count
         call_count += 1
         return original(y)
 
-    monkeypatch.setattr(acqf_module, "_get_non_dominated_box_bounds_from_observations", wrapped)
+    monkeypatch.setattr(acqf_module, "_get_non_dominated_box_bounds", wrapped)
 
     Y = np.array([[1.0, 0.2], [2.0, 0.3], [3.0, -0.4]])
     acqf = acqf_module.qLogEHVI(
@@ -245,6 +245,32 @@ def test_eval_multi_objective_acqf_with_constraints(
         qmc_seed=42,
         constraints_gpr_list=[get_gpr(vals) for vals in c.T],
         constraints_threshold_list=[0.0] * len(c.T),
+        stabilizing_noise=0.0,
+    )
+    verify_eval_acqf(x, acqf)
+
+
+@parametrized_x
+@parametrized_additional_values
+def test_eval_qconstrained_logehvi(
+    x: np.ndarray,
+    additional_values: np.ndarray,
+    search_space: SearchSpace,
+) -> None:
+    c = additional_values.copy()
+    Y = np.hstack([np.array([1.0, 2.0, 3.0])[:, np.newaxis], additional_values])
+    n_objectives = Y.shape[-1]
+    is_feasible = np.all(c <= 0, axis=1)
+    is_all_infeasible = not np.any(is_feasible)
+    acqf = acqf_module.qConstrainedLogEHVI(
+        gpr_list=[get_gpr(Y[:, i]) for i in range(n_objectives)],
+        search_space=search_space,
+        Y_feasible=None if is_all_infeasible else torch.from_numpy(Y[is_feasible]),
+        n_qmc_samples=32,
+        qmc_seed=42,
+        constraints_gpr_list=[get_gpr(vals) for vals in c.T],
+        constraints_threshold_list=[0.0] * len(c.T),
+        normalized_params_of_running_trials=np.array([[0.4, 0.6]]),
         stabilizing_noise=0.0,
     )
     verify_eval_acqf(x, acqf)
