@@ -23,7 +23,7 @@ if TYPE_CHECKING:
     from optuna._gp.search_space import SearchSpace
 
     class PerSampleLogUtilityType(Protocol):
-        def compute_per_sample_log_utilility(self, x: torch.Tensor) -> torch.Tensor:
+        def compute_per_sample_log_utility(self, x: torch.Tensor) -> torch.Tensor:
             raise NotImplementedError
 else:
     from optuna._imports import _LazyImport
@@ -180,7 +180,7 @@ class qLogEI(BaseAcquisitionFunc):
         self._per_sample_log_util_shape = (n_qmc_samples, n_running + 1)
         super().__init__(gpr.length_scales, search_space)
 
-    def compute_per_sample_log_utilility(self, x: torch.Tensor) -> torch.Tensor:
+    def compute_per_sample_log_utility(self, x: torch.Tensor) -> torch.Tensor:
         if np.isneginf(self._threshold):
             return_tensor_shape = x.shape[:-1] + self._per_sample_log_util_shape
             return torch.zeros(return_tensor_shape, dtype=torch.float64)
@@ -189,7 +189,7 @@ class qLogEI(BaseAcquisitionFunc):
         return (y_post - self._threshold).clamp_min_(_EPS).log()
 
     def eval_acqf(self, x: torch.Tensor) -> torch.Tensor:
-        return _compute_mean_max_utility(self.compute_per_sample_log_utilility(x))
+        return _compute_mean_max_utility(self.compute_per_sample_log_utility(x))
 
 
 class LogPI(BaseAcquisitionFunc):
@@ -257,7 +257,7 @@ class qLogPI(BaseAcquisitionFunc):
         )
         super().__init__(gpr.length_scales, search_space)
 
-    def compute_per_sample_log_utilility(self, x: torch.Tensor) -> torch.Tensor:
+    def compute_per_sample_log_utility(self, x: torch.Tensor) -> torch.Tensor:
         y_post = self._cond_gpr.sample_joint_posterior(x)
         return torch.nn.functional.logsigmoid((y_post - self._threshold) / self._tau)
 
@@ -265,7 +265,7 @@ class qLogPI(BaseAcquisitionFunc):
         return self._cond_gpr._fantasy_samples >= self._threshold
 
     def eval_acqf(self, x: torch.Tensor) -> torch.Tensor:
-        return _compute_mean_max_utility(self.compute_per_sample_log_utilility(x))
+        return _compute_mean_max_utility(self.compute_per_sample_log_utility(x))
 
 
 class UCB(BaseAcquisitionFunc):
@@ -379,8 +379,8 @@ class qConstrainedLogEI(BaseAcquisitionFunc):
         super().__init__(gpr.length_scales, search_space)
 
     def eval_acqf(self, x: torch.Tensor) -> torch.Tensor:
-        log_feasible_improvement = self._acqf.compute_per_sample_log_utilility(x) + sum(
-            acqf.compute_per_sample_log_utilility(x) for acqf in self._constraints_acqf_list
+        log_feasible_improvement = self._acqf.compute_per_sample_log_utility(x) + sum(
+            acqf.compute_per_sample_log_utility(x) for acqf in self._constraints_acqf_list
         )
         return _compute_mean_max_utility(log_feasible_improvement)
 
@@ -518,7 +518,7 @@ class qLogEHVI(BaseAcquisitionFunc):
 
         return lower_bounds, intervals, box_mask
 
-    def compute_per_sample_log_utilility(self, x: torch.Tensor) -> torch.Tensor:
+    def compute_per_sample_log_utility(self, x: torch.Tensor) -> torch.Tensor:
         Y_candidate_post = torch.stack(
             [cond_gpr.sample_joint_posterior(x) for cond_gpr in self._cond_gpr_list], dim=-1
         )[..., -1, :]
@@ -530,7 +530,7 @@ class qLogEHVI(BaseAcquisitionFunc):
         )
 
     def eval_acqf(self, x: torch.Tensor) -> torch.Tensor:
-        log_util_vals = self.compute_per_sample_log_utilility(x)
+        log_util_vals = self.compute_per_sample_log_utility(x)
         return torch.special.logsumexp(log_util_vals, dim=-1) - math.log(log_util_vals.shape[-1])
 
 
@@ -663,12 +663,12 @@ class qConstrainedLogEHVI(BaseAcquisitionFunc):
         constraint_log_feasibility = cast(
             "torch.Tensor",
             sum(
-                acqf.compute_per_sample_log_utilility(x)[..., -1]
+                acqf.compute_per_sample_log_utility(x)[..., -1]
                 for acqf in self._constraints_acqf_list
             ),
         )
         log_feasible_improvement = (
-            self._acqf.compute_per_sample_log_utilility(x) + constraint_log_feasibility
+            self._acqf.compute_per_sample_log_utility(x) + constraint_log_feasibility
             if self._acqf is not None
             else constraint_log_feasibility
         )

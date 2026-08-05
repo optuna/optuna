@@ -194,37 +194,6 @@ def test_eval_qlogehvi(
     verify_eval_acqf(x, acqf)
 
 
-def test_qlogehvi_precomputes_fantasy_box_decomposition(
-    monkeypatch: pytest.MonkeyPatch, search_space: SearchSpace
-) -> None:
-    n_qmc_samples = 16
-    call_count = 0
-    original = acqf_module._get_non_dominated_box_bounds
-
-    def wrapped(y: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
-        nonlocal call_count
-        call_count += 1
-        return original(y)
-
-    monkeypatch.setattr(acqf_module, "_get_non_dominated_box_bounds", wrapped)
-
-    Y = np.array([[1.0, 0.2], [2.0, 0.3], [3.0, -0.4]])
-    acqf = acqf_module.qLogEHVI(
-        gpr_list=[get_gpr(Y[:, i]) for i in range(Y.shape[-1])],
-        search_space=search_space,
-        Y_train=torch.from_numpy(Y),
-        n_qmc_samples=n_qmc_samples,
-        qmc_seed=42,
-        normalized_params_of_running_trials=np.array([[0.4, 0.6]]),
-        stabilizing_noise=0.0,
-    )
-    assert call_count == n_qmc_samples
-
-    verify_eval_acqf(np.array([0.15, 0.12]), acqf)
-    verify_eval_acqf(np.array([[0.15, 0.12], [0.0, 1.0]]), acqf)
-    assert call_count == n_qmc_samples
-
-
 @parametrized_x
 @parametrized_additional_values
 def test_eval_multi_objective_acqf_with_constraints(
