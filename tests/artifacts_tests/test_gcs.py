@@ -14,6 +14,7 @@ from optuna.artifacts.exceptions import ArtifactNotFound
 
 
 if TYPE_CHECKING:
+    from collections.abc import Generator
     from collections.abc import Iterator
 
 
@@ -50,7 +51,7 @@ class MockBlob:
 
 
 @contextlib.contextmanager
-def init_mock_client() -> Iterator[None]:
+def init_mock_client() -> Generator[None, None, None]:
     # In case we fail to patch `google.cloud.storage.Client`, we deliberately set an invalid
     # credential path so that we do not accidentally access GCS.
     # Note that this is not a perfect measure; it can become ineffective in future when the
