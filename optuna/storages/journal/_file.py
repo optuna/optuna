@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import abc
 from collections.abc import Generator
-from collections.abc import Iterator
 from contextlib import contextmanager
 import errno
 import json
@@ -306,7 +305,7 @@ class JournalFileOpenLock(BaseJournalFileLock):
 
 
 @contextmanager
-def get_lock_file(lock_obj: BaseJournalFileLock) -> Iterator[None]:
+def get_lock_file(lock_obj: BaseJournalFileLock) -> Generator[None, None, None]:
     lock_obj.acquire()
     try:
         yield
