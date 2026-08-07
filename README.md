@@ -120,25 +120,17 @@ $ conda install -c conda-forge optuna
 > [!IMPORTANT]
 > Optuna supports Python 3.9 or newer.
 
-## Integrations
+## Rustuna
 
-Optuna has integration features with various third-party libraries. Integrations can be found in [optuna/optuna-integration](https://github.com/optuna/optuna-integration) and the document is available [here](https://optuna-integration.readthedocs.io/en/stable/index.html).
+[Rustuna](https://github.com/optuna/rustuna) is a faster implementation of Optuna written in Rust, with Python and JavaScript bindings.
+It keeps the API you already know, and rewrites the parts that start to hurt at scale: sampling speed and memory efficient.
 
-<details>
-<summary>Supported integration libraries</summary>
+1. **Faster sampler implementations**: Rustuna supports TPE, MO-TPE, NSGA-II, and CMA-ES, and finishes the same study several times to several hundred times faster for cheap objective functions.
+2. **Memory-efficient storage**: Several design choices to make Rustuna's storage memory-efficient. Furthermore, dropping unneeded trial history keeps memory and runtime from growing the trial count.
+3. **Zero Python runtime dependencies**: No Python runtime dependencies by default ー dramatically faster imports, and far less exposure to supply chain attacks.
 
-* [Catboost](https://github.com/optuna/optuna-examples/tree/main/catboost/catboost_pruning.py)
-* [Dask](https://github.com/optuna/optuna-examples/tree/main/dask/dask_simple.py)
-* [fastai](https://github.com/optuna/optuna-examples/tree/main/fastai/fastai_simple.py)
-* [Keras](https://github.com/optuna/optuna-examples/tree/main/keras/keras_integration.py)
-* [LightGBM](https://github.com/optuna/optuna-examples/tree/main/lightgbm/lightgbm_integration.py)
-* [PyTorch](https://github.com/optuna/optuna-examples/tree/main/pytorch/pytorch_simple.py)
-* [PyTorch Ignite](https://github.com/optuna/optuna-examples/tree/main/pytorch/pytorch_ignite_simple.py)
-* [PyTorch Lightning](https://github.com/optuna/optuna-examples/tree/main/pytorch/pytorch_lightning_simple.py)
-* [TensorFlow](https://github.com/optuna/optuna-examples/tree/main/tensorflow/tensorflow_estimator_integration.py)
-* [tf.keras](https://github.com/optuna/optuna-examples/tree/main/tfkeras/tfkeras_integration.py)
-* [XGBoost](https://github.com/optuna/optuna-examples/tree/main/xgboost/xgboost_integration.py)
-</details>
+> [!NOTE]
+> Rustuna is currently experimental. Compared with Optuna, it still lacks some features and APIs, and it has not yet been optimized enough to deliver better performance for every use case. Since the project has not had the same level of maturity as Optuna, bugs and rough edges likely remain. We appreciate your understanding when using it.
 
 ## Web Dashboard
 
