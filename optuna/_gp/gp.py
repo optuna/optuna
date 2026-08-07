@@ -428,6 +428,7 @@ class ConditionalGPRegressor:
 
         For batched ``x``, each batch element is treated as a separate query sharing the same
         running fantasies, rather than as part of a joint posterior over the query points.
+        The returned tensor shape is ``(*x.shape[:-1], n_qmc_samples, n_running + 1)``.
         """
         x_ = x.unsqueeze(0) if (is_single := x.ndim == 1) else x
         mu_x, cov_xx_post = self._gpr.posterior(x_)

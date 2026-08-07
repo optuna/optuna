@@ -50,6 +50,9 @@ import logging
 _logger = logging.getLogger(__name__)
 
 EPS = 1e-10
+# NOTE(nabe): Multi-objective and constrained optimization may derive QMC seeds by adding small
+# (like ~30) offsets to a base seed. Use `1 << 30` as a conservative upper bound.
+_MAX_QMC_SEED_VALUE = 1 << 30
 
 _RELATIVE_PARAMS_KEY = "gp:relative_params"
 # The value of system_attrs must be less than 2046 characters on RDBStorage.
@@ -467,7 +470,7 @@ class GPSampler(BaseSampler):
                         search_space=internal_search_space,
                         threshold=standardized_score_vals[:, 0].max(),
                         n_qmc_samples=self._n_qmc_samples_qei,
-                        qmc_seed=self._rng.rng.randint(1 << 30),
+                        qmc_seed=self._rng.rng.randint(_MAX_QMC_SEED_VALUE),
                         normalized_params_of_running_trials=normalized_params_of_running_trials,
                     )
                 best_params = normalized_params[np.argmax(standardized_score_vals), np.newaxis]
@@ -477,7 +480,7 @@ class GPSampler(BaseSampler):
                     search_space=internal_search_space,
                     Y_train=torch.from_numpy(standardized_score_vals),
                     n_qmc_samples=self._n_qmc_samples_ehvi,
-                    qmc_seed=self._rng.rng.randint(1 << 30),
+                    qmc_seed=self._rng.rng.randint(_MAX_QMC_SEED_VALUE),
                     normalized_params_of_running_trials=normalized_params_of_running_trials,
                 )
                 best_params = self._get_best_params_for_multi_objective(
@@ -514,9 +517,7 @@ class GPSampler(BaseSampler):
                         search_space=internal_search_space,
                         threshold=best_feasible_y,
                         n_qmc_samples=self._n_qmc_samples_qei,
-                        qmc_seeds=self._rng.rng.randint(
-                            1 << 30, size=len(constr_gpr_list) + 1
-                        ).tolist(),
+                        qmc_seed=self._rng.rng.randint(_MAX_QMC_SEED_VALUE),
                         constraints_gpr_list=constr_gpr_list,
                         constraints_threshold_list=constr_threshold_list,
                         normalized_params_of_running_trials=normalized_params_of_running_trials,
@@ -542,7 +543,7 @@ class GPSampler(BaseSampler):
                         else None
                     ),
                     n_qmc_samples=self._n_qmc_samples_ehvi,
-                    qmc_seed=self._rng.rng.randint(1 << 30),
+                    qmc_seed=self._rng.rng.randint(_MAX_QMC_SEED_VALUE),
                     constraints_gpr_list=constr_gpr_list,
                     constraints_threshold_list=constr_threshold_list,
                     normalized_params_of_running_trials=normalized_params_of_running_trials,
