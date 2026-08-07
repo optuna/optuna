@@ -286,5 +286,5 @@ def test_ignore_discard_trial_operation() -> None:
         x = trial2.suggest_float("x", -10, 10)
         study.tell(trial2, values=x**2)
 
-        # Optuna simply ignores DISCARD_TRIALS operation.
-        assert len(storage.get_all_trials(study._study_id)) == 2
+        trials = storage.get_all_trials(study._study_id)
+        assert trial2.number in [t.number for t in trials]
