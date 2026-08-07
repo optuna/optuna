@@ -11,10 +11,12 @@ with try_import() as _imports:
     from matplotlib.axes._axes import Axes
     from matplotlib.collections import LineCollection
     from matplotlib.collections import PathCollection
+    from matplotlib.colors import BoundaryNorm
     from matplotlib.colors import Colormap
     from matplotlib.contour import ContourSet
     from matplotlib.dates import DateFormatter
     from matplotlib.figure import Figure
+    from matplotlib.lines import Line2D
     from mpl_toolkits.mplot3d.axes3d import Axes3D
 
     # TODO(ytknzw): Set precise version.
@@ -34,10 +36,12 @@ __all__ = [
     "plt",
     "Axes",
     "Axes3D",
+    "BoundaryNorm",
     "Colormap",
     "ContourSet",
     "DateFormatter",
     "Figure",
     "LineCollection",
+    "Line2D",
     "PathCollection",
 ]

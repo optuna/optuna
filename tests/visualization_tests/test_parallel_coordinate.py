@@ -14,6 +14,7 @@ from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.study import create_study
 from optuna.study import Study
+from optuna.study._constrained_optimization import _CONSTRAINTS_KEY
 from optuna.testing.objectives import fail_objective
 from optuna.testing.visualization import prepare_study_with_trials
 from optuna.trial import create_trial
@@ -167,14 +168,15 @@ def _create_study_with_log_scale_and_str_and_numeric_category() -> Study:
 
 def test_target_is_none_and_study_is_multi_obj() -> None:
     study = create_study(directions=["minimize", "minimize"])
-    with pytest.raises(ValueError):
-        _get_parallel_coordinate_info(study)
+    info = _get_parallel_coordinate_info(study)
+    assert info.is_rank_color
+    assert info.colorbar_title == "Pareto Rank"
 
 
 def test_plot_parallel_coordinate_customized_target_name() -> None:
     study = prepare_study_with_trials()
     figure = plotly_plot_parallel_coordinate(study, target_name="Target Name")
-    assert figure.data[0]["dimensions"][0]["label"] == "Target Name"
+    assert figure.layout.xaxis.ticktext[0] == "Target Name"
 
     figure = matplotlib.plot_parallel_coordinate(study, target_name="Target Name").get_figure()
     assert figure is not None
@@ -204,7 +206,7 @@ def test_plot_parallel_coordinate(
     study = specific_create_study()
     figure = plot_parallel_coordinate(study, params=params)
     if isinstance(figure, go.Figure):
-        figure.write_image(BytesIO())
+        assert figure.to_json()
     else:
         plt.savefig(BytesIO())
         plt.close()
@@ -215,18 +217,22 @@ def test_get_parallel_coordinate_info() -> None:
     study = create_study()
     info = _get_parallel_coordinate_info(study)
     assert info == _ParallelCoordinateInfo(
-        dim_objective=_DimensionInfo(
-            label="Objective Value",
-            values=(),
-            range=(0, 0),
-            is_log=False,
-            is_cat=False,
-            tickvals=[],
-            ticktext=[],
-        ),
+        dims_objectives=[
+            _DimensionInfo(
+                label="Objective Value",
+                values=(),
+                range=(0, 0),
+                is_log=False,
+                is_cat=False,
+                tickvals=[],
+                ticktext=[],
+            )
+        ],
         dims_params=[],
         reverse_scale=True,
-        target_name="Objective Value",
+        colorbar_title="Objective Value",
+        color_values=(),
+        draw_order=(),
     )
 
     study = prepare_study_with_trials()
@@ -234,32 +240,42 @@ def test_get_parallel_coordinate_info() -> None:
     # Test with no parameters.
     info = _get_parallel_coordinate_info(study, params=[])
     assert info == _ParallelCoordinateInfo(
-        dim_objective=_DimensionInfo(
-            label="Objective Value",
-            values=(0.0, 2.0, 1.0),
-            range=(0.0, 2.0),
-            is_log=False,
-            is_cat=False,
-            tickvals=[],
-            ticktext=[],
-        ),
+        dims_objectives=[
+            _DimensionInfo(
+                label="Objective Value",
+                values=(0.0, 2.0, 1.0),
+                range=(0.0, 2.0),
+                is_log=False,
+                is_cat=False,
+                tickvals=[],
+                ticktext=[],
+            )
+        ],
         dims_params=[],
         reverse_scale=True,
-        target_name="Objective Value",
+        colorbar_title="Objective Value",
+        color_values=(0.0, 2.0, 1.0),
+        draw_order=(0, 1, 2),
     )
+
+    study_without_missing_params = create_study()
+    study_without_missing_params.add_trials([study.trials[0], study.trials[2]])
+    study = study_without_missing_params
 
     # Test with a trial.
     info = _get_parallel_coordinate_info(study, params=["param_a", "param_b"])
     assert info == _ParallelCoordinateInfo(
-        dim_objective=_DimensionInfo(
-            label="Objective Value",
-            values=(0.0, 1.0),
-            range=(0.0, 1.0),
-            is_log=False,
-            is_cat=False,
-            tickvals=[],
-            ticktext=[],
-        ),
+        dims_objectives=[
+            _DimensionInfo(
+                label="Objective Value",
+                values=(0.0, 1.0),
+                range=(0.0, 1.0),
+                is_log=False,
+                is_cat=False,
+                tickvals=[],
+                ticktext=[],
+            )
+        ],
         dims_params=[
             _DimensionInfo(
                 label="param_a",
@@ -281,21 +297,25 @@ def test_get_parallel_coordinate_info() -> None:
             ),
         ],
         reverse_scale=True,
-        target_name="Objective Value",
+        colorbar_title="Objective Value",
+        color_values=(0.0, 1.0),
+        draw_order=(0, 1),
     )
 
     # Test with a trial to select parameter.
     info = _get_parallel_coordinate_info(study, params=["param_a"])
     assert info == _ParallelCoordinateInfo(
-        dim_objective=_DimensionInfo(
-            label="Objective Value",
-            values=(0.0, 1.0),
-            range=(0.0, 1.0),
-            is_log=False,
-            is_cat=False,
-            tickvals=[],
-            ticktext=[],
-        ),
+        dims_objectives=[
+            _DimensionInfo(
+                label="Objective Value",
+                values=(0.0, 1.0),
+                range=(0.0, 1.0),
+                is_log=False,
+                is_cat=False,
+                tickvals=[],
+                ticktext=[],
+            )
+        ],
         dims_params=[
             _DimensionInfo(
                 label="param_a",
@@ -308,7 +328,9 @@ def test_get_parallel_coordinate_info() -> None:
             ),
         ],
         reverse_scale=True,
-        target_name="Objective Value",
+        colorbar_title="Objective Value",
+        color_values=(0.0, 1.0),
+        draw_order=(0, 1),
     )
 
     # Test with a customized target value.
@@ -317,15 +339,17 @@ def test_get_parallel_coordinate_info() -> None:
             study, params=["param_a"], target=lambda t: t.params["param_b"]
         )
     assert info == _ParallelCoordinateInfo(
-        dim_objective=_DimensionInfo(
-            label="Objective Value",
-            values=(2.0, 1.0),
-            range=(1.0, 2.0),
-            is_log=False,
-            is_cat=False,
-            tickvals=[],
-            ticktext=[],
-        ),
+        dims_objectives=[
+            _DimensionInfo(
+                label="Objective Value",
+                values=(2.0, 1.0),
+                range=(1.0, 2.0),
+                is_log=False,
+                is_cat=False,
+                tickvals=[],
+                ticktext=[],
+            )
+        ],
         dims_params=[
             _DimensionInfo(
                 label="param_a",
@@ -338,7 +362,9 @@ def test_get_parallel_coordinate_info() -> None:
             ),
         ],
         reverse_scale=True,
-        target_name="Objective Value",
+        colorbar_title="Objective Value",
+        color_values=(2.0, 1.0),
+        draw_order=(0, 1),
     )
 
     # Test with a customized target name.
@@ -346,15 +372,17 @@ def test_get_parallel_coordinate_info() -> None:
         study, params=["param_a", "param_b"], target_name="Target Name"
     )
     assert info == _ParallelCoordinateInfo(
-        dim_objective=_DimensionInfo(
-            label="Target Name",
-            values=(0.0, 1.0),
-            range=(0.0, 1.0),
-            is_log=False,
-            is_cat=False,
-            tickvals=[],
-            ticktext=[],
-        ),
+        dims_objectives=[
+            _DimensionInfo(
+                label="Target Name",
+                values=(0.0, 1.0),
+                range=(0.0, 1.0),
+                is_log=False,
+                is_cat=False,
+                tickvals=[],
+                ticktext=[],
+            )
+        ],
         dims_params=[
             _DimensionInfo(
                 label="param_a",
@@ -376,7 +404,9 @@ def test_get_parallel_coordinate_info() -> None:
             ),
         ],
         reverse_scale=True,
-        target_name="Target Name",
+        colorbar_title="Target Name",
+        color_values=(0.0, 1.0),
+        draw_order=(0, 1),
     )
 
     # Test with wrong params that do not exist in trials.
@@ -387,18 +417,22 @@ def test_get_parallel_coordinate_info() -> None:
     study = _create_study_with_failed_trial()
     info = _get_parallel_coordinate_info(study)
     assert info == _ParallelCoordinateInfo(
-        dim_objective=_DimensionInfo(
-            label="Objective Value",
-            values=(),
-            range=(0, 0),
-            is_log=False,
-            is_cat=False,
-            tickvals=[],
-            ticktext=[],
-        ),
+        dims_objectives=[
+            _DimensionInfo(
+                label="Objective Value",
+                values=(),
+                range=(0, 0),
+                is_log=False,
+                is_cat=False,
+                tickvals=[],
+                ticktext=[],
+            )
+        ],
         dims_params=[],
         reverse_scale=True,
-        target_name="Objective Value",
+        colorbar_title="Objective Value",
+        color_values=(),
+        draw_order=(),
     )
 
 
@@ -407,15 +441,17 @@ def test_get_parallel_coordinate_info_categorical_params() -> None:
     study = _create_study_with_categorical_params()
     info = _get_parallel_coordinate_info(study)
     assert info == _ParallelCoordinateInfo(
-        dim_objective=_DimensionInfo(
-            label="Objective Value",
-            values=(0.0, 2.0),
-            range=(0.0, 2.0),
-            is_log=False,
-            is_cat=False,
-            tickvals=[],
-            ticktext=[],
-        ),
+        dims_objectives=[
+            _DimensionInfo(
+                label="Objective Value",
+                values=(0.0, 2.0),
+                range=(0.0, 2.0),
+                is_log=False,
+                is_cat=False,
+                tickvals=[],
+                ticktext=[],
+            )
+        ],
         dims_params=[
             _DimensionInfo(
                 label="category_a",
@@ -437,7 +473,9 @@ def test_get_parallel_coordinate_info_categorical_params() -> None:
             ),
         ],
         reverse_scale=True,
-        target_name="Objective Value",
+        colorbar_title="Objective Value",
+        color_values=(0.0, 2.0),
+        draw_order=(0, 1),
     )
 
 
@@ -448,15 +486,17 @@ def test_get_parallel_coordinate_info_categorical_numeric_params() -> None:
     # Trials are sorted by using param_a and param_b, i.e., trial#1, trial#2, and trial#0.
     info = _get_parallel_coordinate_info(study)
     assert info == _ParallelCoordinateInfo(
-        dim_objective=_DimensionInfo(
-            label="Objective Value",
-            values=(1.0, 2.0, 0.0),
-            range=(0.0, 2.0),
-            is_log=False,
-            is_cat=False,
-            tickvals=[],
-            ticktext=[],
-        ),
+        dims_objectives=[
+            _DimensionInfo(
+                label="Objective Value",
+                values=(1.0, 2.0, 0.0),
+                range=(0.0, 2.0),
+                is_log=False,
+                is_cat=False,
+                tickvals=[],
+                ticktext=[],
+            )
+        ],
         dims_params=[
             _DimensionInfo(
                 label="category_a",
@@ -478,7 +518,9 @@ def test_get_parallel_coordinate_info_categorical_numeric_params() -> None:
             ),
         ],
         reverse_scale=True,
-        target_name="Objective Value",
+        colorbar_title="Objective Value",
+        color_values=(1.0, 2.0, 0.0),
+        draw_order=(0, 1, 2),
     )
 
 
@@ -487,15 +529,17 @@ def test_get_parallel_coordinate_info_log_params() -> None:
     study = _create_study_with_log_params()
     info = _get_parallel_coordinate_info(study)
     assert info == _ParallelCoordinateInfo(
-        dim_objective=_DimensionInfo(
-            label="Objective Value",
-            values=(0.0, 1.0, 0.1),
-            range=(0.0, 1.0),
-            is_log=False,
-            is_cat=False,
-            tickvals=[],
-            ticktext=[],
-        ),
+        dims_objectives=[
+            _DimensionInfo(
+                label="Objective Value",
+                values=(0.0, 1.0, 0.1),
+                range=(0.0, 1.0),
+                is_log=False,
+                is_cat=False,
+                tickvals=[],
+                ticktext=[],
+            )
+        ],
         dims_params=[
             _DimensionInfo(
                 label="param_a",
@@ -517,7 +561,9 @@ def test_get_parallel_coordinate_info_log_params() -> None:
             ),
         ],
         reverse_scale=True,
-        target_name="Objective Value",
+        colorbar_title="Objective Value",
+        color_values=(0.0, 1.0, 0.1),
+        draw_order=(0, 1, 2),
     )
 
 
@@ -540,15 +586,17 @@ def test_get_parallel_coordinate_info_unique_param() -> None:
     # Both parameters contain unique values.
     info = _get_parallel_coordinate_info(study_categorical_params)
     assert info == _ParallelCoordinateInfo(
-        dim_objective=_DimensionInfo(
-            label="Objective Value",
-            values=(0.0,),
-            range=(0.0, 0.0),
-            is_log=False,
-            is_cat=False,
-            tickvals=[],
-            ticktext=[],
-        ),
+        dims_objectives=[
+            _DimensionInfo(
+                label="Objective Value",
+                values=(0.0,),
+                range=(0.0, 0.0),
+                is_log=False,
+                is_cat=False,
+                tickvals=[],
+                ticktext=[],
+            )
+        ],
         dims_params=[
             _DimensionInfo(
                 label="category_a",
@@ -570,7 +618,9 @@ def test_get_parallel_coordinate_info_unique_param() -> None:
             ),
         ],
         reverse_scale=True,
-        target_name="Objective Value",
+        colorbar_title="Objective Value",
+        color_values=(0.0,),
+        draw_order=(0,),
     )
 
     study_categorical_params.add_trial(
@@ -584,15 +634,17 @@ def test_get_parallel_coordinate_info_unique_param() -> None:
     # Still "category_a" contains unique suggested value during the optimization.
     info = _get_parallel_coordinate_info(study_categorical_params)
     assert info == _ParallelCoordinateInfo(
-        dim_objective=_DimensionInfo(
-            label="Objective Value",
-            values=(0.0, 2.0),
-            range=(0.0, 2.0),
-            is_log=False,
-            is_cat=False,
-            tickvals=[],
-            ticktext=[],
-        ),
+        dims_objectives=[
+            _DimensionInfo(
+                label="Objective Value",
+                values=(0.0, 2.0),
+                range=(0.0, 2.0),
+                is_log=False,
+                is_cat=False,
+                tickvals=[],
+                ticktext=[],
+            )
+        ],
         dims_params=[
             _DimensionInfo(
                 label="category_a",
@@ -614,7 +666,9 @@ def test_get_parallel_coordinate_info_unique_param() -> None:
             ),
         ],
         reverse_scale=True,
-        target_name="Objective Value",
+        colorbar_title="Objective Value",
+        color_values=(0.0, 2.0),
+        draw_order=(0, 1),
     )
 
 
@@ -624,15 +678,17 @@ def test_get_parallel_coordinate_info_with_log_scale_and_str_and_numeric_categor
     study = _create_study_with_log_scale_and_str_and_numeric_category()
     info = _get_parallel_coordinate_info(study)
     assert info == _ParallelCoordinateInfo(
-        dim_objective=_DimensionInfo(
-            label="Objective Value",
-            values=(1.0, 3.0, 0.0, 2.0),
-            range=(0.0, 3.0),
-            is_log=False,
-            is_cat=False,
-            tickvals=[],
-            ticktext=[],
-        ),
+        dims_objectives=[
+            _DimensionInfo(
+                label="Objective Value",
+                values=(1.0, 3.0, 0.0, 2.0),
+                range=(0.0, 3.0),
+                is_log=False,
+                is_cat=False,
+                tickvals=[],
+                ticktext=[],
+            )
+        ],
         dims_params=[
             _DimensionInfo(
                 label="param_a",
@@ -672,7 +728,9 @@ def test_get_parallel_coordinate_info_with_log_scale_and_str_and_numeric_categor
             ),
         ],
         reverse_scale=True,
-        target_name="Objective Value",
+        colorbar_title="Objective Value",
+        color_values=(1.0, 3.0, 0.0, 2.0),
+        draw_order=(0, 1, 2, 3),
     )
 
 
@@ -692,19 +750,19 @@ def test_color_map(direction: Literal["minimize", "maximize"]) -> None:
         )
 
     # `target` is `None`.
-    line = plotly_plot_parallel_coordinate(study).data[0]["line"]
-    assert COLOR_SCALE == [v[1] for v in line["colorscale"]]
+    marker = plotly_plot_parallel_coordinate(study).data[-1]["marker"]
+    assert COLOR_SCALE == [v[1] for v in marker["colorscale"]]
     if direction == "minimize":
-        assert line["reversescale"]
+        assert marker["reversescale"]
     else:
-        assert not line["reversescale"]
+        assert not marker["reversescale"]
 
     # When `target` is not `None`, `reversescale` is always `True`.
-    line = plotly_plot_parallel_coordinate(
+    marker = plotly_plot_parallel_coordinate(
         study, target=lambda t: t.number, target_name="Target Name"
-    ).data[0]["line"]
-    assert COLOR_SCALE == [v[1] for v in line["colorscale"]]
-    assert line["reversescale"]
+    ).data[-1]["marker"]
+    assert COLOR_SCALE == [v[1] for v in marker["colorscale"]]
+    assert marker["reversescale"]
 
     # Multi-objective optimization.
     study = create_study(directions=[direction, direction])
@@ -719,16 +777,15 @@ def test_color_map(direction: Literal["minimize", "maximize"]) -> None:
                 },
             )
         )
-    line = plotly_plot_parallel_coordinate(
+    marker = plotly_plot_parallel_coordinate(
         study, target=lambda t: t.number, target_name="Target Name"
-    ).data[0]["line"]
-    assert COLOR_SCALE == [v[1] for v in line["colorscale"]]
-    assert line["reversescale"]
+    ).data[-1]["marker"]
+    assert COLOR_SCALE == [v[1] for v in marker["colorscale"]]
+    assert marker["reversescale"]
 
 
 def test_get_parallel_coordinate_info_only_missing_params() -> None:
-    # When all trials contain only a part of parameters,
-    # the plot returns an empty figure.
+    # Trials with conditional parameters are connected to a special "None" tick.
     study = create_study()
     study.add_trial(
         create_trial(
@@ -750,27 +807,211 @@ def test_get_parallel_coordinate_info_only_missing_params() -> None:
     )
 
     info = _get_parallel_coordinate_info(study)
-    assert info == _ParallelCoordinateInfo(
-        dim_objective=_DimensionInfo(
-            label="Objective Value",
-            values=(),
-            range=(0, 0),
-            is_log=False,
-            is_cat=False,
-            tickvals=[],
-            ticktext=[],
-        ),
-        dims_params=[],
-        reverse_scale=True,
-        target_name="Objective Value",
+    parameter_dimensions = info.dims_params
+    assert info.dims_objectives[0].values == (0.0, 1.0)
+    assert len(parameter_dimensions) == 2
+    assert all(dim.ticktext[0] == "None" for dim in parameter_dimensions)
+    assert all(len(dim.values) == 2 for dim in parameter_dimensions)
+    assert all(dim.has_missing for dim in parameter_dimensions)
+
+
+@pytest.mark.parametrize(
+    "value, include_missing, expected_ticktext, expected_has_missing",
+    [
+        ("None", True, ["None", "None (value)"], True),
+        (None, True, ["None", "None (value)"], True),
+        (None, False, ["None"], False),
+    ],
+)
+def test_get_parallel_coordinate_info_missing_categorical_value_label_collision(
+    value: str | None,
+    include_missing: bool,
+    expected_ticktext: list[str],
+    expected_has_missing: bool,
+) -> None:
+    study = create_study()
+    distribution = CategoricalDistribution((value, "value"))
+    if include_missing:
+        study.add_trial(create_trial(value=0.0))
+    study.add_trial(
+        create_trial(
+            value=1.0,
+            params={"param": value},
+            distributions={"param": distribution},
+        )
     )
+
+    info = _get_parallel_coordinate_info(study)
+    parameter_dimension = info.dims_params[0]
+    assert parameter_dimension.ticktext == expected_ticktext
+    assert parameter_dimension.values == ((0, 1) if include_missing else (0,))
+    assert parameter_dimension.has_missing == expected_has_missing
+
+
+def test_plot_parallel_coordinate_with_constant_objective() -> None:
+    study = create_study()
+    distribution = FloatDistribution(0.0, 1.0)
+    study.add_trial(
+        create_trial(
+            value=1.0,
+            params={"param": 0.0},
+            distributions={"param": distribution},
+        )
+    )
+    study.add_trial(
+        create_trial(
+            value=1.0,
+            params={"param": 1.0},
+            distributions={"param": distribution},
+        )
+    )
+
+    figure = plotly_plot_parallel_coordinate(study)
+    assert figure.data[-1]["marker"]["cmin"] < figure.data[-1]["marker"]["cmax"]
+
+    ax = matplotlib.plot_parallel_coordinate(study)
+    segments = ax.collections[0].get_segments()
+    assert segments[0][-1, 1] != segments[1][-1, 1]
+    plt.close(ax.get_figure())
+
+
+@pytest.mark.filterwarnings("ignore::optuna.exceptions.ExperimentalWarning")
+def test_get_parallel_coordinate_info_multi_objective() -> None:
+    study = create_study(directions=["minimize", "maximize"])
+    study.set_metric_names(["loss", "score"])
+    distribution = FloatDistribution(0.0, 10.0)
+    study.add_trial(
+        create_trial(
+            values=[1.0, 1.0],
+            params={"param": 1.0},
+            distributions={"param": distribution},
+        )
+    )
+    study.add_trial(
+        create_trial(
+            values=[2.0, 0.0],
+            params={"param": 2.0},
+            distributions={"param": distribution},
+        )
+    )
+
+    info = _get_parallel_coordinate_info(study)
+    assert [dim.label for dim in info.dims_objectives] == ["loss", "score"]
+    assert info.color_values == (0.0, 1.0)
+    assert info.colorbar_title == "Pareto Rank"
+    assert info.is_rank_color
+
+    figure = plotly_plot_parallel_coordinate(study)
+    assert all(trace.type == "scatter" for trace in figure.data)
+    assert figure.layout.plot_bgcolor == "white"
+    assert figure.layout.xaxis.ticktext == ("loss", "score", "param")
+    assert figure.data[-1]["marker"]["colorbar"]["title"]["text"] == "Pareto Rank"
+    assert figure.data[-1]["marker"]["colorbar"]["tickvals"] == (0, 1)
+
+    ax = matplotlib.plot_parallel_coordinate(study)
+    assert [label.get_text() for label in ax.get_xticklabels()] == ["loss", "score", "param"]
+    assert ax.get_figure().axes[1].get_ylabel() == "Pareto Rank"
+    plt.close(ax.get_figure())
+
+
+def test_get_parallel_coordinate_info_multi_objective_with_numeric_category_and_constraints() -> (
+    None
+):
+    study = create_study(directions=["minimize", "minimize"])
+    distribution = CategoricalDistribution((1, 2, 3))
+    study.add_trial(
+        create_trial(
+            values=[0.0, 0.0],
+            params={"param": 2},
+            distributions={"param": distribution},
+            system_attrs={_CONSTRAINTS_KEY: [-1.0]},
+        )
+    )
+    study.add_trial(
+        create_trial(
+            values=[1.0, 1.0],
+            params={"param": 1},
+            distributions={"param": distribution},
+            system_attrs={_CONSTRAINTS_KEY: [1.0]},
+        )
+    )
+    study.add_trial(
+        create_trial(
+            values=[2.0, 2.0],
+            params={"param": 3},
+            distributions={"param": distribution},
+        )
+    )
+
+    info = _get_parallel_coordinate_info(study)
+
+    assert info.color_values == (1.0, 0.0, 2.0)
+    assert info.feasibility == (False, True, False)
+    assert info.draw_order == (2, 0, 1)
+
+    figure = plotly_plot_parallel_coordinate(study)
+    assert [trace["line"]["dash"] for trace in figure.data[:3]] == ["dot", "dot", "solid"]
+
+
+def test_get_parallel_coordinate_info_with_constraints() -> None:
+    study = create_study()
+    distribution = FloatDistribution(0.0, 10.0)
+    study.add_trial(
+        create_trial(
+            value=0.0,
+            params={"param": 1.0},
+            distributions={"param": distribution},
+            system_attrs={_CONSTRAINTS_KEY: [-1.0, 0.0]},
+        )
+    )
+    study.add_trial(
+        create_trial(
+            value=1.0,
+            params={"param": 2.0},
+            distributions={"param": distribution},
+            system_attrs={_CONSTRAINTS_KEY: [0.1]},
+        )
+    )
+    study.add_trial(
+        create_trial(
+            value=2.0,
+            params={"param": 3.0},
+            distributions={"param": distribution},
+        )
+    )
+
+    info = _get_parallel_coordinate_info(study)
+
+    assert info.feasibility == (True, False, False)
+    assert info.dims_params[0].label == "param"
+
+    figure = plotly_plot_parallel_coordinate(study)
+    assert all(trace.type == "scatter" for trace in figure.data)
+    assert figure.layout.xaxis.ticktext == ("Objective Value", "param")
+    assert [trace["line"]["dash"] for trace in figure.data[:3]] == [
+        "solid",
+        "dot",
+        "dot",
+    ]
+    assert [trace["mode"] for trace in figure.data[:3]] == ["lines"] * 3
+    assert [trace["opacity"] for trace in figure.data[:3]] == [0.5] * 3
+    assert [trace["name"] for trace in figure.data[3:5]] == ["Feasible", "Infeasible"]
+    assert figure.to_json()
+
+    ax = matplotlib.plot_parallel_coordinate(study)
+    assert [label.get_text() for label in ax.get_xticklabels()] == ["Objective Value", "param"]
+    legend = ax.get_legend()
+    assert legend is not None
+    assert [text.get_text() for text in legend.get_texts()] == ["Feasible", "Infeasible"]
+    plt.savefig(BytesIO())
+    plt.close(ax.get_figure())
 
 
 @pytest.mark.parametrize("value", [float("inf"), -float("inf")])
 def test_nonfinite_removed(value: float) -> None:
     study = prepare_study_with_trials(value_for_first_trial=value)
     info = _get_parallel_coordinate_info(study)
-    assert all(np.isfinite(info.dim_objective.values))
+    assert all(np.isfinite(info.dims_objectives[0].values))
 
 
 @pytest.mark.parametrize("objective", (0, 1))
@@ -780,4 +1021,4 @@ def test_nonfinite_multiobjective(objective: int, value: float) -> None:
     info = _get_parallel_coordinate_info(
         study, target=lambda t: t.values[objective], target_name="Target Name"
     )
-    assert all(np.isfinite(info.dim_objective.values))
+    assert all(np.isfinite(info.dims_objectives[0].values))
