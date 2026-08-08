@@ -225,3 +225,11 @@ def test_transform_untransform_params_at_bounds(
     trans_upper_param = _untransform_numerical_param(upper_bound, distribution, transform_log)
     assert trans_lower_param == distribution.low  # type: ignore
     assert trans_upper_param == distribution.high  # type: ignore
+
+
+def test_untransform_numerical_param_int_uses_equal_width_bins() -> None:
+    distribution = IntDistribution(0, 3)
+
+    assert _untransform_numerical_param(0.5, distribution, transform_log=False) == 1
+    assert _untransform_numerical_param(1.5, distribution, transform_log=False) == 2
+    assert _untransform_numerical_param(2.5, distribution, transform_log=False) == 3
