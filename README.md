@@ -123,7 +123,7 @@ $ conda install -c conda-forge optuna
 ## Rustuna
 
 [Rustuna](https://github.com/optuna/rustuna) is a faster implementation of Optuna written in Rust.
-It keeps the API you already know, and rewrites the parts that start to hurt at scale: sampling speed and memory efficient.
+It keeps the API you already know, and rewrites the parts that start to hurt at scale: sampling speed and memory efficiency.
 
 1. **Faster sampler implementations**: Rustuna supports TPE, MOTPE, NSGA-II, and CMA-ES, and finishes the same study several times to several hundred times faster for cheap objective functions.
 2. **Memory-efficient storage**: Several design choices to make Rustuna's storage memory-efficient. Furthermore, dropping unneeded trial history keeps memory and runtime from growing the trial count.
