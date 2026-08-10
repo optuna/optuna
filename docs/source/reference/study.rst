@@ -19,3 +19,15 @@ The :mod:`~optuna.study` module implements the :class:`~optuna.study.Study` obje
    MaxTrialsCallback
    StudyDirection
    StudySummary
+
+Trial dataframes
+----------------
+
+Use the ``is_best`` attribute with :meth:`~optuna.study.Study.trials_dataframe` to add an
+opt-in boolean column identifying the best trials. For single-objective studies, the column
+marks the best feasible trial. For multi-objective studies, it marks trials on the Pareto front.
+The default columns are unchanged.
+
+.. code-block:: python
+
+   df = study.trials_dataframe(attrs=("number", "value", "is_best"))
