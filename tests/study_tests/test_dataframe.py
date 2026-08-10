@@ -6,6 +6,7 @@ import pytest
 from optuna import create_study
 from optuna import create_trial
 from optuna import Trial
+from optuna.study._constrained_optimization import _CONSTRAINTS_KEY
 from optuna.testing.storages import STORAGE_MODES
 from optuna.testing.storages import StorageSupplier
 from optuna.trial import TrialState
@@ -15,6 +16,72 @@ def test_study_trials_dataframe_with_no_trials() -> None:
     study_with_no_trials = create_study()
     trials_df = study_with_no_trials.trials_dataframe()
     assert trials_df.empty
+
+
+@pytest.mark.parametrize("multi_index", [True, False])
+def test_trials_dataframe_with_is_best(multi_index: bool) -> None:
+    study = create_study(direction="minimize")
+    study.add_trial(create_trial(value=2.0))
+    study.add_trial(create_trial(value=1.0))
+    study.add_trial(create_trial(value=3.0))
+
+    assert "is_best" not in study.trials_dataframe().columns
+
+    df = study.trials_dataframe(attrs=("number", "is_best"), multi_index=multi_index)
+
+    if multi_index:
+        assert list(df.columns) == [("number", ""), ("is_best", "")]
+        assert df[("is_best", "")].tolist() == [False, True, False]
+    else:
+        assert list(df.columns) == ["number", "is_best"]
+        assert df["is_best"].tolist() == [False, True, False]
+
+
+@pytest.mark.parametrize("multi_index", [True, False])
+def test_trials_dataframe_with_is_best_for_multi_objective(multi_index: bool) -> None:
+    study = create_study(directions=["minimize", "minimize"])
+    study.add_trial(create_trial(values=[1.0, 3.0]))
+    study.add_trial(create_trial(values=[2.0, 2.0]))
+    study.add_trial(create_trial(values=[3.0, 1.0]))
+    study.add_trial(create_trial(values=[4.0, 4.0]))
+
+    df = study.trials_dataframe(attrs=("number", "is_best"), multi_index=multi_index)
+
+    if multi_index:
+        assert df[("is_best", "")].tolist() == [True, True, True, False]
+    else:
+        assert df["is_best"].tolist() == [True, True, True, False]
+
+
+def test_trials_dataframe_with_is_best_when_no_trials_are_complete() -> None:
+    study = create_study()
+    study.add_trial(create_trial(state=TrialState.FAIL))
+    study.add_trial(create_trial(state=TrialState.PRUNED))
+
+    df = study.trials_dataframe(attrs=("number", "is_best"))
+
+    assert df["is_best"].tolist() == [False, False]
+
+
+def test_trials_dataframe_with_is_best_for_constrained_optimization() -> None:
+    study = create_study(direction="minimize")
+    storage = study._storage
+
+    trial = study.ask()
+    storage.set_trial_system_attr(trial._trial_id, _CONSTRAINTS_KEY, [1])
+    study.tell(trial, 0)
+
+    trial = study.ask()
+    storage.set_trial_system_attr(trial._trial_id, _CONSTRAINTS_KEY, [0])
+    study.tell(trial, 1)
+
+    trial = study.ask()
+    storage.set_trial_system_attr(trial._trial_id, _CONSTRAINTS_KEY, [0])
+    study.tell(trial, 2)
+
+    df = study.trials_dataframe(attrs=("number", "is_best"))
+
+    assert df["is_best"].tolist() == [False, True, False]
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)

@@ -806,7 +806,10 @@ class Study:
         Args:
             attrs:
                 Specifies field names of :class:`~optuna.trial.FrozenTrial` to include them to a
-                DataFrame of trials.
+                DataFrame of trials. The special attribute ``is_best`` can be used to include a
+                boolean column indicating whether each trial is among the best trials. It is not
+                included by default. For single-objective studies, only the best trial is marked.
+                For multi-objective studies, trials on the Pareto front are marked.
             multi_index:
                 Specifies whether the returned DataFrame_ employs MultiIndex_ or not. Columns that
                 are hierarchical by nature such as ``(params, x)`` will be flattened to

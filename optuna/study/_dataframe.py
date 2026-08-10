@@ -21,7 +21,7 @@ __all__ = ["pd"]
 
 def _create_records_and_aggregate_column(
     study: "optuna.Study", attrs: tuple[str, ...]
-) -> tuple[list[dict[tuple[str, str], Any]], list[tuple[str, str]]]:
+) -> tuple[list[dict[tuple[str, Any], Any]], list[tuple[str, str]]]:
     attrs_to_df_columns: dict[str, str] = {}
     for attr in attrs:
         if attr.startswith("_"):
@@ -39,10 +39,25 @@ def _create_records_and_aggregate_column(
 
     metric_names = study.metric_names
 
-    records = []
+    records: list[dict[tuple[str, Any], Any]] = []
+    best_trial_numbers: set[int] = set()
+    if "is_best" in attrs:
+        if study._is_multi_objective():
+            best_trial_numbers = {trial.number for trial in study.best_trials}
+        else:
+            try:
+                best_trial_numbers.add(study.best_trial.number)
+            except ValueError:
+                pass
+
     for trial in study.get_trials(deepcopy=False):
-        record = {}
+        record: dict[tuple[str, Any], Any] = {}
         for attr, df_column in attrs_to_df_columns.items():
+            if attr == "is_best":
+                record[(df_column, non_nested_attr)] = trial.number in best_trial_numbers
+                column_agg[attr].add((df_column, non_nested_attr))
+                continue
+
             value = getattr(trial, attr)
             if isinstance(value, TrialState):
                 value = value.name
