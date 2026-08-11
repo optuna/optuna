@@ -15,10 +15,16 @@ from optuna.study._multi_objective import _is_pareto_front
 
 
 if TYPE_CHECKING:
+    from typing import Protocol
+
     import torch
 
     from optuna._gp.gp import GPRegressor
     from optuna._gp.search_space import SearchSpace
+
+    class PerSampleLogUtilityType(Protocol):
+        def compute_per_sample_log_utility(self, x: torch.Tensor) -> torch.Tensor:
+            raise NotImplementedError
 else:
     from optuna._imports import _LazyImport
 
@@ -155,16 +161,20 @@ class qLogEI(BaseAcquisitionFunc):
             qmc_seed=qmc_seed,
             stabilizing_noise=stabilizing_noise,
         )
+        n_running = len(normalized_params_of_running_trials)
+        self._per_sample_log_util_shape = (n_qmc_samples, n_running + 1)
         super().__init__(gpr.length_scales, search_space)
 
-    def eval_acqf(self, x: torch.Tensor) -> torch.Tensor:
+    def compute_per_sample_log_utility(self, x: torch.Tensor) -> torch.Tensor:
         if np.isneginf(self._threshold):
-            return torch.zeros(x.shape[:-1], dtype=torch.float64)
-
+            return_tensor_shape = x.shape[:-1] + self._per_sample_log_util_shape
+            return torch.zeros(return_tensor_shape, dtype=torch.float64)
         # NOTE(nabenabe): See Eq. (10) of https://arxiv.org/pdf/2310.20708
         y_post = self._cond_gpr.sample_joint_posterior(x)
-        log_improvement = (y_post - self._threshold).clamp_min_(_EPS).log()
-        return _compute_mean_max_utility(log_improvement)
+        return (y_post - self._threshold).clamp_min_(_EPS).log()
+
+    def eval_acqf(self, x: torch.Tensor) -> torch.Tensor:
+        return _compute_mean_max_utility(self.compute_per_sample_log_utility(x))
 
 
 class LogPI(BaseAcquisitionFunc):
@@ -232,10 +242,12 @@ class qLogPI(BaseAcquisitionFunc):
         )
         super().__init__(gpr.length_scales, search_space)
 
-    def eval_acqf(self, x: torch.Tensor) -> torch.Tensor:
+    def compute_per_sample_log_utility(self, x: torch.Tensor) -> torch.Tensor:
         y_post = self._cond_gpr.sample_joint_posterior(x)
-        log_prob = torch.nn.functional.logsigmoid((y_post - self._threshold) / self._tau)
-        return _compute_mean_max_utility(log_prob)
+        return torch.nn.functional.logsigmoid((y_post - self._threshold) / self._tau)
+
+    def eval_acqf(self, x: torch.Tensor) -> torch.Tensor:
+        return _compute_mean_max_utility(self.compute_per_sample_log_utility(x))
 
 
 class UCB(BaseAcquisitionFunc):
@@ -311,7 +323,7 @@ class qConstrainedLogEI(BaseAcquisitionFunc):
         search_space: SearchSpace,
         threshold: float,
         n_qmc_samples: int,
-        qmc_seeds: list[int],
+        qmc_seed: int,
         constraints_gpr_list: list[GPRegressor],
         constraints_threshold_list: list[float],
         normalized_params_of_running_trials: np.ndarray,
@@ -320,48 +332,38 @@ class qConstrainedLogEI(BaseAcquisitionFunc):
         assert (
             len(constraints_gpr_list) == len(constraints_threshold_list) and constraints_gpr_list
         )
-        assert len(qmc_seeds) == len(constraints_gpr_list) + 1
-        self._acqf = qLogEI(
+        self._acqf: PerSampleLogUtilityType = qLogEI(
             gpr,
             search_space,
             threshold,
             n_qmc_samples,
-            qmc_seeds[0],
+            qmc_seed,
             normalized_params_of_running_trials,
             stabilizing_noise,
         )
-        self._constraints_acqf_list = [
+        self._constraints_acqf_list: list[PerSampleLogUtilityType] = [
             qLogPI(
                 gpr=constraint_gpr,
                 search_space=search_space,
                 threshold=constraint_threshold,
                 n_qmc_samples=n_qmc_samples,
-                qmc_seed=qmc_seed,
+                qmc_seed=qmc_seed + i + 1,
                 normalized_params_of_running_trials=normalized_params_of_running_trials,
                 stabilizing_noise=stabilizing_noise,
             )
-            for constraint_gpr, constraint_threshold, qmc_seed in zip(
-                constraints_gpr_list,
-                constraints_threshold_list,
-                qmc_seeds[1:],
+            for i, (constraint_gpr, constraint_threshold) in enumerate(
+                zip(
+                    constraints_gpr_list,
+                    constraints_threshold_list,
+                )
             )
         ]
         super().__init__(gpr.length_scales, search_space)
 
     def eval_acqf(self, x: torch.Tensor) -> torch.Tensor:
-        y_post = self._acqf._cond_gpr.sample_joint_posterior(x)
-        log_feasible_improvement = (
-            (y_post - self._acqf._threshold).clamp_min_(_EPS).log()
-            if not np.isneginf(self._acqf._threshold)
-            else torch.zeros_like(y_post, dtype=torch.float64)
+        log_feasible_improvement = self._acqf.compute_per_sample_log_utility(x) + sum(
+            acqf.compute_per_sample_log_utility(x) for acqf in self._constraints_acqf_list
         )
-
-        for acqf in self._constraints_acqf_list:
-            log_prob = acqf._cond_gpr.sample_joint_posterior(x)
-            log_feasible_improvement += torch.nn.functional.logsigmoid(
-                (log_prob - acqf._threshold) / acqf._tau
-            )
-
         return _compute_mean_max_utility(log_feasible_improvement)
 
 
