@@ -245,3 +245,105 @@ def test_trials_dataframe_preserves_metric_names_order() -> None:
     flat_cols2 = list(study2.trials_dataframe().columns)
     values_cols2 = [c for c in flat_cols2 if c.startswith("values_")]
     assert values_cols2 == ["values_test", "values_train"]
+
+
+def _can_symlink() -> bool:
+    import os
+    import tempfile
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        src = os.path.join(tmpdir, "src")
+        dst = os.path.join(tmpdir, "dst")
+        with open(src, "w") as f:
+            f.write("test")
+        try:
+            os.symlink(src, dst)
+            return True
+        except OSError:
+            return False
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+@pytest.mark.parametrize("multi_index", [True, False])
+def test_trials_dataframe_with_is_best(storage_mode: str, multi_index: bool) -> None:
+    from optuna.distributions import FloatDistribution
+
+    if storage_mode in ("journal", "grpc_journal_file"):
+        if not _can_symlink():
+            pytest.skip("Environment does not support symlinks.")
+
+    # Single-objective optimization: minimization
+    with StorageSupplier(storage_mode) as storage:
+        study = create_study(storage=storage, direction="minimize")
+        study.optimize(lambda t: t.suggest_float("x", 0, 10), n_trials=3)
+        best_trial = study.best_trial
+        df = study.trials_dataframe(attrs=("number", "value", "is_best"), multi_index=multi_index)
+        assert len(df) == 3
+        if multi_index:
+            df.set_index(("number", ""), inplace=True, drop=False)
+            is_best_col = ("is_best", "")
+        else:
+            df.set_index("number", inplace=True, drop=False)
+            is_best_col = "is_best"
+
+        for i in range(3):
+            assert bool(df[is_best_col][i]) is (i == best_trial.number)
+
+    # Multi-objective optimization (Pareto front)
+    with StorageSupplier(storage_mode) as storage:
+        study = create_study(storage=storage, directions=["minimize", "minimize"])
+        # Add trials manually to ensure Pareto optimality structure:
+        # Trial 0: (1.0, 5.0) - Pareto-optimal
+        # Trial 1: (5.0, 1.0) - Pareto-optimal
+        # Trial 2: (5.0, 5.0) - Dominated
+        study.add_trial(create_trial(
+            state=TrialState.COMPLETE,
+            values=[1.0, 5.0],
+            params={"x": 1.0, "y": 5.0},
+            distributions={"x": FloatDistribution(0, 10), "y": FloatDistribution(0, 10)}
+        ))
+        study.add_trial(create_trial(
+            state=TrialState.COMPLETE,
+            values=[5.0, 1.0],
+            params={"x": 5.0, "y": 1.0},
+            distributions={"x": FloatDistribution(0, 10), "y": FloatDistribution(0, 10)}
+        ))
+        study.add_trial(create_trial(
+            state=TrialState.COMPLETE,
+            values=[5.0, 5.0],
+            params={"x": 5.0, "y": 5.0},
+            distributions={"x": FloatDistribution(0, 10), "y": FloatDistribution(0, 10)}
+        ))
+
+        df = study.trials_dataframe(attrs=("number", "values", "is_best"), multi_index=multi_index)
+        assert len(df) == 3
+        if multi_index:
+            df.set_index(("number", ""), inplace=True, drop=False)
+            is_best_col = ("is_best", "")
+        else:
+            df.set_index("number", inplace=True, drop=False)
+            is_best_col = "is_best"
+
+        assert bool(df[is_best_col][0]) is True
+        assert bool(df[is_best_col][1]) is True
+        assert bool(df[is_best_col][2]) is False
+
+    # Empty study
+    with StorageSupplier(storage_mode) as storage:
+        study = create_study(storage=storage)
+        df = study.trials_dataframe(attrs=("number", "is_best"), multi_index=multi_index)
+        assert df.empty
+
+    # No completed/feasible trials (only fail)
+    with StorageSupplier(storage_mode) as storage:
+        study = create_study(storage=storage)
+        study.add_trial(create_trial(state=TrialState.FAIL))
+        df = study.trials_dataframe(attrs=("number", "is_best"), multi_index=multi_index)
+        assert len(df) == 1
+        if multi_index:
+            is_best_value = df[("is_best", "")][0]
+        else:
+            is_best_value = df["is_best"][0]
+        assert bool(is_best_value) is False
+
+

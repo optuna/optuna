@@ -39,11 +39,24 @@ def _create_records_and_aggregate_column(
 
     metric_names = study.metric_names
 
+    best_trial_numbers = set()
+    if "is_best" in attrs:
+        if study._is_multi_objective():
+            best_trial_numbers = {t.number for t in study.best_trials}
+        else:
+            try:
+                best_trial_numbers = {study.best_trial.number}
+            except ValueError:
+                pass
+
     records = []
     for trial in study.get_trials(deepcopy=False):
         record = {}
         for attr, df_column in attrs_to_df_columns.items():
-            value = getattr(trial, attr)
+            if attr == "is_best":
+                value = trial.number in best_trial_numbers
+            else:
+                value = getattr(trial, attr)
             if isinstance(value, TrialState):
                 value = value.name
             if isinstance(value, dict):
