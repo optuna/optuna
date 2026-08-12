@@ -49,6 +49,7 @@ class JournalOperation(enum.IntEnum):
     SET_TRIAL_INTERMEDIATE_VALUE = 7
     SET_TRIAL_USER_ATTR = 8
     SET_TRIAL_SYSTEM_ATTR = 9
+    DISCARD_TRIALS = 10
 
 
 class JournalStorage(BaseStorage):
@@ -439,6 +440,9 @@ class JournalStorageReplayResult:
                 self._apply_set_trial_user_attr(log)
             elif op == JournalOperation.SET_TRIAL_SYSTEM_ATTR:
                 self._apply_set_trial_system_attr(log)
+            elif op == JournalOperation.DISCARD_TRIALS:
+                # This operation is only supported by Rustuna.
+                continue
             else:
                 assert False, "Should not reach."
 
