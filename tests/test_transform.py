@@ -233,3 +233,12 @@ def test_untransform_numerical_param_int_uses_equal_width_bins() -> None:
     assert _untransform_numerical_param(0.5, distribution, transform_log=False) == 1
     assert _untransform_numerical_param(1.5, distribution, transform_log=False) == 2
     assert _untransform_numerical_param(2.5, distribution, transform_log=False) == 3
+
+
+def test_search_space_transform_int_large_low_round_trip() -> None:
+    distribution = IntDistribution(2**52 + 1, 2**52 + 11)
+    transform = _SearchSpaceTransform({"x": distribution})
+
+    assert transform.untransform(transform.transform({"x": distribution.low})) == {
+        "x": distribution.low
+    }
