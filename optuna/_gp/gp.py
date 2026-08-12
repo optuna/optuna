@@ -426,12 +426,14 @@ class ConditionalGPRegressor:
     def get_fantasy_samples(self) -> torch.Tensor:
         return self._fantasy_samples
 
-    def sample_joint_posterior(self, x: torch.Tensor) -> torch.Tensor:
+    def sample_joint_posterior(self, x: torch.Tensor, return_fantasy: bool = True) -> torch.Tensor:
         """Return conditional joint posterior samples for each query point.
 
         For batched ``x``, each batch element is treated as a separate query sharing the same
         running fantasies, rather than as part of a joint posterior over the query points.
-        The returned tensor shape is ``(*x.shape[:-1], n_qmc_samples, n_running + 1)``.
+        If ``return_fantasy``, the returned tensor shape is
+        ``(*x.shape[:-1], n_qmc_samples, n_running + 1)``. Otherwise, the returned tensor shape is
+        ``(*x.shape[:-1], n_qmc_samples)``.
         """
         x_ = x.unsqueeze(0) if (is_single := x.ndim == 1) else x
         mu_x, cov_xx_post = self._gpr.posterior(x_)
@@ -447,6 +449,8 @@ class ConditionalGPRegressor:
             cov_xx_post + self._stabilizing_noise - torch.linalg.vecdot(V, cov_fx_fXr_post)
         ).clamp_min_(0.0)
         samples = cond_mean + cond_cov.sqrt().unsqueeze(-1) * self._fixed_samples_x
+        if not return_fantasy:
+            return samples.squeeze(0) if is_single else samples
         if is_single:
             return torch.cat([self._fantasy_samples, samples.squeeze(0).unsqueeze(-1)], dim=-1)
         fantasy = self._fantasy_samples.unsqueeze(0).expand(*x_.shape[:-1], -1, -1)

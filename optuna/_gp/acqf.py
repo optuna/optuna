@@ -64,6 +64,8 @@ def per_sample_log_hvi(
     non_dominated_box_intervals: torch.Tensor,  # (n_qmc_samples, n_boxes, n_objectives)
 ) -> torch.Tensor:  # (..., n_qmc_samples)
     diff = Y_post.unsqueeze(-2) - non_dominated_box_lower_bounds
+    # NOTE(nabenabe): EPS prevents gradients from becoming nan. This function is separated from
+    # logehvi on purpose to maximize the logehvi efficiency.
     diff.clamp_(min=torch.tensor(_EPS, dtype=torch.float64), max=non_dominated_box_intervals)
     return torch.special.logsumexp(diff.log().sum(dim=-1), dim=-1)
 
@@ -480,27 +482,20 @@ class qLogEHVI(BaseAcquisitionFunc):
             )
             for i, gpr in enumerate(gpr_list)
         ]
-        fantasy_samples = torch.stack(
-            [cond_gpr.get_fantasy_samples() for cond_gpr in self._cond_gpr_list],
-            dim=-1,
-        )
         lower_bounds_list = []
-        upper_bounds_list = []
-        for sample_idx in range(fantasy_samples.shape[0]):
-            observed_Y = torch.cat([self._Y_train, fantasy_samples[sample_idx]], dim=0)
-            lower_bounds, upper_bounds = _get_non_dominated_box_bounds(observed_Y)
+        box_intervals_list = []
+        for fantasy in torch.stack(
+            [cond_gpr.get_fantasy_samples() for cond_gpr in self._cond_gpr_list], dim=-1
+        ):
+            Y_fantasy = torch.cat([self._Y_train, fantasy], dim=0)
+            lower_bounds, upper_bounds = _get_non_dominated_box_bounds(Y_fantasy)
             lower_bounds_list.append(lower_bounds)
-            upper_bounds_list.append(upper_bounds)
+            box_intervals_list.append((upper_bounds - lower_bounds).clamp_min_(_EPS))
         self._non_dominated_box_lower_bounds = torch.nn.utils.rnn.pad_sequence(
             lower_bounds_list, batch_first=True
         )
         self._non_dominated_box_intervals = torch.nn.utils.rnn.pad_sequence(
-            [
-                (sample_upper_bounds - sample_lower_bounds).clamp_min(_EPS)
-                for sample_lower_bounds, sample_upper_bounds in zip(
-                    lower_bounds_list, upper_bounds_list
-                )
-            ],
+            box_intervals_list,
             batch_first=True,
             padding_value=_EPS,
         )
@@ -508,8 +503,12 @@ class qLogEHVI(BaseAcquisitionFunc):
 
     def compute_per_sample_log_utility(self, x: torch.Tensor) -> torch.Tensor:
         Y_candidate_post = torch.stack(
-            [cond_gpr.sample_joint_posterior(x) for cond_gpr in self._cond_gpr_list], dim=-1
-        )[..., -1, :]
+            [
+                cond_gpr.sample_joint_posterior(x, return_fantasy=False)
+                for cond_gpr in self._cond_gpr_list
+            ],
+            dim=-1,
+        )
         return per_sample_log_hvi(
             Y_post=Y_candidate_post,
             non_dominated_box_lower_bounds=self._non_dominated_box_lower_bounds,
