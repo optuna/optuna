@@ -496,7 +496,7 @@ class qLogEHVI(BaseAcquisitionFunc):
         n_qmc_samples: int,
         qmc_seed: int,
         normalized_params_of_running_trials: np.ndarray,
-        feasible_running: torch.Tensor | None = None,
+        is_fantasy_feasible: torch.Tensor | None = None,
         stabilizing_noise: float = 1e-12,
     ) -> None:
         self._Y_train = Y_train
@@ -519,7 +519,7 @@ class qLogEHVI(BaseAcquisitionFunc):
             )
         ):
             feasible_fantasy = (
-                fantasy if feasible_running is None else fantasy[feasible_running[i]]
+                fantasy if is_fantasy_feasible is None else fantasy[is_fantasy_feasible[i]]
             )
             Y_fantasy = (
                 torch.cat([self._Y_train, feasible_fantasy], dim=0)
@@ -646,7 +646,7 @@ class qConstrainedLogEHVI(BaseAcquisitionFunc):
         self._acqf: qLogEHVI | None = None
         self._log_running_hvi: torch.Tensor | None = None
         if Y_feasible is not None:
-            feasible_running = torch.all(
+            is_fantasy_feasible = torch.all(
                 torch.stack(
                     [acqf.get_fantasy_feasibility() for acqf in self._constraints_acqf_list],
                     dim=-1,
@@ -660,7 +660,7 @@ class qConstrainedLogEHVI(BaseAcquisitionFunc):
                 n_qmc_samples=n_qmc_samples,
                 qmc_seed=qmc_seed,
                 normalized_params_of_running_trials=normalized_params_of_running_trials,
-                feasible_running=feasible_running,
+                is_fantasy_feasible=is_fantasy_feasible,
                 stabilizing_noise=stabilizing_noise,
             )
             log_running_hvi = []
@@ -677,6 +677,11 @@ class qConstrainedLogEHVI(BaseAcquisitionFunc):
                 for acqf in self._constraints_acqf_list
             ),
         )
+        # NOTE(sawa3030): qConstrainedLogEHVI evaluates HVI(Yr U Yp | Yt) in log space using
+        # HVI(Yr U Yp | Yt) = HVI(Yp | Yr U Yt) + HVI(Yr | Yt). qLogEHVI only needs the first
+        # term because HVI(Yr | Yt) is constant with respect to x, whereas qConstrainedLogEHVI
+        # keeps both terms. Here, self._acqf computes the first term and self._log_running_hvi
+        # stores the second term per fantasy sample.
         log_feasible_improvement = (
             torch.logaddexp(
                 self._log_running_hvi,
