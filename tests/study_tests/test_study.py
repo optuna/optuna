@@ -1930,3 +1930,35 @@ def test_after_trial_with_study_tell() -> None:
     study.tell(study.ask(), 1.0)
 
     assert n_calls == 1
+
+
+def test_enqueue_trial_nan_equality() -> None:
+    study = optuna.create_study()
+    study.enqueue_trial({"fill_value": 0.0})
+    study.enqueue_trial({"fill_value": float("nan")}, skip_if_exists=True)
+    assert len(study.trials) == 2  # Should not skip!
+
+    reverse_study = optuna.create_study()
+    reverse_study.enqueue_trial({"fill_value": float("nan")})
+    reverse_study.enqueue_trial({"fill_value": 0.0}, skip_if_exists=True)
+    assert len(reverse_study.trials) == 2  # Symmetrical behavior!
+
+
+def test_enqueue_trial_skip_if_exists_nan() -> None:
+    # Case 1: 0.0 followed by NaN (The original bug)
+    study1 = optuna.create_study()
+    study1.enqueue_trial({"x": 0.0})
+    study1.enqueue_trial({"x": float("nan")}, skip_if_exists=True)
+    assert len(study1.get_trials(deepcopy=False)) == 2
+
+    # Case 2: NaN followed by 0.0 (Symmetrical behavior)
+    study2 = optuna.create_study()
+    study2.enqueue_trial({"x": float("nan")})
+    study2.enqueue_trial({"x": 0.0}, skip_if_exists=True)
+    assert len(study2.get_trials(deepcopy=False)) == 2
+
+    # Case 3: NaN followed by NaN (Should correctly skip!)
+    study3 = optuna.create_study()
+    study3.enqueue_trial({"x": float("nan")})
+    study3.enqueue_trial({"x": float("nan")}, skip_if_exists=True)
+    assert len(study3.get_trials(deepcopy=False)) == 1

@@ -1136,12 +1136,16 @@ class Study:
                     repeated_params.append(False)
                     continue
 
-                is_repeated = (
-                    np.isnan(float(param_value))
-                    or np.isclose(float(param_value), float(existing_param), atol=0.0)
-                    if isinstance(param_value, Real)
-                    else param_value == existing_param
-                )
+                if isinstance(param_value, Real):
+                    if np.isnan(float(param_value)):
+                        # NaN only matches another NaN
+                        is_repeated = np.isnan(float(existing_param))
+                    else:
+                        is_repeated = np.isclose(
+                            float(param_value), float(existing_param), atol=0.0
+                        )
+                else:
+                    is_repeated = param_value == existing_param
                 repeated_params.append(bool(is_repeated))
 
             if all(repeated_params):
