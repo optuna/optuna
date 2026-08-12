@@ -677,11 +677,11 @@ class qConstrainedLogEHVI(BaseAcquisitionFunc):
                 for acqf in self._constraints_acqf_list
             ),
         )
-        # NOTE(sawa3030): qConstrainedLogEHVI evaluates HVI(Yr U Yp | Yt) in log space using
-        # HVI(Yr U Yp | Yt) = HVI(Yp | Yr U Yt) + HVI(Yr | Yt). qLogEHVI only needs the first
-        # term because HVI(Yr | Yt) is constant with respect to x, whereas qConstrainedLogEHVI
-        # keeps both terms. Here, self._acqf computes the first term and self._log_running_hvi
-        # stores the second term per fantasy sample.
+        # NOTE(sawa3030): qConstrainedLogEHVI evaluates HVI(Y_running U Y_candidate | Y_train)
+        # in log space using HVI(Y_candidate | Y_running U Y_train) + HVI(Y_running | Y_train).
+        # qLogEHVI only needs the first term because HVI(Y_running | Y_train) is constant with
+        # respect to x, whereas qConstrainedLogEHVI keeps both terms. Here, self._acqf computes
+        # the first term and self._log_running_hvi stores the second term per fantasy sample.
         log_feasible_improvement = (
             torch.logaddexp(
                 self._log_running_hvi,
