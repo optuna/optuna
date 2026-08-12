@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from abc import ABC
 from abc import abstractmethod
-from itertools import combinations
 import math
 from typing import cast
 from typing import TYPE_CHECKING
@@ -11,6 +10,7 @@ import numpy as np
 
 from optuna._gp.gp import ConditionalGPRegressor
 from optuna._gp.qmc import sample_from_normal_sobol
+from optuna._hypervolume import compute_hypervolume
 from optuna._hypervolume import get_non_dominated_box_bounds
 from optuna.study._multi_objective import _is_pareto_front
 
@@ -87,21 +87,26 @@ def _get_non_dominated_box_bounds(
 def _compute_log_hvi(Y_baseline: torch.Tensor, Y: torch.Tensor) -> torch.Tensor:
     if Y.shape[0] == 0:
         return torch.tensor(-torch.inf, dtype=torch.float64)
-    lower_bounds, upper_bounds = _get_non_dominated_box_bounds(Y_baseline)
-    box_intervals = (upper_bounds - lower_bounds).clamp_min(_EPS)
-    hvi = 0.0
-
-    # Compute the union volume inside the non-dominated boxes of Y_baseline by
-    # inclusion-exclusion over the feasible running fantasies.
-    for subset_size in range(1, Y.shape[0] + 1):
-        sign = 1.0 if subset_size % 2 == 1 else -1.0
-        for subset_indices in combinations(range(Y.shape[0]), subset_size):
-            overlap_upper = torch.amin(Y[list(subset_indices)], dim=0)
-            diff = overlap_upper.unsqueeze(0) - lower_bounds
-            diff.clamp_min_(0.0)
-            diff = torch.minimum(diff, box_intervals)
-            hvi += sign * diff.prod(dim=-1).sum().item()
-
+    baseline_loss_vals = -Y_baseline.numpy()
+    loss_vals = -Y.numpy()
+    observed_loss_vals = np.concatenate([baseline_loss_vals, loss_vals], axis=0)
+    ref_point = np.max(observed_loss_vals, axis=0)
+    ref_point = np.nextafter(np.maximum(1.1 * ref_point, 0.9 * ref_point), np.inf)
+    baseline_pareto_sols = baseline_loss_vals[
+        _is_pareto_front(baseline_loss_vals, assume_unique_lexsorted=False)
+    ]
+    observed_pareto_sols = observed_loss_vals[
+        _is_pareto_front(observed_loss_vals, assume_unique_lexsorted=False)
+    ]
+    hvi = compute_hypervolume(
+        observed_pareto_sols,
+        ref_point,
+        assume_pareto=True,
+    ) - compute_hypervolume(
+        baseline_pareto_sols,
+        ref_point,
+        assume_pareto=True,
+    )
     return (
         torch.tensor(math.log(hvi), dtype=torch.float64)
         if hvi > 0.0
