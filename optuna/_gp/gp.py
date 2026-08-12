@@ -423,6 +423,9 @@ class ConditionalGPRegressor:
             assert isinstance(cov_Y_Y_chol, torch.Tensor), "MyPy Redefinition"
             self._V_r = _solve_cholesky(cov_Y_Y_chol, cov_fXr_fX, left=False).transpose(-2, -1)
 
+    def get_fantasy_samples(self) -> torch.Tensor:
+        return self._fantasy_samples
+
     def sample_joint_posterior(self, x: torch.Tensor) -> torch.Tensor:
         """Return conditional joint posterior samples for each query point.
 

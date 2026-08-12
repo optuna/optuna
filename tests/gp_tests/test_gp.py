@@ -234,6 +234,7 @@ def test_conditional_gpr_matches_joint(n_running: int, batch_size: int) -> None:
         stabilizing_noise=stabilizing_noise,
     )
     samples_cond = cond_gpr.sample_joint_posterior(x_new)
+    fantasy_samples = cond_gpr.get_fantasy_samples()
 
     mu, cov = gpr.posterior(joint_x, joint=True)
     cov.diagonal(dim1=-2, dim2=-1).add_(stabilizing_noise)
@@ -245,3 +246,9 @@ def test_conditional_gpr_matches_joint(n_running: int, batch_size: int) -> None:
     )
 
     torch.testing.assert_close(samples_joint, samples_cond)
+    expected_fantasy_samples = (
+        fantasy_samples
+        if batch_size == 1
+        else fantasy_samples.unsqueeze(0).expand(batch_size, -1, -1)
+    )
+    torch.testing.assert_close(samples_joint[..., :-1], expected_fantasy_samples)
