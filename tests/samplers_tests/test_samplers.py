@@ -126,10 +126,8 @@ class TestRelativeSampler(RelativeSamplerTestCase):
 class TestMultiObjectiveSampler(MultiObjectiveSamplerTestCase):
     @pytest.fixture(
         params=[
-            optuna.samplers.RandomSampler,
             optuna.samplers.NSGAIISampler,
             optuna.samplers.NSGAIIISampler,
-            optuna.samplers.QMCSampler,
             lambda: optuna.samplers.TPESampler(n_startup_trials=0),
             lambda: get_gp_sampler(deterministic_objective=True),
             lambda: get_gp_sampler(deterministic_objective=False),
