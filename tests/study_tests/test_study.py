@@ -842,6 +842,22 @@ def test_enqueue_trial_skip_existing_handles_common_types(storage_mode: str, par
         assert before_enqueue == after_enqueue
 
 
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_enqueue_trial_skip_existing_distinguishes_nan_from_other_values(
+    storage_mode: str,
+) -> None:
+    with StorageSupplier(storage_mode) as storage:
+        study = create_study(storage=storage)
+        study.enqueue_trial({"x": 0.0})
+        study.enqueue_trial({"x": float("nan")}, skip_if_exists=True)
+        assert len(study.trials) == 2
+
+        reverse_study = create_study(storage=storage)
+        reverse_study.enqueue_trial({"x": float("nan")})
+        reverse_study.enqueue_trial({"x": 0.0}, skip_if_exists=True)
+        assert len(reverse_study.trials) == 2
+
+
 @patch("optuna.study._optimize.gc.collect")
 def test_optimize_with_gc(collect_mock: Mock) -> None:
     study = create_study()
