@@ -84,12 +84,11 @@ def _get_non_dominated_box_bounds(
     return torch.from_numpy(-ubs), torch.from_numpy(-lbs)
 
 
-def _compute_log_hvi(Y_baseline: torch.Tensor, Y: torch.Tensor) -> torch.Tensor:
-    if Y.shape[0] == 0:
+def _compute_log_hvi(Y_baseline: torch.Tensor, Y_observed: torch.Tensor) -> torch.Tensor:
+    if Y_observed.shape[0] == Y_baseline.shape[0]:
         return torch.tensor(-torch.inf, dtype=torch.float64)
     baseline_loss_vals = -Y_baseline.numpy()
-    loss_vals = -Y.numpy()
-    observed_loss_vals = np.concatenate([baseline_loss_vals, loss_vals], axis=0)
+    observed_loss_vals = -Y_observed.numpy()
     ref_point = np.max(observed_loss_vals, axis=0)
     ref_point = np.nextafter(np.maximum(1.1 * ref_point, 0.9 * ref_point), np.inf)
     baseline_pareto_sols = baseline_loss_vals[
@@ -503,6 +502,7 @@ class qLogEHVI(BaseAcquisitionFunc):
         n_qmc_samples: int,
         qmc_seed: int,
         normalized_params_of_running_trials: np.ndarray,
+        feasible_running: torch.Tensor | None = None,
         stabilizing_noise: float = 1e-12,
     ) -> None:
         self._Y_train = Y_train
@@ -518,10 +518,21 @@ class qLogEHVI(BaseAcquisitionFunc):
         ]
         lower_bounds_list = []
         box_intervals_list = []
-        for fantasy in torch.stack(
-            [cond_gpr.get_fantasy_samples() for cond_gpr in self._cond_gpr_list], dim=-1
+        self.fantasy_observations = []
+        for i, fantasy in enumerate(
+            torch.stack(
+                [cond_gpr.get_fantasy_samples() for cond_gpr in self._cond_gpr_list], dim=-1
+            )
         ):
-            Y_fantasy = torch.cat([self._Y_train, fantasy], dim=0)
+            feasible_fantasy = (
+                fantasy if feasible_running is None else fantasy[feasible_running[i]]
+            )
+            Y_fantasy = (
+                torch.cat([self._Y_train, feasible_fantasy], dim=0)
+                if feasible_fantasy.shape[0] > 0
+                else self._Y_train
+            )
+            self.fantasy_observations.append(Y_fantasy)
             lower_bounds, upper_bounds = _get_non_dominated_box_bounds(Y_fantasy)
             lower_bounds_list.append(lower_bounds)
             box_intervals_list.append((upper_bounds - lower_bounds).clamp_min_(_EPS))
@@ -641,18 +652,6 @@ class qConstrainedLogEHVI(BaseAcquisitionFunc):
         self._acqf: qLogEHVI | None = None
         self._log_running_hvi: torch.Tensor | None = None
         if Y_feasible is not None:
-            self._acqf = qLogEHVI(
-                gpr_list=gpr_list,
-                search_space=search_space,
-                Y_train=Y_feasible,
-                n_qmc_samples=n_qmc_samples,
-                qmc_seed=qmc_seed,
-                normalized_params_of_running_trials=normalized_params_of_running_trials,
-                stabilizing_noise=stabilizing_noise,
-            )
-            objective_fantasy_samples_list = [
-                cond_gpr.get_fantasy_samples() for cond_gpr in self._acqf._cond_gpr_list
-            ]
             feasible_running = torch.all(
                 torch.stack(
                     [acqf.get_fantasy_feasibility() for acqf in self._constraints_acqf_list],
@@ -660,32 +659,19 @@ class qConstrainedLogEHVI(BaseAcquisitionFunc):
                 ),
                 dim=-1,
             )
-            lower_bounds_list = []
-            box_intervals_list = []
+            self._acqf = qLogEHVI(
+                gpr_list=gpr_list,
+                search_space=search_space,
+                Y_train=Y_feasible,
+                n_qmc_samples=n_qmc_samples,
+                qmc_seed=qmc_seed,
+                normalized_params_of_running_trials=normalized_params_of_running_trials,
+                feasible_running=feasible_running,
+                stabilizing_noise=stabilizing_noise,
+            )
             log_running_hvi = []
-            for fantasy_samples_per_qmc, feasible_running_per_qmc in zip(
-                zip(*objective_fantasy_samples_list), feasible_running
-            ):
-                fantasy_samples = torch.stack(fantasy_samples_per_qmc, dim=-1)
-                feasible_running_objectives = fantasy_samples[feasible_running_per_qmc]
-                log_running_hvi.append(_compute_log_hvi(Y_feasible, feasible_running_objectives))
-                observed_Y = (
-                    torch.cat([Y_feasible, feasible_running_objectives], dim=0)
-                    if feasible_running_objectives.shape[0] > 0
-                    else Y_feasible
-                )
-                lower_bounds, upper_bounds = _get_non_dominated_box_bounds(observed_Y)
-                lower_bounds_list.append(lower_bounds)
-                box_intervals_list.append((upper_bounds - lower_bounds).clamp_min_(_EPS))
-            self._acqf._non_dominated_box_lower_bounds = torch.nn.utils.rnn.pad_sequence(
-                lower_bounds_list,
-                batch_first=True,
-            )
-            self._acqf._non_dominated_box_intervals = torch.nn.utils.rnn.pad_sequence(
-                box_intervals_list,
-                batch_first=True,
-                padding_value=_EPS,
-            )
+            for Y_fantasy in self._acqf.fantasy_observations:
+                log_running_hvi.append(_compute_log_hvi(Y_feasible, Y_fantasy))
             self._log_running_hvi = torch.stack(log_running_hvi)
         super().__init__(np.mean([gpr.length_scales for gpr in gpr_list], axis=0), search_space)
 
