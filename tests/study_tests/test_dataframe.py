@@ -213,3 +213,35 @@ def test_trials_dataframe_with_multi_objective_optimization_with_fail_and_pruned
     else:
         assert df.get("values_v0")[0] is None
         assert df.get("values_v1")[0] is None
+
+
+def test_trials_dataframe_preserves_metric_names_order() -> None:
+    # GH #6785: trials_dataframe() sorted value columns alphabetically instead
+    # of preserving the order set by set_metric_names().
+    study = create_study(directions=["minimize", "minimize"])
+    study.set_metric_names(["train", "test"])
+
+    def objective(trial: Trial) -> tuple[float, float]:
+        x0 = trial.suggest_int("x0", 0, 10)
+        x1 = trial.suggest_int("x1", 0, 10)
+        return x0, x1
+
+    study.optimize(objective, n_trials=3)
+
+    # Flat columns
+    flat_cols = list(study.trials_dataframe().columns)
+    values_cols = [c for c in flat_cols if c.startswith("values_")]
+    assert values_cols == ["values_train", "values_test"]
+
+    # Multi-index columns
+    multi_cols = list(study.trials_dataframe(multi_index=True).columns)
+    values_multi = [c for c in multi_cols if c[0] == "values"]
+    assert values_multi == [("values", "train"), ("values", "test")]
+
+    # Reverse order should also be preserved
+    study2 = create_study(directions=["minimize", "minimize"])
+    study2.set_metric_names(["test", "train"])
+    study2.optimize(objective, n_trials=1)
+    flat_cols2 = list(study2.trials_dataframe().columns)
+    values_cols2 = [c for c in flat_cols2 if c.startswith("values_")]
+    assert values_cols2 == ["values_test", "values_train"]
