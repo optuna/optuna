@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from abc import ABC
 from abc import abstractmethod
+from itertools import combinations
 import math
 from typing import cast
 from typing import TYPE_CHECKING
@@ -81,6 +82,31 @@ def _get_non_dominated_box_bounds(
     lbs, ubs = get_non_dominated_box_bounds(pareto_sols, ref_point)
     # NOTE(nabenabe): Flip back the sign to make them compatible with maximization.
     return torch.from_numpy(-ubs), torch.from_numpy(-lbs)
+
+
+def _compute_log_hvi(Y_baseline: torch.Tensor, Y: torch.Tensor) -> torch.Tensor:
+    if Y.shape[0] == 0:
+        return torch.tensor(-torch.inf, dtype=torch.float64)
+    lower_bounds, upper_bounds = _get_non_dominated_box_bounds(Y_baseline)
+    box_intervals = (upper_bounds - lower_bounds).clamp_min(_EPS)
+    hvi = 0.0
+
+    # Compute the union volume inside the non-dominated boxes of Y_baseline by
+    # inclusion-exclusion over the feasible running fantasies.
+    for subset_size in range(1, Y.shape[0] + 1):
+        sign = 1.0 if subset_size % 2 == 1 else -1.0
+        for subset_indices in combinations(range(Y.shape[0]), subset_size):
+            overlap_upper = torch.amin(Y[list(subset_indices)], dim=0)
+            diff = overlap_upper.unsqueeze(0) - lower_bounds
+            diff.clamp_min_(0.0)
+            diff = torch.minimum(diff, box_intervals)
+            hvi += sign * diff.prod(dim=-1).sum().item()
+
+    return (
+        torch.tensor(math.log(hvi), dtype=torch.float64)
+        if hvi > 0.0
+        else torch.tensor(-torch.inf, dtype=torch.float64)
+    )
 
 
 def standard_logei(z: torch.Tensor) -> torch.Tensor:
@@ -608,6 +634,7 @@ class qConstrainedLogEHVI(BaseAcquisitionFunc):
             )
         ]
         self._acqf: qLogEHVI | None = None
+        self._log_running_hvi: torch.Tensor | None = None
         if Y_feasible is not None:
             self._acqf = qLogEHVI(
                 gpr_list=gpr_list,
@@ -630,13 +657,17 @@ class qConstrainedLogEHVI(BaseAcquisitionFunc):
             )
             lower_bounds_list = []
             box_intervals_list = []
+            log_running_hvi = []
             for fantasy_samples_per_qmc, feasible_running_per_qmc in zip(
                 zip(*objective_fantasy_samples_list), feasible_running
             ):
                 fantasy_samples = torch.stack(fantasy_samples_per_qmc, dim=-1)
-                observed_Y = torch.cat(
-                    [Y_feasible, fantasy_samples[feasible_running_per_qmc]],
-                    dim=0,
+                feasible_running_objectives = fantasy_samples[feasible_running_per_qmc]
+                log_running_hvi.append(_compute_log_hvi(Y_feasible, feasible_running_objectives))
+                observed_Y = (
+                    torch.cat([Y_feasible, feasible_running_objectives], dim=0)
+                    if feasible_running_objectives.shape[0] > 0
+                    else Y_feasible
                 )
                 lower_bounds, upper_bounds = _get_non_dominated_box_bounds(observed_Y)
                 lower_bounds_list.append(lower_bounds)
@@ -650,6 +681,7 @@ class qConstrainedLogEHVI(BaseAcquisitionFunc):
                 batch_first=True,
                 padding_value=_EPS,
             )
+            self._log_running_hvi = torch.stack(log_running_hvi)
         super().__init__(np.mean([gpr.length_scales for gpr in gpr_list], axis=0), search_space)
 
     def eval_acqf(self, x: torch.Tensor) -> torch.Tensor:
@@ -661,7 +693,10 @@ class qConstrainedLogEHVI(BaseAcquisitionFunc):
             ),
         )
         log_feasible_improvement = (
-            self._acqf.compute_per_sample_log_utility(x) + constraint_log_feasibility
+            torch.logaddexp(
+                cast("torch.Tensor", self._log_running_hvi),
+                self._acqf.compute_per_sample_log_utility(x) + constraint_log_feasibility,
+            )
             if self._acqf is not None
             else constraint_log_feasibility
         )
