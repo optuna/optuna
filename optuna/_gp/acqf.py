@@ -91,20 +91,14 @@ def _compute_log_hvi(Y_baseline: torch.Tensor, Y_observed: torch.Tensor) -> torc
     observed_loss_vals = -Y_observed.numpy()
     ref_point = np.max(observed_loss_vals, axis=0)
     ref_point = np.nextafter(np.maximum(1.1 * ref_point, 0.9 * ref_point), np.inf)
-    baseline_pareto_sols = baseline_loss_vals[
-        _is_pareto_front(baseline_loss_vals, assume_unique_lexsorted=False)
-    ]
-    observed_pareto_sols = observed_loss_vals[
-        _is_pareto_front(observed_loss_vals, assume_unique_lexsorted=False)
-    ]
     hvi = compute_hypervolume(
-        observed_pareto_sols,
+        observed_loss_vals,
         ref_point,
-        assume_pareto=True,
+        assume_pareto=False,
     ) - compute_hypervolume(
-        baseline_pareto_sols,
+        baseline_loss_vals,
         ref_point,
-        assume_pareto=True,
+        assume_pareto=False,
     )
     return (
         torch.tensor(math.log(hvi), dtype=torch.float64)
@@ -685,9 +679,10 @@ class qConstrainedLogEHVI(BaseAcquisitionFunc):
         )
         log_feasible_improvement = (
             torch.logaddexp(
-                cast("torch.Tensor", self._log_running_hvi),
-                self._acqf.compute_per_sample_log_utility(x) + constraint_log_feasibility,
+                self._log_running_hvi,
+                self._acqf.compute_per_sample_log_utility(x),
             )
+            + constraint_log_feasibility
             if self._acqf is not None
             else constraint_log_feasibility
         )
