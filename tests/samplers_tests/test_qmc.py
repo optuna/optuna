@@ -249,6 +249,77 @@ def test_sample_relative_categorical_balanced(n: int) -> None:
     assert counts == {"a": n // 4, "b": n // 4, "c": n // 4, "d": n // 4}
 
 
+@pytest.mark.parametrize("n", [4, 16])
+def test_sample_relative_int_balanced(n: int) -> None:
+    search_space: dict[str, BaseDistribution] = {
+        "x": optuna.distributions.IntDistribution(0, 3),
+    }
+    sampler = _init_QMCSampler_without_exp_warning(qmc_type="sobol", scramble=False)
+    study = optuna.create_study(sampler=sampler)
+    trial = Mock()
+    counts = Counter(sampler.sample_relative(study, trial, search_space)["x"] for _ in range(n))
+    assert counts == {0: n // 4, 1: n // 4, 2: n // 4, 3: n // 4}
+
+
+@pytest.mark.parametrize(
+    ("low", "high", "suggest_kwargs", "expected_counts"),
+    [
+        (0, 3, {}, {0: 4, 1: 4, 2: 4, 3: 4}),
+        (-2, 1, {}, {-2: 4, -1: 4, 0: 4, 1: 4}),
+        (0, 6, {"step": 2}, {0: 4, 2: 4, 4: 4, 6: 4}),
+        (-3, 3, {"step": 2}, {-3: 4, -1: 4, 1: 4, 3: 4}),
+    ],
+)
+def test_qmc_sampler_suggest_int_balanced(
+    low: int, high: int, suggest_kwargs: dict[str, Any], expected_counts: dict[int, int]
+) -> None:
+    sampler = _init_QMCSampler_without_exp_warning(qmc_type="sobol", scramble=False)
+    study = optuna.create_study(sampler=sampler)
+
+    def objective(trial: Trial) -> float:
+        trial.suggest_int("x", low, high, **suggest_kwargs)
+        return 0.0
+
+    study.optimize(objective, n_trials=17)
+    counts = Counter(t.params["x"] for t in study.trials[1:])
+    assert counts == expected_counts
+
+
+@pytest.mark.parametrize("suggest_kwargs", [{}, {"step": 2}, {"log": True}])
+def test_qmc_sampler_suggest_int_single_value(suggest_kwargs: dict[str, Any]) -> None:
+    sampler = _init_QMCSampler_without_exp_warning(qmc_type="sobol", scramble=False)
+    study = optuna.create_study(sampler=sampler)
+
+    def objective(trial: Trial) -> float:
+        if suggest_kwargs == {"step": 2}:
+            value = trial.suggest_int("x", 5, 5, step=2)
+        elif suggest_kwargs == {"log": True}:
+            value = trial.suggest_int("x", 1, 1, log=True)
+        else:
+            value = trial.suggest_int("x", 5, 5)
+        assert value in (1, 5)
+        return 0.0
+
+    study.optimize(objective, n_trials=5)
+    observed = {t.params["x"] for t in study.trials}
+    assert len(observed) == 1
+    assert observed in ({5}, {1})
+
+
+def test_qmc_sampler_suggest_int_log_samples_valid_values() -> None:
+    sampler = _init_QMCSampler_without_exp_warning(qmc_type="sobol", scramble=False)
+    study = optuna.create_study(sampler=sampler)
+
+    def objective(trial: Trial) -> float:
+        trial.suggest_int("x", 1, 8, log=True)
+        return 0.0
+
+    study.optimize(objective, n_trials=129)
+    counts = Counter(t.params["x"] for t in study.trials[1:])
+    assert set(counts) == set(range(1, 9))
+    assert all(count > 0 for count in counts.values())
+
+
 def test_sample_relative_categorical_single_choice() -> None:
     search_space: dict[str, BaseDistribution] = {
         "c": optuna.distributions.CategoricalDistribution(["only"]),
