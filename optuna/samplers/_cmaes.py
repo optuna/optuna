@@ -666,6 +666,11 @@ class CmaEsSampler(BaseSampler):
         state: TrialState,
         values: Sequence[float] | None,
     ) -> None:
+        if trial.constraints:
+            optuna_warn(
+                "Constraints have been set, but CmaEsSampler will not use them for optimization.",
+                UserWarning,
+            )
         self._independent_sampler.after_trial(study, trial, state, values)
 
 
