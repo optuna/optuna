@@ -86,34 +86,6 @@ def _solve_cholesky(L: torch.Tensor, B: torch.Tensor, *, left: bool = True) -> t
         )
 
 
-def _extend_cholesky(L11: torch.Tensor, K21: torch.Tensor, K22: torch.Tensor) -> torch.Tensor:
-    """
-    This function calculates the Cholesky decompsition L of K=[[K11,K12],[K21,K22]] by
-    extending L11 where K11 = L11 @ L11.T. Note that K12 = K21.T.
-
-    The solution L = chol(K) is calculated as:
-        chol(K) = [[L11, 0], [K21 @ inv(L11).T, chol(K22 - K21 @ inv(K11) @ K21.T)]].
-
-    Denote L21 := K21 @ inv(L11).T.
-    Since inv(L11.T).T = inv(L11), L21 = K21 @ inv(L11.T) --> L21.T = inv(L11) @ K21.T
-    --> Solving L11 @ L21.T = K21.T yields L21.T.
-    Note that L21 = K21 @ inv(L11).T = K21 @ inv(L11.T).
-
-    Since inv(K11) = inv(L11 @ L11.T) = inv(L11.T) @ inv(L11),
-    K21 @ inv(K11) @ K21.T = K21 @ inv(L11.T) @ inv(L11) @ K21.T = L21 @ L21.T.
-    """
-    n1 = L11.shape[-1]
-    n2 = K22.shape[-1]
-    batch_shape = L11.shape[:-2]
-    L = torch.zeros(batch_shape + (n1 + n2, n1 + n2), dtype=torch.float64)
-    L21_T = torch.linalg.solve_triangular(L11, K21.transpose(-1, -2), upper=False)
-    L21 = L21_T.transpose(-1, -2)
-    L[..., :n1, :n1] = L11
-    L[..., n1:, n1:] = torch.linalg.cholesky(K22 - L21 @ L21_T)
-    L[..., n1:, :n1] = L21
-    return L
-
-
 class Matern52Kernel(torch.autograd.Function):
     @staticmethod
     def forward(ctx: Any, squared_distance: torch.Tensor) -> torch.Tensor:
