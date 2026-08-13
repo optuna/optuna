@@ -545,8 +545,8 @@ class GPSampler(BaseSampler):
                     constraint_vals, internal_search_space, normalized_params
                 )
                 is_all_infeasible = not any(is_feasible)
-                if normalized_params_of_running_trials is not None:
-                    acqf = acqf_module.qConstrainedLogEHVI(
+                if normalized_params_of_running_trials is None:
+                    acqf = acqf_module.ConstrainedLogEHVI(
                         gpr_list=gprs_list,
                         search_space=internal_search_space,
                         Y_feasible=(
@@ -558,10 +558,9 @@ class GPSampler(BaseSampler):
                         qmc_seed=self._rng.rng.randint(_MAX_QMC_SEED_VALUE),
                         constraints_gpr_list=constr_gpr_list,
                         constraints_threshold_list=constr_threshold_list,
-                        normalized_params_of_running_trials=normalized_params_of_running_trials,
                     )
                 else:
-                    acqf = acqf_module.ConstrainedLogEHVI(
+                    acqf = acqf_module.qConstrainedLogEHVI(
                         gpr_list=gprs_list,
                         search_space=internal_search_space,
                         Y_feasible=(
