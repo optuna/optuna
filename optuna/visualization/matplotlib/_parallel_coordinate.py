@@ -55,7 +55,9 @@ def plot_parallel_coordinate(
             Pareto rank. Pareto ranks are computed from the objective values without considering
             constraints.
         target_name:
-            Target's name to display on the axis label and the legend.
+            Target's name to display on the axis label and the legend. This is used for
+            single-objective studies or when ``target`` is specified, and ignored for
+            multi-objective studies when ``target`` is :obj:`None`.
 
     Returns:
         A :class:`matplotlib.axes.Axes` object.
