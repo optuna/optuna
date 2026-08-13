@@ -5,6 +5,8 @@ from typing import Any
 
 import optuna
 from optuna._imports import try_import
+from optuna.study._multi_objective import _get_pareto_front_trials
+from optuna.study._study_direction import StudyDirection
 from optuna.trial._state import TrialState
 
 
@@ -98,13 +100,62 @@ def _flatten_columns(columns: list[tuple[str, str]]) -> list[str]:
     return ["_".join(filter(lambda c: c, map(lambda c: str(c), col))) for col in columns]
 
 
+def _compute_is_best(
+    study: "optuna.Study", trials: list, multi_index: bool
+) -> list[bool]:
+    """Compute is_best column for each trial.
+
+    For single-objective optimization:
+        A trial is 'best' if it is COMPLETE and its value is better than all previous
+        COMPLETE trials. For minimization, lower is better; for maximization, higher is better.
+
+    For multi-objective optimization:
+        A trial is 'best' if it is on the Pareto front.
+    """
+    is_best_list = []
+
+    if study._is_multi_objective():
+        pareto_trials = _get_pareto_front_trials(study, consider_constraint=False)
+        pareto_trial_ids = {t._trial_id for t in pareto_trials}
+        for trial in trials:
+            is_best_list.append(
+                trial.state == TrialState.COMPLETE and trial._trial_id in pareto_trial_ids
+            )
+        return is_best_list
+
+    is_minimize = study.directions[0] == StudyDirection.MINIMIZE
+
+    best_value = None
+    for trial in trials:
+        if trial.state != TrialState.COMPLETE:
+            is_best_list.append(False)
+            continue
+
+        value = trial.value
+        if value is None:
+            is_best_list.append(False)
+            continue
+
+        if best_value is None:
+            is_best_list.append(True)
+            best_value = value
+        else:
+            is_better = (value < best_value) if is_minimize else (value > best_value)
+            is_best_list.append(is_better)
+            if is_better:
+                best_value = value
+
+    return is_best_list
+
+
 def _trials_dataframe(
     study: "optuna.Study", attrs: tuple[str, ...], multi_index: bool
 ) -> "pd.DataFrame":
     _imports.check()
 
-    # If no trials, return an empty dataframe.
-    if len(study.get_trials(deepcopy=False)) == 0:
+    trials = study.get_trials(deepcopy=False)
+
+    if len(trials) == 0:
         return pd.DataFrame()
 
     if "value" in attrs and study._is_multi_objective():
@@ -116,5 +167,10 @@ def _trials_dataframe(
 
     if not multi_index:
         df.columns = _flatten_columns(columns)
+
+    is_best_list = _compute_is_best(study, trials, multi_index)
+
+    is_best_column = ("is_best", "") if multi_index else "is_best"
+    df[is_best_column] = is_best_list
 
     return df

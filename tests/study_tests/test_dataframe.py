@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -72,14 +73,15 @@ def test_trials_dataframe(storage_mode: str, attrs: tuple[str, ...], multi_index
             df.set_index("number", inplace=True, drop=False)
         assert len(df) == 3
 
-        # Number columns are as follows (total of 13):
+        # Number columns are as follows (total of 14):
         #   non-nested: 6 (number, value, state, datetime_start, datetime_complete, duration)
         #   params: 2
         #   distributions: 2
         #   user_attrs: 1
         #   system_attrs: 1
         #   intermediate_values: 1
-        expected_n_columns = len(attrs)
+        #   is_best: 1 (new column)
+        expected_n_columns = len(attrs) + 1
         if "params" in attrs:
             expected_n_columns += 1
         if "distributions" in attrs:
@@ -92,6 +94,11 @@ def test_trials_dataframe(storage_mode: str, attrs: tuple[str, ...], multi_index
             assert df.value[i] == 3.5
             assert isinstance(df.datetime_start[i], pd.Timestamp)
             assert isinstance(df.datetime_complete[i], pd.Timestamp)
+            if multi_index:
+                is_best_val = bool(df[("is_best", "")][i])
+            else:
+                is_best_val = bool(df.is_best[i])
+            assert is_best_val == (i == 0)
 
             if multi_index:
                 if "distributions" in attrs:
@@ -137,8 +144,8 @@ def test_trials_dataframe_with_failure(storage_mode: str) -> None:
         # Change index to access rows via trial number.
         df.set_index("number", inplace=True, drop=False)
         assert len(df) == 3
-        # non-nested: 6, params: 2, user_attrs: 1 system_attrs: 0
-        assert len(df.columns) == 9
+        # non-nested: 6, params: 2, user_attrs: 1 system_attrs: 0, is_best: 1
+        assert len(df.columns) == 10
         for i in range(3):
             assert df.number[i] == i
             assert df.state[i] == "FAIL"
@@ -149,6 +156,7 @@ def test_trials_dataframe_with_failure(storage_mode: str) -> None:
             assert df.params_x[i] == 1
             assert df.params_y[i] == 2.5
             assert df.user_attrs_train_loss[i] == 3
+            assert bool(df.is_best[i]) is False
 
 
 @pytest.mark.parametrize("attrs", [("value",), ("values",)])
@@ -169,9 +177,11 @@ def test_trials_dataframe_with_multi_objective_optimization(
     if multi_index:
         assert df.get("values")[0][0] == 3
         assert df.get("values")[1][0] == 5
+        assert ("is_best", "") in df.columns
     else:
         assert df.values_0[0] == 3
         assert df.values_1[0] == 5
+        assert "is_best" in df.columns
 
     # with set_metric_names()
     study.set_metric_names(["v0", "v1"])
@@ -179,9 +189,11 @@ def test_trials_dataframe_with_multi_objective_optimization(
     if multi_index:
         assert df.get("values")["v0"][0] == 3
         assert df.get("values")["v1"][0] == 5
+        assert ("is_best", "") in df.columns
     else:
         assert df.get("values_v0")[0] == 3
         assert df.get("values_v1")[0] == 5
+        assert "is_best" in df.columns
 
 
 @pytest.mark.parametrize("attrs", [("value",), ("values",)])
@@ -199,10 +211,12 @@ def test_trials_dataframe_with_multi_objective_optimization_with_fail_and_pruned
         for i in range(2):
             assert df.get("values")[0][i] is None
             assert df.get("values")[1][i] is None
+            assert bool(df.get("is_best")[i]) is False
     else:
         for i in range(2):
             assert df.values_0[i] is None
             assert df.values_1[i] is None
+            assert bool(df.is_best[i]) is False
 
     # with set_metric_names()
     study.set_metric_names(["v0", "v1"])
@@ -245,3 +259,112 @@ def test_trials_dataframe_preserves_metric_names_order() -> None:
     flat_cols2 = list(study2.trials_dataframe().columns)
     values_cols2 = [c for c in flat_cols2 if c.startswith("values_")]
     assert values_cols2 == ["values_test", "values_train"]
+
+
+def test_trials_dataframe_is_best_minimization() -> None:
+    """Test is_best column for minimization study."""
+    study = create_study(direction="minimize")
+
+    def objective(trial: Trial) -> float:
+        x = trial.suggest_float("x", 0, 10)
+        return x**2
+
+    trial = study.ask()
+    trial.report(4.0, step=0)
+    study.tell(trial, 4.0)
+
+    trial = study.ask()
+    trial.report(1.0, step=0)
+    study.tell(trial, 1.0)
+
+    trial = study.ask()
+    trial.report(9.0, step=0)
+    study.tell(trial, 9.0)
+
+    df = study.trials_dataframe()
+    assert bool(df.is_best[0]) is True  # First COMPLETE trial
+    assert bool(df.is_best[1]) is True  # Better than previous
+    assert bool(df.is_best[2]) is False  # Worse than previous
+
+
+def test_trials_dataframe_is_best_maximization() -> None:
+    """Test is_best column for maximization study."""
+    study = create_study(direction="maximize")
+
+    def objective(trial: Trial) -> float:
+        x = trial.suggest_float("x", 0, 10)
+        return x
+
+    trial = study.ask()
+    trial.report(1.0, step=0)
+    study.tell(trial, 1.0)
+
+    trial = study.ask()
+    trial.report(5.0, step=0)
+    study.tell(trial, 5.0)
+
+    trial = study.ask()
+    trial.report(3.0, step=0)
+    study.tell(trial, 3.0)
+
+    df = study.trials_dataframe()
+    assert bool(df.is_best[0]) is True  # First COMPLETE trial
+    assert bool(df.is_best[1]) is True  # Better than previous
+    assert bool(df.is_best[2]) is False  # Worse than previous
+
+
+def test_trials_dataframe_is_best_with_pruned() -> None:
+    """Test is_best column with pruned trials."""
+    study = create_study(direction="minimize")
+
+    trial = study.ask()
+    trial.report(1.0, step=0)
+    study.tell(trial, state=TrialState.PRUNED)
+
+    trial = study.ask()
+    trial.report(5.0, step=0)
+    study.tell(trial, 5.0)
+
+    trial = study.ask()
+    trial.report(2.0, step=0)
+    study.tell(trial, 2.0)
+
+    df = study.trials_dataframe()
+    assert bool(df.is_best[0]) is False  # PRUNED
+    assert bool(df.is_best[1]) is True  # First COMPLETE
+    assert bool(df.is_best[2]) is True  # Better than previous
+
+
+def test_trials_dataframe_is_best_multi_index() -> None:
+    """Test is_best column with multi_index=True."""
+    study = create_study(direction="minimize")
+
+    def objective(trial: Trial) -> float:
+        x = trial.suggest_float("x", 0, 10)
+        return x**2
+
+    study.optimize(objective, n_trials=3)
+    df = study.trials_dataframe(multi_index=True)
+
+    assert ("is_best", "") in df.columns
+    # For minimization, track which trials are best-so-far
+    # with random values, we can't predict exactly, so just check all are bool
+    for i in range(3):
+        assert isinstance(df[("is_best", "")][i], (bool, np.bool_))
+
+
+def test_trials_dataframe_is_best_multi_objective() -> None:
+    """Test is_best column for multi-objective optimization."""
+    study = create_study(directions=["minimize", "maximize"])
+
+    def objective(trial: Trial) -> tuple[float, float]:
+        x = trial.suggest_float("x", 0, 10)
+        y = trial.suggest_float("y", 0, 10)
+        return x, y
+
+    study.optimize(objective, n_trials=2)
+    df = study.trials_dataframe(multi_index=True)
+
+    assert ("is_best", "") in df.columns
+    # At least one trial should be on the Pareto front
+    assert bool(df[("is_best", "")].any()) is True
