@@ -95,33 +95,6 @@ def _is_numerical(trials: list[FrozenTrial], param: str) -> bool:
     return True
 
 
-def _get_skipped_trial_numbers(
-    trials: list[FrozenTrial], used_param_names: Sequence[str]
-) -> set[int]:
-    """Utility function for ``plot_parallel_coordinate``.
-
-    If trial's parameters do not contain a parameter in ``used_param_names``,
-    ``plot_parallel_coordinate`` methods do not use such trials.
-
-    Args:
-        trials:
-            List of ``FrozenTrial``s.
-        used_param_names:
-            The parameter names used in ``plot_parallel_coordinate``.
-
-    Returns:
-        A set of invalid trial numbers.
-    """
-
-    skipped_trial_numbers = set()
-    for trial in trials:
-        for used_param in used_param_names:
-            if used_param not in trial.params.keys():
-                skipped_trial_numbers.add(trial.number)
-                break
-    return skipped_trial_numbers
-
-
 def _filter_nonfinite(
     trials: list[FrozenTrial],
     target: Callable[[FrozenTrial], float] | None = None,
