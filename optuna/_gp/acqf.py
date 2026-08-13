@@ -84,15 +84,15 @@ def _get_non_dominated_box_bounds(
     return torch.from_numpy(-ubs), torch.from_numpy(-lbs)
 
 
-def _compute_log_hvi(Y_baseline: torch.Tensor, Y_observed: torch.Tensor) -> torch.Tensor:
-    if Y_observed.shape[0] == Y_baseline.shape[0]:
+def _compute_log_hvi(Y_baseline: torch.Tensor, Y_fantasy: torch.Tensor) -> torch.Tensor:
+    if Y_fantasy.shape[0] == Y_baseline.shape[0]:
         return torch.tensor(-torch.inf, dtype=torch.float64)
     baseline_loss_vals = -Y_baseline.numpy()
-    observed_loss_vals = -Y_observed.numpy()
-    ref_point = np.max(observed_loss_vals, axis=0)
+    fantasy_loss_vals = -Y_fantasy.numpy()
+    ref_point = np.max(fantasy_loss_vals, axis=0)
     ref_point = np.nextafter(np.maximum(1.1 * ref_point, 0.9 * ref_point), np.inf)
     hvi = compute_hypervolume(
-        observed_loss_vals,
+        fantasy_loss_vals,
         ref_point,
         assume_pareto=False,
     ) - compute_hypervolume(
@@ -291,8 +291,10 @@ class qLogPI(BaseAcquisitionFunc):
         )
         super().__init__(gpr.length_scales, search_space)
 
-    def compute_per_sample_log_utility(self, x: torch.Tensor) -> torch.Tensor:
-        y_post = self._cond_gpr.sample_joint_posterior(x)
+    def compute_per_sample_log_utility(
+        self, x: torch.Tensor, return_fantasy: bool = True
+    ) -> torch.Tensor:
+        y_post = self._cond_gpr.sample_joint_posterior(x, return_fantasy=return_fantasy)
         return torch.nn.functional.logsigmoid((y_post - self._threshold) / self._tau)
 
     def get_fantasy_feasibility(self) -> torch.Tensor:
@@ -670,12 +672,9 @@ class qConstrainedLogEHVI(BaseAcquisitionFunc):
         super().__init__(np.mean([gpr.length_scales for gpr in gpr_list], axis=0), search_space)
 
     def eval_acqf(self, x: torch.Tensor) -> torch.Tensor:
-        constraint_log_feasibility = cast(
-            "torch.Tensor",
-            sum(
-                acqf.compute_per_sample_log_utility(x)[..., -1]
-                for acqf in self._constraints_acqf_list
-            ),
+        constraint_log_feasibility = sum(
+            acqf.compute_per_sample_log_utility(x, return_fantasy=False)
+            for acqf in self._constraints_acqf_list
         )
         # NOTE(sawa3030): qConstrainedLogEHVI evaluates HVI(Y_running U Y_candidate | Y_train)
         # in log space using HVI(Y_candidate | Y_running U Y_train) + HVI(Y_running | Y_train).
