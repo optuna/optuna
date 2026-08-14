@@ -828,11 +828,12 @@ class Study:
             objective value as value.
 
         Note:
-            The ``is_best`` column is always included in the returned DataFrame. It indicates
-            whether each trial was the best trial at the time it completed. For single-objective
+            ``is_best`` can be passed in ``attrs`` to add a boolean column that indicates whether
+            each trial was the best trial at the time it completed. For single-objective
             optimization, a trial is marked as best if its value is better than all previous
             COMPLETE trials. For multi-objective optimization, a trial is marked as best if it is
-            on the Pareto front. Trials that are not COMPLETE are marked as :obj:`False`.
+            on the Pareto front. Trials that are not COMPLETE are marked as :obj:`False`. This
+            column is opt-in and is not part of the default ``attrs``.
         """
         return _dataframe._trials_dataframe(self, attrs, multi_index)
 

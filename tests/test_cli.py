@@ -571,9 +571,6 @@ def test_trials_command(objective: Callable[[Trial], float], output_format: str 
 
         for i, trial in enumerate(trials):
             for key in df.columns:
-                if key[0] == "is_best":
-                    continue
-
                 expected_value = df.loc[i][key]
 
                 # The param may be NaN when the objective function has branched search space.
@@ -656,9 +653,6 @@ def test_trials_command_flatten(
         for i, trial in enumerate(trials):
             assert set(trial.keys()) <= set(df.columns)
             for key in df.columns:
-                if key == "is_best":
-                    continue
-
                 expected_value = df.loc[i][key]
 
                 # The param may be NaN when the objective function has branched search space.
@@ -734,9 +728,6 @@ def test_best_trial_command(
         df = study.trials_dataframe(attrs, multi_index=True)
 
         for key in df.columns:
-            if key[0] == "is_best":
-                continue
-
             expected_value = df.loc[study.best_trial.number][key]
 
             # The param may be NaN when the objective function has branched search space.
@@ -820,9 +811,6 @@ def test_best_trial_command_flatten(
 
         assert set(best_trial.keys()) <= set(df.columns)
         for key in df.columns:
-            if key == "is_best":
-                continue
-
             expected_value = df.loc[study.best_trial.number][key]
 
             # The param may be NaN when the objective function has branched search space.
@@ -901,9 +889,6 @@ def test_best_trials_command(output_format: str | None) -> None:
                 number = trial["number"]
             assert number in best_trials
             for key in df.columns:
-                if key[0] == "is_best":
-                    continue
-
                 expected_value = df.loc[number][key]
 
                 # The param may be NaN when the objective function has branched search space.
@@ -990,9 +975,6 @@ def test_best_trials_command_flatten(output_format: str | None) -> None:
             else:
                 number = trial["number"]
             for key in df.columns:
-                if key == "is_best":
-                    continue
-
                 expected_value = df.loc[number][key]
 
                 # The param may be NaN when the objective function has branched search space.

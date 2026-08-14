@@ -161,19 +161,26 @@ def _trials_dataframe(
     if len(trials) == 0:
         return pd.DataFrame()
 
-    if "value" in attrs and study._is_multi_objective():
-        attrs = tuple("values" if attr == "value" else attr for attr in attrs)
+    # `is_best` is a virtual column computed from the trials, not a `FrozenTrial`
+    # attribute. It is opt-in: it is only added when explicitly listed in `attrs`,
+    # so the default `trials_dataframe()` output is unchanged.
+    want_is_best = "is_best" in attrs
+    data_attrs = tuple(attr for attr in attrs if attr != "is_best")
 
-    records, columns = _create_records_and_aggregate_column(study, attrs)
+    if "value" in data_attrs and study._is_multi_objective():
+        data_attrs = tuple("values" if attr == "value" else attr for attr in data_attrs)
+
+    records, columns = _create_records_and_aggregate_column(study, data_attrs)
 
     df = pd.DataFrame(records, columns=pd.MultiIndex.from_tuples(columns))
 
     if not multi_index:
         df.columns = _flatten_columns(columns)
 
-    is_best_list = _compute_is_best(study, trials)
-
-    is_best_column = ("is_best", "") if multi_index else "is_best"
-    df[is_best_column] = is_best_list
+    if want_is_best:
+        is_best_list = _compute_is_best(study, trials)
+        is_best_column = ("is_best", "") if multi_index else "is_best"
+        insert_index = list(attrs).index("is_best")
+        df.insert(insert_index, is_best_column, is_best_list)
 
     return df
