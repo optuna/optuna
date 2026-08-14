@@ -115,7 +115,7 @@ def test_concurrent_append_logs_for_multi_threads(
         assert all(record == r for r in storage.read_logs(0))
 
 
-def test_read_logs_caches_offset_after_incomplete_skipped_log_1() -> None:
+def test_retry_an_incomplete_trailing_log() -> None:
     what_to_write_1 = (
         b'{"op_code":0,"worker_id":"worker-0"}\n'
         + b'{"op_code":0,"worker_id":"worker-1"}\n'
