@@ -143,7 +143,7 @@ def test_read_logs_caches_offset_after_incomplete_skipped_log_1() -> None:
         ]
 
 
-def test_read_logs_caches_offset_after_incomplete_skipped_log_2() -> None:
+def test_does_not_cache_an_incomplete_log_before_requested_number() -> None:
     what_to_write_1 = (
         b'{"op_code":0,"worker_id":"worker-0"}\n'
         + b'{"op_code":0,"worker_id":"worker-1"}\n'
