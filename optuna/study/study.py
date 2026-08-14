@@ -826,6 +826,13 @@ class Study:
             If :meth:`~optuna.study.Study.set_metric_names` is called, the ``value`` or ``values``
             is implicitly replaced with the dictionary with the objective name as key and the
             objective value as value.
+
+        Note:
+            The ``is_best`` column is always included in the returned DataFrame. It indicates
+            whether each trial was the best trial at the time it completed. For single-objective
+            optimization, a trial is marked as best if its value is better than all previous
+            COMPLETE trials. For multi-objective optimization, a trial is marked as best if it is
+            on the Pareto front. Trials that are not COMPLETE are marked as :obj:`False`.
         """
         return _dataframe._trials_dataframe(self, attrs, multi_index)
 

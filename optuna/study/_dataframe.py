@@ -2,12 +2,17 @@ from __future__ import annotations
 
 import collections
 from typing import Any
+from typing import TYPE_CHECKING
 
 import optuna
 from optuna._imports import try_import
 from optuna.study._multi_objective import _get_pareto_front_trials
 from optuna.study._study_direction import StudyDirection
 from optuna.trial._state import TrialState
+
+
+if TYPE_CHECKING:
+    from optuna.trial import FrozenTrial
 
 
 with try_import() as _imports:
@@ -100,9 +105,7 @@ def _flatten_columns(columns: list[tuple[str, str]]) -> list[str]:
     return ["_".join(filter(lambda c: c, map(lambda c: str(c), col))) for col in columns]
 
 
-def _compute_is_best(
-    study: "optuna.Study", trials: list, multi_index: bool
-) -> list[bool]:
+def _compute_is_best(study: "optuna.Study", trials: list["FrozenTrial"]) -> list[bool]:
     """Compute is_best column for each trial.
 
     For single-objective optimization:
@@ -168,7 +171,7 @@ def _trials_dataframe(
     if not multi_index:
         df.columns = _flatten_columns(columns)
 
-    is_best_list = _compute_is_best(study, trials, multi_index)
+    is_best_list = _compute_is_best(study, trials)
 
     is_best_column = ("is_best", "") if multi_index else "is_best"
     df[is_best_column] = is_best_list
