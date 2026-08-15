@@ -117,7 +117,7 @@ def test_eval_qconstrained_logei(
     Y = np.array([1.0, 2.0, 3.0])
     is_feasible = np.all(c <= 0, axis=1)
     is_all_infeasible = not np.any(is_feasible)
-    acqf = acqf_module.qConstrainedLogEI(
+    acqf = acqf_module.qLogCEI(
         gpr=get_gpr(Y),
         search_space=search_space,
         threshold=-np.inf if is_all_infeasible else np.max(Y[is_feasible]),
@@ -142,7 +142,7 @@ def test_eval_acqf_with_constraints(
     Y = np.array([1.0, 2.0, 3.0])
     is_feasible = np.all(c <= 0, axis=1)
     is_all_infeasible = not np.any(is_feasible)
-    acqf = acqf_module.ConstrainedLogEI(
+    acqf = acqf_module.LogCEI(
         gpr=get_gpr(Y),
         search_space=search_space,
         threshold=-np.inf if is_all_infeasible else np.max(Y[is_feasible]),
@@ -185,7 +185,7 @@ def test_eval_multi_objective_acqf_with_constraints(
     n_objectives = Y.shape[-1]
     is_feasible = np.all(c <= 0, axis=1)
     is_all_infeasible = not np.any(is_feasible)
-    acqf = acqf_module.ConstrainedLogEHVI(
+    acqf = acqf_module.LogCEHVI(
         gpr_list=[get_gpr(Y[:, i]) for i in range(n_objectives)],
         search_space=search_space,
         Y_feasible=None if is_all_infeasible else torch.from_numpy(Y[is_feasible]),

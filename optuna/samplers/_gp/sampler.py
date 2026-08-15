@@ -92,7 +92,7 @@ class GPSampler(BaseSampler):
       assumption of each constraint for (black-box inequality) constrained optimization,
     - MC-based batch log expected improvement (qLogEI) for single-objective optimization with
       running trials, and
-    - MC-based batch constrained log expected improvement (qConstrainedLogEI) for
+    - MC-based batch constrained log expected improvement (qLogCEI) for
       single-objective constrained optimization with running trials.
 
     Note that We adopt a sequential greedy selection for batch candidates instead of joint
@@ -504,7 +504,7 @@ class GPSampler(BaseSampler):
                 i_opt = np.argmax(y_with_neginf)
                 best_feasible_y = y_with_neginf[i_opt]
                 if normalized_params_of_running_trials is None:
-                    acqf = acqf_module.ConstrainedLogEI(
+                    acqf = acqf_module.LogCEI(
                         gpr=gprs_list[0],
                         search_space=internal_search_space,
                         threshold=best_feasible_y,
@@ -512,7 +512,7 @@ class GPSampler(BaseSampler):
                         constraints_threshold_list=constr_threshold_list,
                     )
                 else:
-                    acqf = acqf_module.qConstrainedLogEI(
+                    acqf = acqf_module.qLogCEI(
                         gpr=gprs_list[0],
                         search_space=internal_search_space,
                         threshold=best_feasible_y,
@@ -534,7 +534,7 @@ class GPSampler(BaseSampler):
                     constraint_vals, internal_search_space, normalized_params
                 )
                 is_all_infeasible = not any(is_feasible)
-                acqf = acqf_module.ConstrainedLogEHVI(
+                acqf = acqf_module.LogCEHVI(
                     gpr_list=gprs_list,
                     search_space=internal_search_space,
                     Y_feasible=(

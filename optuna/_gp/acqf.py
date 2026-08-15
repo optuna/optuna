@@ -282,7 +282,7 @@ class LCB(BaseAcquisitionFunc):
         return mean - torch.sqrt(self._beta * var)
 
 
-class ConstrainedLogEI(BaseAcquisitionFunc):
+class LogCEI(BaseAcquisitionFunc):
     def __init__(
         self,
         gpr: GPRegressor,
@@ -309,14 +309,13 @@ class ConstrainedLogEI(BaseAcquisitionFunc):
         super().__init__(gpr.length_scales, search_space)
 
     def eval_acqf(self, x: torch.Tensor) -> torch.Tensor:
-        # TODO(kAIto47802): Handle the infeasible case inside `ConstrainedLogEI`
-        # instead of `LogEI`.
+        # TODO(kAIto47802): Handle the infeasible case inside `LogCEI` instead of `LogEI`.
         return self._acqf.eval_acqf(x) + sum(
             acqf.eval_acqf(x) for acqf in self._constraints_acqf_list
         )
 
 
-class qConstrainedLogEI(BaseAcquisitionFunc):
+class qLogCEI(BaseAcquisitionFunc):
     def __init__(
         self,
         gpr: GPRegressor,
@@ -445,7 +444,7 @@ class LogEHVI(BaseAcquisitionFunc):
         )
 
 
-class ConstrainedLogEHVI(BaseAcquisitionFunc):
+class LogCEHVI(BaseAcquisitionFunc):
     def __init__(
         self,
         gpr_list: list[GPRegressor],
