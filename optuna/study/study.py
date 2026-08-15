@@ -1128,7 +1128,8 @@ class Study:
             repeated_params: list[bool] = []
             for param_name, param_value in params.items():
                 existing_param = trial_params[param_name]
-                if not isinstance(param_value, type(existing_param)):
+                both_numeric = isinstance(param_value, Real) and isinstance(existing_param, Real)
+                if not both_numeric and not isinstance(param_value, type(existing_param)):
                     # Enqueued param has distribution that does not match existing param
                     # (e.g. trying to enqueue categorical to float param).
                     # We are not doing anything about it here, since sanitization should
@@ -1139,7 +1140,7 @@ class Study:
                 is_repeated = (
                     np.isnan(float(param_value))
                     or np.isclose(float(param_value), float(existing_param), atol=0.0)
-                    if isinstance(param_value, Real)
+                    if both_numeric
                     else param_value == existing_param
                 )
                 repeated_params.append(bool(is_repeated))
