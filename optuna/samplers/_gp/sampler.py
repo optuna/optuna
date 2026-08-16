@@ -91,9 +91,9 @@ class GPSampler(BaseSampler):
     - log constrained expected improvement (logCEI) for single-objective constrained optimization,
     - log constrained expected hypervolume improvement (logCEHVI) for multi-objective constrained
       optimization,
-    - MC-based q-batch log expected improvement (qLogEI) for single-objective optimization with
+    - q-batch log expected improvement (qLogEI) for single-objective optimization with
       running trials, and
-    - MC-based q-batch log constrained expected improvement (qLogCEI) for
+    - q-batch log constrained expected improvement (qLogCEI) for
       single-objective constrained optimization with running trials.
 
     Note that we adopt a sequential greedy selection for batch candidates instead of joint
