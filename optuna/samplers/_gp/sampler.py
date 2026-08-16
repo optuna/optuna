@@ -88,9 +88,7 @@ class GPSampler(BaseSampler):
 
     - log expected improvement (logEI) for single-objective optimization,
     - log expected hypervolume improvement (logEHVI) for Multi-objective optimization,
-    - log constrained expected improvement (logCEI), the summation of logEI and the logarithm of
-      the feasible probability with the independent assumption of each constraint for
-      single-objective (black-box inequality) constrained optimization,
+    - log constrained expected improvement (logCEI) for single-objective constrained optimization,
     - log constrained expected hypervolume improvement (logCEHVI) for multi-objective constrained
       optimization,
     - MC-based q-batch log expected improvement (qLogEI) for single-objective optimization with
@@ -98,8 +96,11 @@ class GPSampler(BaseSampler):
     - MC-based q-batch log constrained expected improvement (qLogCEI) for
       single-objective constrained optimization with running trials.
 
-    Note that We adopt a sequential greedy selection for batch candidates instead of joint
-    optimization.
+    Note that we adopt a sequential greedy selection for batch candidates instead of joint
+    optimization and constrained optimization refers to optimization with black-box inequalities.
+    The constained acquisition functions assume the independence between each constraint and
+    objective, computing the summation of objective acquisition function and the logarithm of
+    the feasible probability.
 
     For further information about these acquisition functions, please refer to the following
     papers:
