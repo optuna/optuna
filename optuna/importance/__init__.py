@@ -105,6 +105,11 @@ def get_param_importances(
     Returns:
         A :obj:`dict` where the keys are parameter names and the values are assessed importances.
 
+    Raises:
+        :exc:`TypeError`:
+            If ``evaluator`` is not a subclass of
+            :class:`~optuna.importance.BaseImportanceEvaluator`.
+
     Example:
         .. testcode::
 

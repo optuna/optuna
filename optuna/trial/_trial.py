@@ -475,6 +475,13 @@ class Trial(BaseTrial):
                 :class:`~optuna.pruners.MedianPruner` simply checks if ``step`` is less than
                 ``n_warmup_steps`` as the warmup mechanism.
                 ``step`` must be a non-negative integer.
+
+        Raises:
+            :exc:`TypeError`:
+                If ``value`` cannot be cast to :obj:`float`, or if ``step`` cannot be cast to
+                :obj:`int`.
+            :exc:`ValueError`:
+                If ``step`` is a negative integer.
         """
 
         if len(self.study.directions) > 1:
