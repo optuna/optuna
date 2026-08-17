@@ -12,6 +12,7 @@ from optuna.visualization.matplotlib._matplotlib_imports import _imports
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+    from typing import Literal
 
     from optuna.study import Study
     from optuna.trial import FrozenTrial
@@ -128,7 +129,7 @@ def _get_parallel_coordinate_plot(info: _ParallelCoordinateInfo) -> "Axes":
         lc.set_linestyle(
             ["solid" if info.feasibility[trial_id] else "dotted" for trial_id in draw_order]
         )
-        feasibility_legend = [
+        feasibility_legend: list[tuple[bool, str, Literal["solid", "dotted"]]] = [
             (True, "Feasible", "solid"),
             (False, "Infeasible", "dotted"),
         ]
