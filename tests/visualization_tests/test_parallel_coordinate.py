@@ -4,6 +4,7 @@ from collections.abc import Callable
 from io import BytesIO
 import math
 from typing import Any
+from typing import cast
 from typing import Literal
 
 import numpy as np
@@ -25,6 +26,8 @@ from optuna.visualization._parallel_coordinate import _get_parallel_coordinate_i
 from optuna.visualization._parallel_coordinate import _ParallelCoordinateInfo
 from optuna.visualization._plotly_imports import go
 from optuna.visualization._utils import COLOR_SCALE
+from optuna.visualization.matplotlib._matplotlib_imports import Figure
+from optuna.visualization.matplotlib._matplotlib_imports import LineCollection
 from optuna.visualization.matplotlib._matplotlib_imports import plt
 
 
@@ -870,9 +873,9 @@ def test_plot_parallel_coordinate_with_constant_objective() -> None:
     assert figure.data[-1]["marker"]["cmin"] < figure.data[-1]["marker"]["cmax"]
 
     ax = matplotlib.plot_parallel_coordinate(study)
-    segments = ax.collections[0].get_segments()
+    segments = cast(LineCollection, ax.collections[0]).get_segments()
     assert segments[0][-1, 1] != segments[1][-1, 1]
-    plt.close(ax.get_figure())
+    plt.close(cast(Figure, ax.get_figure()))
 
 
 @pytest.mark.filterwarnings("ignore::optuna.exceptions.ExperimentalWarning")
@@ -910,8 +913,9 @@ def test_get_parallel_coordinate_info_multi_objective() -> None:
 
     ax = matplotlib.plot_parallel_coordinate(study)
     assert [label.get_text() for label in ax.get_xticklabels()] == ["loss", "score", "param"]
-    assert ax.get_figure().axes[1].get_ylabel() == "Pareto Rank"
-    plt.close(ax.get_figure())
+    figure = cast(Figure, ax.get_figure())
+    assert figure.axes[1].get_ylabel() == "Pareto Rank"
+    plt.close(figure)
 
 
 def test_get_parallel_coordinate_info_multi_objective_with_numeric_category_and_constraints() -> (
@@ -1004,7 +1008,7 @@ def test_get_parallel_coordinate_info_with_constraints() -> None:
     assert legend is not None
     assert [text.get_text() for text in legend.get_texts()] == ["Feasible", "Infeasible"]
     plt.savefig(BytesIO())
-    plt.close(ax.get_figure())
+    plt.close(cast(Figure, ax.get_figure()))
 
 
 @pytest.mark.parametrize("value", [float("inf"), -float("inf")])
