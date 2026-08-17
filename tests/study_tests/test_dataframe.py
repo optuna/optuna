@@ -3,6 +3,8 @@ from __future__ import annotations
 import pandas as pd
 import pytest
 
+from typing import Any
+
 from optuna import create_study
 from optuna import create_trial
 from optuna import Trial
@@ -281,7 +283,7 @@ def test_trials_dataframe_with_is_best(storage_mode: str, multi_index: bool) -> 
         assert len(df) == 3
         if multi_index:
             df.set_index(("number", ""), inplace=True, drop=False)
-            is_best_col = ("is_best", "")
+            is_best_col: Any = ("is_best", "")
         else:
             df.set_index("number", inplace=True, drop=False)
             is_best_col = "is_best"
@@ -296,30 +298,45 @@ def test_trials_dataframe_with_is_best(storage_mode: str, multi_index: bool) -> 
         # Trial 0: (1.0, 5.0) - Pareto-optimal
         # Trial 1: (5.0, 1.0) - Pareto-optimal
         # Trial 2: (5.0, 5.0) - Dominated
-        study.add_trial(create_trial(
-            state=TrialState.COMPLETE,
-            values=[1.0, 5.0],
-            params={"x": 1.0, "y": 5.0},
-            distributions={"x": FloatDistribution(0, 10), "y": FloatDistribution(0, 10)}
-        ))
-        study.add_trial(create_trial(
-            state=TrialState.COMPLETE,
-            values=[5.0, 1.0],
-            params={"x": 5.0, "y": 1.0},
-            distributions={"x": FloatDistribution(0, 10), "y": FloatDistribution(0, 10)}
-        ))
-        study.add_trial(create_trial(
-            state=TrialState.COMPLETE,
-            values=[5.0, 5.0],
-            params={"x": 5.0, "y": 5.0},
-            distributions={"x": FloatDistribution(0, 10), "y": FloatDistribution(0, 10)}
-        ))
+        study.add_trial(
+            create_trial(
+                state=TrialState.COMPLETE,
+                values=[1.0, 5.0],
+                params={"x": 1.0, "y": 5.0},
+                distributions={
+                    "x": FloatDistribution(0, 10),
+                    "y": FloatDistribution(0, 10),
+                },
+            )
+        )
+        study.add_trial(
+            create_trial(
+                state=TrialState.COMPLETE,
+                values=[5.0, 1.0],
+                params={"x": 5.0, "y": 1.0},
+                distributions={
+                    "x": FloatDistribution(0, 10),
+                    "y": FloatDistribution(0, 10),
+                },
+            )
+        )
+        study.add_trial(
+            create_trial(
+                state=TrialState.COMPLETE,
+                values=[5.0, 5.0],
+                params={"x": 5.0, "y": 5.0},
+                distributions={
+                    "x": FloatDistribution(0, 10),
+                    "y": FloatDistribution(0, 10),
+                },
+            )
+        )
 
         df = study.trials_dataframe(attrs=("number", "values", "is_best"), multi_index=multi_index)
         assert len(df) == 3
         if multi_index:
             df.set_index(("number", ""), inplace=True, drop=False)
-            is_best_col = ("is_best", "")
+            is_best_col: Any = ("is_best", "")
         else:
             df.set_index("number", inplace=True, drop=False)
             is_best_col = "is_best"
