@@ -914,6 +914,10 @@ class Study:
 
             Please refer to :ref:`enqueue_trial_tutorial` for the tutorial of specifying
             hyperparameters manually.
+
+        Raises:
+            :exc:`TypeError`:
+                If ``params`` is not a dictionary.
         """
 
         if not isinstance(params, dict):
@@ -990,6 +994,10 @@ class Study:
         Args:
             trial: Trial to add.
 
+        Raises:
+            :exc:`ValueError`:
+                If the number of values in the trial does not match the number of objectives
+                in the study.
         """
 
         trial._validate()
@@ -1078,6 +1086,10 @@ class Study:
 
         Args:
             metric_names: A list of metric names for the objective function.
+
+        Raises:
+            :exc:`ValueError`:
+                If the length of ``metric_names`` does not match the number of objectives.
         """
         if len(self.directions) != len(metric_names):
             raise ValueError("The number of objectives must match the length of the metric names.")
@@ -1271,6 +1283,12 @@ def create_study(
         The :ref:`rdb` tutorial provides concrete examples to save and resume optimization using
         RDB.
 
+    Raises:
+        :exc:`ValueError`:
+            If both ``direction`` and ``directions`` are specified, or if neither is specified,
+            or if an invalid direction string is provided, or if the number of objectives is
+            not greater than 0.
+
     """
 
     if direction is None and directions is None:
@@ -1388,6 +1406,10 @@ def load_study(
 
     See also:
         :func:`optuna.load_study` is an alias of :func:`optuna.study.load_study`.
+
+    Raises:
+        :exc:`ValueError`:
+            If ``study_name`` is :obj:`None` and cannot be determined from the storage.
 
     """
     if study_name is None:
