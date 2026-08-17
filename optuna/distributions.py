@@ -571,6 +571,9 @@ def json_to_distribution(json_str: str) -> BaseDistribution:
     Returns:
         A deserialized distribution.
 
+    Raises:
+        :exc:`ValueError`:
+            If the JSON string does not contain a known distribution class or type.
     """
 
     json_dict = json.loads(json_str)
@@ -636,6 +639,10 @@ def check_distribution_compatibility(
         dist_new:
             A distribution newly added to storage.
 
+    Raises:
+        :exc:`ValueError`:
+            If ``dist_old`` and ``dist_new`` are of different distribution kinds,
+            different ``choices`` (for categorical), or different log/step configurations.
     """
 
     if dist_old.__class__ != dist_new.__class__:

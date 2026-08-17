@@ -207,6 +207,12 @@ class FixedTrial(BaseTrial):
             value:
                 A constraint value. The trial is considered feasible when all constraint values
                 are zero or less.
+
+        Raises:
+            :exc:`TypeError`:
+                If ``value`` cannot be cast to :obj:`float`.
+            :exc:`ValueError`:
+                If ``value`` is NaN.
         """
 
         try:
