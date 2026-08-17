@@ -161,6 +161,18 @@ class HyperbandPruner(BasePruner):
         self._trial_allocation_budgets: list[int] = []
         self._n_brackets: int | None = None
 
+        if self._min_resource < 1:
+            raise ValueError(
+                "The `min_resource` should be a positive integer, "
+                f"but got min_resource={self._min_resource}."
+            )
+
+        if self._reduction_factor < 2:
+            raise ValueError(
+                "The `reduction_factor` should be an integer no less than 2, "
+                f"but got reduction_factor={self._reduction_factor}."
+            )
+
         if not isinstance(self._max_resource, int) and self._max_resource != "auto":
             raise ValueError(
                 "The 'max_resource' should be integer or 'auto'. "
