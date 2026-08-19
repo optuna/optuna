@@ -90,10 +90,7 @@ class BaseGASampler(BaseSampler, abc.ABC):
 
     def _sync_incremental_cache(self, study: Study) -> list[FrozenTrial]:
         trials = study._get_trials(deepcopy=False, use_cache=True)
-        if (
-            self._cached_study_id != study._study_id
-            or len(trials) < self._cached_trial_cursor
-        ):
+        if self._cached_study_id != study._study_id or len(trials) < self._cached_trial_cursor:
             self._cached_study_id = study._study_id
             self._cached_generation_to_numbers.clear()
             self._cached_completed_numbers.clear()
