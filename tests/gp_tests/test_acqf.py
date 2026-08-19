@@ -217,3 +217,17 @@ def test_eval_multi_objective_acqf_with_constraints(
         stabilizing_noise=0.0,
     )
     verify_eval_acqf(x, acqf)
+
+
+def test_non_dominated_box_bounds_ignore_point_outside_reference() -> None:
+    Y_train = torch.tensor([[0.0, 1.0], [1.0, 0.0]], dtype=torch.float64)
+    loss_ref_point = acqf_module._get_reference_point(Y_train)
+    expected_lbs, expected_ubs = acqf_module._get_non_dominated_box_bounds(Y_train, loss_ref_point)
+    # This point is non-dominated, but does not dominate the reference point
+    # in every objective. Therefore, it has zero hypervolume contribution.
+    fantasy = torch.tensor([[100.0, -1.0]], dtype=torch.float64)
+    actual_lbs, actual_ubs = acqf_module._get_non_dominated_box_bounds(
+        torch.cat([Y_train, fantasy]), loss_ref_point
+    )
+    torch.testing.assert_close(actual_lbs, expected_lbs)
+    torch.testing.assert_close(actual_ubs, expected_ubs)
