@@ -88,20 +88,17 @@ class BaseGASampler(BaseSampler, abc.ABC):
         """
         raise NotImplementedError
 
-    def _reset_incremental_cache(self, study_id: int | None = None) -> None:
-        self._cached_study_id = study_id
-        self._cached_generation_to_numbers.clear()
-        self._cached_completed_numbers.clear()
-        self._cached_unfinished_numbers.clear()
-        self._cached_trial_cursor = 0
-
     def _sync_incremental_cache(self, study: Study) -> list[FrozenTrial]:
-        if self._cached_study_id != study._study_id:
-            self._reset_incremental_cache(study._study_id)
-
         trials = study._get_trials(deepcopy=False, use_cache=True)
-        if len(trials) < self._cached_trial_cursor:
-            self._reset_incremental_cache(study._study_id)
+        if (
+            self._cached_study_id != study._study_id
+            or len(trials) < self._cached_trial_cursor
+        ):
+            self._cached_study_id = study._study_id
+            self._cached_generation_to_numbers.clear()
+            self._cached_completed_numbers.clear()
+            self._cached_unfinished_numbers.clear()
+            self._cached_trial_cursor = 0
 
         trials_to_index = [
             trials[trial_number]
