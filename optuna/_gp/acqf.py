@@ -58,7 +58,7 @@ def logehvi(
     return torch.special.logsumexp(diff.log().sum(dim=-1), dim=(-2, -1)) - log_n_qmc_samples
 
 
-def per_sample_log_hvi(
+def _per_sample_log_hvi(
     Y_post: torch.Tensor,  # (..., n_qmc_samples, n_objectives)
     non_dominated_box_lower_bounds: torch.Tensor,  # (n_qmc_samples, n_boxes, n_objectives)
     non_dominated_box_intervals: torch.Tensor,  # (n_qmc_samples, n_boxes, n_objectives)
@@ -509,7 +509,7 @@ class qLogEHVI(BaseAcquisitionFunc):
             ],
             dim=-1,
         )
-        return per_sample_log_hvi(
+        return _per_sample_log_hvi(
             Y_post=Y_candidate_post,
             non_dominated_box_lower_bounds=self._non_dominated_box_lower_bounds,
             non_dominated_box_intervals=self._non_dominated_box_intervals,
