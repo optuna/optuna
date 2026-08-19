@@ -308,7 +308,9 @@ def optimize_acqf_mixed(
     # We use a modified roulette wheel selection to pick the initial param for each local search.
     probs = np.exp(f_vals - f_vals[max_i])
     probs[max_i] = 0.0  # We already picked the best param, so remove it from roulette.
-    probs /= probs.sum()
+    probs_sum = probs.sum()
+    if probs_sum > 0.0:
+        probs /= probs_sum
     n_non_zero_probs_improvement = int(np.count_nonzero(probs > 0.0))
     # n_additional_warmstart becomes smaller when study starts to converge.
     n_additional_warmstart = min(
