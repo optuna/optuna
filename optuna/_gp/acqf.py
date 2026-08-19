@@ -70,14 +70,24 @@ def _per_sample_log_hvi(
     return torch.special.logsumexp(diff.log().sum(dim=-1), dim=-1)
 
 
+def _get_reference_point(Y: torch.Tensor) -> np.ndarray:
+    # NOTE(nabenabe): Y is to be maximized, loss_vals is to be minimized.
+    loss_vals = -Y.numpy()
+    ref_point = np.max(loss_vals, axis=0)
+    return np.nextafter(np.maximum(1.1 * ref_point, 0.9 * ref_point), np.inf)
+
+
 def _get_non_dominated_box_bounds(
     Y: torch.Tensor,
+    ref_point: np.ndarray,
 ) -> tuple[torch.Tensor, torch.Tensor]:
     # NOTE(nabenabe): Y is to be maximized, loss_vals is to be minimized.
     loss_vals = -Y.numpy()
+    # NOTE(kAIto47802): Points that do not dominate the reference point have zero
+    # hypervolume contribution and must not participate in the decomposition.
+    # Since Y contains Y_train, the resulting loss_vals is guaranteed to be non-empty.
+    loss_vals = loss_vals[np.all(loss_vals < ref_point, axis=-1)]
     pareto_sols = loss_vals[_is_pareto_front(loss_vals, assume_unique_lexsorted=False)]
-    ref_point = np.max(loss_vals, axis=0)
-    ref_point = np.nextafter(np.maximum(1.1 * ref_point, 0.9 * ref_point), np.inf)
     lbs, ubs = get_non_dominated_box_bounds(pareto_sols, ref_point)
     # NOTE(nabenabe): Flip back the sign to make them compatible with maximization.
     return torch.from_numpy(-ubs), torch.from_numpy(-lbs)
@@ -427,8 +437,9 @@ class LogEHVI(BaseAcquisitionFunc):
         self._fixed_samples = sample_from_normal_sobol(
             dim=Y_train.shape[-1], n_samples=n_qmc_samples, seed=qmc_seed
         )
+        ref_point = _get_reference_point(Y_train)
         self._non_dominated_box_lower_bounds, non_dominated_box_upper_bounds = (
-            _get_non_dominated_box_bounds(Y_train)
+            _get_non_dominated_box_bounds(Y_train, ref_point)
         )
         self._non_dominated_box_intervals = (
             non_dominated_box_upper_bounds - self._non_dominated_box_lower_bounds
@@ -482,13 +493,16 @@ class qLogEHVI(BaseAcquisitionFunc):
             )
             for i, gpr in enumerate(gpr_list)
         ]
+        ref_point = _get_reference_point(Y_train)
         lower_bounds_list = []
         box_intervals_list = []
         for fantasy in torch.stack(
             [cond_gpr.get_fantasy_samples() for cond_gpr in self._cond_gpr_list], dim=-1
         ):
             Y_fantasy = torch.cat([self._Y_train, fantasy], dim=0)
-            lower_bounds, upper_bounds = _get_non_dominated_box_bounds(Y_fantasy)
+            lower_bounds, upper_bounds = _get_non_dominated_box_bounds(
+                Y_fantasy, ref_point
+            )
             lower_bounds_list.append(lower_bounds)
             box_intervals_list.append((upper_bounds - lower_bounds).clamp_min_(_EPS))
         self._non_dominated_box_lower_bounds = torch.nn.utils.rnn.pad_sequence(
