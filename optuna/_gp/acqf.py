@@ -500,9 +500,7 @@ class qLogEHVI(BaseAcquisitionFunc):
             [cond_gpr.get_fantasy_samples() for cond_gpr in self._cond_gpr_list], dim=-1
         ):
             Y_fantasy = torch.cat([self._Y_train, fantasy], dim=0)
-            lower_bounds, upper_bounds = _get_non_dominated_box_bounds(
-                Y_fantasy, ref_point
-            )
+            lower_bounds, upper_bounds = _get_non_dominated_box_bounds(Y_fantasy, ref_point)
             lower_bounds_list.append(lower_bounds)
             box_intervals_list.append((upper_bounds - lower_bounds).clamp_min_(_EPS))
         self._non_dominated_box_lower_bounds = torch.nn.utils.rnn.pad_sequence(
