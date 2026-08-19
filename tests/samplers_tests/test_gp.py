@@ -41,9 +41,24 @@ def test_after_convergence(caplog: LogCaptureFixture) -> None:
     acqf_params = acqf_module.LogEI(
         gpr=gpr, search_space=search_space, threshold=np.max(score_vals)
     )
+    sampled_xs = search_space.sample_normalized_params(4, rng=np.random.RandomState(0))
+    f_vals = acqf_params.eval_acqf_no_grad(sampled_xs)
+    max_i = np.argmax(f_vals)
+    probs = np.exp(f_vals - f_vals[max_i])
+    probs[max_i] = 0.0
+    assert np.isfinite(f_vals).all()
+    assert not np.any(probs)
+
     caplog.clear()
     optuna.logging.enable_propagation()
-    optim_mixed.optimize_acqf_mixed(acqf_params, rng=np.random.RandomState(42))
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", RuntimeWarning)
+        optim_mixed.optimize_acqf_mixed(
+            acqf_params,
+            n_preliminary_samples=4,
+            n_local_search=2,
+            rng=np.random.RandomState(0),
+        )
     # len(caplog.text) > 0 means the optimization has already converged.
     assert len(caplog.text) > 0, "Did you change the kernel implementation?"
 
