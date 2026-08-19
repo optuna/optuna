@@ -231,7 +231,7 @@ def test_eval_qconstrained_logehvi(
     n_objectives = Y.shape[-1]
     is_feasible = np.all(c <= 0, axis=1)
     is_all_infeasible = not np.any(is_feasible)
-    acqf = acqf_module.qConstrainedLogEHVI(
+    acqf = acqf_module.qLogCEHVI(
         gpr_list=[get_gpr(Y[:, i]) for i in range(n_objectives)],
         search_space=search_space,
         Y_feasible=None if is_all_infeasible else torch.from_numpy(Y[is_feasible]),

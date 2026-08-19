@@ -96,7 +96,7 @@ class GPSampler(BaseSampler):
       single-objective constrained optimization with running trials,
     - MC-based batch log expected hypervolume improvement (qLogEHVI) for multi-objective
       optimization with running trials, and
-    - MC-based batch constrained log expected hypervolume improvement (qConstrainedLogEHVI) for
+    - q-batch constrained log expected hypervolume improvement (qLogCEHVI) for
       multi-objective constrained optimization with running trials.
 
     Note that We adopt a sequential greedy selection for batch candidates instead of joint
@@ -562,7 +562,7 @@ class GPSampler(BaseSampler):
                         constraints_threshold_list=constr_threshold_list,
                     )
                 else:
-                    acqf = acqf_module.qConstrainedLogEHVI(
+                    acqf = acqf_module.qLogCEHVI(
                         gpr_list=gprs_list,
                         search_space=internal_search_space,
                         Y_feasible=(

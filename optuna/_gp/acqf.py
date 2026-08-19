@@ -570,7 +570,7 @@ class ConstrainedLogEHVI(BaseAcquisitionFunc):
         return constraints_acqf_values + self._acqf.eval_acqf(x)
 
 
-class qConstrainedLogEHVI(BaseAcquisitionFunc):
+class qLogCEHVI(BaseAcquisitionFunc):
     def __init__(
         self,
         gpr_list: list[GPRegressor],
@@ -633,10 +633,10 @@ class qConstrainedLogEHVI(BaseAcquisitionFunc):
             acqf.compute_per_sample_log_utility(x, return_fantasy=False)
             for acqf in self._constraints_acqf_list
         )
-        # NOTE(sawa3030): qConstrainedLogEHVI evaluates HVI(Y_running U Y_candidate | Y_train)
+        # NOTE(sawa3030): qLogCEHVI evaluates HVI(Y_running U Y_candidate | Y_train)
         # in log space using HVI(Y_candidate | Y_running U Y_train) + HVI(Y_running | Y_train).
         # qLogEHVI only needs the first term because HVI(Y_running | Y_train) is constant with
-        # respect to x, whereas qConstrainedLogEHVI keeps both terms. Here, self._acqf computes
+        # respect to x, whereas qLogCEHVI keeps both terms. Here, self._acqf computes
         # the first term and self._log_running_hvi stores the second term per fantasy sample.
         log_feasible_improvement = (
             torch.logaddexp(
