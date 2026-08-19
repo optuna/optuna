@@ -121,9 +121,10 @@ def test_retry_an_incomplete_trailing_log() -> None:
         + b'{"op_code":0,"work'
     )
     what_to_write_2 = b'er_id":"worker-2"}\n' + b'{"op_code":0,"worker_id":"worker-3"}\n'
-    with NamedTemporaryFilePool() as file:
-        with open(file.name, "wb") as f:
-            f.write(what_to_write_1)
+    with NamedTemporaryFilePool() as file_:
+        file: IO[bytes] = file_
+        file.write(what_to_write_1)
+        file.flush()
 
         file_backend = journal.JournalFileBackend(file.name)
         assert list(file_backend.read_logs(0)) == [
@@ -131,8 +132,8 @@ def test_retry_an_incomplete_trailing_log() -> None:
             {"op_code": 0, "worker_id": "worker-1"},
         ]
 
-        with open(file.name, "ab") as f:
-            f.write(what_to_write_2)
+        file.write(what_to_write_2)
+        file.flush()
 
         assert list(file_backend.read_logs(2)) == [
             {"op_code": 0, "worker_id": "worker-2"},
@@ -147,15 +148,16 @@ def test_does_not_cache_an_incomplete_log_before_requested_number() -> None:
         + b'{"op_code":0,"work'
     )
     what_to_write_2 = b'er_id":"worker-2"}\n' + b'{"op_code":0,"worker_id":"worker-3"}\n'
-    with NamedTemporaryFilePool() as file:
-        with open(file.name, "wb") as f:
-            f.write(what_to_write_1)
+    with NamedTemporaryFilePool() as file_:
+        file: IO[bytes] = file_
+        file.write(what_to_write_1)
+        file.flush()
 
         file_backend = journal.JournalFileBackend(file.name)
         assert list(file_backend.read_logs(3)) == []
 
-        with open(file.name, "ab") as f:
-            f.write(what_to_write_2)
+        file.write(what_to_write_2)
+        file.flush()
 
         assert list(file_backend.read_logs(3)) == [
             {"op_code": 0, "worker_id": "worker-3"},
