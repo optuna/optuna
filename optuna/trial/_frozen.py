@@ -531,6 +531,7 @@ def create_trial(
     user_attrs: dict[str, Any] | None = None,
     system_attrs: dict[str, Any] | None = None,
     intermediate_values: dict[int, float] | None = None,
+    constraints: dict[str, float] | None = None,
 ) -> FrozenTrial:
     """Create a new :class:`~optuna.trial.FrozenTrial`.
 
@@ -594,6 +595,9 @@ def create_trial(
             Dictionary with system attributes. Should not have to be used for most users.
         intermediate_values:
             Dictionary with intermediate objective values of the trial.
+        constraints:
+            Dictionary with constraint values of the trial. The trial is considered feasible when
+            all constraint values are zero or less.
 
     Returns:
         Created trial.
@@ -633,6 +637,10 @@ def create_trial(
         system_attrs=system_attrs,
         intermediate_values=intermediate_values,
     )
+
+    if constraints is not None:
+        for key, constraint_value in constraints.items():
+            trial.set_constraint(key, constraint_value)
 
     trial._validate()
 
