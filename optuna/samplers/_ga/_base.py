@@ -52,6 +52,11 @@ class BaseGASampler(BaseSampler, abc.ABC):
 
     def __init__(self, population_size: int | None):
         self._population_size = population_size
+        self._cached_study_id: int | None = None
+        self._cached_generation_to_numbers: dict[int, list[int]] = {}
+        self._cached_completed_numbers: set[int] = set()
+        self._cached_unfinished_numbers: set[int] = set()
+        self._cached_trial_cursor = 0
 
     @property
     def population_size(self) -> int | None:
@@ -83,6 +88,44 @@ class BaseGASampler(BaseSampler, abc.ABC):
         """
         raise NotImplementedError
 
+    def _sync_incremental_cache(self, study: Study) -> list[FrozenTrial]:
+        trials = study._get_trials(deepcopy=False, use_cache=True)
+        if self._cached_study_id != study._study_id or len(trials) < self._cached_trial_cursor:
+            self._cached_study_id = study._study_id
+            self._cached_generation_to_numbers.clear()
+            self._cached_completed_numbers.clear()
+            self._cached_unfinished_numbers.clear()
+            self._cached_trial_cursor = 0
+
+        trials_to_index = [
+            trials[trial_number]
+            for trial_number in list(self._cached_unfinished_numbers)
+            if trial_number < len(trials)
+        ]
+        trials_to_index.extend(trials[self._cached_trial_cursor :])
+
+        for trial in trials_to_index:
+            if trial.state == TrialState.COMPLETE:
+                self._cached_unfinished_numbers.discard(trial.number)
+                if trial.number in self._cached_completed_numbers:
+                    continue
+
+                self._cached_completed_numbers.add(trial.number)
+                generation = trial.system_attrs.get(self._get_generation_key())
+                if generation is not None:
+                    self._cached_generation_to_numbers.setdefault(generation, []).append(
+                        trial.number
+                    )
+                continue
+
+            if trial.state.is_finished():
+                self._cached_unfinished_numbers.discard(trial.number)
+            else:
+                self._cached_unfinished_numbers.add(trial.number)
+
+        self._cached_trial_cursor = len(trials)
+        return trials
+
     def get_trial_generation(self, study: Study, trial: FrozenTrial) -> int:
         """Get the generation number of the given trial.
 
@@ -106,26 +149,12 @@ class BaseGASampler(BaseSampler, abc.ABC):
         if generation is not None:
             return generation
 
-        trials = study._get_trials(deepcopy=False, states=[TrialState.COMPLETE], use_cache=True)
-
-        max_generation, max_generation_count = 0, 0
-
-        for t in reversed(trials):
-            generation = t.system_attrs.get(self._get_generation_key(), -1)
-
-            if generation < max_generation:
-                continue
-            elif generation > max_generation:
-                max_generation = generation
-                max_generation_count = 1
-            else:
-                max_generation_count += 1
+        self._sync_incremental_cache(study)
 
         assert self._population_size is not None, "Population size must be set."
-        if max_generation_count < self._population_size:
-            generation = max_generation
-        else:
-            generation = max_generation + 1
+        generation = 0
+        while len(self._cached_generation_to_numbers.get(generation, ())) >= self._population_size:
+            generation += 1
         study._storage.set_trial_system_attr(
             trial._trial_id, self._get_generation_key(), generation
         )
@@ -143,12 +172,10 @@ class BaseGASampler(BaseSampler, abc.ABC):
         Returns:
             List of frozen trials in the given generation.
         """
+        trials = self._sync_incremental_cache(study)
         return [
-            trial
-            for trial in study._get_trials(
-                deepcopy=False, states=[TrialState.COMPLETE], use_cache=True
-            )
-            if trial.system_attrs.get(self._get_generation_key(), None) == generation
+            trials[trial_number]
+            for trial_number in self._cached_generation_to_numbers.get(generation, ())
         ]
 
     def get_parent_population(self, study: Study, generation: int) -> list[FrozenTrial]:
