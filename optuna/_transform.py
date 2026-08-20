@@ -292,13 +292,14 @@ def _untransform_numerical_param(
     elif isinstance(d, IntDistribution):
         if d.log:
             if transform_log:
-                param = int(np.clip(np.round(math.exp(trans_param)), d.low, d.high))
+                param = int(round(math.exp(trans_param)))
+                param = min(max(param, d.low), d.high)
             else:
                 param = int(trans_param)
         else:
-            param = int(
-                np.clip(np.round((trans_param - d.low) / d.step) * d.step + d.low, d.low, d.high)
-            )
+            step_index = math.floor((trans_param - d.low) / d.step + 0.5)
+            param = step_index * d.step + d.low
+            param = min(max(param, d.low), d.high)
     else:
         assert False, "Should not reach. Unexpected distribution."
 

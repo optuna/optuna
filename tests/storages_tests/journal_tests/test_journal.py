@@ -23,6 +23,7 @@ from optuna.storages import JournalFileSymlinkLock as DeprecatedJournalFileSymli
 from optuna.storages import JournalStorage
 from optuna.storages.journal._base import BaseJournalSnapshot
 from optuna.storages.journal._file import BaseJournalFileLock
+from optuna.storages.journal._storage import JournalOperation
 from optuna.storages.journal._storage import JournalStorageReplayResult
 from optuna.testing.storages import StorageSupplier
 from optuna.testing.tempfile_pool import NamedTemporaryFilePool
@@ -264,3 +265,26 @@ def test_invalid_grace_period(log_storage_type: str, grace_period: int) -> None:
     with pytest.raises(ValueError):
         with JournalLogStorageSupplier(log_storage_type, grace_period):
             pass
+
+
+def test_ignore_discard_trial_operation() -> None:
+    with NamedTemporaryFilePool() as file:
+        file_storage = journal.JournalFileBackend(file.name)
+        storage = optuna.storages.JournalStorage(file_storage)
+
+        # Create an Optuna study
+        study = optuna.create_study(storage=storage)
+        trial1 = study.ask()
+        x = trial1.suggest_float("x", -10, 10)
+        study.tell(trial1, values=x**2)
+
+        # Insert DISCARD_TRIALS operation
+        storage._write_log(JournalOperation.DISCARD_TRIALS, {"trial_ids": [trial1._trial_id]})
+
+        # Resume optimization
+        trial2 = study.ask()
+        x = trial2.suggest_float("x", -10, 10)
+        study.tell(trial2, values=x**2)
+
+        trials = storage.get_all_trials(study._study_id)
+        assert trial2.number in [t.number for t in trials]
