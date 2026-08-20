@@ -108,7 +108,7 @@ def test_eval_qlogpi(x: np.ndarray, search_space: SearchSpace) -> None:
 
 @parametrized_x
 @parametrized_additional_values
-def test_eval_qconstrained_logei(
+def test_eval_qlogcei(
     x: np.ndarray,
     additional_values: np.ndarray,
     search_space: SearchSpace,
