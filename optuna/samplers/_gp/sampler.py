@@ -87,7 +87,7 @@ class GPSampler(BaseSampler):
     As an acquisition function, we use:
 
     - log expected improvement (logEI) for single-objective optimization,
-    - log expected hypervolume improvement (logEHVI) for Multi-objective optimization,
+    - log expected hypervolume improvement (logEHVI) for multi-objective optimization,
     - log constrained expected improvement (logCEI) for single-objective constrained optimization,
     - log constrained expected hypervolume improvement (logCEHVI) for multi-objective constrained
       optimization,
