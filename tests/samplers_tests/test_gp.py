@@ -24,6 +24,33 @@ def test_after_convergence(caplog: LogCaptureFixture) -> None:
     # instability in the variance calculation.
     X_uniform = [(i + 1) / 10 for i in range(10)]
     X_uniform_near_optimal = [(i + 1) / 1e5 for i in range(20)]
+    X_optimal = [0.0] * 10
+    X = np.array(X_uniform + X_uniform_near_optimal + X_optimal)
+    score_vals = -(X - np.mean(X)) / np.std(X)
+    search_space = gp_search_space.SearchSpace(
+        {"a": optuna.distributions.FloatDistribution(0.0, 1.0)}
+    )
+    gpr = optuna_gp.fit_kernel_params(
+        X=X[:, np.newaxis],
+        Y=score_vals,
+        is_categorical=np.array([False]),
+        log_prior=prior.default_log_prior,
+        minimum_noise=prior.DEFAULT_MINIMUM_NOISE_VAR,
+        deterministic_objective=False,
+    )
+    acqf_params = acqf_module.LogEI(
+        gpr=gpr, search_space=search_space, threshold=np.max(score_vals)
+    )
+    caplog.clear()
+    optuna.logging.enable_propagation()
+    optim_mixed.optimize_acqf_mixed(acqf_params, rng=np.random.RandomState(42))
+    # len(caplog.text) > 0 means the optimization has already converged.
+    assert len(caplog.text) > 0, "Did you change the kernel implementation?"
+
+
+def test_after_convergence_with_zero_sum_probabilities() -> None:
+    X_uniform = [(i + 1) / 10 for i in range(10)]
+    X_uniform_near_optimal = [(i + 1) / 1e5 for i in range(20)]
     X_optimal = [0.0] * 60
     X = np.array(X_uniform + X_uniform_near_optimal + X_optimal)
     score_vals = -(X - np.mean(X)) / np.std(X)
@@ -49,13 +76,9 @@ def test_after_convergence(caplog: LogCaptureFixture) -> None:
     assert np.isfinite(f_vals).all()
     assert not np.any(probs)
 
-    caplog.clear()
-    optuna.logging.enable_propagation()
     with warnings.catch_warnings():
         warnings.simplefilter("error", RuntimeWarning)
         optim_mixed.optimize_acqf_mixed(acqf_params, rng=np.random.RandomState(22))
-    # len(caplog.text) > 0 means the optimization has already converged.
-    assert len(caplog.text) > 0, "Did you change the kernel implementation?"
 
 
 @pytest.mark.parametrize("constraint_value", [-1.0, 0.0, 1.0, -float("inf"), float("inf")])
