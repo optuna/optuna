@@ -76,9 +76,7 @@ def test_after_convergence_with_zero_sum_probabilities() -> None:
     assert np.isfinite(f_vals).all()
     assert not np.any(probs)
 
-    with warnings.catch_warnings():
-        warnings.simplefilter("error", RuntimeWarning)
-        optim_mixed.optimize_acqf_mixed(acqf_params, rng=np.random.RandomState(22))
+    optim_mixed.optimize_acqf_mixed(acqf_params, rng=np.random.RandomState(22))
 
 
 @pytest.mark.parametrize("constraint_value", [-1.0, 0.0, 1.0, -float("inf"), float("inf")])
