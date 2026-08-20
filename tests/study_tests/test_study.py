@@ -842,6 +842,33 @@ def test_enqueue_trial_skip_existing_handles_common_types(storage_mode: str, par
         assert before_enqueue == after_enqueue
 
 
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_enqueue_trial_skip_existing_nan_not_duplicate_of_other_value(
+    storage_mode: str,
+) -> None:
+    # https://github.com/optuna/optuna/issues/6798
+    # A NaN value should not be treated as a duplicate of a different numeric value, and
+    # vice versa, regardless of enqueue order.
+    with StorageSupplier(storage_mode) as storage:
+        study = create_study(storage=storage)
+        study.enqueue_trial({"x": 0.0})
+        study.enqueue_trial({"x": float("nan")}, skip_if_exists=True)
+        assert len(study.trials) == 2
+
+    with StorageSupplier(storage_mode) as storage:
+        reverse_study = create_study(storage=storage)
+        reverse_study.enqueue_trial({"x": float("nan")})
+        reverse_study.enqueue_trial({"x": 0.0}, skip_if_exists=True)
+        assert len(reverse_study.trials) == 2
+
+    with StorageSupplier(storage_mode) as storage:
+        # NaN should still be treated as a duplicate of an existing NaN.
+        nan_study = create_study(storage=storage)
+        nan_study.enqueue_trial({"x": float("nan")})
+        nan_study.enqueue_trial({"x": float("nan")}, skip_if_exists=True)
+        assert len(nan_study.trials) == 1
+
+
 @patch("optuna.study._optimize.gc.collect")
 def test_optimize_with_gc(collect_mock: Mock) -> None:
     study = create_study()
