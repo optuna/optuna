@@ -98,7 +98,7 @@ class GPSampler(BaseSampler):
 
     Note that we adopt a sequential greedy selection for batch candidates instead of joint
     optimization and constrained optimization refers to optimization with black-box inequalities.
-    The constained acquisition functions assume the independence between each constraint and
+    The constrained acquisition functions assume the independence between each constraint and
     objective, computing the summation of objective acquisition function and the logarithm of
     the feasible probability.
 
