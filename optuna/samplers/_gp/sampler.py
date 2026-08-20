@@ -87,18 +87,22 @@ class GPSampler(BaseSampler):
     As an acquisition function, we use:
 
     - log expected improvement (logEI) for single-objective optimization,
-    - log expected hypervolume improvement (logEHVI) for Multi-objective optimization,
-    - the summation of logEI and the logarithm of the feasible probability with the independent
-      assumption of each constraint for (black-box inequality) constrained optimization,
-    - MC-based batch log expected improvement (qLogEI) for single-objective optimization with
-      running trials,
-    - MC-based batch constrained log expected improvement (qConstrainedLogEI) for
-      single-objective constrained optimization with running trials, and
+    - log expected hypervolume improvement (logEHVI) for multi-objective optimization,
+    - log constrained expected improvement (logCEI) for single-objective constrained optimization,
+    - log constrained expected hypervolume improvement (logCEHVI) for multi-objective constrained
+      optimization,
+    - q-batch log expected improvement (qLogEI) for single-objective optimization with
+      running trials, and
+    - q-batch log constrained expected improvement (qLogCEI) for
+      single-objective constrained optimization with running trials
     - q-batch log expected hypervolume improvement (qLogEHVI) for multi-objective
       optimization with running trials.
 
-    Note that We adopt a sequential greedy selection for batch candidates instead of joint
-    optimization.
+    Note that we adopt a sequential greedy selection for batch candidates instead of joint
+    optimization and constrained optimization refers to optimization with black-box inequalities.
+    The constrained acquisition functions assume the independence between each constraint and
+    objective, computing the summation of objective acquisition function and the logarithm of
+    the feasible probability.
 
     For further information about these acquisition functions, please refer to the following
     papers:
@@ -515,7 +519,7 @@ class GPSampler(BaseSampler):
                 i_opt = np.argmax(y_with_neginf)
                 best_feasible_y = y_with_neginf[i_opt]
                 if normalized_params_of_running_trials is None:
-                    acqf = acqf_module.ConstrainedLogEI(
+                    acqf = acqf_module.LogCEI(
                         gpr=gprs_list[0],
                         search_space=internal_search_space,
                         threshold=best_feasible_y,
@@ -523,7 +527,7 @@ class GPSampler(BaseSampler):
                         constraints_threshold_list=constr_threshold_list,
                     )
                 else:
-                    acqf = acqf_module.qConstrainedLogEI(
+                    acqf = acqf_module.qLogCEI(
                         gpr=gprs_list[0],
                         search_space=internal_search_space,
                         threshold=best_feasible_y,
@@ -545,7 +549,7 @@ class GPSampler(BaseSampler):
                     constraint_vals, internal_search_space, normalized_params
                 )
                 is_all_infeasible = not any(is_feasible)
-                acqf = acqf_module.ConstrainedLogEHVI(
+                acqf = acqf_module.LogCEHVI(
                     gpr_list=gprs_list,
                     search_space=internal_search_space,
                     Y_feasible=(
