@@ -94,22 +94,17 @@ def _get_non_dominated_box_bounds(
     return torch.from_numpy(-ubs), torch.from_numpy(-lbs)
 
 
-def _compute_log_hvi(Y_baseline: torch.Tensor, Y_fantasy: torch.Tensor) -> torch.Tensor:
-    if Y_fantasy.shape[0] == Y_baseline.shape[0]:
-        return torch.tensor(-torch.inf, dtype=torch.float64)
-    baseline_loss_vals = -Y_baseline.numpy()
+def _compute_log_hvi(
+    Y_fantasy: torch.Tensor, ref_point: np.ndarray, baseline_hypervolume: float
+) -> torch.Tensor:
     fantasy_loss_vals = -Y_fantasy.numpy()
-    ref_point = np.max(fantasy_loss_vals, axis=0)
-    ref_point = np.nextafter(np.maximum(1.1 * ref_point, 0.9 * ref_point), np.inf)
-    hvi = compute_hypervolume(
+    fantasy_loss_vals = fantasy_loss_vals[np.all(fantasy_loss_vals < ref_point, axis=-1)]
+    fantasy_hypervolume = compute_hypervolume(
         fantasy_loss_vals,
         ref_point,
         assume_pareto=False,
-    ) - compute_hypervolume(
-        baseline_loss_vals,
-        ref_point,
-        assume_pareto=False,
     )
+    hvi = fantasy_hypervolume - baseline_hypervolume
     return (
         torch.tensor(math.log(hvi), dtype=torch.float64)
         if hvi > 0.0
@@ -483,7 +478,7 @@ class qLogEHVI(BaseAcquisitionFunc):
             )
             for i, gpr in enumerate(gpr_list)
         ]
-        ref_point = _get_reference_point(Y_train)
+        self._ref_point = _get_reference_point(Y_train)
         lower_bounds_list = []
         box_intervals_list = []
         self.fantasy_observations = []
@@ -501,7 +496,7 @@ class qLogEHVI(BaseAcquisitionFunc):
                 else self._Y_train
             )
             self.fantasy_observations.append(Y_fantasy)
-            lower_bounds, upper_bounds = _get_non_dominated_box_bounds(Y_fantasy, ref_point)
+            lower_bounds, upper_bounds = _get_non_dominated_box_bounds(Y_fantasy, self._ref_point)
             lower_bounds_list.append(lower_bounds)
             box_intervals_list.append((upper_bounds - lower_bounds).clamp_min_(_EPS))
         self._non_dominated_box_lower_bounds = torch.nn.utils.rnn.pad_sequence(
@@ -634,9 +629,17 @@ class qLogCEHVI(BaseAcquisitionFunc):
                 is_fantasy_feasible=is_fantasy_feasible,
                 stabilizing_noise=stabilizing_noise,
             )
+            baseline_loss_vals = -Y_feasible.numpy()
+            baseline_hypervolume = compute_hypervolume(
+                baseline_loss_vals,
+                self._acqf._ref_point,
+                assume_pareto=False,
+            )
             log_running_hvi = []
             for Y_fantasy in self._acqf.fantasy_observations:
-                log_running_hvi.append(_compute_log_hvi(Y_feasible, Y_fantasy))
+                log_running_hvi.append(
+                    _compute_log_hvi(Y_fantasy, self._acqf._ref_point, baseline_hypervolume)
+                )
             self._log_running_hvi = torch.stack(log_running_hvi)
         super().__init__(np.mean([gpr.length_scales for gpr in gpr_list], axis=0), search_space)
 
