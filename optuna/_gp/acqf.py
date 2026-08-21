@@ -609,6 +609,12 @@ class qLogCEHVI(BaseAcquisitionFunc):
                 zip(constraints_gpr_list, constraints_threshold_list)
             )
         ]
+
+        # NOTE(sawa3030): qLogCEHVI evaluates HVI(Y_running U Y_candidate | Y_train)
+        # in log space using HVI(Y_candidate | Y_running U Y_train) + HVI(Y_running | Y_train).
+        # qLogEHVI only needs the first term because HVI(Y_running | Y_train) is constant with
+        # respect to x, whereas qLogCEHVI keeps both terms. Here, self._acqf computes
+        # the first term and self._log_running_hvi stores the second term per fantasy sample.
         self._acqf: qLogEHVI | None = None
         self._log_running_hvi: torch.Tensor | None = None
         if Y_feasible is not None:
@@ -629,18 +635,18 @@ class qLogCEHVI(BaseAcquisitionFunc):
                 is_fantasy_feasible=is_fantasy_feasible,
                 stabilizing_noise=stabilizing_noise,
             )
-            baseline_loss_vals = -Y_feasible.numpy()
+
             baseline_hypervolume = compute_hypervolume(
-                baseline_loss_vals,
+                -Y_feasible.numpy(),
                 self._acqf._ref_point,
                 assume_pareto=False,
             )
-            log_running_hvi = []
-            for Y_fantasy in self._acqf.fantasy_observations:
-                log_running_hvi.append(
+            self._log_running_hvi = torch.stack(
+                [
                     _compute_log_hvi(Y_fantasy, self._acqf._ref_point, baseline_hypervolume)
-                )
-            self._log_running_hvi = torch.stack(log_running_hvi)
+                    for Y_fantasy in self._acqf.fantasy_observations
+                ]
+            )
         super().__init__(np.mean([gpr.length_scales for gpr in gpr_list], axis=0), search_space)
 
     def eval_acqf(self, x: torch.Tensor) -> torch.Tensor:
@@ -648,11 +654,6 @@ class qLogCEHVI(BaseAcquisitionFunc):
             acqf.compute_per_sample_log_utility(x, return_fantasy=False)
             for acqf in self._constraints_acqf_list
         )
-        # NOTE(sawa3030): qLogCEHVI evaluates HVI(Y_running U Y_candidate | Y_train)
-        # in log space using HVI(Y_candidate | Y_running U Y_train) + HVI(Y_running | Y_train).
-        # qLogEHVI only needs the first term because HVI(Y_running | Y_train) is constant with
-        # respect to x, whereas qLogCEHVI keeps both terms. Here, self._acqf computes
-        # the first term and self._log_running_hvi stores the second term per fantasy sample.
         log_feasible_improvement = (
             torch.logaddexp(
                 self._log_running_hvi,
