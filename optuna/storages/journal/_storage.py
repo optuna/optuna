@@ -153,7 +153,8 @@ class JournalStorage(BaseStorage):
     def create_new_study(
         self, directions: Sequence[StudyDirection], study_name: str | None = None
     ) -> int:
-        study_name = study_name or DEFAULT_STUDY_NAME_PREFIX + str(uuid.uuid4())
+        if study_name is None:
+            study_name = DEFAULT_STUDY_NAME_PREFIX + str(uuid.uuid4())
 
         with self._thread_lock:
             self._write_log(
