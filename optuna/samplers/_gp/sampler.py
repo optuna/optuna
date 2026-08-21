@@ -552,7 +552,7 @@ class GPSampler(BaseSampler):
                 )
                 is_all_infeasible = not any(is_feasible)
                 if normalized_params_of_running_trials is None:
-                    acqf = acqf_module.CEHVI(
+                    acqf = acqf_module.LogCEHVI(
                         gpr_list=gprs_list,
                         search_space=internal_search_space,
                         Y_feasible=(
