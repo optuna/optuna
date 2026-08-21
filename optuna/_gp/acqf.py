@@ -656,9 +656,8 @@ class qLogCEHVI(BaseAcquisitionFunc):
         log_feasible_improvement = (
             torch.logaddexp(
                 self._log_running_hvi,
-                self._acqf.compute_per_sample_log_utility(x),
+                constraint_log_feasibility + self._acqf.compute_per_sample_log_utility(x),
             )
-            + constraint_log_feasibility
             if self._acqf is not None
             else constraint_log_feasibility
         )
