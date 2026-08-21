@@ -10,6 +10,7 @@ import numpy as np
 
 from optuna._gp.gp import ConditionalGPRegressor
 from optuna._gp.qmc import sample_from_normal_sobol
+from optuna._hypervolume import compute_hypervolume
 from optuna._hypervolume import get_non_dominated_box_bounds
 from optuna.study._multi_objective import _is_pareto_front
 
@@ -91,6 +92,24 @@ def _get_non_dominated_box_bounds(
     lbs, ubs = get_non_dominated_box_bounds(pareto_sols, ref_point)
     # NOTE(nabenabe): Flip back the sign to make them compatible with maximization.
     return torch.from_numpy(-ubs), torch.from_numpy(-lbs)
+
+
+def _compute_log_hvi(
+    Y_fantasy: torch.Tensor, ref_point: np.ndarray, baseline_hypervolume: float
+) -> torch.Tensor:
+    fantasy_loss_vals = -Y_fantasy.numpy()
+    fantasy_loss_vals = fantasy_loss_vals[np.all(fantasy_loss_vals < ref_point, axis=-1)]
+    fantasy_hypervolume = compute_hypervolume(
+        fantasy_loss_vals,
+        ref_point,
+        assume_pareto=False,
+    )
+    hvi = fantasy_hypervolume - baseline_hypervolume
+    return (
+        torch.tensor(math.log(hvi), dtype=torch.float64)
+        if hvi > 0.0
+        else torch.tensor(-torch.inf, dtype=torch.float64)
+    )
 
 
 def standard_logei(z: torch.Tensor) -> torch.Tensor:
@@ -277,9 +296,14 @@ class qLogPI(BaseAcquisitionFunc):
         )
         super().__init__(gpr.length_scales, search_space)
 
-    def compute_per_sample_log_utility(self, x: torch.Tensor) -> torch.Tensor:
-        y_post = self._cond_gpr.sample_joint_posterior(x)
+    def compute_per_sample_log_utility(
+        self, x: torch.Tensor, return_fantasy: bool = True
+    ) -> torch.Tensor:
+        y_post = self._cond_gpr.sample_joint_posterior(x, return_fantasy=return_fantasy)
         return torch.nn.functional.logsigmoid((y_post - self._threshold) / self._tau)
+
+    def get_fantasy_feasibility(self) -> torch.Tensor:
+        return self._cond_gpr.get_fantasy_samples() >= self._threshold
 
     def eval_acqf(self, x: torch.Tensor) -> torch.Tensor:
         return _compute_mean_max_utility(self.compute_per_sample_log_utility(x))
@@ -479,6 +503,7 @@ class qLogEHVI(BaseAcquisitionFunc):
         n_qmc_samples: int,
         qmc_seed: int,
         normalized_params_of_running_trials: np.ndarray,
+        is_fantasy_feasible: torch.Tensor | None = None,
         stabilizing_noise: float = 1e-12,
     ) -> None:
         self._Y_train = Y_train
@@ -492,14 +517,25 @@ class qLogEHVI(BaseAcquisitionFunc):
             )
             for i, gpr in enumerate(gpr_list)
         ]
-        ref_point = _get_reference_point(Y_train)
+        self._ref_point = _get_reference_point(Y_train)
         lower_bounds_list = []
         box_intervals_list = []
-        for fantasy in torch.stack(
-            [cond_gpr.get_fantasy_samples() for cond_gpr in self._cond_gpr_list], dim=-1
+        self.fantasy_observations = []
+        for i, fantasy in enumerate(
+            torch.stack(
+                [cond_gpr.get_fantasy_samples() for cond_gpr in self._cond_gpr_list], dim=-1
+            )
         ):
-            Y_fantasy = torch.cat([self._Y_train, fantasy], dim=0)
-            lower_bounds, upper_bounds = _get_non_dominated_box_bounds(Y_fantasy, ref_point)
+            feasible_fantasy = (
+                fantasy if is_fantasy_feasible is None else fantasy[is_fantasy_feasible[i]]
+            )
+            Y_fantasy = (
+                torch.cat([self._Y_train, feasible_fantasy], dim=0)
+                if feasible_fantasy.shape[0] > 0
+                else self._Y_train
+            )
+            self.fantasy_observations.append(Y_fantasy)
+            lower_bounds, upper_bounds = _get_non_dominated_box_bounds(Y_fantasy, self._ref_point)
             lower_bounds_list.append(lower_bounds)
             box_intervals_list.append((upper_bounds - lower_bounds).clamp_min_(_EPS))
         self._non_dominated_box_lower_bounds = torch.nn.utils.rnn.pad_sequence(
@@ -541,7 +577,6 @@ class LogCEHVI(BaseAcquisitionFunc):
         qmc_seed: int,
         constraints_gpr_list: list[GPRegressor],
         constraints_threshold_list: list[float],
-        normalized_params_of_running_trials: np.ndarray | None = None,
         stabilizing_noise: float = 1e-12,
     ) -> None:
         assert (
@@ -554,7 +589,7 @@ class LogCEHVI(BaseAcquisitionFunc):
                 Y_feasible,
                 n_qmc_samples,
                 qmc_seed,
-                normalized_params_of_running_trials,
+                None,
                 stabilizing_noise,
             )
             if Y_feasible is not None
@@ -565,7 +600,7 @@ class LogCEHVI(BaseAcquisitionFunc):
                 _gpr,
                 search_space,
                 _threshold,
-                normalized_params_of_running_trials,
+                None,
                 stabilizing_noise,
             )
             for _gpr, _threshold in zip(constraints_gpr_list, constraints_threshold_list)
@@ -581,3 +616,94 @@ class LogCEHVI(BaseAcquisitionFunc):
         if self._acqf is None:
             return cast("torch.Tensor", constraints_acqf_values)
         return constraints_acqf_values + self._acqf.eval_acqf(x)
+
+
+class qLogCEHVI(BaseAcquisitionFunc):
+    def __init__(
+        self,
+        gpr_list: list[GPRegressor],
+        search_space: SearchSpace,
+        Y_feasible: torch.Tensor | None,
+        n_qmc_samples: int,
+        qmc_seed: int,
+        constraints_gpr_list: list[GPRegressor],
+        constraints_threshold_list: list[float],
+        normalized_params_of_running_trials: np.ndarray,
+        stabilizing_noise: float = 1e-12,
+        tau: float = 1e-2,
+    ) -> None:
+        assert (
+            len(constraints_gpr_list) == len(constraints_threshold_list) and constraints_gpr_list
+        )
+        self._constraints_acqf_list: list[qLogPI] = [
+            qLogPI(
+                gpr=constraint_gpr,
+                search_space=search_space,
+                threshold=constraint_threshold,
+                n_qmc_samples=n_qmc_samples,
+                qmc_seed=qmc_seed + len(gpr_list) + i,
+                normalized_params_of_running_trials=normalized_params_of_running_trials,
+                stabilizing_noise=stabilizing_noise,
+                tau=tau,
+            )
+            for i, (constraint_gpr, constraint_threshold) in enumerate(
+                zip(constraints_gpr_list, constraints_threshold_list)
+            )
+        ]
+
+        # NOTE(sawa3030): qLogCEHVI evaluates HVI(Y_running U Y_candidate | Y_train)
+        # in log space using HVI(Y_candidate | Y_running U Y_train) + HVI(Y_running | Y_train).
+        # qLogEHVI only needs the first term because HVI(Y_running | Y_train) is constant with
+        # respect to x, whereas qLogCEHVI keeps both terms. Here, self._acqf computes
+        # the first term and self._log_running_hvi stores the second term per fantasy sample.
+        self._acqf: qLogEHVI | None = None
+        self._log_running_hvi: torch.Tensor | None = None
+        if Y_feasible is not None:
+            is_fantasy_feasible = torch.all(
+                torch.stack(
+                    [acqf.get_fantasy_feasibility() for acqf in self._constraints_acqf_list],
+                    dim=-1,
+                ),
+                dim=-1,
+            )
+            self._acqf = qLogEHVI(
+                gpr_list=gpr_list,
+                search_space=search_space,
+                Y_train=Y_feasible,
+                n_qmc_samples=n_qmc_samples,
+                qmc_seed=qmc_seed,
+                normalized_params_of_running_trials=normalized_params_of_running_trials,
+                is_fantasy_feasible=is_fantasy_feasible,
+                stabilizing_noise=stabilizing_noise,
+            )
+
+            baseline_hypervolume = compute_hypervolume(
+                -Y_feasible.numpy(),
+                self._acqf._ref_point,
+                assume_pareto=False,
+            )
+            self._log_running_hvi = torch.stack(
+                [
+                    _compute_log_hvi(Y_fantasy, self._acqf._ref_point, baseline_hypervolume)
+                    for Y_fantasy in self._acqf.fantasy_observations
+                ]
+            )
+        super().__init__(np.mean([gpr.length_scales for gpr in gpr_list], axis=0), search_space)
+
+    def eval_acqf(self, x: torch.Tensor) -> torch.Tensor:
+        constraint_log_feasibility = sum(
+            acqf.compute_per_sample_log_utility(x, return_fantasy=False)
+            for acqf in self._constraints_acqf_list
+        )
+        log_feasible_improvement = (
+            torch.logaddexp(
+                self._log_running_hvi,
+                constraint_log_feasibility + self._acqf.compute_per_sample_log_utility(x),
+            )
+            if self._acqf is not None
+            else constraint_log_feasibility
+        )
+
+        return torch.special.logsumexp(log_feasible_improvement, dim=-1) - math.log(
+            log_feasible_improvement.shape[-1]
+        )
