@@ -235,7 +235,7 @@ def test_non_dominated_box_bounds_ignore_point_outside_reference() -> None:
 
 @parametrized_x
 @parametrized_additional_values
-def test_eval_qconstrained_logehvi(
+def test_eval_q_logcehvi(
     x: np.ndarray,
     additional_values: np.ndarray,
     search_space: SearchSpace,
