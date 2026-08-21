@@ -1137,8 +1137,7 @@ class Study:
                     continue
 
                 is_repeated = (
-                    np.isnan(float(param_value))
-                    or np.isclose(float(param_value), float(existing_param), atol=0.0)
+                    np.isclose(float(param_value), float(existing_param), atol=0.0, equal_nan=True)
                     if isinstance(param_value, Real)
                     else param_value == existing_param
                 )
