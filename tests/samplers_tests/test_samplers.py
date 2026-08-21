@@ -114,6 +114,7 @@ class TestRelativeSampler(RelativeSamplerTestCase):
             lambda: optuna.samplers.TPESampler(n_startup_trials=0, multivariate=True),
             lambda: optuna.samplers.CmaEsSampler(n_startup_trials=0),
             lambda: optuna.samplers.CmaEsSampler(n_startup_trials=0, use_separable_cma=True),
+            optuna.samplers.QMCSampler,
             lambda: get_gp_sampler(n_startup_trials=0),
             lambda: get_gp_sampler(n_startup_trials=0, deterministic_objective=True),
         ]
