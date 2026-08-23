@@ -437,6 +437,12 @@ def test_eq_ne_hash() -> None:
     d2 = distributions.IntDistribution(low=1, high=2)
     assert d0 != d2
 
+    d3 = distributions.CategoricalDistribution(choices=(float("nan"), 1.0))
+    d4 = distributions.CategoricalDistribution(choices=(float("nan"), 1.0))
+    assert d3 == d4
+    assert hash(d3) == hash(d4)
+    assert {d3: "value"}[d4] == "value"
+
 
 def test_repr() -> None:
     # The following variables are needed to apply `eval` to distribution

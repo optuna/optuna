@@ -467,6 +467,12 @@ def _categorical_choice_equal(
     return (value1 == value2) or (value1_is_nan and value2_is_nan)
 
 
+def _categorical_choice_hash(value: CategoricalChoiceType) -> int:
+    if isinstance(value, Real) and math.isnan(float(value)):
+        return hash(("nan",))
+    return hash(value)
+
+
 class CategoricalDistribution(BaseDistribution):
     """A categorical distribution.
 
@@ -547,7 +553,8 @@ class CategoricalDistribution(BaseDistribution):
                     return False
         return True
 
-    __hash__ = BaseDistribution.__hash__
+    def __hash__(self) -> int:
+        return hash((self.__class__, tuple(map(_categorical_choice_hash, self.choices))))
 
 
 DISTRIBUTION_CLASSES = (
