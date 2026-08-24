@@ -457,6 +457,48 @@ class ConditionalGPRegressor:
         return torch.cat([fantasy, samples.unsqueeze(-1)], dim=-1)
 
 
+class MultiObjectiveConditionalGPRegressor:
+    """Conditional GP samplers for each objective, sharing one set of running trials.
+
+    ``fantasy_samples`` is shaped ``(n_qmc_samples, n_running, n_objectives)`` and
+    ``sample_candidate_posterior`` returns ``(*x.shape[:-1], n_qmc_samples, n_objectives)``.
+    """
+
+    def __init__(
+        self,
+        gpr_list: list[GPRegressor],
+        X_running: torch.Tensor,
+        n_qmc_samples: int,
+        qmc_seed: int,
+        stabilizing_noise: float,
+    ) -> None:
+        self._cond_gpr_list = [
+            ConditionalGPRegressor(
+                gpr=gpr,
+                X_running=X_running,
+                n_qmc_samples=n_qmc_samples,
+                qmc_seed=qmc_seed + i,
+                stabilizing_noise=stabilizing_noise,
+            )
+            for i, gpr in enumerate(gpr_list)
+        ]
+
+    @property
+    def fantasy_samples(self) -> torch.Tensor:
+        return torch.stack(
+            [cond_gpr.get_fantasy_samples() for cond_gpr in self._cond_gpr_list], dim=-1
+        )
+
+    def sample_candidate_posterior(self, x: torch.Tensor) -> torch.Tensor:
+        return torch.stack(
+            [
+                cond_gpr.sample_joint_posterior(x, return_fantasy=False)
+                for cond_gpr in self._cond_gpr_list
+            ],
+            dim=-1,
+        )
+
+
 def fit_kernel_params(
     X: np.ndarray,
     Y: np.ndarray,
