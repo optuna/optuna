@@ -331,6 +331,8 @@ def test_get_all_study_summaries(storage_mode: str, include_best_trial: bool) ->
         assert summary.n_trials == NUM_MINIMAL_TRIALS
         if include_best_trial:
             assert summary.best_trial is not None
+            assert summary.best_trial.number == study.best_trial.number
+            assert summary.best_trial.value == study.best_trial.value
         else:
             assert summary.best_trial is None
 
@@ -1270,6 +1272,74 @@ def test_best_trial_constrained_optimization(direction: StudyDirection) -> None:
     storage.set_trial_system_attr(trial._trial_id, _CONSTRAINTS_KEY, [0])
     study.tell(trial, -1 if direction == StudyDirection.MINIMIZE else 1)
     assert study.best_trial.number == 3
+
+
+@pytest.mark.parametrize("direction", [StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE])
+def test_get_all_study_summaries_constrained_optimization(direction: StudyDirection) -> None:
+    study = create_study(direction=direction)
+    storage = study._storage
+
+    summaries = get_all_study_summaries(storage)
+    assert summaries[0].best_trial is None
+
+    trial = study.ask()
+    storage.set_trial_system_attr(trial._trial_id, _CONSTRAINTS_KEY, [1])
+    study.tell(trial, 0)
+    summaries = get_all_study_summaries(storage)
+    assert summaries[0].best_trial is None
+
+    trial = study.ask()
+    storage.set_trial_system_attr(trial._trial_id, _CONSTRAINTS_KEY, [0])
+    study.tell(trial, 0)
+    summaries = get_all_study_summaries(storage)
+    assert summaries[0].best_trial is not None
+    assert summaries[0].best_trial.number == study.best_trial.number == 1
+
+    trial = study.ask()
+    storage.set_trial_system_attr(trial._trial_id, _CONSTRAINTS_KEY, [1])
+    study.tell(trial, -1 if direction == StudyDirection.MINIMIZE else 1)
+    summaries = get_all_study_summaries(storage)
+    assert summaries[0].best_trial is not None
+    assert summaries[0].best_trial.number == study.best_trial.number == 1
+
+    trial = study.ask()
+    storage.set_trial_system_attr(trial._trial_id, _CONSTRAINTS_KEY, [0])
+    study.tell(trial, -1 if direction == StudyDirection.MINIMIZE else 1)
+    summaries = get_all_study_summaries(storage)
+    assert summaries[0].best_trial is not None
+    assert summaries[0].best_trial.number == study.best_trial.number == 3
+
+    summaries = get_all_study_summaries(storage, include_best_trial=False)
+    assert summaries[0].best_trial is None
+
+
+def test_get_all_study_summaries_constrained_multi_objective() -> None:
+    study = create_study(directions=["minimize", "minimize"])
+    trial = study.ask()
+    trial.set_constraint("c", 0.0)
+    study.tell(trial, [0.0, 0.0])
+
+    summaries = get_all_study_summaries(study._storage, include_best_trial=True)
+    assert summaries[0].best_trial is None
+
+
+def test_get_all_study_summaries_constrained_matches_study_best_trial() -> None:
+    def objective(trial: Trial) -> float:
+        x = trial.suggest_float("x", -10, 10)
+        trial.set_constraint("c", 5 - x)  # Feasible iff x >= 5.
+        return x
+
+    study = create_study(direction="minimize")
+    study.enqueue_trial({"x": -10.0})  # Infeasible, better objective.
+    study.enqueue_trial({"x": 5.0})  # Feasible.
+    study.optimize(objective, n_trials=2)
+
+    summary = get_all_study_summaries(study._storage)[0]
+    assert summary.best_trial is not None
+    assert summary.best_trial.number == study.best_trial.number
+    assert summary.best_trial.params == {"x": 5.0}
+    assert summary.best_trial.value == 5.0
+    assert summary.best_trial.constraints == {"c": 0.0}
 
 
 def test_best_trials() -> None:
