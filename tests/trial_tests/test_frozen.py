@@ -39,6 +39,24 @@ def test_eq_ne() -> None:
     assert trial != trial_other
 
 
+def test_hash() -> None:
+    trial = _create_trial()
+
+    # A ``FrozenTrial`` defines ``__eq__``, so defining ``__hash__`` declares that instances
+    # are hashable. ``hash`` must therefore not raise, even though the trial holds list/dict
+    # fields such as ``values`` and ``params``.
+    assert isinstance(hash(trial), int)
+
+    # Objects that compare equal must have the same hash value.
+    trial_other = copy.copy(trial)
+    assert trial == trial_other
+    assert hash(trial) == hash(trial_other)
+
+    # A ``FrozenTrial`` can therefore be used as a set element and a dict key.
+    assert trial in {trial}
+    assert {trial: "value"}[trial_other] == "value"
+
+
 def test_lt() -> None:
     trial = _create_trial()
 

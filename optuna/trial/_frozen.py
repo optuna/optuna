@@ -194,7 +194,11 @@ class FrozenTrial(BaseTrial):
         return self.number <= other.number
 
     def __hash__(self) -> int:
-        return hash(tuple(getattr(self, field) for field in self.__dict__))
+        # ``__dict__`` holds unhashable values (e.g. the ``list`` in ``values`` and the ``dict``
+        # in ``params``), so hashing over it raises ``TypeError`` for every trial. Hash on the
+        # ``number`` and ``trial_id`` identity fields instead. Equal trials share the whole
+        # ``__dict__`` and hence both fields, so the equal-implies-equal-hash invariant holds.
+        return hash((self._number, self._trial_id))
 
     def __repr__(self) -> str:
         cls = self.__class__.__name__
