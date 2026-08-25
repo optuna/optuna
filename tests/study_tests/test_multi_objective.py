@@ -6,6 +6,7 @@ import pytest
 from optuna.study import StudyDirection
 from optuna.study._multi_objective import _dominates
 from optuna.study._multi_objective import _fast_non_domination_rank
+from optuna.study._multi_objective import _is_pareto_front_for_unique_sorted
 from optuna.study._multi_objective import _normalize_value
 from optuna.trial import create_trial
 from optuna.trial import TrialState
@@ -169,3 +170,12 @@ def test_normalize_value() -> None:
     assert _normalize_value(1.0, StudyDirection.MAXIMIZE) == -1.0
     assert _normalize_value(None, StudyDirection.MINIMIZE) == float("inf")
     assert _normalize_value(None, StudyDirection.MAXIMIZE) == float("inf")
+
+
+def test_is_pareto_front_for_unique_sorted_with_empty_array() -> None:
+    """Test that an empty array returns an empty boolean array without crashing (Issue #6827)."""
+    empty_array = np.zeros((0, 1))
+    on_front = _is_pareto_front_for_unique_sorted(empty_array)
+
+    assert on_front.shape == (0,)
+    assert on_front.dtype == bool

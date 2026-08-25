@@ -145,6 +145,8 @@ def _is_pareto_front_2d(unique_lexsorted_loss_values: np.ndarray) -> np.ndarray:
 
 def _is_pareto_front_for_unique_sorted(unique_lexsorted_loss_values: np.ndarray) -> np.ndarray:
     (n_trials, n_objectives) = unique_lexsorted_loss_values.shape
+    if n_trials == 0:
+        return np.zeros(0, dtype=bool)
     if n_objectives == 1:
         on_front = np.zeros(len(unique_lexsorted_loss_values), dtype=bool)
         on_front[0] = True  # Only the first element is Pareto optimal.
