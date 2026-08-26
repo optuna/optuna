@@ -87,7 +87,7 @@ class BaseGASampler(BaseSampler, abc.ABC):
         """
         raise NotImplementedError
 
-    def _sync_incremental_cache(self, study: Study) -> list[FrozenTrial]:
+    def _sync_generation_cache(self, study: Study) -> list[FrozenTrial]:
         trials = study._get_trials(deepcopy=False, use_cache=True)
         if (
             self._cached_study_id != study._study_id
@@ -146,7 +146,7 @@ class BaseGASampler(BaseSampler, abc.ABC):
         if generation is not None:
             return generation
 
-        self._sync_incremental_cache(study)
+        self._sync_generation_cache(study)
 
         assert self._population_size is not None, "Population size must be set."
         generation = 0
@@ -169,7 +169,7 @@ class BaseGASampler(BaseSampler, abc.ABC):
         Returns:
             List of frozen trials in the given generation.
         """
-        trials = self._sync_incremental_cache(study)
+        trials = self._sync_generation_cache(study)
         return [
             trials[trial_number]
             for trial_number in self._cached_generation_to_numbers.get(generation, ())
