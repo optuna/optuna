@@ -54,9 +54,8 @@ class BaseGASampler(BaseSampler, abc.ABC):
         self._population_size = population_size
         self._cached_study_id: int | None = None
         self._cached_generation_to_numbers: dict[int, list[int]] = {}
-        self._cached_completed_numbers: set[int] = set()
         self._cached_unfinished_numbers: set[int] = set()
-        self._cached_trial_cursor = 0
+        self._cached_unseen_trial_start = 0
 
     @property
     def population_size(self) -> int | None:
@@ -90,27 +89,25 @@ class BaseGASampler(BaseSampler, abc.ABC):
 
     def _sync_incremental_cache(self, study: Study) -> list[FrozenTrial]:
         trials = study._get_trials(deepcopy=False, use_cache=True)
-        if self._cached_study_id != study._study_id or len(trials) < self._cached_trial_cursor:
+        if (
+            self._cached_study_id != study._study_id
+            or len(trials) < self._cached_unseen_trial_start
+        ):
             self._cached_study_id = study._study_id
             self._cached_generation_to_numbers.clear()
-            self._cached_completed_numbers.clear()
             self._cached_unfinished_numbers.clear()
-            self._cached_trial_cursor = 0
+            self._cached_unseen_trial_start = 0
 
         trials_to_index = [
             trials[trial_number]
             for trial_number in list(self._cached_unfinished_numbers)
             if trial_number < len(trials)
         ]
-        trials_to_index.extend(trials[self._cached_trial_cursor :])
+        trials_to_index.extend(trials[self._cached_unseen_trial_start :])
 
         for trial in trials_to_index:
             if trial.state == TrialState.COMPLETE:
                 self._cached_unfinished_numbers.discard(trial.number)
-                if trial.number in self._cached_completed_numbers:
-                    continue
-
-                self._cached_completed_numbers.add(trial.number)
                 generation = trial.system_attrs.get(self._get_generation_key())
                 if generation is not None:
                     self._cached_generation_to_numbers.setdefault(generation, []).append(
@@ -123,7 +120,7 @@ class BaseGASampler(BaseSampler, abc.ABC):
             else:
                 self._cached_unfinished_numbers.add(trial.number)
 
-        self._cached_trial_cursor = len(trials)
+        self._cached_unseen_trial_start = len(trials)
         return trials
 
     def get_trial_generation(self, study: Study, trial: FrozenTrial) -> int:
