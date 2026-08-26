@@ -457,8 +457,8 @@ class ConditionalGPRegressor:
         return torch.cat([fantasy, samples.unsqueeze(-1)], dim=-1)
 
 
-class MultiObjectiveConditionalGPRegressor:
-    """Conditional GP samplers for each objective, sharing one set of running trials.
+class ListConditionalGPRegressor:
+    """A list of conditional GP regressors for each objective, sharing one set of running trials.
 
     ``fantasy_samples`` is shaped ``(n_qmc_samples, n_running, n_objectives)`` and
     ``sample_candidate_posterior`` returns ``(*x.shape[:-1], n_qmc_samples, n_objectives)``.
@@ -482,12 +482,12 @@ class MultiObjectiveConditionalGPRegressor:
             )
             for i, gpr in enumerate(gpr_list)
         ]
-
-    @property
-    def fantasy_samples(self) -> torch.Tensor:
-        return torch.stack(
+        self._fantasy_samples = torch.stack(
             [cond_gpr.get_fantasy_samples() for cond_gpr in self._cond_gpr_list], dim=-1
         )
+
+    def get_fantasy_samples(self) -> torch.Tensor:
+        return self._fantasy_samples
 
     def sample_candidate_posterior(self, x: torch.Tensor) -> torch.Tensor:
         return torch.stack(
