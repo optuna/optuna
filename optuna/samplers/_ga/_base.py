@@ -98,14 +98,24 @@ class BaseGASampler(BaseSampler, abc.ABC):
             self._cached_unfinished_numbers.clear()
             self._cached_unseen_trial_start = 0
 
-        trials_to_index = [
-            trials[trial_number]
-            for trial_number in list(self._cached_unfinished_numbers)
-            if trial_number < len(trials)
-        ]
-        trials_to_index.extend(trials[self._cached_unseen_trial_start :])
+        for trial_number in tuple(self._cached_unfinished_numbers):
+            if trial_number < len(trials):
+                trial = trials[trial_number]
+                if trial.state == TrialState.COMPLETE:
+                    self._cached_unfinished_numbers.discard(trial.number)
+                    generation = trial.system_attrs.get(self._get_generation_key())
+                    if generation is not None:
+                        self._cached_generation_to_numbers.setdefault(generation, []).append(
+                            trial.number
+                        )
+                    continue
 
-        for trial in trials_to_index:
+                if trial.state.is_finished():
+                    self._cached_unfinished_numbers.discard(trial.number)
+                else:
+                    self._cached_unfinished_numbers.add(trial.number)
+
+        for trial in trials[self._cached_unseen_trial_start :]:
             if trial.state == TrialState.COMPLETE:
                 self._cached_unfinished_numbers.discard(trial.number)
                 generation = trial.system_attrs.get(self._get_generation_key())
