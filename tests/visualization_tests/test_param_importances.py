@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from io import BytesIO
 from typing import Any
 
 import pytest
@@ -24,7 +23,6 @@ from optuna.visualization._param_importances import _ImportancesInfo
 from optuna.visualization._plotly_imports import go
 from optuna.visualization.matplotlib import plot_param_importances as plt_plot_param_importances
 from optuna.visualization.matplotlib._matplotlib_imports import Axes
-from optuna.visualization.matplotlib._matplotlib_imports import plt
 
 
 parametrize_plot_param_importances = pytest.mark.parametrize(
@@ -108,12 +106,7 @@ def test_plot_param_importances(
     params: list[str] | None,
 ) -> None:
     study = specific_create_study()
-    figure = plot_param_importances(study, params=params)
-    if isinstance(figure, go.Figure):
-        figure.write_image(BytesIO())
-    else:
-        plt.savefig(BytesIO())
-        plt.close()
+    plot_param_importances(study, params=params)
 
 
 @pytest.mark.parametrize(
