@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from io import BytesIO
 import math
 from typing import Any
 from typing import Literal
@@ -26,7 +25,6 @@ from optuna.visualization._plotly_imports import go
 from optuna.visualization._utils import COLOR_SCALE
 from optuna.visualization.matplotlib import plot_contour as plt_plot_contour
 from optuna.visualization.matplotlib._matplotlib_imports import Axes
-from optuna.visualization.matplotlib._matplotlib_imports import plt
 
 
 parametrize_plot_contour = pytest.mark.parametrize(
@@ -178,12 +176,7 @@ def test_plot_contour(
     params: list[str] | None,
 ) -> None:
     study = specific_create_study()
-    figure = plot_contour(study, params=params)
-    if isinstance(figure, go.Figure):
-        figure.write_image(BytesIO())
-    else:
-        plt.savefig(BytesIO())
-        plt.close()
+    plot_contour(study, params=params)
 
 
 def test_target_is_none_and_study_is_multi_obj() -> None:

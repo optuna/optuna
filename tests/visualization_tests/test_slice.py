@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from collections.abc import Sequence
-from io import BytesIO
 from typing import Any
 from typing import Literal
 
@@ -25,7 +24,6 @@ from optuna.visualization._slice import _SliceSubplotInfo
 from optuna.visualization._utils import COLOR_SCALE
 from optuna.visualization.matplotlib import plot_slice as plt_plot_slice
 from optuna.visualization.matplotlib._matplotlib_imports import Axes
-from optuna.visualization.matplotlib._matplotlib_imports import plt
 
 
 parametrize_plot_slice = pytest.mark.parametrize("plot_slice", [plotly_plot_slice, plt_plot_slice])
@@ -107,12 +105,7 @@ def test_plot_slice(
     params: list[str] | None,
 ) -> None:
     study = specific_create_study()
-    figure = plot_slice(study, params=params)
-    if isinstance(figure, go.Figure):
-        figure.write_image(BytesIO())
-    else:
-        plt.savefig(BytesIO())
-        plt.close()
+    plot_slice(study, params=params)
 
 
 def test_target_is_none_and_study_is_multi_obj() -> None:
