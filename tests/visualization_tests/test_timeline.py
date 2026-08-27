@@ -10,10 +10,8 @@ import optuna
 from optuna.study._constrained_optimization import _CONSTRAINTS_KEY
 from optuna.trial import TrialState
 from optuna.visualization import plot_timeline as plotly_plot_timeline
-from optuna.visualization._plotly_imports import _imports as plotly_imports
 from optuna.visualization._timeline import _get_timeline_info
 from optuna.visualization.matplotlib import plot_timeline as plt_plot_timeline
-from optuna.visualization.matplotlib._matplotlib_imports import _imports as plt_imports
 
 
 if TYPE_CHECKING:
