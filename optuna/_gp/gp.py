@@ -15,6 +15,12 @@ sqd: The squared differences of each dimension between two points.
 is_categorical:
     A boolean array with the shape of (len(params), ). If is_categorical[i] is True, the i-th
     parameter is categorical.
+
+Notation for q-batch acquisition functions with running trials:
+
+q-batch: The set consisting of the running trials and one candidate currently being evaluated.
+fantasy_samples: Hypothetical objective values at the running trials for each QMC sample.
+candidate: A new parameter value whose acquisition value is being evaluated.
 """
 
 from __future__ import annotations
@@ -460,7 +466,13 @@ class ConditionalGPRegressor:
 class ListConditionalGPRegressor:
     """A list of conditional GP regressors for each objective, sharing one set of running trials.
 
-    ``fantasy_samples`` is shaped ``(n_qmc_samples, n_running, n_objectives)`` and
+    This class is used by q-batch multi-objective acquisition functions. For each QMC sample, it
+    shares the same q-batch structure across objectives: the first ``n_running`` entries are
+    fantasy values at the running trials, and the final q-batch entry is the candidate currently
+    being evaluated.
+
+    ``fantasy_samples`` is shaped ``(n_qmc_samples, n_running, n_objectives)``. It contains the
+    running-trial part of the q-batch, which is used to build the per-sample HVI baseline.
     ``sample_candidate_posterior`` returns ``(*x.shape[:-1], n_qmc_samples, n_objectives)``.
     """
 
