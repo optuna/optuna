@@ -73,6 +73,11 @@ class StorageTestCase:
         with pytest.raises(optuna.exceptions.DuplicatedStudyError):
             storage.create_new_study(directions=[StudyDirection.MINIMIZE], study_name=study_name)
 
+    def test_create_new_study_with_empty_name(self, storage: BaseStorage) -> None:
+        study_id = storage.create_new_study(directions=[StudyDirection.MINIMIZE], study_name="")
+
+        assert storage.get_study_name_from_id(study_id) == ""
+
     def test_delete_study(self, storage: BaseStorage) -> None:
         study_id = storage.create_new_study(directions=[StudyDirection.MINIMIZE])
         storage.create_new_trial(study_id)

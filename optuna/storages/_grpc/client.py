@@ -113,12 +113,14 @@ class GrpcStorageProxy(BaseStorage):
     def create_new_study(
         self, directions: Sequence[StudyDirection], study_name: str | None = None
     ) -> int:
+        if study_name is None:
+            study_name = DEFAULT_STUDY_NAME_PREFIX + str(uuid.uuid4())
         request = api_pb2.CreateNewStudyRequest(
             directions=[
                 api_pb2.MINIMIZE if d == StudyDirection.MINIMIZE else api_pb2.MAXIMIZE
                 for d in directions
             ],
-            study_name=study_name or DEFAULT_STUDY_NAME_PREFIX + str(uuid.uuid4()),
+            study_name=study_name,
         )
         try:
             response = self._stub.CreateNewStudy(request)
