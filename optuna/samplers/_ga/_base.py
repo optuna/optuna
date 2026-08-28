@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import abc
+import threading
 from typing import Any
 from typing import TYPE_CHECKING
 
@@ -56,6 +57,7 @@ class BaseGASampler(BaseSampler, abc.ABC):
         self._cached_generation_to_numbers: dict[int, list[int]] = {}
         self._cached_unfinished_numbers: set[int] = set()
         self._cached_unseen_trial_start = 0
+        self._thread_lock = threading.Lock()
 
     @property
     def population_size(self) -> int | None:
@@ -88,19 +90,35 @@ class BaseGASampler(BaseSampler, abc.ABC):
         raise NotImplementedError
 
     def _sync_generation_cache(self, study: Study) -> list[FrozenTrial]:
-        trials = study._get_trials(deepcopy=False, use_cache=True)
-        if (
-            self._cached_study_id != study._study_id
-            or len(trials) < self._cached_unseen_trial_start
-        ):
-            self._cached_study_id = study._study_id
-            self._cached_generation_to_numbers.clear()
-            self._cached_unfinished_numbers.clear()
-            self._cached_unseen_trial_start = 0
+        with self._thread_lock:
+            trials = study._get_trials(deepcopy=False, use_cache=True)
+            if (
+                self._cached_study_id != study._study_id
+                or len(trials) < self._cached_unseen_trial_start
+            ):
+                self._cached_study_id = study._study_id
+                self._cached_generation_to_numbers.clear()
+                self._cached_unfinished_numbers.clear()
+                self._cached_unseen_trial_start = 0
 
-        for trial_number in tuple(self._cached_unfinished_numbers):
-            if trial_number < len(trials):
-                trial = trials[trial_number]
+            for trial_number in tuple(self._cached_unfinished_numbers):
+                if trial_number < len(trials):
+                    trial = trials[trial_number]
+                    if trial.state == TrialState.COMPLETE:
+                        self._cached_unfinished_numbers.discard(trial.number)
+                        generation = trial.system_attrs.get(self._get_generation_key())
+                        if generation is not None:
+                            self._cached_generation_to_numbers.setdefault(generation, []).append(
+                                trial.number
+                            )
+                        continue
+
+                    if trial.state.is_finished():
+                        self._cached_unfinished_numbers.discard(trial.number)
+                    else:
+                        self._cached_unfinished_numbers.add(trial.number)
+
+            for trial in trials[self._cached_unseen_trial_start :]:
                 if trial.state == TrialState.COMPLETE:
                     self._cached_unfinished_numbers.discard(trial.number)
                     generation = trial.system_attrs.get(self._get_generation_key())
@@ -115,23 +133,8 @@ class BaseGASampler(BaseSampler, abc.ABC):
                 else:
                     self._cached_unfinished_numbers.add(trial.number)
 
-        for trial in trials[self._cached_unseen_trial_start :]:
-            if trial.state == TrialState.COMPLETE:
-                self._cached_unfinished_numbers.discard(trial.number)
-                generation = trial.system_attrs.get(self._get_generation_key())
-                if generation is not None:
-                    self._cached_generation_to_numbers.setdefault(generation, []).append(
-                        trial.number
-                    )
-                continue
-
-            if trial.state.is_finished():
-                self._cached_unfinished_numbers.discard(trial.number)
-            else:
-                self._cached_unfinished_numbers.add(trial.number)
-
-        self._cached_unseen_trial_start = len(trials)
-        return trials
+            self._cached_unseen_trial_start = len(trials)
+            return trials
 
     def get_trial_generation(self, study: Study, trial: FrozenTrial) -> int:
         """Get the generation number of the given trial.
