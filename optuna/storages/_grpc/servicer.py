@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from datetime import timezone
 import json
 import threading
 from typing import TYPE_CHECKING
@@ -29,7 +30,6 @@ else:
 
 
 _logger = logging.get_logger(__name__)
-DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S.%f"
 
 
 class OptunaStorageProxyService(api_pb2_grpc.StorageServiceServicer):
@@ -370,6 +370,24 @@ def _from_proto_trial_state(state: api_pb2.TrialState.ValueType) -> TrialState:
     raise ValueError(f"Unknown api_pb2.TrialState: {state}")
 
 
+def _to_proto_datetime(dt: datetime | None) -> str:
+    """Convert a datetime to a UTC-aware ISO 8601 string for gRPC, or an empty string for None."""
+    if dt is None:
+        return ""
+
+    dt_utc = dt.astimezone(timezone.utc)
+    return dt_utc.isoformat(timespec="microseconds")
+
+
+def _from_proto_datetime(proto_str: str) -> datetime | None:
+    """Convert a gRPC datetime string to a naive local datetime, or None for an empty string."""
+    if proto_str == "":
+        return None
+
+    dt = datetime.fromisoformat(proto_str)
+    return dt.astimezone().replace(tzinfo=None)
+
+
 def _to_proto_trial(trial: FrozenTrial) -> api_pb2.Trial:
     params = {}
     for key, value in trial.params.items():
@@ -380,12 +398,8 @@ def _to_proto_trial(trial: FrozenTrial) -> api_pb2.Trial:
         number=trial.number,
         state=_to_proto_trial_state(trial.state),
         values=trial.values,
-        datetime_start=(
-            trial.datetime_start.strftime(DATETIME_FORMAT) if trial.datetime_start else ""
-        ),
-        datetime_complete=(
-            trial.datetime_complete.strftime(DATETIME_FORMAT) if trial.datetime_complete else ""
-        ),
+        datetime_start=_to_proto_datetime(trial.datetime_start),
+        datetime_complete=_to_proto_datetime(trial.datetime_complete),
         distributions={
             key: distribution_to_json(distribution)
             for key, distribution in trial.distributions.items()
@@ -398,14 +412,8 @@ def _to_proto_trial(trial: FrozenTrial) -> api_pb2.Trial:
 
 
 def _from_proto_trial(trial: api_pb2.Trial) -> FrozenTrial:
-    datetime_start = (
-        datetime.strptime(trial.datetime_start, DATETIME_FORMAT) if trial.datetime_start else None
-    )
-    datetime_complete = (
-        datetime.strptime(trial.datetime_complete, DATETIME_FORMAT)
-        if trial.datetime_complete
-        else None
-    )
+    datetime_start = _from_proto_datetime(trial.datetime_start)
+    datetime_complete = _from_proto_datetime(trial.datetime_complete)
     distributions = {
         key: json_to_distribution(value) for key, value in trial.distributions.items()
     }
