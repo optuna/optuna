@@ -7,6 +7,8 @@ plot_timeline
 
 The following code snippet shows how to plot the timeline of a study.
 
+.. _visualization-plot-timeline-matplotlib-content:
+
 """
 
 import time

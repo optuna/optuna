@@ -7,6 +7,8 @@ plot_parallel_coordinate
 
 The following code snippet shows how to plot the high-dimensional parameter relationships.
 
+.. _visualization-plot-parallel-coordinate-matplotlib-content:
+
 """
 
 import optuna
