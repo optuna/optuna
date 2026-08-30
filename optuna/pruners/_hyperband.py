@@ -204,12 +204,18 @@ class HyperbandPruner(BasePruner):
             # In this implementation, we combine this formula and that of ASHA paper
             # https://arxiv.org/abs/1502.07943 as
             # `n_brackets = floor(log_{reduction_factor}(max_resource / min_resource)) + 1`
-            self._n_brackets = (
-                math.floor(
-                    math.log(self._max_resource / self._min_resource, self._reduction_factor)
-                )
-                + 1
+            max_rung = math.floor(
+                math.log(self._max_resource / self._min_resource, self._reduction_factor)
             )
+            # `math.log` is inexact, e.g. it evaluates `log_3(243)` as 4.999999999999999, so the
+            # exponent above is corrected by exact integer comparisons.
+            while self._min_resource * self._reduction_factor**max_rung > self._max_resource:
+                max_rung -= 1
+            while (
+                self._min_resource * self._reduction_factor ** (max_rung + 1) <= self._max_resource
+            ):
+                max_rung += 1
+            self._n_brackets = max_rung + 1
 
         _logger.debug(f"Hyperband has {self._n_brackets} brackets")
 

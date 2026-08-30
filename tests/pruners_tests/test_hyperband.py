@@ -94,6 +94,32 @@ def test_hyperband_max_resource_value_error() -> None:
 
 
 @pytest.mark.parametrize(
+    "min_resource,max_resource,reduction_factor,expected_n_brackets",
+    [
+        # `math.log(243, 3)` is 4.999999999999999 and `math.log(1000, 10)` is 2.9999999999999996,
+        # so a naive `floor` of them drops the last bracket.
+        (1, 243, 3, 6),
+        (2, 486, 3, 6),
+        (1, 1000, 10, 4),
+        (1, 81, 3, 5),
+        (1, 16, 2, 5),
+        (1, 20, 3, 3),
+    ],
+)
+def test_hyperband_n_brackets(
+    min_resource: int, max_resource: int, reduction_factor: int, expected_n_brackets: int
+) -> None:
+    pruner = optuna.pruners.HyperbandPruner(
+        min_resource=min_resource, max_resource=max_resource, reduction_factor=reduction_factor
+    )
+    study = optuna.study.create_study(pruner=pruner)
+    pruner._try_initialization(study)
+
+    assert pruner._n_brackets == expected_n_brackets
+    assert len(pruner._pruners) == expected_n_brackets
+
+
+@pytest.mark.parametrize(
     "sampler_init_func",
     [
         lambda: optuna.samplers.RandomSampler(),
