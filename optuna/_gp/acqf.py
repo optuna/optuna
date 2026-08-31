@@ -605,25 +605,40 @@ class qLogCEHVI(BaseAcquisitionFunc):
         assert (
             len(constraints_gpr_list) == len(constraints_threshold_list) and constraints_gpr_list
         )
-        self._constraints_acqf_list: list[qLogPI] = [
-            qLogPI(
-                gpr=constraint_gpr,
-                search_space=search_space,
-                threshold=constraint_threshold,
-                n_qmc_samples=n_qmc_samples,
-                qmc_seed=qmc_seed + len(gpr_list) + i,
-                normalized_params_of_running_trials=normalized_params_of_running_trials,
-                stabilizing_noise=stabilizing_noise,
-                tau=tau,
-            )
-            for i, (constraint_gpr, constraint_threshold) in enumerate(
-                zip(constraints_gpr_list, constraints_threshold_list)
-            )
-        ]
-
+        self._constraints_acqf_list: list[qLogPI] = []
+        self._marginal_constraints_acqf_list: list[LogPI] = []
         self._cond_gpr: ListConditionalGPRegressor | None = None
         self._baseline: _PerSampleParetoBaseline | None = None
-        if Y_feasible is not None:
+        if Y_feasible is None:
+            # Without an HVI term, the tower property reduces the expectation over conditional
+            # feasibility given running fantasies to the marginal feasibility probability.
+            self._marginal_constraints_acqf_list = [
+                LogPI(
+                    gpr=constraint_gpr,
+                    search_space=search_space,
+                    threshold=constraint_threshold,
+                    stabilizing_noise=stabilizing_noise,
+                )
+                for constraint_gpr, constraint_threshold in zip(
+                    constraints_gpr_list, constraints_threshold_list
+                )
+            ]
+        else:
+            self._constraints_acqf_list = [
+                qLogPI(
+                    gpr=constraint_gpr,
+                    search_space=search_space,
+                    threshold=constraint_threshold,
+                    n_qmc_samples=n_qmc_samples,
+                    qmc_seed=qmc_seed + len(gpr_list) + i,
+                    normalized_params_of_running_trials=normalized_params_of_running_trials,
+                    stabilizing_noise=stabilizing_noise,
+                    tau=tau,
+                )
+                for i, (constraint_gpr, constraint_threshold) in enumerate(
+                    zip(constraints_gpr_list, constraints_threshold_list)
+                )
+            ]
             is_fantasy_feasible = torch.all(
                 torch.stack(
                     [acqf.is_fantasy_above_threshold() for acqf in self._constraints_acqf_list],
@@ -650,13 +665,15 @@ class qLogCEHVI(BaseAcquisitionFunc):
         super().__init__(np.mean([gpr.length_scales for gpr in gpr_list], axis=0), search_space)
 
     def eval_acqf(self, x: torch.Tensor) -> torch.Tensor:
+        if self._baseline is None:
+            return torch.stack(
+                [acqf.eval_acqf(x) for acqf in self._marginal_constraints_acqf_list]
+            ).sum(dim=0)
+
+        assert self._cond_gpr is not None
         constraint_log_feasibility = sum(
             acqf.compute_candidate_log_utility(x) for acqf in self._constraints_acqf_list
         )
-        if self._baseline is None or self._cond_gpr is None:
-            return torch.special.logsumexp(constraint_log_feasibility, dim=-1) - math.log(
-                constraint_log_feasibility.shape[-1]
-            )
         log_feasible_improvement = (
             constraint_log_feasibility
             + self._baseline.compute_per_sample_log_hvi(
