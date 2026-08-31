@@ -679,7 +679,6 @@ class Trial(BaseTrial):
             )
 
     def _get_latest_trial(self) -> FrozenTrial:
-        # TODO(eukaryo): Remove this method after `system_attrs` property is removed.
         latest_trial = copy.copy(self._cached_frozen_trial)
         latest_trial.system_attrs = _LazyTrialSystemAttrs(self._trial_id, self.storage)
         return latest_trial
