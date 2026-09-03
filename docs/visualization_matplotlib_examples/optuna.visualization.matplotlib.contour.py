@@ -7,6 +7,8 @@ plot_contour
 
 The following code snippet shows how to plot the parameter relationship as contour plot.
 
+.. _visualization-plot-contour-matplotlib-content:
+
 """
 
 import optuna

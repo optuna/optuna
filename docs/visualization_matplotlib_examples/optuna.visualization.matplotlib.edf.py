@@ -7,6 +7,8 @@ plot_edf
 
 The following code snippet shows how to plot EDF.
 
+.. _visualization-plot-edf-matplotlib-content:
+
 """
 
 import math
