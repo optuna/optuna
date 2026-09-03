@@ -25,6 +25,9 @@ from optuna.samplers._nsgaiii._elite_population_selection_strategy import (
 from optuna.samplers._nsgaiii._elite_population_selection_strategy import (
     _preserve_niche_individuals,
 )
+from optuna.samplers._nsgaiii._elite_population_selection_strategy import (
+    NSGAIIIElitePopulationSelectionStrategy,
+)
 from optuna.samplers._nsgaiii._sampler import NSGAIIISampler
 from optuna.samplers.nsgaii import BaseCrossover
 from optuna.samplers.nsgaii import BLXAlphaCrossover
@@ -199,6 +202,27 @@ def test_child_generation_strategy_experimental_warning() -> None:
 def test_after_trial_strategy_experimental_warning() -> None:
     with pytest.warns(optuna.exceptions.ExperimentalWarning):
         NSGAIIISampler(after_trial_strategy=lambda study, trial, state, value: None)
+
+
+@pytest.mark.parametrize(
+    "reference_points",
+    [[[1.0, 0.0], [0.0, 1.0]], np.array([[1.0, 0.0], [0.0, 1.0]])],
+)
+def test_reference_points_as_array_like(
+    reference_points: Sequence[Sequence[float]] | np.ndarray,
+) -> None:
+    sampler = NSGAIIISampler(population_size=2, reference_points=reference_points)
+
+    elite_population_selection_strategy = sampler._elite_population_selection_strategy
+    assert isinstance(elite_population_selection_strategy, NSGAIIIElitePopulationSelectionStrategy)
+    assert isinstance(elite_population_selection_strategy._reference_points, np.ndarray)
+    assert np.array_equal(
+        elite_population_selection_strategy._reference_points, np.asarray(reference_points)
+    )
+
+    study = optuna.create_study(directions=["minimize", "minimize"], sampler=sampler)
+    study.optimize(lambda t: [t.suggest_float("x", 0, 9), t.suggest_float("y", 0, 9)], n_trials=10)
+    assert len(study.trials) == 10
 
 
 def test_call_after_trial_of_random_sampler() -> None:
