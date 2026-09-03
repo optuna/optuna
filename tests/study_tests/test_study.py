@@ -765,33 +765,8 @@ def test_enqueue_trial_skips_existing_finished(storage_mode: str) -> None:
         assert t0.params["x"] == -5
         assert t0.params["y"] == 5
 
-        before_enqueue = len(study.trials)
         study.enqueue_trial({"x": -5, "y": 5}, skip_if_exists=True)
-        after_enqueue = len(study.trials)
-        assert before_enqueue == after_enqueue
-
-
-@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-def test_enqueue_trial_skips_existing_waiting(storage_mode: str) -> None:
-    with StorageSupplier(storage_mode) as storage:
-        study = create_study(storage=storage)
-        assert len(study.trials) == 0
-
-        def objective(trial: Trial) -> float:
-            x = trial.suggest_int("x", -10, 10)
-            y = trial.suggest_int("y", -10, 10)
-            return x**2 + y**2
-
-        study.enqueue_trial({"x": -5, "y": 5})
-        before_enqueue = len(study.trials)
-        study.enqueue_trial({"x": -5, "y": 5}, skip_if_exists=True)
-        after_enqueue = len(study.trials)
-        assert before_enqueue == after_enqueue
-
-        study.optimize(objective, n_trials=1)
-        t0 = study.trials[0]
-        assert t0.params["x"] == -5
-        assert t0.params["y"] == 5
+        assert len(study.trials) == 1
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
@@ -830,31 +805,31 @@ def test_enqueue_trial_skip_existing_allows_unfixed(
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 @pytest.mark.parametrize(
-    "param", ["foo", 1, 1.1, 1e17, 1e-17, float("inf"), float("-inf"), float("nan"), None]
+    "params, expected_n_trials",
+    [
+        (["foo", "foo"], 1),
+        ([1, 1], 1),
+        ([1.1, 1.1], 1),
+        ([1e17, 1e17], 1),
+        ([1e-17, 1e-17], 1),
+        ([float("inf"), float("inf")], 1),
+        ([float("-inf"), float("-inf")], 1),
+        ([float("nan"), float("nan")], 1),
+        ([None, None], 1),
+        ([0.0, float("nan")], 2),
+        ([float("nan"), 0.0], 2),
+    ],
 )
-def test_enqueue_trial_skip_existing_handles_common_types(storage_mode: str, param: Any) -> None:
-    with StorageSupplier(storage_mode) as storage:
-        study = create_study(storage=storage)
-        study.enqueue_trial({"x": param})
-        before_enqueue = len(study.trials)
-        study.enqueue_trial({"x": param}, skip_if_exists=True)
-        after_enqueue = len(study.trials)
-        assert before_enqueue == after_enqueue
-
-
-@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-@pytest.mark.parametrize(
-    ("first_param", "second_param"),
-    [(0.0, float("nan")), (float("nan"), 0.0)],
-)
-def test_enqueue_trial_skip_existing_distinguishes_nan_from_numeric_values(
-    storage_mode: str, first_param: float, second_param: float
+def test_enqueue_trial_skip_existing_handles_values(
+    storage_mode: str, params: list[Any], expected_n_trials: int
 ) -> None:
     with StorageSupplier(storage_mode) as storage:
         study = create_study(storage=storage)
-        study.enqueue_trial({"x": first_param})
-        study.enqueue_trial({"x": second_param}, skip_if_exists=True)
-        assert len(study.trials) == 2
+
+        for param in params:
+            study.enqueue_trial({"x": param}, skip_if_exists=True)
+
+        assert len(study.trials) == expected_n_trials
 
 
 @patch("optuna.study._optimize.gc.collect")
