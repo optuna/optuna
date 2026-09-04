@@ -7,7 +7,6 @@ import pathlib
 import pickle
 from types import TracebackType
 from typing import Any
-from typing import cast
 from typing import IO
 from unittest import mock
 
@@ -123,8 +122,7 @@ def test_retry_an_incomplete_trailing_log() -> None:
         + b'{"op_code":0,"work'
     )
     what_to_write_2 = b'er_id":"worker-2"}\n' + b'{"op_code":0,"worker_id":"worker-3"}\n'
-    with NamedTemporaryFilePool() as file_:
-        file = cast(IO[bytes], file_)
+    with NamedTemporaryFilePool[bytes]() as file:
         file.write(what_to_write_1)
         file.flush()
 
@@ -150,8 +148,7 @@ def test_does_not_cache_an_incomplete_log_before_requested_number() -> None:
         + b'{"op_code":0,"work'
     )
     what_to_write_2 = b'er_id":"worker-2"}\n' + b'{"op_code":0,"worker_id":"worker-3"}\n'
-    with NamedTemporaryFilePool() as file_:
-        file = cast(IO[bytes], file_)
+    with NamedTemporaryFilePool[bytes]() as file:
         file.write(what_to_write_1)
         file.flush()
 
