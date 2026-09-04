@@ -3,6 +3,8 @@ from __future__ import annotations
 from typing import Any
 from typing import TYPE_CHECKING
 
+import numpy as np
+
 from optuna import _deprecated
 from optuna._experimental import experimental_class
 from optuna._warnings import optuna_warn
@@ -25,8 +27,6 @@ from optuna.trial import TrialState
 if TYPE_CHECKING:
     from collections.abc import Callable
     from collections.abc import Sequence
-
-    import numpy as np
 
     from optuna.distributions import BaseDistribution
     from optuna.study import Study
@@ -62,8 +62,10 @@ class NSGAIIISampler(BaseGASampler):
 
     Args:
         reference_points:
-            A 2 dimension ``numpy.ndarray`` with objective dimension columns. Represents
-            a list of reference points which is used to determine who to survive.
+            A 2 dimensional array-like object, e.g. ``numpy.ndarray`` or a nested list, with
+            objective dimension columns. The given object is converted to ``numpy.ndarray``
+            internally. Represents a list of reference points which is used to determine who
+            to survive.
             After non-dominated sort, who out of borderline front are going to survived is
             determined according to how sparse the closest reference point of each individual is.
             In the default setting the algorithm uses `uniformly` spread points to diversify the
@@ -93,7 +95,7 @@ class NSGAIIISampler(BaseGASampler):
         swapping_prob: float = 0.5,
         seed: int | None = None,
         constraints_func: Callable[[FrozenTrial], Sequence[float]] | None = None,
-        reference_points: np.ndarray | None = None,
+        reference_points: np.ndarray | Sequence[Sequence[float]] | None = None,
         dividing_parameter: int = 3,
         elite_population_selection_strategy: (
             Callable[[Study, list[FrozenTrial]], list[FrozenTrial]] | None
@@ -133,6 +135,9 @@ class NSGAIIISampler(BaseGASampler):
                 f" the population size should be greater than or equal to {crossover.n_parents}."
                 f" The specified `population_size` is {population_size}."
             )
+
+        if reference_points is not None:
+            reference_points = np.asarray(reference_points)
 
         super().__init__(population_size=population_size)
         self._random_sampler = RandomSampler(seed=seed)
