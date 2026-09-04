@@ -279,7 +279,7 @@ def _untransform_numerical_param(
             if d.single():
                 pass
             else:
-                param = min(param, np.nextafter(d.high, d.high - 1))
+                param = float(np.clip(param, d.low, np.nextafter(d.high, d.high - 1)))
         elif d.step is not None:
             param = float(
                 np.clip(np.round((trans_param - d.low) / d.step) * d.step + d.low, d.low, d.high)
