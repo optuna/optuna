@@ -9,7 +9,6 @@ import copy
 from numbers import Real
 import threading
 from typing import Any
-from typing import cast
 from typing import Literal
 from typing import TYPE_CHECKING
 from typing import Union
@@ -28,7 +27,7 @@ from optuna._warnings import optuna_warn
 from optuna.distributions import _convert_old_distribution_to_new_distribution
 from optuna.distributions import BaseDistribution
 from optuna.storages._heartbeat import is_heartbeat_enabled
-from optuna.study._constrained_optimization import _get_feasible_trials
+from optuna.study._constrained_optimization import _get_best_feasible_trial
 from optuna.study._constrained_optimization import _is_constrained_optimization
 from optuna.study._multi_objective import _get_pareto_front_trials
 from optuna.study._optimize import _optimize
@@ -336,13 +335,10 @@ class Study:
         # trials.
         if any(x > 0.0 for x in best_trial.constraints.values()):
             complete_trials = self.get_trials(deepcopy=False, states=[TrialState.COMPLETE])
-            feasible_trials = _get_feasible_trials(complete_trials)
-            if len(feasible_trials) == 0:
+            best_feasible_trial = _get_best_feasible_trial(complete_trials, self.direction)
+            if best_feasible_trial is None:
                 raise ValueError("No feasible trials are completed yet.")
-            if self.direction == StudyDirection.MAXIMIZE:
-                best_trial = max(feasible_trials, key=lambda t: cast("float", t.value))
-            else:
-                best_trial = min(feasible_trials, key=lambda t: cast("float", t.value))
+            best_trial = best_feasible_trial
 
         return copy.deepcopy(best_trial) if deepcopy else best_trial
 
@@ -1574,8 +1570,10 @@ def get_all_study_summaries(
             Database URL such as ``sqlite:///example.db``. Please see also the documentation of
             :func:`~optuna.study.create_study` for further details.
         include_best_trial:
-            Include the best trials if exist. It potentially increases the number of queries and
-            may take longer to fetch summaries depending on the storage.
+            Include the best trial if it exists. In constrained optimization, only feasible
+            trials are considered. If every complete trial is infeasible, ``best_trial`` is
+            :obj:`None`. It potentially increases the number of queries and may take longer to
+            fetch summaries depending on the storage.
 
     Returns:
         List of study history summarized as :class:`~optuna.study.StudySummary` objects.
@@ -1599,11 +1597,8 @@ def get_all_study_summaries(
         if len(s.directions) == 1:
             direction = s.direction
             directions = None
-            if include_best_trial and len(completed_trials) != 0:
-                if direction == StudyDirection.MAXIMIZE:
-                    best_trial = max(completed_trials, key=lambda t: cast("float", t.value))
-                else:
-                    best_trial = min(completed_trials, key=lambda t: cast("float", t.value))
+            if include_best_trial:
+                best_trial = _get_best_feasible_trial(completed_trials, direction)
             else:
                 best_trial = None
         else:
