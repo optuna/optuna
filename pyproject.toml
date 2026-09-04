@@ -93,11 +93,8 @@ checking = [
 ]
 test = [
   "fakeredis[lua]",
-  "kaleido<0.4,!=0.2.1.post1",  # TODO(nzw0301): Remove the version constraint by installing browser separately.
   "moto",
-  # plotly>=7 dropped support for kaleido<1, which `Figure.write_image` in the tests relies on.
-  # The upper bound can be dropped together with the kaleido constraint above.
-  "plotly<7",
+  "plotly",
   "pytest",
   "pytest-xdist",
   "scipy>=1.9.2",

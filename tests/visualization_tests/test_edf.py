@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from io import BytesIO
 from typing import Any
 from typing import Literal
 
@@ -27,18 +26,9 @@ if plotly_imports.is_successful():
 
 if plt_imports.is_successful():
     from optuna.visualization.matplotlib._matplotlib_imports import Axes
-    from optuna.visualization.matplotlib._matplotlib_imports import plt
 
 
 parametrized_plot_edf = pytest.mark.parametrize("plot_edf", [plotly_plot_edf, plt_plot_edf])
-
-
-def save_static_image(figure: go.Figure | Axes | np.ndarray) -> None:
-    if isinstance(figure, go.Figure):
-        figure.write_image(BytesIO())
-    else:
-        plt.savefig(BytesIO())
-        plt.close()
 
 
 @parametrized_plot_edf
@@ -63,8 +53,7 @@ def test_target_is_none_and_study_is_multi_obj(plot_edf: Callable[..., Any]) -> 
 def test_edf_plot_no_trials(
     plot_edf: Callable[..., Any], direction: Literal["minimize", "maximize"]
 ) -> None:
-    figure = plot_edf(create_study(direction=direction))
-    save_static_image(figure)
+    plot_edf(create_study(direction=direction))
 
 
 @parametrized_plot_edf
@@ -76,8 +65,7 @@ def test_edf_plot_no_trials_studies(
     num_studies: int,
 ) -> None:
     studies = [create_study(direction=direction) for _ in range(num_studies)]
-    figure = plot_edf(studies)
-    save_static_image(figure)
+    plot_edf(studies)
 
 
 @parametrized_plot_edf
@@ -93,8 +81,7 @@ def test_plot_edf_with_multiple_studies(
         study = create_study(direction=direction)
         study.optimize(lambda t: t.suggest_float("x", 0, 5), n_trials=10)
         studies.append(study)
-    figure = plot_edf(studies)
-    save_static_image(figure)
+    plot_edf(studies)
 
 
 @parametrized_plot_edf
@@ -102,8 +89,7 @@ def test_plot_edf_with_target(plot_edf: Callable[..., Any]) -> None:
     study = create_study()
     study.optimize(lambda t: t.suggest_float("x", 0, 5), n_trials=10)
     with pytest.warns(UserWarning):
-        figure = plot_edf(study, target=lambda t: t.params["x"])
-    save_static_image(figure)
+        plot_edf(study, target=lambda t: t.params["x"])
 
 
 @parametrized_plot_edf
@@ -121,8 +107,6 @@ def test_plot_edf_with_target_name(plot_edf: Callable[..., Any], target_name: st
         assert figure.layout.xaxis.title.text == expected
     elif isinstance(figure, Axes):
         assert figure.xaxis.label.get_text() == expected
-
-    save_static_image(figure)
 
 
 def test_empty_edf_info() -> None:
