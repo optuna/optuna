@@ -820,7 +820,7 @@ def test_enqueue_trial_skip_existing_allows_unfixed(
         ([float("nan"), 0.0], 2),
     ],
 )
-def test_enqueue_trial_skip_existing_handles_values(
+def test_enqueue_trial_skip_existing(
     storage_mode: str, params: list[Any], expected_n_trials: int
 ) -> None:
     with StorageSupplier(storage_mode) as storage:
