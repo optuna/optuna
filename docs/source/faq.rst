@@ -230,8 +230,9 @@ You can find the failed trials in log messages.
 
 .. code-block:: sh
 
-    [W 2018-12-07 16:38:36,889] Setting status of trial#0 as TrialState.FAIL because of \
-    the following error: ValueError('A sample error in objective.')
+    [W 2018-12-07 16:38:36,889] Trial 0 failed with parameters: {'x': 7} because of the \
+    following error: ValueError('A sample error in objective.').
+    [W 2018-12-07 16:38:36,889] Trial 0 failed with value None.
 
 You can also find the failed trials by checking the trial states as follows:
 
@@ -241,9 +242,9 @@ You can also find the failed trials by checking the trial states as follows:
 
 .. csv-table::
 
-    number,state,value,...,params,system_attrs
-    0,TrialState.FAIL,,...,0,Setting status of trial#0 as TrialState.FAIL because of the following error: ValueError('A test error in objective.')
-    1,TrialState.COMPLETE,1269,...,1,
+    number,value,...,params_x,state
+    0,,...,7,FAIL
+    1,1269.0,...,5,COMPLETE
 
 .. seealso::
 
@@ -259,8 +260,9 @@ Trials which return NaN are shown as follows:
 
 .. code-block:: sh
 
-    [W 2018-12-07 16:41:59,000] Setting status of trial#2 as TrialState.FAIL because the \
-    objective function returned nan.
+    [W 2018-12-07 16:41:59,000] Trial 2 failed with parameters: {'x': 3} because of the \
+    following error: The value nan is not acceptable.
+    [W 2018-12-07 16:41:59,000] Trial 2 failed with value nan.
 
 
 What happens when I dynamically alter a search space?
