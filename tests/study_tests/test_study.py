@@ -252,6 +252,29 @@ def test_optimize_with_catch(storage_mode: str) -> None:
         assert all(trial.state == TrialState.FAIL for trial in study.trials)
 
 
+@pytest.mark.parametrize("n_trials", [1, 2, 3])
+@pytest.mark.parametrize("n_jobs", [1, 2])
+@pytest.mark.parametrize("catch", [(), (ValueError,), (ArithmeticError,)])
+def test_optimize_with_error_in_last_trial(
+    n_trials: int, n_jobs: int, catch: tuple[type[Exception], ...]
+) -> None:
+    def objective(trial: Trial) -> float:
+        if trial.number == n_trials - 1:
+            raise ValueError("error in last trial")
+        return 1.0
+
+    study = create_study()
+    if ValueError in catch:
+        study.optimize(objective, n_trials=n_trials, n_jobs=n_jobs, catch=catch)
+    else:
+        with pytest.raises(ValueError, match="error in last trial"):
+            study.optimize(objective, n_trials=n_trials, n_jobs=n_jobs, catch=catch)
+
+    assert [trial.state for trial in study.trials] == [TrialState.COMPLETE] * (n_trials - 1) + [
+        TrialState.FAIL
+    ]
+
+
 @pytest.mark.parametrize("catch", [ValueError, (ValueError,), [ValueError], {ValueError}])
 def test_optimize_with_catch_valid_type(catch: Any) -> None:
     study = create_study()
