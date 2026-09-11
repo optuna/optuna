@@ -86,21 +86,21 @@ def test_systemattr_keys() -> None:
 )
 def test_get_generation(args: dict[str, Any]) -> None:
     test_sampler = BaseGASamplerTestSampler(population_size=args["population_size"])
-    mock_study = Mock(
-        _get_trials=Mock(
-            return_value=[
-                Mock(system_attrs={"BaseGASamplerTestSampler:generation": i})
-                for i in args["trials"]
-            ]
+    mock_study = Mock()
+    mock_study._get_trials.return_value = [
+        Mock(
+            number=n,
+            _trial_id=n,
+            state=TrialState.COMPLETE,
+            system_attrs={"BaseGASamplerTestSampler:generation": i},
         )
-    )
+        for n, i in enumerate(args["trials"])
+    ]
     mock_trial = Mock(system_attrs={})
 
     assert test_sampler.get_trial_generation(mock_study, mock_trial) == args["generation"]
 
-    mock_study._get_trials.assert_called_once_with(
-        deepcopy=False, states=[TrialState.COMPLETE], use_cache=True
-    )
+    mock_study._get_trials.assert_called_once_with(deepcopy=False, use_cache=True)
     mock_study._storage.set_trial_system_attr.assert_called_once_with(
         mock_trial._trial_id,
         "BaseGASamplerTestSampler:generation",
@@ -156,8 +156,13 @@ def test_get_population(args: dict[str, Any]) -> None:
     mock_study = Mock(
         _get_trials=Mock(
             return_value=[
-                Mock(system_attrs={"BaseGASamplerTestSampler:generation": i})
-                for i in args["trials"]
+                Mock(
+                    number=n,
+                    _trial_id=n,
+                    state=TrialState.COMPLETE,
+                    system_attrs={"BaseGASamplerTestSampler:generation": i},
+                )
+                for n, i in enumerate(args["trials"])
             ]
         )
     )
