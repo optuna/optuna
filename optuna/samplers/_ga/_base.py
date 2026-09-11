@@ -54,7 +54,8 @@ class BaseGASampler(BaseSampler, abc.ABC):
     def __init__(self, population_size: int | None):
         self._population_size = population_size
         self._cached_study_id: int | None = None
-        self._cached_generation_to_numbers: dict[int, list[int]] = {}
+        self._cached_generation = 0
+        self._cached_generation_numbers: list[int] = []
         self._cached_unfinished_numbers: list[int] = []
         self._cached_unseen_trial_start = 0
         self._thread_lock = threading.Lock()
@@ -97,7 +98,8 @@ class BaseGASampler(BaseSampler, abc.ABC):
                 or len(trials) < self._cached_unseen_trial_start
             ):
                 self._cached_study_id = study._study_id
-                self._cached_generation_to_numbers.clear()
+                self._cached_generation = 0
+                self._cached_generation_numbers.clear()
                 self._cached_unfinished_numbers.clear()
                 self._cached_unseen_trial_start = 0
 
@@ -113,15 +115,20 @@ class BaseGASampler(BaseSampler, abc.ABC):
                 if trial.state == TrialState.COMPLETE:
                     generation = trial.system_attrs.get(self._get_generation_key())
                     if generation is not None:
-                        self._cached_generation_to_numbers.setdefault(generation, []).append(
-                            trial.number
-                        )
+                        self._cache_completed_trial(generation, trial.number)
                 elif not trial.state.is_finished():
                     next_unfinished_numbers.append(trial.number)
 
             self._cached_unfinished_numbers = next_unfinished_numbers
             self._cached_unseen_trial_start = len(trials)
             return trials
+
+    def _cache_completed_trial(self, generation: int, trial_number: int) -> None:
+        if generation > self._cached_generation:
+            self._cached_generation = generation
+            self._cached_generation_numbers = [trial_number]
+        elif generation == self._cached_generation:
+            self._cached_generation_numbers.append(trial_number)
 
     def get_trial_generation(self, study: Study, trial: FrozenTrial) -> int:
         """Get the generation number of the given trial.
@@ -149,8 +156,8 @@ class BaseGASampler(BaseSampler, abc.ABC):
         self._sync_generation_cache(study)
 
         assert self._population_size is not None, "Population size must be set."
-        generation = 0
-        while len(self._cached_generation_to_numbers.get(generation, ())) >= self._population_size:
+        generation = self._cached_generation
+        if len(self._cached_generation_numbers) >= self._population_size:
             generation += 1
         study._storage.set_trial_system_attr(
             trial._trial_id, self._get_generation_key(), generation
@@ -170,9 +177,17 @@ class BaseGASampler(BaseSampler, abc.ABC):
             List of frozen trials in the given generation.
         """
         trials = self._sync_generation_cache(study)
+        if generation == self._cached_generation:
+            return [trials[trial_number] for trial_number in self._cached_generation_numbers]
+
+        # Calls made by GA samplers target the latest completed generation. Preserve the public
+        # method's behavior for an explicitly requested historical generation without retaining
+        # every generation in the sampler-side cache.
         return [
-            trials[trial_number]
-            for trial_number in self._cached_generation_to_numbers.get(generation, ())
+            trial
+            for trial in trials
+            if trial.state == TrialState.COMPLETE
+            and trial.system_attrs.get(self._get_generation_key()) == generation
         ]
 
     def get_parent_population(self, study: Study, generation: int) -> list[FrozenTrial]:
