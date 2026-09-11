@@ -7,6 +7,8 @@ plot_hypervolume_history
 
 The following code snippet shows how to plot optimization history.
 
+.. _visualization-plot-hypervolume-history-matplotlib-content:
+
 """
 
 import optuna

@@ -7,10 +7,13 @@ plot_slice
 
 The following code snippet shows how to plot the parameter relationship as slice plot.
 
+.. _visualization-plot-slice-plotly-content:
+
 """
 
+# sphinx_gallery_thumbnail_path = "reference/visualization/matplotlib/generated/images/sphx_glr_optuna.visualization.matplotlib.slice_001.png"
+
 import optuna
-from plotly.io import show
 
 
 def objective(trial):
@@ -24,4 +27,4 @@ study = optuna.create_study(sampler=sampler)
 study.optimize(objective, n_trials=10)
 
 fig = optuna.visualization.plot_slice(study, params=["x", "y"])
-show(fig)
+fig

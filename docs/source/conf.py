@@ -59,6 +59,7 @@ extensions = [
     "sphinx.ext.githubpages",
     "sphinx.ext.graphviz",
     "sphinx_copybutton",
+    "sphinx_design",
     "sphinx_gallery.gen_gallery"
 ]
 
@@ -197,28 +198,27 @@ autodoc_default_options = {
 copybutton_prompt_text = "$ "
 
 # Sphinx Gallery
-pio.renderers.default = "sphinx_gallery_png"
 
 sphinx_gallery_conf = {
     "doc_module": ("sphinx_gallery"),
     "examples_dirs": [
         "../../tutorial/10_key_features",
         "../../tutorial/20_recipes",
-        "../visualization_examples",
         "../visualization_matplotlib_examples",
+        "../visualization_examples",
     ],
     "gallery_dirs": [
         "tutorial/10_key_features",
         "tutorial/20_recipes",
-        "reference/visualization/generated",
         "reference/visualization/matplotlib/generated",
+        "reference/visualization/generated",
     ],
     "compress_images": ("images", "thumbnails"),
     "thumbnail_size": (400, 280),
     "within_subsection_order": "FileNameSortKey",
     "filename_pattern": r"/*\.py",
     "first_notebook_cell": None,
-    "image_scrapers": ("matplotlib", "plotly.io._sg_scraper.plotly_sg_scraper"),
+    "image_scrapers": ("matplotlib",),
 }
 
 # matplotlib plot directive
@@ -226,12 +226,6 @@ plot_include_source = True
 plot_formats = [("png", 90)]
 plot_html_show_formats = False
 plot_html_show_source_link = False
-
-# sphinx plotly directive
-plotly_include_source = True
-plotly_formats = ["html"]
-plotly_html_show_formats = False
-plotly_html_show_source_link = False
 
 # Not showing common warning messages as in
 # https://sphinx-gallery.github.io/stable/configuration.html#removing-warnings.

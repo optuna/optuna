@@ -8,6 +8,8 @@ plot_terminator_improvement
 The following code snippet shows how to plot improvement potentials,
 together with cross-validation errors.
 
+.. _visualization-plot-terminator-improvement-matplotlib-content:
+
 """
 
 from lightgbm import LGBMClassifier

@@ -7,6 +7,8 @@ plot_slice
 
 The following code snippet shows how to plot the parameter relationship as slice plot.
 
+.. _visualization-plot-slice-matplotlib-content:
+
 """
 
 import optuna

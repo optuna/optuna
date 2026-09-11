@@ -7,10 +7,13 @@ plot_parallel_coordinate
 
 The following code snippet shows how to plot the high-dimensional parameter relationships.
 
+.. _visualization-plot-parallel-coordinate-plotly-content:
+
 """
 
+# sphinx_gallery_thumbnail_path = "reference/visualization/matplotlib/generated/images/sphx_glr_optuna.visualization.matplotlib.parallel_coordinate_001.png"
+
 import optuna
-from plotly.io import show
 
 
 def objective(trial):
@@ -24,4 +27,4 @@ study = optuna.create_study(sampler=sampler)
 study.optimize(objective, n_trials=10)
 
 fig = optuna.visualization.plot_parallel_coordinate(study, params=["x", "y"])
-show(fig)
+fig
