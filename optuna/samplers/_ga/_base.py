@@ -98,38 +98,25 @@ class BaseGASampler(BaseSampler, abc.ABC):
                 self._cached_unfinished_numbers.clear()
                 self._cached_unseen_trial_start = 0
 
-            for trial_number in tuple(self._cached_unfinished_numbers):
-                if trial_number < len(trials):
-                    trial = trials[trial_number]
-                    if trial.state == TrialState.COMPLETE:
-                        self._cached_unfinished_numbers.discard(trial.number)
-                        generation = trial.system_attrs.get(self._get_generation_key())
-                        if generation is not None:
-                            self._cached_generation_to_numbers.setdefault(generation, []).append(
-                                trial.number
-                            )
-                        continue
+            next_unfinished_numbers = []
+            trial_numbers = [
+                *self._cached_unfinished_numbers,
+                *range(self._cached_unseen_trial_start, len(trials)),
+            ]
 
-                    if trial.state.is_finished():
-                        self._cached_unfinished_numbers.discard(trial.number)
-                    else:
-                        self._cached_unfinished_numbers.add(trial.number)
+            for trial_number in trial_numbers:
+                trial = trials[trial_number]
 
-            for trial in trials[self._cached_unseen_trial_start :]:
                 if trial.state == TrialState.COMPLETE:
-                    self._cached_unfinished_numbers.discard(trial.number)
                     generation = trial.system_attrs.get(self._get_generation_key())
                     if generation is not None:
                         self._cached_generation_to_numbers.setdefault(generation, []).append(
                             trial.number
                         )
-                    continue
+                elif not trial.state.is_finished():
+                    next_unfinished_numbers.append(trial.number)
 
-                if trial.state.is_finished():
-                    self._cached_unfinished_numbers.discard(trial.number)
-                else:
-                    self._cached_unfinished_numbers.add(trial.number)
-
+            self._cached_unfinished_numbers = next_unfinished_numbers
             self._cached_unseen_trial_start = len(trials)
             return trials
 
