@@ -336,6 +336,44 @@ def test_get_all_study_summaries(storage_mode: str, include_best_trial: bool) ->
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+@pytest.mark.parametrize("direction", ["minimize", "maximize"])
+def test_get_all_study_summaries_with_constraints(
+    storage_mode: str, direction: Literal["minimize", "maximize"]
+) -> None:
+    def objective(trial: Trial) -> float:
+        x = trial.suggest_float("x", -10, 10)
+        # feasible iff x >= 0
+        trial.set_constraint("c", -x)
+        return x
+
+    with StorageSupplier(storage_mode) as storage:
+        study = create_study(storage=storage, direction=direction)
+
+        # 1. Only infeasible trial completed.
+        study.enqueue_trial({"x": -5.0})
+        study.optimize(objective, n_trials=1)
+
+        summaries = get_all_study_summaries(study._storage, include_best_trial=True)
+        summary = [s for s in summaries if s._study_id == study._study_id][0]
+        assert summary.best_trial is None
+        with pytest.raises(ValueError):
+            _ = study.best_trial
+
+        # 2. Add feasible trials.
+        study.enqueue_trial({"x": 2.0})
+        study.enqueue_trial({"x": 5.0})
+        study.optimize(objective, n_trials=2)
+
+        summaries = get_all_study_summaries(study._storage, include_best_trial=True)
+        summary = [s for s in summaries if s._study_id == study._study_id][0]
+        assert summary.best_trial is not None
+        assert summary.best_trial.number == study.best_trial.number
+        assert summary.best_trial.value == study.best_trial.value
+        expected_x = 2.0 if direction == "minimize" else 5.0
+        assert summary.best_trial.params["x"] == expected_x
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_get_all_study_summaries_with_no_trials(storage_mode: str) -> None:
     with StorageSupplier(storage_mode) as storage:
         study = create_study(storage=storage)

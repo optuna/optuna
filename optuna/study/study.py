@@ -1600,10 +1600,13 @@ def get_all_study_summaries(
             direction = s.direction
             directions = None
             if include_best_trial and len(completed_trials) != 0:
-                if direction == StudyDirection.MAXIMIZE:
-                    best_trial = max(completed_trials, key=lambda t: cast("float", t.value))
+                feasible_trials = _get_feasible_trials(completed_trials)
+                if len(feasible_trials) == 0:
+                    best_trial = None
+                elif direction == StudyDirection.MAXIMIZE:
+                    best_trial = max(feasible_trials, key=lambda t: cast("float", t.value))
                 else:
-                    best_trial = min(completed_trials, key=lambda t: cast("float", t.value))
+                    best_trial = min(feasible_trials, key=lambda t: cast("float", t.value))
             else:
                 best_trial = None
         else:
