@@ -53,7 +53,10 @@ class BaseGASampler(BaseSampler, abc.ABC):
 
     def __init__(self, population_size: int | None):
         self._population_size = population_size
+        self._cached_study_id: int | None = None
+        self._cached_generation_to_numbers: dict[int, list[int]] = {}
         self._cached_unfinished_numbers: list[int] = []
+        self._cached_unseen_trial_start = 0
         self._thread_lock = threading.Lock()
 
     @property
