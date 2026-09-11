@@ -34,6 +34,13 @@ class StudySummary:
         best_trial:
             :class:`optuna.trial.FrozenTrial` with best objective value in the
             :class:`~optuna.study.Study`.
+
+            .. note::
+                In constrained optimization, the best trial is selected from trials that
+                satisfy all constraints. A trial is considered feasible when all of its
+                constraint values are less than or equal to 0.0. This attribute is
+                :obj:`None` if no complete feasible trials exist or if the study is
+                multi-objective.
         user_attrs:
             Dictionary that contains the attributes of the :class:`~optuna.study.Study` set with
             :func:`optuna.study.Study.set_user_attr`.
