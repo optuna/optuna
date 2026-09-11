@@ -230,8 +230,7 @@ You can find the failed trials in log messages.
 
 .. code-block:: sh
 
-    [W 2018-12-07 16:38:36,889] Trial 0 failed with parameters: {'x': 7} because of the \
-    following error: ValueError('A sample error in objective.').
+    [W 2018-12-07 16:38:36,889] Trial 0 failed with parameters: {'x': 7} because of the following error: ValueError('A sample error in objective.').
     [W 2018-12-07 16:38:36,889] Trial 0 failed with value None.
 
 You can also find the failed trials by checking the trial states as follows:
@@ -260,8 +259,7 @@ Trials which return NaN are shown as follows:
 
 .. code-block:: sh
 
-    [W 2018-12-07 16:41:59,000] Trial 2 failed with parameters: {'x': 3} because of the \
-    following error: The value nan is not acceptable.
+    [W 2018-12-07 16:41:59,000] Trial 2 failed with parameters: {'x': 3} because of the following error: The value nan is not acceptable.
     [W 2018-12-07 16:41:59,000] Trial 2 failed with value nan.
 
 
