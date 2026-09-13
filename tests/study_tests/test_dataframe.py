@@ -6,6 +6,7 @@ import pytest
 from optuna import create_study
 from optuna import create_trial
 from optuna import Trial
+from optuna.distributions import IntDistribution
 from optuna.testing.storages import STORAGE_MODES
 from optuna.testing.storages import StorageSupplier
 from optuna.trial import TrialState
@@ -245,3 +246,68 @@ def test_trials_dataframe_preserves_metric_names_order() -> None:
     flat_cols2 = list(study2.trials_dataframe().columns)
     values_cols2 = [c for c in flat_cols2 if c.startswith("values_")]
     assert values_cols2 == ["values_test", "values_train"]
+
+
+def test_trials_dataframe_preserves_param_order() -> None:
+    # GH #6855: trials_dataframe() sorted parameter columns alphabetically
+    # instead of preserving the order in which they were suggested.
+    def objective(trial: Trial) -> float:
+        x3 = trial.suggest_int("x3", 0, 10)
+        x1 = trial.suggest_int("x1", 0, 10)
+        x2 = trial.suggest_int("x2", 0, 10)
+        return min(x3, x1, x2)
+
+    study = create_study()
+    study.optimize(objective, n_trials=3)
+
+    # Flat columns
+    flat_cols = list(study.trials_dataframe().columns)
+    param_cols = [c for c in flat_cols if c.startswith("params_")]
+    assert param_cols == ["params_x3", "params_x1", "params_x2"]
+
+    # Multi-index columns
+    multi_cols = list(study.trials_dataframe(multi_index=True).columns)
+    param_multi = [c for c in multi_cols if c[0] == "params"]
+    assert param_multi == [("params", "x3"), ("params", "x1"), ("params", "x2")]
+
+
+@pytest.mark.parametrize(
+    "storage_mode", [mode for mode in STORAGE_MODES if not mode.startswith("grpc")]
+)
+def test_trials_dataframe_preserves_param_order_with_different_params(
+    storage_mode: str,
+) -> None:
+    # GH #6855: when trials suggest different parameters (e.g. with conditional
+    # search spaces), parameter columns keep the order in which each parameter is
+    # first encountered across trials. Non-parameter columns are still sorted.
+    # The gRPC storage proxy sends parameters as a protobuf map, which does not
+    # preserve their order, so it is excluded from this test.
+    with StorageSupplier(storage_mode) as storage:
+        study = create_study(storage=storage)
+        study.add_trial(
+            create_trial(
+                params={"x": 1, "b": 2},
+                distributions={"x": IntDistribution(0, 10), "b": IntDistribution(0, 10)},
+                user_attrs={"y": 1, "a": 2},
+                value=1,
+            )
+        )
+        study.add_trial(
+            create_trial(
+                params={"x": 0, "a": 3},
+                distributions={"x": IntDistribution(0, 10), "a": IntDistribution(0, 10)},
+                value=0,
+            )
+        )
+
+        # Flat columns
+        flat_cols = list(study.trials_dataframe().columns)
+        param_cols = [c for c in flat_cols if c.startswith("params_")]
+        assert param_cols == ["params_x", "params_b", "params_a"]
+        user_attr_cols = [c for c in flat_cols if c.startswith("user_attrs_")]
+        assert user_attr_cols == ["user_attrs_a", "user_attrs_y"]
+
+        # Multi-index columns
+        multi_cols = list(study.trials_dataframe(multi_index=True).columns)
+        param_multi = [c for c in multi_cols if c[0] == "params"]
+        assert param_multi == [("params", "x"), ("params", "b"), ("params", "a")]

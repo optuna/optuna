@@ -34,7 +34,11 @@ def _create_records_and_aggregate_column(
     # column_agg is an aggregator of column names.
     # Keys of column agg are attributes of `FrozenTrial` such as 'trial_id' and 'params'.
     # Values are dataframe columns such as ('trial_id', '') and ('params', 'n_layers').
-    column_agg: collections.defaultdict[str, set] = collections.defaultdict(set)
+    # The columns are stored as keys of an insertion-ordered dict to retain the order
+    # in which they are first encountered (GH #6855).
+    column_agg: collections.defaultdict[str, dict[tuple[str, Any], None]] = (
+        collections.defaultdict(dict)
+    )
     non_nested_attr = ""
 
     metric_names = study.metric_names
@@ -49,7 +53,7 @@ def _create_records_and_aggregate_column(
             if isinstance(value, dict):
                 for nested_attr, nested_value in value.items():
                     record[(df_column, nested_attr)] = nested_value
-                    column_agg[attr].add((df_column, nested_attr))
+                    column_agg[attr][(df_column, nested_attr)] = None
             elif attr == "values":
                 # Expand trial.values.
                 # trial.values should be None when the trial's state is FAIL or PRUNED.
@@ -61,29 +65,32 @@ def _create_records_and_aggregate_column(
                 )
                 for nested_attr, nested_value in iterator:
                     record[(df_column, nested_attr)] = nested_value
-                    column_agg[attr].add((df_column, nested_attr))
+                    column_agg[attr][(df_column, nested_attr)] = None
             elif isinstance(value, list):
                 for nested_attr, nested_value in enumerate(value):
                     record[(df_column, nested_attr)] = nested_value
-                    column_agg[attr].add((df_column, nested_attr))
+                    column_agg[attr][(df_column, nested_attr)] = None
             elif attr == "value":
                 nested_attr = non_nested_attr if metric_names is None else metric_names[0]
                 record[(df_column, nested_attr)] = value
-                column_agg[attr].add((df_column, nested_attr))
+                column_agg[attr][(df_column, nested_attr)] = None
             else:
                 record[(df_column, non_nested_attr)] = value
-                column_agg[attr].add((df_column, non_nested_attr))
+                column_agg[attr][(df_column, non_nested_attr)] = None
 
         records.append(record)
 
-    # Build column list preserving the order of `attrs` and, for multi-objective
-    # studies with metric names set, the order of `metric_names` instead of
-    # alphabetical sorting (GH #6785).
+    # Build column list preserving the order of `attrs`, the order in which
+    # parameters first appear, and, for multi-objective studies with metric names
+    # set, the order of `metric_names` instead of alphabetical sorting
+    # (GH #6785, GH #6855).
     columns: list[tuple[str, str]] = []
     for k in attrs:
         if k not in column_agg:
             continue
-        if k == "values" and metric_names is not None:
+        if k == "params":
+            columns.extend(column_agg[k])
+        elif k == "values" and metric_names is not None:
             df_col = attrs_to_df_columns[k]
             columns.extend((df_col, name) for name in metric_names)
         else:
