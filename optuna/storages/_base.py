@@ -46,6 +46,11 @@ class BaseStorage(abc.ABC):
     Trials in the WAITING state are not allowed to be modified except for the `state` field.
     """
 
+    # Whether the storage preserves the order of parameters in `FrozenTrial.params`.
+    # Storages that cannot guarantee it, e.g. because parameters are transferred as an
+    # unordered map, should override this attribute with :obj:`False`.
+    _preserves_param_order: bool = True
+
     # Basic study manipulation
 
     @abc.abstractmethod

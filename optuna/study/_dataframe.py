@@ -89,7 +89,13 @@ def _create_records_and_aggregate_column(
         if k not in column_agg:
             continue
         if k == "params":
-            columns.extend(column_agg[k])
+            if study._storage._preserves_param_order:
+                columns.extend(column_agg[k])
+            else:
+                # E.g. `GrpcStorageProxy` does not preserve the order of
+                # `FrozenTrial.params`, so fall back to alphabetical order to keep
+                # the output deterministic.
+                columns.extend(sorted(column_agg[k]))
         elif k == "values" and metric_names is not None:
             df_col = attrs_to_df_columns[k]
             columns.extend((df_col, name) for name in metric_names)

@@ -799,6 +799,12 @@ class Study:
             If :meth:`~optuna.study.Study.set_metric_names` is called, the ``value`` or ``values``
             is implicitly replaced with the dictionary with the objective name as key and the
             objective value as value.
+
+        Note:
+            Parameter columns are ordered by the first appearance of each parameter when the
+            storage preserves the order of ``FrozenTrial.params``. For storages that do not
+            preserve it, such as :class:`~optuna.storages.GrpcStorageProxy`, the parameter
+            columns are sorted alphabetically to keep the output deterministic.
         """
         return _dataframe._trials_dataframe(self, attrs, multi_index)
 

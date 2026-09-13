@@ -7,6 +7,7 @@ from optuna import create_study
 from optuna import create_trial
 from optuna import Trial
 from optuna.distributions import IntDistribution
+from optuna.storages import InMemoryStorage
 from optuna.testing.storages import STORAGE_MODES
 from optuna.testing.storages import StorageSupplier
 from optuna.trial import TrialState
@@ -311,3 +312,44 @@ def test_trials_dataframe_preserves_param_order_with_different_params(
         multi_cols = list(study.trials_dataframe(multi_index=True).columns)
         param_multi = [c for c in multi_cols if c[0] == "params"]
         assert param_multi == [("params", "x"), ("params", "b"), ("params", "a")]
+
+
+def test_trials_dataframe_param_order_follows_storage_capability() -> None:
+    # GH #6855: storages that do not preserve the order of `FrozenTrial.params`,
+    # such as `GrpcStorageProxy`, fall back to sorted parameter columns so the
+    # output stays deterministic.
+    class _UnorderedParamStorage(InMemoryStorage):
+        _preserves_param_order = False
+
+    def objective(trial: Trial) -> float:
+        x3 = trial.suggest_int("x3", 0, 10)
+        x1 = trial.suggest_int("x1", 0, 10)
+        x2 = trial.suggest_int("x2", 0, 10)
+        return min(x3, x1, x2)
+
+    for storage, expected in [
+        (InMemoryStorage(), ["params_x3", "params_x1", "params_x2"]),
+        (_UnorderedParamStorage(), ["params_x1", "params_x2", "params_x3"]),
+    ]:
+        study = create_study(storage=storage)
+        study.optimize(objective, n_trials=1)
+        flat_cols = list(study.trials_dataframe().columns)
+        param_cols = [c for c in flat_cols if c.startswith("params_")]
+        assert param_cols == expected
+
+
+def test_trials_dataframe_with_grpc_storage_proxy_sorts_params() -> None:
+    # `GrpcStorageProxy` transfers parameters as an unordered protobuf map, so
+    # parameter columns keep the alphabetical order instead of a random one.
+    def objective(trial: Trial) -> float:
+        x3 = trial.suggest_int("x3", 0, 10)
+        x1 = trial.suggest_int("x1", 0, 10)
+        x2 = trial.suggest_int("x2", 0, 10)
+        return min(x3, x1, x2)
+
+    with StorageSupplier("grpc_rdb") as storage:
+        study = create_study(storage=storage)
+        study.optimize(objective, n_trials=1)
+        flat_cols = list(study.trials_dataframe().columns)
+        param_cols = [c for c in flat_cols if c.startswith("params_")]
+        assert param_cols == ["params_x1", "params_x2", "params_x3"]

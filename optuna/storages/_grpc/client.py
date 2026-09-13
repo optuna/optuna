@@ -72,6 +72,10 @@ class GrpcStorageProxy(BaseStorage):
         behaviors when calling :func:`optuna.delete_study` due to non-invalidated cache.
     """
 
+    # Parameters are transferred as an unordered protobuf map, so the order of
+    # `FrozenTrial.params` is not preserved and can vary across processes.
+    _preserves_param_order = False
+
     def __init__(self, *, host: str = "localhost", port: int = 13000) -> None:
         self._host = host
         self._port = port
