@@ -7,10 +7,13 @@ plot_intermediate_values
 
 The following code snippet shows how to plot intermediate values.
 
+.. _visualization-plot-intermediate-values-plotly-content:
+
 """
 
+# sphinx_gallery_thumbnail_path = "reference/visualization/matplotlib/generated/images/sphx_glr_optuna.visualization.matplotlib.intermediate_values_001.png"
+
 import optuna
-from plotly.io import show
 
 
 def f(x):
@@ -43,4 +46,4 @@ study = optuna.create_study(sampler=sampler)
 study.optimize(objective, n_trials=16)
 
 fig = optuna.visualization.plot_intermediate_values(study)
-show(fig)
+fig

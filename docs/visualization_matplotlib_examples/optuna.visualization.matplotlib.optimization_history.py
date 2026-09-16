@@ -7,6 +7,8 @@ plot_optimization_history
 
 The following code snippet shows how to plot optimization history.
 
+.. _visualization-plot-optimization-history-matplotlib-content:
+
 """
 
 import optuna

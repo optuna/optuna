@@ -7,6 +7,8 @@ plot_pareto_front
 
 The following code snippet shows how to plot the Pareto front of a study.
 
+.. _visualization-plot-pareto-front-matplotlib-content:
+
 """
 
 import optuna

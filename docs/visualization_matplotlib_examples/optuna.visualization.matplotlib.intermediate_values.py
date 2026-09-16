@@ -7,6 +7,8 @@ plot_intermediate_values
 
 The following code snippet shows how to plot intermediate values.
 
+.. _visualization-plot-intermediate-values-matplotlib-content:
+
 """
 
 import optuna

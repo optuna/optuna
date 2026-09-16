@@ -7,12 +7,15 @@ plot_edf
 
 The following code snippet shows how to plot EDF.
 
+.. _visualization-plot-edf-plotly-content:
+
 """
+
+# sphinx_gallery_thumbnail_path = "reference/visualization/matplotlib/generated/images/sphx_glr_optuna.visualization.matplotlib.edf_001.png"
 
 import math
 
 import optuna
-from plotly.io import show
 
 
 def ackley(x, y):
@@ -42,4 +45,4 @@ study2 = optuna.create_study(study_name="x=[1,3), y=[1,3)", sampler=sampler)
 study2.optimize(lambda t: objective(t, 1, 3), n_trials=500)
 
 fig = optuna.visualization.plot_edf([study0, study1, study2])
-show(fig)
+fig

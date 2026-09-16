@@ -9,12 +9,15 @@ The following code snippet shows how to plot the timeline of a study.
 Timeline plot can visualize trials with overlapping execution time
 (e.g., in distributed environments).
 
+.. _visualization-plot-timeline-plotly-content:
+
 """
+
+# sphinx_gallery_thumbnail_path = "reference/visualization/matplotlib/generated/images/sphx_glr_optuna.visualization.matplotlib.timeline_001.png"
 
 import time
 
 import optuna
-from plotly.io import show
 
 
 def objective(trial):
@@ -33,5 +36,4 @@ study.optimize(
 )
 
 fig = optuna.visualization.plot_timeline(study)
-show(fig)
-
+fig
