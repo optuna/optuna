@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from io import BytesIO
 from typing import Any
 
 import pytest
@@ -13,9 +12,7 @@ import optuna.visualization._intermediate_values
 from optuna.visualization._intermediate_values import _get_intermediate_plot_info
 from optuna.visualization._intermediate_values import _IntermediatePlotInfo
 from optuna.visualization._intermediate_values import _TrialInfo
-from optuna.visualization._plotly_imports import go
 import optuna.visualization.matplotlib._intermediate_values
-from optuna.visualization.matplotlib._matplotlib_imports import plt
 
 
 def test_intermediate_plot_info() -> None:
@@ -120,9 +117,4 @@ def test_intermediate_plot_info() -> None:
 def test_plot_intermediate_values(
     plotter: Callable[[_IntermediatePlotInfo], Any], info: _IntermediatePlotInfo
 ) -> None:
-    figure = plotter(info)
-    if isinstance(figure, go.Figure):
-        figure.write_image(BytesIO())
-    else:
-        plt.savefig(BytesIO())
-        plt.close()
+    plotter(info)

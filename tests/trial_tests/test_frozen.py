@@ -341,6 +341,35 @@ def test_create_trial(state: TrialState) -> None:
         )
 
 
+def test_create_trial_with_constraints() -> None:
+    trial = create_trial(
+        value=0.2,
+        params={"x": 10},
+        distributions={"x": FloatDistribution(5, 12)},
+        constraints={"cost": 1.5, "limit": -2.5},
+    )
+
+    assert trial.constraints == {"cost": 1.5, "limit": -2.5}
+
+
+def test_create_trial_with_invalid_constraints() -> None:
+    with pytest.raises(ValueError):
+        create_trial(
+            value=0.2,
+            params={"x": 10},
+            distributions={"x": FloatDistribution(5, 12)},
+            constraints={"cost": float("nan")},
+        )
+
+    with pytest.raises(TypeError):
+        create_trial(
+            value=0.2,
+            params={"x": 10},
+            distributions={"x": FloatDistribution(5, 12)},
+            constraints={"cost": "foo"},  # type: ignore[dict-item]
+        )
+
+
 # Deprecated distributions are internally converted to corresponding distributions.
 @pytest.mark.filterwarnings("ignore::FutureWarning")
 def test_create_trial_distribution_conversion() -> None:

@@ -34,7 +34,7 @@ class GCSArtifactStore:
             from optuna.artifacts import GCSArtifactStore, upload_artifact
 
 
-            artifact_backend = GCSArtifactStore("my-bucket")
+            artifact_store = GCSArtifactStore("my-bucket")
 
 
             def objective(trial: optuna.Trial) -> float:

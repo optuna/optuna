@@ -15,11 +15,18 @@ sqd: The squared differences of each dimension between two points.
 is_categorical:
     A boolean array with the shape of (len(params), ). If is_categorical[i] is True, the i-th
     parameter is categorical.
+
+Notation for q-batch acquisition functions with running trials:
+
+q-batch: The set consisting of the running trials and one candidate currently being evaluated.
+fantasy_samples: Hypothetical objective values at the running trials for each QMC sample.
+candidate: A new parameter value whose acquisition value is being evaluated.
 """
 
 from __future__ import annotations
 
 from typing import Any
+from typing import Callable
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -232,7 +239,8 @@ class GPRegressor:
                     torch.float64
                 )
         sqdist = sqd.matmul(self.inverse_squared_lengthscales)
-        return Matern52Kernel.apply(sqdist) * self.kernel_scale  # type: ignore
+        apply_kernel: Callable[[torch.Tensor], torch.Tensor] = Matern52Kernel.apply
+        return apply_kernel(sqdist) * self.kernel_scale
 
     def posterior(self, x: torch.Tensor, joint: bool = False) -> tuple[torch.Tensor, torch.Tensor]:
         """
@@ -423,11 +431,17 @@ class ConditionalGPRegressor:
             assert isinstance(cov_Y_Y_chol, torch.Tensor), "MyPy Redefinition"
             self._V_r = _solve_cholesky(cov_Y_Y_chol, cov_fXr_fX, left=False).transpose(-2, -1)
 
-    def sample_joint_posterior(self, x: torch.Tensor) -> torch.Tensor:
+    def get_fantasy_samples(self) -> torch.Tensor:
+        return self._fantasy_samples
+
+    def sample_joint_posterior(self, x: torch.Tensor, return_fantasy: bool = True) -> torch.Tensor:
         """Return conditional joint posterior samples for each query point.
 
         For batched ``x``, each batch element is treated as a separate query sharing the same
         running fantasies, rather than as part of a joint posterior over the query points.
+        If ``return_fantasy``, the returned tensor shape is
+        ``(*x.shape[:-1], n_qmc_samples, n_running + 1)``. Otherwise, the returned tensor shape is
+        ``(*x.shape[:-1], n_qmc_samples)``.
         """
         x_ = x.unsqueeze(0) if (is_single := x.ndim == 1) else x
         mu_x, cov_xx_post = self._gpr.posterior(x_)
@@ -443,10 +457,60 @@ class ConditionalGPRegressor:
             cov_xx_post + self._stabilizing_noise - torch.linalg.vecdot(V, cov_fx_fXr_post)
         ).clamp_min_(0.0)
         samples = cond_mean + cond_cov.sqrt().unsqueeze(-1) * self._fixed_samples_x
+        if not return_fantasy:
+            return samples.squeeze(0) if is_single else samples
         if is_single:
             return torch.cat([self._fantasy_samples, samples.squeeze(0).unsqueeze(-1)], dim=-1)
         fantasy = self._fantasy_samples.unsqueeze(0).expand(*x_.shape[:-1], -1, -1)
         return torch.cat([fantasy, samples.unsqueeze(-1)], dim=-1)
+
+
+class ListConditionalGPRegressor:
+    """A list of conditional GP regressors for each objective, sharing one set of running trials.
+
+    This class is used by q-batch multi-objective acquisition functions. For each QMC sample, it
+    shares the same q-batch structure across objectives: the first ``n_running`` entries are
+    fantasy values at the running trials, and the final q-batch entry is the candidate currently
+    being evaluated.
+
+    ``fantasy_samples`` is shaped ``(n_qmc_samples, n_running, n_objectives)``. It contains the
+    running-trial part of the q-batch, which is used to build the per-sample HVI baseline.
+    ``sample_candidate_posterior`` returns ``(*x.shape[:-1], n_qmc_samples, n_objectives)``.
+    """
+
+    def __init__(
+        self,
+        gpr_list: list[GPRegressor],
+        X_running: torch.Tensor,
+        n_qmc_samples: int,
+        qmc_seed: int,
+        stabilizing_noise: float,
+    ) -> None:
+        self._cond_gpr_list = [
+            ConditionalGPRegressor(
+                gpr=gpr,
+                X_running=X_running,
+                n_qmc_samples=n_qmc_samples,
+                qmc_seed=qmc_seed + i,
+                stabilizing_noise=stabilizing_noise,
+            )
+            for i, gpr in enumerate(gpr_list)
+        ]
+        self._fantasy_samples = torch.stack(
+            [cond_gpr.get_fantasy_samples() for cond_gpr in self._cond_gpr_list], dim=-1
+        )
+
+    def get_fantasy_samples(self) -> torch.Tensor:
+        return self._fantasy_samples
+
+    def sample_candidate_posterior(self, x: torch.Tensor) -> torch.Tensor:
+        return torch.stack(
+            [
+                cond_gpr.sample_joint_posterior(x, return_fantasy=False)
+                for cond_gpr in self._cond_gpr_list
+            ],
+            dim=-1,
+        )
 
 
 def fit_kernel_params(

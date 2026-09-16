@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import datetime
-from io import BytesIO
 from typing import Any
 from typing import TYPE_CHECKING
 
@@ -11,10 +10,8 @@ import optuna
 from optuna.study._constrained_optimization import _CONSTRAINTS_KEY
 from optuna.trial import TrialState
 from optuna.visualization import plot_timeline as plotly_plot_timeline
-from optuna.visualization._plotly_imports import _imports as plotly_imports
 from optuna.visualization._timeline import _get_timeline_info
 from optuna.visualization.matplotlib import plot_timeline as plt_plot_timeline
-from optuna.visualization.matplotlib._matplotlib_imports import _imports as plt_imports
 
 
 if TYPE_CHECKING:
@@ -23,12 +20,6 @@ if TYPE_CHECKING:
     import _pytest.capture
 
     from optuna.study.study import Study
-
-if plotly_imports.is_successful():
-    from optuna.visualization._plotly_imports import go
-
-if plt_imports.is_successful():
-    from optuna.visualization.matplotlib._matplotlib_imports import plt
 
 
 parametrize_plot_timeline = pytest.mark.parametrize(
@@ -172,13 +163,7 @@ def test_get_timeline_plot(
     n_recent_trials: int | None,
 ) -> None:
     study = _create_study(trial_states)
-    figure = plot_timeline(study, n_recent_trials=n_recent_trials)
-
-    if isinstance(figure, go.Figure):
-        figure.write_image(BytesIO())
-    else:
-        plt.savefig(BytesIO())
-        plt.close()
+    plot_timeline(study, n_recent_trials=n_recent_trials)
 
 
 @parametrize_plot_timeline

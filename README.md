@@ -25,12 +25,14 @@ Optuna can dynamically construct the search spaces for the hyperparameters.
 ## :loudspeaker: News
 
 <!-- TODO: when you add a new line, please delete the oldest line -->
+* **Sep 7, 2026**: Optuna v5 and [Rustuna](https://github.com/optuna/rustuna/) v0.1.0 have been released! Check out the release blog posts.
+  * [Optuna v5.0.0 release blog post](https://medium.com/optuna/releasing-optuna-v5-0-an-open-source-black-box-optimization-library-9bff8b4587ba)
+  * [Rustuna v0.1.0 release blog post](https://medium.com/optuna/announcing-rustuna-cc82a6815bf7)
 * **Aug 3, 2026**: Release candidate of Optuna v5 is available! Check out [the release note](https://github.com/optuna/optuna/releases/tag/v5.0.0-rc1) for details.
 * **Jun 1, 2026**: Optuna 4.9.0 is out! Check out [the release note](https://github.com/optuna/optuna/releases/tag/v4.9.0) for details.
 * **Mar 16, 2026**: Optuna 4.8.0 is out! Check out [the release note](https://github.com/optuna/optuna/releases/tag/v4.8.0) for details.
 * **Jan 19, 2026**: Optuna 4.7.0 is out! Check out [the release note](https://github.com/optuna/optuna/releases/tag/v4.7.0) for details.
 * **Nov 10, 2025**: A new article [Announcing Optuna 4.6](https://medium.com/optuna/announcing-optuna-4-6-a9e82183ab07) has been published.
-* **Oct 28, 2025**: A new article [AutoSampler: Full Support for Multi-Objective & Constrained Optimization](https://medium.com/optuna/autosampler-full-support-for-multi-objective-constrained-optimization-c1c4fc957ba2) has been published.
 
 ## :fire: Key Features
 
@@ -120,25 +122,17 @@ $ conda install -c conda-forge optuna
 > [!IMPORTANT]
 > Optuna supports Python 3.9 or newer.
 
-## Integrations
+## Rustuna
 
-Optuna has integration features with various third-party libraries. Integrations can be found in [optuna/optuna-integration](https://github.com/optuna/optuna-integration) and the document is available [here](https://optuna-integration.readthedocs.io/en/stable/index.html).
+[Rustuna](https://github.com/optuna/rustuna) is a faster implementation of Optuna written in Rust.
+It keeps the API you already know, and rewrites the parts that start to hurt at scale: sampling speed and memory efficiency.
 
-<details>
-<summary>Supported integration libraries</summary>
+1. **Faster sampler implementations**: Rustuna supports TPE, MOTPE, NSGA-II, and CMA-ES, and finishes the same study several times to several hundred times faster for cheap objective functions.
+2. **Memory-efficient storage**: Several design choices to make Rustuna's storage memory-efficient. Furthermore, discarding unnecessary trial history prevents memory usage and runtime from increasing as the number of trials grows.
+3. **Zero Python runtime dependencies**: No Python runtime dependencies by default ー dramatically faster imports, and far less exposure to supply chain attacks.
 
-* [Catboost](https://github.com/optuna/optuna-examples/tree/main/catboost/catboost_pruning.py)
-* [Dask](https://github.com/optuna/optuna-examples/tree/main/dask/dask_simple.py)
-* [fastai](https://github.com/optuna/optuna-examples/tree/main/fastai/fastai_simple.py)
-* [Keras](https://github.com/optuna/optuna-examples/tree/main/keras/keras_integration.py)
-* [LightGBM](https://github.com/optuna/optuna-examples/tree/main/lightgbm/lightgbm_integration.py)
-* [PyTorch](https://github.com/optuna/optuna-examples/tree/main/pytorch/pytorch_simple.py)
-* [PyTorch Ignite](https://github.com/optuna/optuna-examples/tree/main/pytorch/pytorch_ignite_simple.py)
-* [PyTorch Lightning](https://github.com/optuna/optuna-examples/tree/main/pytorch/pytorch_lightning_simple.py)
-* [TensorFlow](https://github.com/optuna/optuna-examples/tree/main/tensorflow/tensorflow_estimator_integration.py)
-* [tf.keras](https://github.com/optuna/optuna-examples/tree/main/tfkeras/tfkeras_integration.py)
-* [XGBoost](https://github.com/optuna/optuna-examples/tree/main/xgboost/xgboost_integration.py)
-</details>
+> [!NOTE]
+> Rustuna is currently experimental. Compared with Optuna, it still lacks some features and APIs, and it has not yet been optimized enough to deliver better performance for every use case. Since the project has not had the same level of maturity as Optuna, bugs and rough edges likely remain. We appreciate your understanding when using it.
 
 ## Web Dashboard
 

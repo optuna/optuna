@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import abc
 from collections.abc import Generator
-from collections.abc import Iterator
 from contextlib import contextmanager
 import errno
 import json
@@ -82,17 +81,16 @@ class JournalFileBackend(BaseJournalBackend):
                     break
                 if last_decode_error is not None:
                     raise last_decode_error
+
+                # Ensure that each line ends with line separators (\n, \r\n).
+                if not line.endswith(b"\n"):
+                    last_decode_error = ValueError("Invalid log format.")
+                    continue
                 if log_number + 1 not in self._log_number_offset:
                     self._log_number_offset[log_number + 1] = (
                         self._log_number_offset[log_number] + byte_len
                     )
                 if log_number < log_number_from:
-                    continue
-
-                # Ensure that each line ends with line separators (\n, \r\n).
-                if not line.endswith(b"\n"):
-                    last_decode_error = ValueError("Invalid log format.")
-                    del self._log_number_offset[log_number + 1]
                     continue
                 try:
                     yield json.loads(line)
@@ -306,7 +304,7 @@ class JournalFileOpenLock(BaseJournalFileLock):
 
 
 @contextmanager
-def get_lock_file(lock_obj: BaseJournalFileLock) -> Iterator[None]:
+def get_lock_file(lock_obj: BaseJournalFileLock) -> Generator[None, None, None]:
     lock_obj.acquire()
     try:
         yield

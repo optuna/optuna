@@ -136,8 +136,7 @@ class FrozenTrial(BaseTrial):
             Dictionary that contains the attributes of the :class:`~optuna.trial.Trial` set with
             :func:`optuna.trial.Trial.set_user_attr`.
         system_attrs:
-            Dictionary that contains the attributes of the :class:`~optuna.trial.Trial` set with
-            :func:`optuna.trial.Trial.set_system_attr`.
+            Dictionary that contains the optuna-internal attributes.
         intermediate_values:
             Intermediate objective values set with :func:`optuna.trial.Trial.report`.
     """
@@ -297,10 +296,6 @@ class FrozenTrial(BaseTrial):
 
     def set_user_attr(self, key: str, value: Any) -> None:
         self._user_attrs[key] = value
-
-    @deprecated_func("3.1.0", "5.0.0")
-    def set_system_attr(self, key: str, value: Any) -> None:
-        self._system_attrs[key] = value
 
     def _validate(self) -> None:
         if self.state != TrialState.WAITING and self.datetime_start is None:
@@ -531,6 +526,7 @@ def create_trial(
     user_attrs: dict[str, Any] | None = None,
     system_attrs: dict[str, Any] | None = None,
     intermediate_values: dict[int, float] | None = None,
+    constraints: dict[str, float] | None = None,
 ) -> FrozenTrial:
     """Create a new :class:`~optuna.trial.FrozenTrial`.
 
@@ -594,6 +590,9 @@ def create_trial(
             Dictionary with system attributes. Should not have to be used for most users.
         intermediate_values:
             Dictionary with intermediate objective values of the trial.
+        constraints:
+            Dictionary with constraint values of the trial. The trial is considered feasible when
+            all constraint values are zero or less.
 
     Returns:
         Created trial.
@@ -633,6 +632,10 @@ def create_trial(
         system_attrs=system_attrs,
         intermediate_values=intermediate_values,
     )
+
+    if constraints is not None:
+        for key, constraint_value in constraints.items():
+            trial.set_constraint(key, constraint_value)
 
     trial._validate()
 

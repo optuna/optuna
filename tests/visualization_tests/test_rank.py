@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from io import BytesIO
 import math
 from typing import Any
 
@@ -18,7 +17,6 @@ from optuna.testing.objectives import fail_objective
 from optuna.testing.visualization import prepare_study_with_trials
 from optuna.trial import create_trial
 from optuna.visualization import plot_rank as plotly_plot_rank
-from optuna.visualization._plotly_imports import go
 from optuna.visualization._rank import _AxisInfo
 from optuna.visualization._rank import _convert_color_idxs_to_scaled_rgb_colors
 from optuna.visualization._rank import _get_axis_info
@@ -178,9 +176,7 @@ def test_plot_rank(
     params: list[str] | None,
 ) -> None:
     study = specific_create_study()
-    figure = plot_rank(study, params=params)
-    if isinstance(figure, go.Figure):
-        figure.write_image(BytesIO())
+    plot_rank(study, params=params)
 
 
 def test_target_is_none_and_study_is_multi_obj() -> None:

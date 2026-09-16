@@ -7,6 +7,7 @@ import pathlib
 import pickle
 from types import TracebackType
 from typing import Any
+from typing import cast
 from typing import IO
 from unittest import mock
 
@@ -23,6 +24,7 @@ from optuna.storages import JournalFileSymlinkLock as DeprecatedJournalFileSymli
 from optuna.storages import JournalStorage
 from optuna.storages.journal._base import BaseJournalSnapshot
 from optuna.storages.journal._file import BaseJournalFileLock
+from optuna.storages.journal._storage import JournalOperation
 from optuna.storages.journal._storage import JournalStorageReplayResult
 from optuna.testing.storages import StorageSupplier
 from optuna.testing.tempfile_pool import NamedTemporaryFilePool
@@ -112,6 +114,56 @@ def test_concurrent_append_logs_for_multi_threads(
 
         assert len(list(storage.read_logs(0))) == num_records
         assert all(record == r for r in storage.read_logs(0))
+
+
+def test_retry_an_incomplete_trailing_log() -> None:
+    what_to_write_1 = (
+        b'{"op_code":0,"worker_id":"worker-0"}\n'
+        + b'{"op_code":0,"worker_id":"worker-1"}\n'
+        + b'{"op_code":0,"work'
+    )
+    what_to_write_2 = b'er_id":"worker-2"}\n' + b'{"op_code":0,"worker_id":"worker-3"}\n'
+    with NamedTemporaryFilePool() as file_:
+        file = cast(IO[bytes], file_)
+        file.write(what_to_write_1)
+        file.flush()
+
+        file_backend = journal.JournalFileBackend(file.name)
+        assert list(file_backend.read_logs(0)) == [
+            {"op_code": 0, "worker_id": "worker-0"},
+            {"op_code": 0, "worker_id": "worker-1"},
+        ]
+
+        file.write(what_to_write_2)
+        file.flush()
+
+        assert list(file_backend.read_logs(2)) == [
+            {"op_code": 0, "worker_id": "worker-2"},
+            {"op_code": 0, "worker_id": "worker-3"},
+        ]
+
+
+def test_does_not_cache_an_incomplete_log_before_requested_number() -> None:
+    what_to_write_1 = (
+        b'{"op_code":0,"worker_id":"worker-0"}\n'
+        + b'{"op_code":0,"worker_id":"worker-1"}\n'
+        + b'{"op_code":0,"work'
+    )
+    what_to_write_2 = b'er_id":"worker-2"}\n' + b'{"op_code":0,"worker_id":"worker-3"}\n'
+    with NamedTemporaryFilePool() as file_:
+        file = cast(IO[bytes], file_)
+        file.write(what_to_write_1)
+        file.flush()
+
+        file_backend = journal.JournalFileBackend(file.name)
+        assert list(file_backend.read_logs(3)) == []
+
+        file.write(what_to_write_2)
+        file.flush()
+
+        assert list(file_backend.read_logs(3)) == [
+            {"op_code": 0, "worker_id": "worker-3"},
+        ]
 
 
 def pop_waiting_trial(file_path: str, study_name: str) -> int | None:
@@ -264,3 +316,26 @@ def test_invalid_grace_period(log_storage_type: str, grace_period: int) -> None:
     with pytest.raises(ValueError):
         with JournalLogStorageSupplier(log_storage_type, grace_period):
             pass
+
+
+def test_ignore_discard_trial_operation() -> None:
+    with NamedTemporaryFilePool() as file:
+        file_storage = journal.JournalFileBackend(file.name)
+        storage = optuna.storages.JournalStorage(file_storage)
+
+        # Create an Optuna study
+        study = optuna.create_study(storage=storage)
+        trial1 = study.ask()
+        x = trial1.suggest_float("x", -10, 10)
+        study.tell(trial1, values=x**2)
+
+        # Insert DISCARD_TRIALS operation
+        storage._write_log(JournalOperation.DISCARD_TRIALS, {"trial_ids": [trial1._trial_id]})
+
+        # Resume optimization
+        trial2 = study.ask()
+        x = trial2.suggest_float("x", -10, 10)
+        study.tell(trial2, values=x**2)
+
+        trials = storage.get_all_trials(study._study_id)
+        assert trial2.number in [t.number for t in trials]

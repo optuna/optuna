@@ -108,7 +108,7 @@ def test_eval_qlogpi(x: np.ndarray, search_space: SearchSpace) -> None:
 
 @parametrized_x
 @parametrized_additional_values
-def test_eval_qconstrained_logei(
+def test_eval_qlogcei(
     x: np.ndarray,
     additional_values: np.ndarray,
     search_space: SearchSpace,
@@ -117,12 +117,12 @@ def test_eval_qconstrained_logei(
     Y = np.array([1.0, 2.0, 3.0])
     is_feasible = np.all(c <= 0, axis=1)
     is_all_infeasible = not np.any(is_feasible)
-    acqf = acqf_module.qConstrainedLogEI(
+    acqf = acqf_module.qLogCEI(
         gpr=get_gpr(Y),
         search_space=search_space,
         threshold=-np.inf if is_all_infeasible else np.max(Y[is_feasible]),
         n_qmc_samples=32,
-        qmc_seeds=[42, 17, 99, 123][: len(c.T) + 1],
+        qmc_seed=42,
         constraints_gpr_list=[get_gpr(vals) for vals in c.T],
         constraints_threshold_list=[0.0] * len(c.T),
         normalized_params_of_running_trials=np.array([[0.4, 0.6]]),
@@ -142,7 +142,7 @@ def test_eval_acqf_with_constraints(
     Y = np.array([1.0, 2.0, 3.0])
     is_feasible = np.all(c <= 0, axis=1)
     is_all_infeasible = not np.any(is_feasible)
-    acqf = acqf_module.ConstrainedLogEI(
+    acqf = acqf_module.LogCEI(
         gpr=get_gpr(Y),
         search_space=search_space,
         threshold=-np.inf if is_all_infeasible else np.max(Y[is_feasible]),
@@ -175,6 +175,27 @@ def test_eval_multi_objective_acqf(
 
 @parametrized_x
 @parametrized_additional_values
+def test_eval_qlogehvi(
+    x: np.ndarray,
+    additional_values: np.ndarray,
+    search_space: SearchSpace,
+) -> None:
+    Y = np.hstack([np.array([1.0, 2.0, 3.0])[:, np.newaxis], additional_values])
+    n_objectives = Y.shape[-1]
+    acqf = acqf_module.qLogEHVI(
+        gpr_list=[get_gpr(Y[:, i]) for i in range(n_objectives)],
+        search_space=search_space,
+        Y_train=torch.from_numpy(Y),
+        n_qmc_samples=32,
+        qmc_seed=42,
+        normalized_params_of_running_trials=np.array([[0.4, 0.6]]),
+        stabilizing_noise=0.0,
+    )
+    verify_eval_acqf(x, acqf)
+
+
+@parametrized_x
+@parametrized_additional_values
 def test_eval_multi_objective_acqf_with_constraints(
     x: np.ndarray,
     additional_values: np.ndarray,
@@ -185,7 +206,7 @@ def test_eval_multi_objective_acqf_with_constraints(
     n_objectives = Y.shape[-1]
     is_feasible = np.all(c <= 0, axis=1)
     is_all_infeasible = not np.any(is_feasible)
-    acqf = acqf_module.ConstrainedLogEHVI(
+    acqf = acqf_module.LogCEHVI(
         gpr_list=[get_gpr(Y[:, i]) for i in range(n_objectives)],
         search_space=search_space,
         Y_feasible=None if is_all_infeasible else torch.from_numpy(Y[is_feasible]),
@@ -193,6 +214,46 @@ def test_eval_multi_objective_acqf_with_constraints(
         qmc_seed=42,
         constraints_gpr_list=[get_gpr(vals) for vals in c.T],
         constraints_threshold_list=[0.0] * len(c.T),
+        stabilizing_noise=0.0,
+    )
+    verify_eval_acqf(x, acqf)
+
+
+def test_non_dominated_box_bounds_ignore_point_outside_reference() -> None:
+    Y_train = torch.tensor([[0.0, 1.0], [1.0, 0.0]], dtype=torch.float64)
+    loss_ref_point = acqf_module._get_reference_point(Y_train)
+    expected_lbs, expected_ubs = acqf_module._get_non_dominated_box_bounds(Y_train, loss_ref_point)
+    # This point is non-dominated, but does not dominate the reference point
+    # in every objective. Therefore, it has zero hypervolume contribution.
+    fantasy = torch.tensor([[100.0, -1.0]], dtype=torch.float64)
+    actual_lbs, actual_ubs = acqf_module._get_non_dominated_box_bounds(
+        torch.cat([Y_train, fantasy]), loss_ref_point
+    )
+    torch.testing.assert_close(actual_lbs, expected_lbs)
+    torch.testing.assert_close(actual_ubs, expected_ubs)
+
+
+@parametrized_x
+@parametrized_additional_values
+def test_eval_q_logcehvi(
+    x: np.ndarray,
+    additional_values: np.ndarray,
+    search_space: SearchSpace,
+) -> None:
+    c = additional_values.copy()
+    Y = np.hstack([np.array([1.0, 2.0, 3.0])[:, np.newaxis], additional_values])
+    n_objectives = Y.shape[-1]
+    is_feasible = np.all(c <= 0, axis=1)
+    is_all_infeasible = not np.any(is_feasible)
+    acqf = acqf_module.qLogCEHVI(
+        gpr_list=[get_gpr(Y[:, i]) for i in range(n_objectives)],
+        search_space=search_space,
+        Y_feasible=None if is_all_infeasible else torch.from_numpy(Y[is_feasible]),
+        n_qmc_samples=32,
+        qmc_seed=42,
+        constraints_gpr_list=[get_gpr(vals) for vals in c.T],
+        constraints_threshold_list=[0.0] * len(c.T),
+        normalized_params_of_running_trials=np.array([[0.4, 0.6]]),
         stabilizing_noise=0.0,
     )
     verify_eval_acqf(x, acqf)
