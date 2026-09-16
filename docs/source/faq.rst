@@ -136,7 +136,7 @@ For instance, you can stop showing each trial result as follows:
     # Logs like '[I 2020-07-21 13:41:45,627] Trial 0 finished with value:...' are disabled.
 
 
-Please refer to :class:`optuna.logging` for further details.
+Please refer to :mod:`~optuna.logging` for further details.
 
 
 How to save machine learning models trained in objective functions?
@@ -355,10 +355,6 @@ Specify ``gc_after_trial`` to :obj:`True` when calling :func:`~optuna.study.Stud
 There is a performance trade-off for running the garbage collector, which could be non-negligible depending on how fast your objective function otherwise is. Therefore, ``gc_after_trial`` is :obj:`False` by default.
 Note that the above examples are similar to running the garbage collector inside the objective function, except for the fact that :func:`gc.collect` is called even when errors, including :class:`~optuna.exceptions.TrialPruned` are raised.
 
-.. note::
-
-    :class:`~optuna.integration.ChainerMNStudy` does currently not provide ``gc_after_trial`` nor callbacks for :func:`~optuna.integration.ChainerMNStudy.optimize`.
-    When using this class, you will have to call the garbage collector inside the objective function.
 
 How can I output a log only when the best value is updated?
 -----------------------------------------------------------
@@ -762,7 +758,7 @@ However, if it is necessary to remove artifacts from a Python script, users can 
 
 .. warning::
 
-    :func:`~optuna.study.Study.add_trial` and :meth:`~optuna.study.copy_study` do not copy artifact files linked to :class:`~optuna.study.Study` or :class:`~optuna.trial.Trial`.
+    :meth:`~optuna.study.Study.add_trial` and :func:`~optuna.study.copy_study` do not copy artifact files linked to :class:`~optuna.study.Study` or :class:`~optuna.trial.Trial`.
     Please make sure **NOT** to delete the artifacts from the source study or trial.
     Failing to do so may lead to unexpected behaviors as Optuna does not guarantee expected behaviors when users call :meth:`remove` externally.
     Due to the Optuna software design, it is hard to officially support the delete feature and we are not planning to support this feature in the future either.
