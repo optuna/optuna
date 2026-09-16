@@ -38,7 +38,7 @@ class GCSArtifactStore:
 
 
             def objective(trial: optuna.Trial) -> float:
-                ... = trial.suggest_float("x", -10, 10)
+                x = trial.suggest_float("x", -10, 10)
                 file_path = generate_example(...)
                 upload_artifact(
                     artifact_store=artifact_store,
