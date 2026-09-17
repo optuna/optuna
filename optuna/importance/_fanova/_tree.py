@@ -19,6 +19,20 @@ class _FanovaTree:
         self._tree = tree
         self._search_spaces = search_spaces
 
+        # Cache these per instance rather than leaving `lru_cache` decorating the
+        # methods directly: decorating an instance method keys the cache on `self`
+        # too, so with `maxsize=None` every `_FanovaTree` ever constructed (one per
+        # random-forest estimator, on every `get_param_importances()` call) would
+        # stay reachable via the cache for the life of the process instead of being
+        # garbage-collected once the caller is done with it.
+        self._is_node_leaf = lru_cache(maxsize=None)(self._is_node_leaf)
+        self._get_node_left_child = lru_cache(maxsize=None)(self._get_node_left_child)
+        self._get_node_right_child = lru_cache(maxsize=None)(self._get_node_right_child)
+        self._get_node_children = lru_cache(maxsize=None)(self._get_node_children)
+        self._get_node_value = lru_cache(maxsize=None)(self._get_node_value)
+        self._get_node_split_threshold = lru_cache(maxsize=None)(self._get_node_split_threshold)
+        self._get_node_split_feature = lru_cache(maxsize=None)(self._get_node_split_feature)
+
         statistics = self._precompute_statistics()
         split_midpoints, split_sizes = self._precompute_split_midpoints_and_sizes()
         subtree_active_features = self._precompute_subtree_active_features()
@@ -243,33 +257,26 @@ class _FanovaTree:
     def _n_nodes(self) -> int:
         return self._tree.node_count
 
-    @lru_cache(maxsize=None)
     def _is_node_leaf(self, node_index: int) -> bool:
         return self._tree.feature[node_index] < 0
 
-    @lru_cache(maxsize=None)
     def _get_node_left_child(self, node_index: int) -> int:
         return self._tree.children_left[node_index]
 
-    @lru_cache(maxsize=None)
     def _get_node_right_child(self, node_index: int) -> int:
         return self._tree.children_right[node_index]
 
-    @lru_cache(maxsize=None)
     def _get_node_children(self, node_index: int) -> tuple[int, int]:
         return self._get_node_left_child(node_index), self._get_node_right_child(node_index)
 
-    @lru_cache(maxsize=None)
     def _get_node_value(self, node_index: int) -> float:
         # self._tree.value: sklearn.tree._tree.Tree.value has
         # the shape (node_count, n_outputs, max_n_classes)
         return float(self._tree.value[node_index].reshape(-1)[0])
 
-    @lru_cache(maxsize=None)
     def _get_node_split_threshold(self, node_index: int) -> float:
         return self._tree.threshold[node_index]
 
-    @lru_cache(maxsize=None)
     def _get_node_split_feature(self, node_index: int) -> int:
         return self._tree.feature[node_index]
 
