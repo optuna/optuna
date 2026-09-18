@@ -209,16 +209,22 @@ def test_retried_trial() -> None:
     assert study.trials[0].system_attrs["grid_id"] == study.trials[1].system_attrs["grid_id"]
 
 
-def test_enqueued_trial() -> None:
-    sampler = samplers.GridSampler({"a": [0, 50]})
+@pytest.mark.parametrize(
+    ("grid_values", "n_initial_trials"), [([0], 0), ([0, 50], 0), ([0, 50], 1)]
+)
+def test_enqueued_trial(grid_values: list[int], n_initial_trials: int) -> None:
+    sampler = samplers.GridSampler({"a": grid_values})
     study = optuna.create_study(sampler=sampler)
+    study.optimize(lambda trial: trial.suggest_int("a", 0, 100), n_trials=n_initial_trials)
     study.enqueue_trial({"a": 100})
 
     study.optimize(lambda trial: trial.suggest_int("a", 0, 100))
 
-    assert len(study.trials) == 3
-    assert study.trials[0].params["a"] == 100
-    assert sorted([study.trials[1].params["a"], study.trials[2].params["a"]]) == [0, 50]
+    trials = study.trials
+    assert len(trials) == len(grid_values) + 1
+    assert trials[n_initial_trials].params["a"] == 100
+    grid_trials = trials[:n_initial_trials] + trials[n_initial_trials + 1 :]
+    assert sorted(trial.params["a"] for trial in grid_trials) == grid_values
 
 
 def test_same_seed_trials() -> None:
