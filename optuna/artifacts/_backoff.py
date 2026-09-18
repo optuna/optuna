@@ -99,6 +99,7 @@ class Backoff:
         for i in range(self._max_retries):
             try:
                 self._backend.remove(artifact_id)
+                return
             except ArtifactNotFound:
                 raise
             except Exception as e:
