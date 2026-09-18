@@ -57,7 +57,8 @@ document = [
   "scikit-learn",
   "sphinx",
   "sphinx-copybutton",
-  "sphinx-gallery",
+  # Sphinx-Gallery 0.22.0 truncates dotted image filenames in _find_image_ext.
+  "sphinx-gallery<0.22",  # Remove once the upstream filename handling is fixed.
   "sphinx-notfound-page",
   "sphinx_rtd_theme>=1.2.0",
   "torch",
