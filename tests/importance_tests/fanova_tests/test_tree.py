@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import gc
 import math
 from unittest.mock import Mock
+import weakref
 
 import numpy as np
 import pytest
@@ -294,3 +296,31 @@ def test_tree_get_node_subspaces(tree: _FanovaTree) -> None:
         tree._get_node_children_subspaces(1, search_spaces)[1], expected_right_child_subspace
     )
     np.testing.assert_array_equal(search_spaces, search_spaces_copy)
+
+
+def test_tree_is_garbage_collected() -> None:
+    # `_is_node_leaf`, `_get_node_value`, etc. used to be `@lru_cache(maxsize=None)`
+    # directly on the class. That keys the cache on `self` too, so every `_FanovaTree`
+    # ever constructed (one per random-forest estimator, on every
+    # `get_param_importances()` call) stayed reachable through the cache for the life
+    # of the process instead of being collected once the caller was done with it.
+    sklearn_tree = Mock()
+    sklearn_tree.n_features = 3
+    sklearn_tree.node_count = 5
+    sklearn_tree.feature = [1, 2, -1, -1, -1]
+    sklearn_tree.children_left = [1, 2, -1, -1, -1]
+    sklearn_tree.children_right = [4, 3, -1, -1, -1]
+    sklearn_tree.value = np.array([[[-1.0]], [[-1.0]], [[0.1]], [[0.2]], [[0.5]]])
+    sklearn_tree.threshold = [0.5, 1.5, -1.0, -1.0, -1.0]
+    search_spaces = np.array([[0.0, 1.0], [0.0, 1.0], [0.0, 2.0]])
+
+    tree = _FanovaTree(tree=sklearn_tree, search_spaces=search_spaces)
+    # Exercise the cached methods so the instance is actually inserted into any
+    # class-level cache, the way a real `get_param_importances()` call would.
+    tree.variance
+    ref = weakref.ref(tree)
+
+    del tree
+    gc.collect()
+
+    assert ref() is None
