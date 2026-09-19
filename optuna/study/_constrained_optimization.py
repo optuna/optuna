@@ -2,9 +2,11 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from typing import Any
+from typing import cast
 from typing import TYPE_CHECKING
 
 from optuna._warnings import optuna_warn
+from optuna.study._study_direction import StudyDirection
 
 
 if TYPE_CHECKING:
@@ -33,6 +35,23 @@ def _get_feasible_trials(trials: Sequence[FrozenTrial]) -> list[FrozenTrial]:
         if all(x <= 0.0 for x in constraints):
             feasible_trials.append(trial)
     return feasible_trials
+
+
+def _get_best_feasible_trial(
+    trials: Sequence[FrozenTrial], direction: StudyDirection
+) -> FrozenTrial | None:
+    """Return the best feasible trial from given trials.
+
+    Returns:
+        The best feasible trial, or ``None`` if no feasible trial exists.
+    """
+
+    feasible_trials = _get_feasible_trials(trials)
+    if len(feasible_trials) == 0:
+        return None
+    if direction == StudyDirection.MAXIMIZE:
+        return max(feasible_trials, key=lambda t: cast("float", t.value))
+    return min(feasible_trials, key=lambda t: cast("float", t.value))
 
 
 def _get_constraints_from_system_attrs(system_attrs: dict[str, Any]) -> dict[str, float]:
