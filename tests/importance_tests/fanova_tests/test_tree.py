@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import gc
 import math
 from unittest.mock import Mock
+import weakref
 
 import numpy as np
 import pytest
@@ -253,6 +255,37 @@ def test_tree_attrs(tree: _FanovaTree) -> None:
 
     assert tree._get_node_split_feature(0) == 1
     assert tree._get_node_split_feature(1) == 2
+
+
+def test_tree_is_garbage_collected() -> None:
+    """
+    The _get_node_*/_is_node_leaf methods used to be @lru_cache(maxsize=None)
+    directly on the instance methods. functools.lru_cache's cache is shared
+    at the class level and keys on `self`, so every _FanovaTree instance
+    that ever called one of them stayed reachable - and un-collectable -
+    for the lifetime of the process. Build one, exercise those methods (as
+    __init__ already does via the _precompute_* calls), drop all references,
+    and confirm the instance is actually collected.
+    """
+    sklearn_tree = Mock()
+    sklearn_tree.n_features = 3
+    sklearn_tree.node_count = 5
+    sklearn_tree.feature = [1, 2, -1, -1, -1]
+    sklearn_tree.children_left = [1, 2, -1, -1, -1]
+    sklearn_tree.children_right = [4, 3, -1, -1, -1]
+    sklearn_tree.value = np.array([[[-1.0]], [[-1.0]], [[0.1]], [[0.2]], [[0.5]]])
+    sklearn_tree.threshold = [0.5, 1.5, -1.0, -1.0, -1.0]
+    search_spaces = np.array([[0.0, 1.0], [0.0, 1.0], [0.0, 2.0]])
+
+    instance = _FanovaTree(tree=sklearn_tree, search_spaces=search_spaces)
+    instance._is_node_leaf(0)
+    instance._get_node_value(2)
+
+    ref = weakref.ref(instance)
+    del instance
+    gc.collect()
+
+    assert ref() is None
 
 
 def test_tree_get_node_subspaces(tree: _FanovaTree) -> None:

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from functools import lru_cache
 import itertools
 from typing import TYPE_CHECKING
 
@@ -18,6 +17,19 @@ class _FanovaTree:
 
         self._tree = tree
         self._search_spaces = search_spaces
+
+        # Per-instance memoization for the _get_node_*/_is_node_leaf methods below.
+        # These used to be @lru_cache(maxsize=None) on the methods directly, but that
+        # caches on a dict shared by every _FanovaTree ever created, keyed in part on
+        # `self` - so every instance that ever called one of them stayed reachable
+        # (and un-collectable) for the lifetime of the process.
+        self._is_node_leaf_cache: dict[int, bool] = {}
+        self._node_left_child_cache: dict[int, int] = {}
+        self._node_right_child_cache: dict[int, int] = {}
+        self._node_children_cache: dict[int, tuple[int, int]] = {}
+        self._node_value_cache: dict[int, float] = {}
+        self._node_split_threshold_cache: dict[int, float] = {}
+        self._node_split_feature_cache: dict[int, int] = {}
 
         statistics = self._precompute_statistics()
         split_midpoints, split_sizes = self._precompute_split_midpoints_and_sizes()
@@ -243,35 +255,45 @@ class _FanovaTree:
     def _n_nodes(self) -> int:
         return self._tree.node_count
 
-    @lru_cache(maxsize=None)
     def _is_node_leaf(self, node_index: int) -> bool:
-        return self._tree.feature[node_index] < 0
+        if node_index not in self._is_node_leaf_cache:
+            self._is_node_leaf_cache[node_index] = self._tree.feature[node_index] < 0
+        return self._is_node_leaf_cache[node_index]
 
-    @lru_cache(maxsize=None)
     def _get_node_left_child(self, node_index: int) -> int:
-        return self._tree.children_left[node_index]
+        if node_index not in self._node_left_child_cache:
+            self._node_left_child_cache[node_index] = self._tree.children_left[node_index]
+        return self._node_left_child_cache[node_index]
 
-    @lru_cache(maxsize=None)
     def _get_node_right_child(self, node_index: int) -> int:
-        return self._tree.children_right[node_index]
+        if node_index not in self._node_right_child_cache:
+            self._node_right_child_cache[node_index] = self._tree.children_right[node_index]
+        return self._node_right_child_cache[node_index]
 
-    @lru_cache(maxsize=None)
     def _get_node_children(self, node_index: int) -> tuple[int, int]:
-        return self._get_node_left_child(node_index), self._get_node_right_child(node_index)
+        if node_index not in self._node_children_cache:
+            self._node_children_cache[node_index] = (
+                self._get_node_left_child(node_index),
+                self._get_node_right_child(node_index),
+            )
+        return self._node_children_cache[node_index]
 
-    @lru_cache(maxsize=None)
     def _get_node_value(self, node_index: int) -> float:
-        # self._tree.value: sklearn.tree._tree.Tree.value has
-        # the shape (node_count, n_outputs, max_n_classes)
-        return float(self._tree.value[node_index].reshape(-1)[0])
+        if node_index not in self._node_value_cache:
+            # self._tree.value: sklearn.tree._tree.Tree.value has
+            # the shape (node_count, n_outputs, max_n_classes)
+            self._node_value_cache[node_index] = float(self._tree.value[node_index].reshape(-1)[0])
+        return self._node_value_cache[node_index]
 
-    @lru_cache(maxsize=None)
     def _get_node_split_threshold(self, node_index: int) -> float:
-        return self._tree.threshold[node_index]
+        if node_index not in self._node_split_threshold_cache:
+            self._node_split_threshold_cache[node_index] = self._tree.threshold[node_index]
+        return self._node_split_threshold_cache[node_index]
 
-    @lru_cache(maxsize=None)
     def _get_node_split_feature(self, node_index: int) -> int:
-        return self._tree.feature[node_index]
+        if node_index not in self._node_split_feature_cache:
+            self._node_split_feature_cache[node_index] = self._tree.feature[node_index]
+        return self._node_split_feature_cache[node_index]
 
     def _get_node_left_child_subspaces(
         self, node_index: int, search_spaces: np.ndarray
