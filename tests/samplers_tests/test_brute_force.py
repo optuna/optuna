@@ -251,6 +251,50 @@ def test_study_optimize_with_failed_trials() -> None:
         assert a in all_suggested_values
 
 
+@pytest.mark.parametrize("state", [optuna.trial.TrialState.FAIL, optuna.trial.TrialState.PRUNED])
+@pytest.mark.parametrize("stopped_params", [{"a": 1}, {}])
+@pytest.mark.parametrize("stopped_first", [True, False])
+def test_study_optimize_with_trials_stopped_before_last_suggestion(
+    state: optuna.trial.TrialState, stopped_params: dict[str, int], stopped_first: bool
+) -> None:
+    def objective(trial: Trial) -> float:
+        a = trial.suggest_int("a", 0, 2)
+        return a + trial.suggest_int("b", 0, 1) if a == 1 else a
+
+    dist_a = optuna.distributions.IntDistribution(0, 2)
+    dist_b = optuna.distributions.IntDistribution(0, 1)
+    complete = optuna.create_trial(
+        params={"a": 1, "b": 0}, distributions={"a": dist_a, "b": dist_b}, value=1.0
+    )
+    stopped = optuna.create_trial(
+        state=state,
+        params=stopped_params,
+        distributions={"a": dist_a} if stopped_params else {},
+    )
+    study = optuna.create_study(sampler=samplers.BruteForceSampler())
+    for trial in [stopped, complete] if stopped_first else [complete, stopped]:
+        study.add_trial(trial)
+    study.optimize(objective, n_trials=10)
+
+    completed = [t.params for t in study.get_trials(states=(optuna.trial.TrialState.COMPLETE,))]
+    assert len(completed) == 4
+    for params in [{"a": 0}, {"a": 1, "b": 0}, {"a": 1, "b": 1}, {"a": 2}]:
+        assert params in completed
+
+
+def test_study_optimize_after_trial_failed_before_first_suggestion() -> None:
+    def objective(trial: Trial) -> float:
+        if trial.number == 0:
+            raise RuntimeError
+        return trial.suggest_int("x", 0, 3)
+
+    study = optuna.create_study(sampler=samplers.BruteForceSampler())
+    study.optimize(objective, n_trials=10, catch=(RuntimeError,))
+
+    completed = [t.params for t in study.get_trials(states=(optuna.trial.TrialState.COMPLETE,))]
+    assert sorted(p["x"] for p in completed) == [0, 1, 2, 3]
+
+
 def test_parallel_optimize() -> None:
     study = optuna.create_study(sampler=samplers.BruteForceSampler())
     trial1 = study.ask()

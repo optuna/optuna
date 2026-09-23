@@ -315,6 +315,7 @@ class BruteForceSampler(BaseSampler):
                     trial_path.append((name, (dist.low, dist.high, dist.step), trial_params[name]))
             return trial_path
 
+        stopped_early: list[FrozenTrial] = []
         for trial in trials:
             if params:
                 trial_params = trial.params
@@ -322,12 +323,21 @@ class BruteForceSampler(BaseSampler):
                     continue
                 if not all(_is_nan(trial_params.get(p)) for p in nan_param_names):
                     continue
+            if trial.state == TrialState.FAIL or trial.state == TrialState.PRUNED:
+                if trial.params:
+                    stopped_early.append(trial)
+                continue
             if (leaf := tree.add_path(_get_trial_path(trial))) is not None:
                 # The parameters are on the defined grid.
                 if trial.state.is_finished():
                     leaf.set_leaf()
                 else:
                     leaf.set_running()
+        # A failed or pruned trial may have stopped before its last suggestion. Its path goes in
+        # after the others, longest first, and marks a leaf only where the tree does not go deeper.
+        for trial in sorted(stopped_early, key=lambda t: len(t.params), reverse=True):
+            if (leaf := tree.add_path(_get_trial_path(trial))) is not None and not leaf.children:
+                leaf.set_leaf()
 
     def sample_independent(
         self,
@@ -380,6 +390,9 @@ class BruteForceSampler(BaseSampler):
         # avoided `tree_size` caching in favor of the stateless nature of this sampler.
         # See https://github.com/optuna/optuna/pull/6646/ for the full discussion.
         # endregion
+        if not trial.params and state != TrialState.COMPLETE:
+            # Nothing was suggested, so this trial cannot have exhausted the search space.
+            return
         params = trial.params.copy()
         for param_name in reversed(trial.params.keys()):
             params.pop(param_name)
