@@ -288,7 +288,7 @@ def _untransform_numerical_param(
             if d.single():
                 param = trans_param
             else:
-                param = min(trans_param, np.nextafter(d.high, d.high - 1))
+                param = float(min(trans_param, np.nextafter(d.high, d.high - 1)))
     elif isinstance(d, IntDistribution):
         if d.log:
             if transform_log:
