@@ -349,6 +349,28 @@ def test_get_all_study_summaries_with_no_trials(storage_mode: str) -> None:
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+@pytest.mark.parametrize("direction", [StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE])
+def test_get_all_study_summaries_with_constraints(
+    storage_mode: str, direction: StudyDirection
+) -> None:
+    with StorageSupplier(storage_mode) as storage:
+        study = create_study(storage=storage, direction=direction)
+
+        infeasible_trial = study.ask()
+        storage.set_trial_system_attr(infeasible_trial._trial_id, _CONSTRAINTS_KEY, [1])
+        study.tell(infeasible_trial, -1 if direction == StudyDirection.MINIMIZE else 1)
+
+        assert get_all_study_summaries(study._storage)[0].best_trial is None
+
+        feasible_trial = study.ask()
+        storage.set_trial_system_attr(feasible_trial._trial_id, _CONSTRAINTS_KEY, [0])
+        study.tell(feasible_trial, 0)
+
+        summary = get_all_study_summaries(study._storage)[0]
+        assert summary.best_trial == study.best_trial
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_get_all_study_names(storage_mode: str) -> None:
     with StorageSupplier(storage_mode) as storage:
         n_studies = 5

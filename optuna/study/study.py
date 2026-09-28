@@ -1593,17 +1593,18 @@ def get_all_study_summaries(
     for s in frozen_studies:
         all_trials = storage.get_all_trials(s._study_id)
         completed_trials = [t for t in all_trials if t.state == TrialState.COMPLETE]
+        feasible_trials = _get_feasible_trials(completed_trials)
 
         n_trials = len(all_trials)
 
         if len(s.directions) == 1:
             direction = s.direction
             directions = None
-            if include_best_trial and len(completed_trials) != 0:
+            if include_best_trial and len(feasible_trials) != 0:
                 if direction == StudyDirection.MAXIMIZE:
-                    best_trial = max(completed_trials, key=lambda t: cast("float", t.value))
+                    best_trial = max(feasible_trials, key=lambda t: cast("float", t.value))
                 else:
-                    best_trial = min(completed_trials, key=lambda t: cast("float", t.value))
+                    best_trial = min(feasible_trials, key=lambda t: cast("float", t.value))
             else:
                 best_trial = None
         else:
