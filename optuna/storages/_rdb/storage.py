@@ -1049,7 +1049,7 @@ class RDBStorage(BaseStorage, BaseHeartbeat):
                 # Re-fetch the existing heartbeat with the write authorization.
                 heartbeat = models.TrialHeartbeatModel.where_trial_id(trial_id, session, True)
                 assert heartbeat is not None
-                heartbeat.heartbeat = session.execute(sqlalchemy.func.now()).scalar()
+                heartbeat.heartbeat = session.execute(sqlalchemy.func.now()).scalar_one()
 
     def _get_stale_trial_ids(self, study_id: int) -> list[int]:
         assert self.heartbeat_interval is not None
