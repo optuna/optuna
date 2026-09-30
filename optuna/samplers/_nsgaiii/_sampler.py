@@ -93,7 +93,7 @@ class NSGAIIISampler(BaseGASampler):
         swapping_prob: float = 0.5,
         seed: int | None = None,
         constraints_func: Callable[[FrozenTrial], Sequence[float]] | None = None,
-        reference_points: np.ndarray | None = None,
+        reference_points: Sequence[Sequence[float]] | np.ndarray | None = None,
         dividing_parameter: int = 3,
         elite_population_selection_strategy: (
             Callable[[Study, list[FrozenTrial]], list[FrozenTrial]] | None

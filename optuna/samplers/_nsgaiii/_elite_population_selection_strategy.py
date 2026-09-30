@@ -30,7 +30,7 @@ class NSGAIIIElitePopulationSelectionStrategy:
         *,
         population_size: int,
         constraints_func: Callable[[FrozenTrial], Sequence[float]] | None = None,
-        reference_points: np.ndarray | None = None,
+        reference_points: Sequence[Sequence[float]] | np.ndarray | None = None,
         dividing_parameter: int = 3,
         rng: LazyRandomState,
     ) -> None:
