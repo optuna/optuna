@@ -4,6 +4,7 @@ import datetime
 import enum
 import math
 from typing import Any
+from typing import cast
 
 from sqlalchemy import asc
 from sqlalchemy import case
@@ -33,10 +34,10 @@ except ImportError:
 try:
     from sqlalchemy.orm import mapped_column
 
-    _Column = mapped_column
+    _Column = cast(Any, mapped_column)
 except ImportError:
     # TODO(Shinichi): Remove this after dropping support for SQLAlchemy<2.0.
-    from sqlalchemy import Column as _Column  # type: ignore[assignment]
+    from sqlalchemy import Column as _Column
 
 # Don't modify this version number anymore.
 # The schema management functionality has been moved to alembic.
