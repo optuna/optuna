@@ -9,6 +9,7 @@ from optuna.artifacts import FileSystemArtifactStore
 from optuna.artifacts import get_all_artifact_meta
 from optuna.artifacts import upload_artifact
 from optuna.artifacts._protocol import ArtifactStore
+from optuna.testing.storages import StorageSupplier
 
 
 @pytest.fixture(params=["FileSystem"])
@@ -64,6 +65,59 @@ def test_upload_study_artifact(tmp_path: pathlib.PurePath, artifact_store: Artif
     assert artifact_items[0].filename == "dummy.txt"
     assert artifact_items[0].mimetype == "text/plain"
     assert artifact_items[0].encoding is None
+
+
+@pytest.mark.parametrize("storage_mode", ["inmemory", "sqlite", "journal"])
+@pytest.mark.parametrize("target", ["study", "trial", "frozen_trial"])
+def test_upload_artifact_missing_source(
+    tmp_path: pathlib.PurePath,
+    artifact_store: ArtifactStore,
+    storage_mode: str,
+    target: str,
+) -> None:
+    file_path = str(tmp_path / "dummy.txt")
+    with open(file_path, "w") as f:
+        f.write("foo")
+
+    with StorageSupplier(storage_mode) as storage:
+        study = optuna.create_study(storage=storage)
+        trial = study.ask()
+        targets: dict[str, optuna.Study | optuna.Trial | optuna.trial.FrozenTrial] = {
+            "study": study,
+            "trial": trial,
+            "frozen_trial": study.get_trials()[0],
+        }
+        study_or_trial = targets[target]
+        upload_artifact(
+            study_or_trial=study_or_trial,
+            file_path=file_path,
+            artifact_store=artifact_store,
+            storage=storage,
+        )
+        original_metadata = get_all_artifact_meta(study_or_trial, storage=storage)
+        assert len(original_metadata) == 1
+
+        with pytest.raises(FileNotFoundError):
+            upload_artifact(
+                study_or_trial=study_or_trial,
+                file_path=str(tmp_path / "missing.txt"),
+                artifact_store=artifact_store,
+                storage=storage,
+            )
+        assert get_all_artifact_meta(study_or_trial, storage=storage) == original_metadata
+
+        artifact_id = upload_artifact(
+            study_or_trial=study_or_trial,
+            file_path=file_path,
+            artifact_store=artifact_store,
+            storage=storage,
+        )
+        artifact_items = get_all_artifact_meta(study_or_trial, storage=storage)
+        assert len(artifact_items) == 2
+        assert original_metadata[0] in artifact_items
+        assert artifact_id in [artifact.artifact_id for artifact in artifact_items]
+        with artifact_store.open_reader(artifact_id) as f:
+            assert f.read() == b"foo"
 
 
 def test_upload_artifact_with_mimetype(
