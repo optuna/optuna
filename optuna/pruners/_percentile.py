@@ -21,6 +21,10 @@ def _get_best_intermediate_result_over_steps(
     trial: "optuna.trial.FrozenTrial", direction: StudyDirection
 ) -> float:
     values = np.asarray(list(trial.intermediate_values.values()), dtype=float)
+    if values.size > 0 and np.isnan(values).all():
+        # `np.nanmin`/`np.nanmax` would return NaN for an all-NaN input anyway, but they also
+        # emit an "All-NaN slice encountered" RuntimeWarning while doing so.
+        return float("nan")
     if direction == StudyDirection.MAXIMIZE:
         return np.nanmax(values)
     return np.nanmin(values)
