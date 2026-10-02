@@ -11,8 +11,6 @@ The following code snippet shows how to plot EDF.
 
 """
 
-# sphinx_gallery_thumbnail_path = "reference/visualization/matplotlib/generated/images/sphx_glr_optuna.visualization.matplotlib.edf_001.png"
-
 import math
 
 import optuna

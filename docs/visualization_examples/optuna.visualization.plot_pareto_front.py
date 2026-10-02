@@ -11,8 +11,6 @@ The following code snippet shows how to plot the Pareto front of a study.
 
 """
 
-# sphinx_gallery_thumbnail_path = "reference/visualization/matplotlib/generated/images/sphx_glr_optuna.visualization.matplotlib.pareto_front_001.png"
-
 import optuna
 
 
