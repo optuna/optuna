@@ -26,6 +26,7 @@ candidate: A new parameter value whose acquisition value is being evaluated.
 from __future__ import annotations
 
 from typing import Any
+from typing import Callable
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -238,7 +239,8 @@ class GPRegressor:
                     torch.float64
                 )
         sqdist = sqd.matmul(self.inverse_squared_lengthscales)
-        return Matern52Kernel.apply(sqdist) * self.kernel_scale  # type: ignore
+        apply_kernel: Callable[[torch.Tensor], torch.Tensor] = Matern52Kernel.apply
+        return apply_kernel(sqdist) * self.kernel_scale
 
     def posterior(self, x: torch.Tensor, joint: bool = False) -> tuple[torch.Tensor, torch.Tensor]:
         """

@@ -4,6 +4,7 @@ import datetime
 import enum
 import math
 from typing import Any
+from typing import Optional
 
 from sqlalchemy import asc
 from sqlalchemy import case
@@ -19,6 +20,7 @@ from sqlalchemy import orm
 from sqlalchemy import String
 from sqlalchemy import Text
 from sqlalchemy import UniqueConstraint
+from sqlalchemy.orm import Mapped
 
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import TrialState
@@ -51,11 +53,14 @@ FLOAT_PRECISION = 53
 
 BaseModel: Any = declarative_base()
 
+# TODO(not522): Replace `Optional[X]` in `Mapped[...]` with `X | None` after dropping Python 3.9
+# support. SQLAlchemy cannot resolve `X | None` from string annotations on Python 3.9.
+
 
 class StudyModel(BaseModel):
     __tablename__ = "studies"
-    study_id = _Column(Integer, primary_key=True)
-    study_name = _Column(
+    study_id: Mapped[int] = _Column(Integer, primary_key=True)
+    study_name: Mapped[str] = _Column(
         String(MAX_INDEXED_STRING_LENGTH), index=True, unique=True, nullable=False
     )
 
@@ -92,10 +97,10 @@ class StudyModel(BaseModel):
 class StudyDirectionModel(BaseModel):
     __tablename__ = "study_directions"
     __table_args__: Any = (UniqueConstraint("study_id", "objective"),)
-    study_direction_id = _Column(Integer, primary_key=True)
-    direction = _Column(Enum(StudyDirection), nullable=False)
-    study_id = _Column(Integer, ForeignKey("studies.study_id"), nullable=False)
-    objective = _Column(Integer, nullable=False)
+    study_direction_id: Mapped[int] = _Column(Integer, primary_key=True)
+    direction: Mapped[StudyDirection] = _Column(Enum(StudyDirection), nullable=False)
+    study_id: Mapped[int] = _Column(Integer, ForeignKey("studies.study_id"), nullable=False)
+    objective: Mapped[int] = _Column(Integer, nullable=False)
 
     study = orm.relationship(
         StudyModel, backref=orm.backref("directions", cascade="all, delete-orphan")
@@ -109,10 +114,10 @@ class StudyDirectionModel(BaseModel):
 class StudyUserAttributeModel(BaseModel):
     __tablename__ = "study_user_attributes"
     __table_args__: Any = (UniqueConstraint("study_id", "key"),)
-    study_user_attribute_id = _Column(Integer, primary_key=True)
-    study_id = _Column(Integer, ForeignKey("studies.study_id"))
-    key = _Column(String(MAX_INDEXED_STRING_LENGTH))
-    value_json = _Column(Text())
+    study_user_attribute_id: Mapped[int] = _Column(Integer, primary_key=True)
+    study_id: Mapped[Optional[int]] = _Column(Integer, ForeignKey("studies.study_id"))
+    key: Mapped[str] = _Column(String(MAX_INDEXED_STRING_LENGTH), nullable=True)
+    value_json: Mapped[str] = _Column(Text(), nullable=True)
 
     study = orm.relationship(
         StudyModel, backref=orm.backref("user_attributes", cascade="all, delete-orphan")
@@ -141,10 +146,10 @@ class StudyUserAttributeModel(BaseModel):
 class StudySystemAttributeModel(BaseModel):
     __tablename__ = "study_system_attributes"
     __table_args__: Any = (UniqueConstraint("study_id", "key"),)
-    study_system_attribute_id = _Column(Integer, primary_key=True)
-    study_id = _Column(Integer, ForeignKey("studies.study_id"))
-    key = _Column(String(MAX_INDEXED_STRING_LENGTH))
-    value_json = _Column(Text())
+    study_system_attribute_id: Mapped[int] = _Column(Integer, primary_key=True)
+    study_id: Mapped[Optional[int]] = _Column(Integer, ForeignKey("studies.study_id"))
+    key: Mapped[str] = _Column(String(MAX_INDEXED_STRING_LENGTH), nullable=True)
+    value_json: Mapped[str] = _Column(Text(), nullable=True)
 
     study = orm.relationship(
         StudyModel, backref=orm.backref("system_attributes", cascade="all, delete-orphan")
@@ -172,13 +177,13 @@ class StudySystemAttributeModel(BaseModel):
 
 class TrialModel(BaseModel):
     __tablename__ = "trials"
-    trial_id = _Column(Integer, primary_key=True)
+    trial_id: Mapped[int] = _Column(Integer, primary_key=True)
     # No `UniqueConstraint` is put on the `number` columns although it in practice is constrained
     # to be unique. This is to reduce code complexity as table-level locking would be required
     # otherwise. See https://github.com/optuna/optuna/pull/939#discussion_r387447632.
-    number = _Column(Integer)
-    study_id = _Column(Integer, ForeignKey("studies.study_id"), index=True)
-    state = _Column(Enum(TrialState), nullable=False)
+    number: Mapped[int] = _Column(Integer, nullable=True)
+    study_id: Mapped[Optional[int]] = _Column(Integer, ForeignKey("studies.study_id"), index=True)
+    state: Mapped[TrialState] = _Column(Enum(TrialState), nullable=False)
 
     # Trial datetimes are stored as naive UTC and converted to naive local time when constructing
     # FrozenTrial objects.
@@ -186,8 +191,10 @@ class TrialModel(BaseModel):
     # Unlike JournalStorage, which stores aware UTC datetimes, RDBStorage intentionally uses naive
     # UTC. Timezone-aware column types would require a schema migration where supported and are not
     # portable across all supported database backends.
-    _datetime_start_utc = _Column("datetime_start", DateTime)
-    _datetime_complete_utc = _Column("datetime_complete", DateTime)
+    _datetime_start_utc: Mapped[Optional[datetime.datetime]] = _Column("datetime_start", DateTime)
+    _datetime_complete_utc: Mapped[Optional[datetime.datetime]] = _Column(
+        "datetime_complete", DateTime
+    )
 
     @property
     def datetime_start(self) -> datetime.datetime | None:
@@ -256,7 +263,7 @@ class TrialModel(BaseModel):
                         ),
                     )
                 ),
-                desc(TrialValueModel.value),
+                TrialValueModel.value.desc(),
             )
             .limit(1)
             .one_or_none()
@@ -291,7 +298,7 @@ class TrialModel(BaseModel):
                         ),
                     )
                 ),
-                asc(TrialValueModel.value),  # Note: asc here
+                TrialValueModel.value.asc(),  # Note: asc here
             )
             .limit(1)
             .one_or_none()
@@ -339,10 +346,10 @@ class TrialModel(BaseModel):
 class TrialUserAttributeModel(BaseModel):
     __tablename__ = "trial_user_attributes"
     __table_args__: Any = (UniqueConstraint("trial_id", "key"),)
-    trial_user_attribute_id = _Column(Integer, primary_key=True)
-    trial_id = _Column(Integer, ForeignKey("trials.trial_id"))
-    key = _Column(String(MAX_INDEXED_STRING_LENGTH))
-    value_json = _Column(Text())
+    trial_user_attribute_id: Mapped[int] = _Column(Integer, primary_key=True)
+    trial_id: Mapped[Optional[int]] = _Column(Integer, ForeignKey("trials.trial_id"))
+    key: Mapped[str] = _Column(String(MAX_INDEXED_STRING_LENGTH), nullable=True)
+    value_json: Mapped[str] = _Column(Text(), nullable=True)
 
     trial = orm.relationship(
         TrialModel, backref=orm.backref("user_attributes", cascade="all, delete-orphan")
@@ -371,10 +378,10 @@ class TrialUserAttributeModel(BaseModel):
 class TrialSystemAttributeModel(BaseModel):
     __tablename__ = "trial_system_attributes"
     __table_args__: Any = (UniqueConstraint("trial_id", "key"),)
-    trial_system_attribute_id = _Column(Integer, primary_key=True)
-    trial_id = _Column(Integer, ForeignKey("trials.trial_id"))
-    key = _Column(String(MAX_INDEXED_STRING_LENGTH))
-    value_json = _Column(Text())
+    trial_system_attribute_id: Mapped[int] = _Column(Integer, primary_key=True)
+    trial_id: Mapped[Optional[int]] = _Column(Integer, ForeignKey("trials.trial_id"))
+    key: Mapped[str] = _Column(String(MAX_INDEXED_STRING_LENGTH), nullable=True)
+    value_json: Mapped[str] = _Column(Text(), nullable=True)
 
     trial = orm.relationship(
         TrialModel, backref=orm.backref("system_attributes", cascade="all, delete-orphan")
@@ -403,11 +410,11 @@ class TrialSystemAttributeModel(BaseModel):
 class TrialParamModel(BaseModel):
     __tablename__ = "trial_params"
     __table_args__: Any = (UniqueConstraint("trial_id", "param_name"),)
-    param_id = _Column(Integer, primary_key=True)
-    trial_id = _Column(Integer, ForeignKey("trials.trial_id"))
-    param_name = _Column(String(MAX_INDEXED_STRING_LENGTH))
-    param_value = _Column(Float(precision=FLOAT_PRECISION))
-    distribution_json = _Column(Text())
+    param_id: Mapped[int] = _Column(Integer, primary_key=True)
+    trial_id: Mapped[Optional[int]] = _Column(Integer, ForeignKey("trials.trial_id"))
+    param_name: Mapped[str] = _Column(String(MAX_INDEXED_STRING_LENGTH), nullable=True)
+    param_value: Mapped[float] = _Column(Float(precision=FLOAT_PRECISION), nullable=True)
+    distribution_json: Mapped[str] = _Column(Text(), nullable=True)
 
     trial = orm.relationship(
         TrialModel, backref=orm.backref("params", cascade="all, delete-orphan")
@@ -452,11 +459,11 @@ class TrialValueModel(BaseModel):
 
     __tablename__ = "trial_values"
     __table_args__: Any = (UniqueConstraint("trial_id", "objective"),)
-    trial_value_id = _Column(Integer, primary_key=True)
-    trial_id = _Column(Integer, ForeignKey("trials.trial_id"), nullable=False)
-    objective = _Column(Integer, nullable=False)
-    value = _Column(Float(precision=FLOAT_PRECISION), nullable=True)
-    value_type = _Column(Enum(TrialValueType), nullable=False)
+    trial_value_id: Mapped[int] = _Column(Integer, primary_key=True)
+    trial_id: Mapped[int] = _Column(Integer, ForeignKey("trials.trial_id"), nullable=False)
+    objective: Mapped[int] = _Column(Integer, nullable=False)
+    value: Mapped[Optional[float]] = _Column(Float(precision=FLOAT_PRECISION), nullable=True)
+    value_type: Mapped[TrialValueType] = _Column(Enum(TrialValueType), nullable=False)
 
     trial = orm.relationship(
         TrialModel, backref=orm.backref("values", cascade="all, delete-orphan")
@@ -500,7 +507,7 @@ class TrialValueModel(BaseModel):
     @classmethod
     def where_trial_id(cls, trial_id: int, session: orm.Session) -> list["TrialValueModel"]:
         trial_values = (
-            session.query(cls).filter(cls.trial_id == trial_id).order_by(asc(cls.objective)).all()
+            session.query(cls).filter(cls.trial_id == trial_id).order_by(cls.objective.asc()).all()
         )
 
         return trial_values
@@ -515,11 +522,15 @@ class TrialIntermediateValueModel(BaseModel):
 
     __tablename__ = "trial_intermediate_values"
     __table_args__: Any = (UniqueConstraint("trial_id", "step"),)
-    trial_intermediate_value_id = _Column(Integer, primary_key=True)
-    trial_id = _Column(Integer, ForeignKey("trials.trial_id"), nullable=False)
-    step = _Column(Integer, nullable=False)
-    intermediate_value = _Column(Float(precision=FLOAT_PRECISION), nullable=True)
-    intermediate_value_type = _Column(Enum(TrialIntermediateValueType), nullable=False)
+    trial_intermediate_value_id: Mapped[int] = _Column(Integer, primary_key=True)
+    trial_id: Mapped[int] = _Column(Integer, ForeignKey("trials.trial_id"), nullable=False)
+    step: Mapped[int] = _Column(Integer, nullable=False)
+    intermediate_value: Mapped[Optional[float]] = _Column(
+        Float(precision=FLOAT_PRECISION), nullable=True
+    )
+    intermediate_value_type: Mapped[TrialIntermediateValueType] = _Column(
+        Enum(TrialIntermediateValueType), nullable=False
+    )
 
     trial = orm.relationship(
         TrialModel, backref=orm.backref("intermediate_values", cascade="all, delete-orphan")
@@ -581,9 +592,11 @@ class TrialIntermediateValueModel(BaseModel):
 class TrialHeartbeatModel(BaseModel):
     __tablename__ = "trial_heartbeats"
     __table_args__: Any = (UniqueConstraint("trial_id"),)
-    trial_heartbeat_id = _Column(Integer, primary_key=True)
-    trial_id = _Column(Integer, ForeignKey("trials.trial_id"), nullable=False)
-    heartbeat = _Column(DateTime, nullable=False, default=func.current_timestamp())
+    trial_heartbeat_id: Mapped[int] = _Column(Integer, primary_key=True)
+    trial_id: Mapped[int] = _Column(Integer, ForeignKey("trials.trial_id"), nullable=False)
+    heartbeat: Mapped[datetime.datetime] = _Column(
+        DateTime, nullable=False, default=func.current_timestamp()
+    )
 
     trial = orm.relationship(
         TrialModel, backref=orm.backref("heartbeats", cascade="all, delete-orphan")
@@ -605,9 +618,11 @@ class VersionInfoModel(BaseModel):
     __tablename__ = "version_info"
     # setting check constraint to ensure the number of rows is at most 1
     __table_args__: Any = (CheckConstraint("version_info_id=1"),)
-    version_info_id = _Column(Integer, primary_key=True, autoincrement=False, default=1)
-    schema_version = _Column(Integer)
-    library_version = _Column(String(MAX_VERSION_LENGTH))
+    version_info_id: Mapped[int] = _Column(
+        Integer, primary_key=True, autoincrement=False, default=1
+    )
+    schema_version: Mapped[Optional[int]] = _Column(Integer)
+    library_version: Mapped[Optional[str]] = _Column(String(MAX_VERSION_LENGTH))
 
     @classmethod
     def find(cls, session: orm.Session) -> "VersionInfoModel" | None:

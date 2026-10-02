@@ -17,10 +17,10 @@ jobs:
     steps:
 
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
     - name: Install the latest version of uv
-      uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+      uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
       with:
         python-version: 3.12
         enable-cache: true
@@ -42,6 +42,6 @@ jobs:
         uv run ruff format .
 
     - name: Reviewdog
-      uses: reviewdog/action-suggester@v1
+      uses: reviewdog/action-suggester@c387862ad6765a9729f2b40ee4d8b5769f2145c7 # v1.26.1
       with:
         tool_name: formatters
