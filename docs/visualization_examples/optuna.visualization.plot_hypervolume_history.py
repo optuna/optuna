@@ -7,10 +7,11 @@ plot_hypervolume_history
 
 The following code snippet shows how to plot optimization history.
 
+.. _visualization-plot-hypervolume-history-plotly-content:
+
 """
 
 import optuna
-from plotly.io import show
 
 
 def objective(trial):
@@ -27,4 +28,4 @@ study.optimize(objective, n_trials=50)
 
 reference_point = [100.0, 50.0]
 fig = optuna.visualization.plot_hypervolume_history(study, reference_point)
-show(fig)
+fig

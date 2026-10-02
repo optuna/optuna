@@ -7,6 +7,8 @@ plot_param_importances
 
 The following code snippet shows how to plot hyperparameter importances.
 
+.. _visualization-plot-param-importances-matplotlib-content:
+
 """
 
 import optuna

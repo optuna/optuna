@@ -7,10 +7,11 @@ plot_param_importances
 
 The following code snippet shows how to plot hyperparameter importances.
 
+.. _visualization-plot-param-importances-plotly-content:
+
 """
 
 import optuna
-from plotly.io import show
 
 
 def objective(trial):
@@ -25,4 +26,4 @@ study = optuna.create_study(sampler=sampler)
 study.optimize(objective, n_trials=100)
 
 fig = optuna.visualization.plot_param_importances(study)
-show(fig)
+fig

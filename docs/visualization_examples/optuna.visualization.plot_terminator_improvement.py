@@ -8,6 +8,8 @@ plot_terminator_improvement
 The following code snippet shows how to plot improvement potentials,
 together with cross-validation errors.
 
+.. _visualization-plot-terminator-improvement-plotly-content:
+
 """
 
 from lightgbm import LGBMClassifier
@@ -15,7 +17,6 @@ from sklearn.datasets import load_wine
 from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import KFold
 import optuna
-from plotly.io import show
 from optuna.terminator import report_cross_validation_scores
 from optuna.visualization import plot_terminator_improvement
 
@@ -40,4 +41,4 @@ study = optuna.create_study()
 study.optimize(objective, n_trials=30)
 
 fig = plot_terminator_improvement(study, plot_error=True)
-show(fig)
+fig
