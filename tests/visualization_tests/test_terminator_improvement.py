@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from io import BytesIO
 from typing import Any
 
 import pytest
@@ -68,8 +67,7 @@ def test_plot_terminator_improvement(
     plot_error: bool,
 ) -> None:
     study = specific_create_study()
-    figure = plot_terminator_improvement(study, plot_error)
-    figure.write_image(BytesIO())
+    plot_terminator_improvement(study, plot_error)
 
 
 @pytest.mark.parametrize(

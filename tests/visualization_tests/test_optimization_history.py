@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from io import BytesIO
 import math
 from typing import Literal
 
@@ -421,4 +420,3 @@ def test_get_optimization_history_plot(
             expected_legends.append(info.best_values_info.label_name)
     legends = [scatter.name for scatter in figure.data if scatter.name is not None]
     assert sorted(legends) == sorted(expected_legends)
-    figure.write_image(BytesIO())

@@ -9,35 +9,39 @@ import os
 import tempfile
 import threading
 from typing import Any
-from typing import cast
 from typing import ClassVar
+from typing import Generic
 from typing import IO
 from typing import TYPE_CHECKING
+from typing import TypeVar
 
 
 if TYPE_CHECKING:
     from types import TracebackType
 
 
-class NamedTemporaryFilePool:
+_T = TypeVar("_T", bytes, str)
+
+
+class NamedTemporaryFilePool(Generic[_T]):
     _lock: ClassVar[threading.Lock] = threading.Lock()
     _path: ClassVar[list[str]] = []
     _registered: ClassVar[bool] = False
 
     def __init__(self, **kwargs: Any) -> None:
         self.kwargs = kwargs
-        self._file: IO[bytes] | IO[str] | None = None
+        self._file: IO[_T] | None = None
 
         with self.__class__._lock:
             if not self.__class__._registered:
                 _ = atexit.register(self.__class__.cleanup)
                 self.__class__._registered = True
 
-    def __enter__(self) -> IO[bytes] | IO[str]:
+    def __enter__(self) -> IO[_T]:
         return self.tempfile()
 
-    def tempfile(self) -> IO[bytes] | IO[str]:
-        f = cast("IO[bytes] | IO[str]", tempfile.NamedTemporaryFile(delete=False, **self.kwargs))
+    def tempfile(self) -> IO[_T]:
+        f = tempfile.NamedTemporaryFile(delete=False, **self.kwargs)
         self._file = f
         with self.__class__._lock:
             self.__class__._path.append(f.name)
