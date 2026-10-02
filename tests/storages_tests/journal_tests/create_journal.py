@@ -32,9 +32,9 @@ if __name__ == "__main__":
 
     # Set study system attributes
     study = optuna.create_study(storage=storage, study_name="single_system_attr")
-    study.set_system_attr("A", 1)
-    study.set_system_attr("B", 2)
-    study.set_system_attr("C", 3)
+    storage.set_study_system_attr(study._study_id, "A", 1)
+    storage.set_study_system_attr(study._study_id, "B", 2)
+    storage.set_study_system_attr(study._study_id, "C", 3)
 
     # Study for single-objective optimization
     def objective(trial: optuna.trial.Trial) -> float:
@@ -43,7 +43,7 @@ if __name__ == "__main__":
         z = trial.suggest_categorical("z", [-5, 0, 5])
         trial.report(0.5, step=0)
         trial.set_user_attr(f"a_{trial.number}", 0)
-        trial.set_system_attr(f"b_{trial.number}", 1)
+        storage.set_trial_system_attr(trial._trial_id, f"b_{trial.number}", 1)
         return x**2 + y**2 + z**2
 
     study = optuna.create_study(storage=storage, study_name="single_optimization")

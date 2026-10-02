@@ -119,6 +119,10 @@ def _optimize(
                             progress_bar,
                         )
                     )
+
+                # Raise if an exception occurred in any remaining future.
+                for f in futures:
+                    f.result()
     finally:
         study._thread_local.in_optimize_loop = False
         progress_bar.close()

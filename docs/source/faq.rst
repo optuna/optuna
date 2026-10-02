@@ -136,7 +136,7 @@ For instance, you can stop showing each trial result as follows:
     # Logs like '[I 2020-07-21 13:41:45,627] Trial 0 finished with value:...' are disabled.
 
 
-Please refer to :class:`optuna.logging` for further details.
+Please refer to :mod:`~optuna.logging` for further details.
 
 
 How to save machine learning models trained in objective functions?
@@ -230,8 +230,8 @@ You can find the failed trials in log messages.
 
 .. code-block:: sh
 
-    [W 2018-12-07 16:38:36,889] Setting status of trial#0 as TrialState.FAIL because of \
-    the following error: ValueError('A sample error in objective.')
+    [W 2018-12-07 16:38:36,889] Trial 0 failed with parameters: {'x': 7} because of the following error: ValueError('A sample error in objective.').
+    [W 2018-12-07 16:38:36,889] Trial 0 failed with value None.
 
 You can also find the failed trials by checking the trial states as follows:
 
@@ -241,9 +241,9 @@ You can also find the failed trials by checking the trial states as follows:
 
 .. csv-table::
 
-    number,state,value,...,params,system_attrs
-    0,TrialState.FAIL,,...,0,Setting status of trial#0 as TrialState.FAIL because of the following error: ValueError('A test error in objective.')
-    1,TrialState.COMPLETE,1269,...,1,
+    number,value,...,params_x,state
+    0,,...,7,FAIL
+    1,1269.0,...,5,COMPLETE
 
 .. seealso::
 
@@ -259,8 +259,8 @@ Trials which return NaN are shown as follows:
 
 .. code-block:: sh
 
-    [W 2018-12-07 16:41:59,000] Setting status of trial#2 as TrialState.FAIL because the \
-    objective function returned nan.
+    [W 2018-12-07 16:41:59,000] Trial 2 failed with parameters: {'x': 3} because of the following error: The value nan is not acceptable.
+    [W 2018-12-07 16:41:59,000] Trial 2 failed with value nan.
 
 
 What happens when I dynamically alter a search space?
@@ -355,10 +355,6 @@ Specify ``gc_after_trial`` to :obj:`True` when calling :func:`~optuna.study.Stud
 There is a performance trade-off for running the garbage collector, which could be non-negligible depending on how fast your objective function otherwise is. Therefore, ``gc_after_trial`` is :obj:`False` by default.
 Note that the above examples are similar to running the garbage collector inside the objective function, except for the fact that :func:`gc.collect` is called even when errors, including :class:`~optuna.exceptions.TrialPruned` are raised.
 
-.. note::
-
-    :class:`~optuna.integration.ChainerMNStudy` does currently not provide ``gc_after_trial`` nor callbacks for :func:`~optuna.integration.ChainerMNStudy.optimize`.
-    When using this class, you will have to call the garbage collector inside the objective function.
 
 How can I output a log only when the best value is updated?
 -----------------------------------------------------------
@@ -762,7 +758,7 @@ However, if it is necessary to remove artifacts from a Python script, users can 
 
 .. warning::
 
-    :func:`~optuna.study.Study.add_trial` and :meth:`~optuna.study.copy_study` do not copy artifact files linked to :class:`~optuna.study.Study` or :class:`~optuna.trial.Trial`.
+    :meth:`~optuna.study.Study.add_trial` and :func:`~optuna.study.copy_study` do not copy artifact files linked to :class:`~optuna.study.Study` or :class:`~optuna.trial.Trial`.
     Please make sure **NOT** to delete the artifacts from the source study or trial.
     Failing to do so may lead to unexpected behaviors as Optuna does not guarantee expected behaviors when users call :meth:`remove` externally.
     Due to the Optuna software design, it is hard to officially support the delete feature and we are not planning to support this feature in the future either.

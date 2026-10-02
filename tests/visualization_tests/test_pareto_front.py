@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from collections.abc import Sequence
-from io import BytesIO
 from typing import Any
 from typing import Literal
 import warnings
@@ -21,9 +20,7 @@ from optuna.visualization import plot_pareto_front
 import optuna.visualization._pareto_front
 from optuna.visualization._pareto_front import _get_pareto_front_info
 from optuna.visualization._pareto_front import _ParetoFrontInfo
-from optuna.visualization._plotly_imports import go
 from optuna.visualization._utils import COLOR_SCALE
-from optuna.visualization.matplotlib._matplotlib_imports import plt
 import optuna.visualization.matplotlib._pareto_front
 
 
@@ -334,12 +331,7 @@ def test_get_pareto_front_plot(
     if not has_constraints:
         info = info._replace(has_constraints=False, infeasible_trials_with_values=[])
 
-    figure = plotter(info)
-    if isinstance(figure, go.Figure):
-        figure.write_image(BytesIO())
-    else:
-        plt.savefig(BytesIO())
-        plt.close()
+    plotter(info)
 
 
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])

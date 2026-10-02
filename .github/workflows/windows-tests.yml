@@ -27,10 +27,10 @@ jobs:
     if: (github.event_name == 'schedule' && github.repository == 'optuna/optuna') || (github.event_name != 'schedule')
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
     - name: Install the latest version of uv
-      uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+      uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
       with:
         python-version: "3.12"
         enable-cache: true
@@ -47,9 +47,6 @@ jobs:
         uv pip install "kaleido<=0.1.0post1"
         # TODO(nabe): <6.3.0 is a hotfix, so please remove it once the bug is fixed.
         uv pip install "plotly<6.3.0"
-        # TODO(nabe): Remove the version constraint once Torch supports NumPy v2.0.0 for Windows.
-        uv pip uninstall numpy
-        uv pip install 'numpy<2.0.0'
 
     - name: Output installed packages
       run: |
