@@ -12,6 +12,8 @@ from optuna import Study
 from optuna.study import create_study
 from optuna.testing.visualization import prepare_study_with_trials
 from optuna.trial import create_trial
+from optuna.trial import FrozenTrial
+from optuna.trial import TrialState
 from optuna.visualization import plot_edf as plotly_plot_edf
 from optuna.visualization._edf import _EDFInfo
 from optuna.visualization._edf import _get_edf_info
@@ -26,6 +28,7 @@ if plotly_imports.is_successful():
 
 if plt_imports.is_successful():
     from optuna.visualization.matplotlib._matplotlib_imports import Axes
+    from optuna.visualization.matplotlib._matplotlib_imports import plt
 
 
 parametrized_plot_edf = pytest.mark.parametrize("plot_edf", [plotly_plot_edf, plt_plot_edf])
@@ -125,6 +128,30 @@ def test_empty_edf_info() -> None:
     study.tell(trial, state=optuna.trial.TrialState.PRUNED)
     edf_info = _get_edf_info(study)
     _assert_empty(edf_info)
+
+
+@parametrized_plot_edf
+@pytest.mark.parametrize(
+    "empty_trials",
+    [[], [create_trial(state=TrialState.PRUNED)], [create_trial(value=float("inf"))]],
+)
+@pytest.mark.filterwarnings("error::RuntimeWarning")
+def test_plot_edf_with_empty_study(
+    plot_edf: Callable[..., Any], empty_trials: list[FrozenTrial]
+) -> None:
+    study = create_study(study_name="completed")
+    study.add_trials([create_trial(value=1.0), create_trial(value=3.0)])
+    empty_study = create_study(study_name="empty")
+    empty_study.add_trials(empty_trials)
+    studies = [empty_study, study, empty_study]
+
+    info = _get_edf_info(studies)
+    assert [line.study_name for line in info.lines] == [study.study_name]
+    np.testing.assert_array_equal(info.x_values, np.linspace(1.0, 3.0, NUM_SAMPLES_X_AXIS))
+    np.testing.assert_array_equal(info.lines[0].y_values, np.where(info.x_values < 3.0, 0.5, 1.0))
+    figure = plot_edf(studies)
+    if isinstance(figure, Axes):
+        plt.close()
 
 
 @pytest.mark.parametrize("n_studies", [1, 2, 3])
