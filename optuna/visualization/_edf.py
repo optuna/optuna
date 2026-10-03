@@ -133,10 +133,12 @@ def _get_edf_info(
         )
 
         values = np.array([target(trial) for trial in trials])
+        if len(values) == 0:
+            continue
         all_values.append(values)
         study_names.append(study.study_name)
 
-    if all(len(values) == 0 for values in all_values):
+    if len(all_values) == 0:
         _logger.warning("There are no complete trials.")
         return _EDFInfo(lines=[], x_values=np.array([]))
 
