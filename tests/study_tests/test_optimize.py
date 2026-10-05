@@ -163,5 +163,23 @@ def test_run_trial_invoke_tell_with_suppressing_warning(storage_mode: str) -> No
                 trial=mock.ANY,
                 value_or_values=mock.ANY,
                 state=mock.ANY,
+                skip_if_finished=True,
                 suppress_warning=True,
             )
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_run_trial_skip_if_already_finished(storage_mode: str) -> None:
+    with StorageSupplier(storage_mode) as storage:
+        study = create_study(storage=storage)
+
+        def objective(trial: Trial) -> float:
+            study._storage.set_trial_state_values(
+                trial._trial_id, TrialState.COMPLETE, values=[1.0]
+            )
+            return 0.0
+
+        frozen_trial_id = _optimize._run_trial(study, objective, catch=())
+        frozen_trial = study._storage.get_trial(frozen_trial_id)
+        assert frozen_trial.state == TrialState.COMPLETE
+        assert frozen_trial.value == 1.0

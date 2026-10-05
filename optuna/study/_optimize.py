@@ -224,6 +224,7 @@ def _run_trial(
             trial=trial,
             value_or_values=value_or_values,
             state=state,
+            skip_if_finished=True,
             suppress_warning=True,
         )
     except Exception:
