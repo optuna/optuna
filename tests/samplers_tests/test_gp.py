@@ -183,7 +183,7 @@ def test_named_constraint_order_does_not_change_suggestion(n_objectives: int) ->
             sampler=GPSampler(seed=0, n_startup_trials=1),
         )
         for i, x in enumerate(np.linspace(0, 1, 6)):
-            constraints = {"low": 0.15 - x, "high": x - 0.85}
+            constraints = {"low": float(0.15 - x), "high": float(x - 0.85)}
             if reverse_order and i % 2:
                 constraints = dict(reversed(list(constraints.items())))
             study.add_trial(
