@@ -62,7 +62,6 @@ class NSGAIIISampler(BaseGASampler):
 
     Args:
         reference_points:
-            A 2 dimension ``numpy.ndarray`` with objective dimension columns. Represents
             A two-dimensional sequence of floats or a ``numpy.ndarray`` of shape
             ``(n_reference_points, n_objectives)``. Each row represents a reference point
             used to select surviving individuals.
