@@ -6,7 +6,6 @@ plot_hypervolume_history
     .. tab-item:: Plotly
 
         .. autofunction:: optuna.visualization.plot_hypervolume_history
-            :no-index:
 
         .. include:: generated/optuna.visualization.plot_hypervolume_history.rst
             :start-after: .. _visualization-plot-hypervolume-history-plotly-content:
@@ -15,7 +14,6 @@ plot_hypervolume_history
     .. tab-item:: Matplotlib
 
         .. autofunction:: optuna.visualization.matplotlib.plot_hypervolume_history
-            :no-index:
 
         .. include:: matplotlib/generated/optuna.visualization.matplotlib.hypervolume_history.rst
             :start-after: .. _visualization-plot-hypervolume-history-matplotlib-content:

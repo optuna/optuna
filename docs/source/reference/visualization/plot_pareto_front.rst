@@ -6,7 +6,6 @@ plot_pareto_front
     .. tab-item:: Plotly
 
         .. autofunction:: optuna.visualization.plot_pareto_front
-            :no-index:
 
         .. include:: generated/optuna.visualization.plot_pareto_front.rst
             :start-after: .. _visualization-plot-pareto-front-plotly-content:
@@ -15,7 +14,6 @@ plot_pareto_front
     .. tab-item:: Matplotlib
 
         .. autofunction:: optuna.visualization.matplotlib.plot_pareto_front
-            :no-index:
 
         .. include:: matplotlib/generated/optuna.visualization.matplotlib.pareto_front.rst
             :start-after: .. _visualization-plot-pareto-front-matplotlib-content:

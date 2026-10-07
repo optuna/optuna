@@ -6,7 +6,6 @@ plot_intermediate_values
     .. tab-item:: Plotly
 
         .. autofunction:: optuna.visualization.plot_intermediate_values
-            :no-index:
 
         .. include:: generated/optuna.visualization.plot_intermediate_values.rst
             :start-after: .. _visualization-plot-intermediate-values-plotly-content:
@@ -15,7 +14,6 @@ plot_intermediate_values
     .. tab-item:: Matplotlib
 
         .. autofunction:: optuna.visualization.matplotlib.plot_intermediate_values
-            :no-index:
 
         .. include:: matplotlib/generated/optuna.visualization.matplotlib.intermediate_values.rst
             :start-after: .. _visualization-plot-intermediate-values-matplotlib-content:

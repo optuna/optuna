@@ -4,6 +4,7 @@ plot_hypervolume_history
 ========================
 
 .. autofunction:: optuna.visualization.plot_hypervolume_history
+    :no-index:
 
 The following code snippet shows how to plot optimization history.
 

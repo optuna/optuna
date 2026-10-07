@@ -6,7 +6,6 @@ plot_param_importances
     .. tab-item:: Plotly
 
         .. autofunction:: optuna.visualization.plot_param_importances
-            :no-index:
 
         .. include:: generated/optuna.visualization.plot_param_importances.rst
             :start-after: .. _visualization-plot-param-importances-plotly-content:
@@ -15,7 +14,6 @@ plot_param_importances
     .. tab-item:: Matplotlib
 
         .. autofunction:: optuna.visualization.matplotlib.plot_param_importances
-            :no-index:
 
         .. include:: matplotlib/generated/optuna.visualization.matplotlib.param_importances.rst
             :start-after: .. _visualization-plot-param-importances-matplotlib-content:

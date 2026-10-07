@@ -6,7 +6,6 @@ plot_slice
     .. tab-item:: Plotly
 
         .. autofunction:: optuna.visualization.plot_slice
-            :no-index:
 
         .. include:: generated/optuna.visualization.plot_slice.rst
             :start-after: .. _visualization-plot-slice-plotly-content:
@@ -15,7 +14,6 @@ plot_slice
     .. tab-item:: Matplotlib
 
         .. autofunction:: optuna.visualization.matplotlib.plot_slice
-            :no-index:
 
         .. include:: matplotlib/generated/optuna.visualization.matplotlib.slice.rst
             :start-after: .. _visualization-plot-slice-matplotlib-content:

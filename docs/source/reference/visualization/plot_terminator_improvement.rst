@@ -6,7 +6,6 @@ plot_terminator_improvement
     .. tab-item:: Plotly
 
         .. autofunction:: optuna.visualization.plot_terminator_improvement
-            :no-index:
 
         .. include:: generated/optuna.visualization.plot_terminator_improvement.rst
             :start-after: .. _visualization-plot-terminator-improvement-plotly-content:
@@ -15,7 +14,6 @@ plot_terminator_improvement
     .. tab-item:: Matplotlib
 
         .. autofunction:: optuna.visualization.matplotlib.plot_terminator_improvement
-            :no-index:
 
         .. include:: matplotlib/generated/optuna.visualization.matplotlib.terminator_improvement.rst
             :start-after: .. _visualization-plot-terminator-improvement-matplotlib-content:

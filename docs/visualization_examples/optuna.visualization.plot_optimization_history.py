@@ -4,6 +4,7 @@ plot_optimization_history
 =========================
 
 .. autofunction:: optuna.visualization.plot_optimization_history
+    :no-index:
 
 The following code snippet shows how to plot optimization history.
 

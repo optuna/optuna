@@ -4,6 +4,7 @@ plot_parallel_coordinate
 ========================
 
 .. autofunction:: optuna.visualization.plot_parallel_coordinate
+    :no-index:
 
 The following code snippet shows how to plot the high-dimensional parameter relationships.
 

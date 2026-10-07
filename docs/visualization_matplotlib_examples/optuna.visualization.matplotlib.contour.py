@@ -4,6 +4,7 @@ plot_contour
 ============
 
 .. autofunction:: optuna.visualization.matplotlib.plot_contour
+    :no-index:
 
 The following code snippet shows how to plot the parameter relationship as contour plot.
 

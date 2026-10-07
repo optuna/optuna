@@ -4,6 +4,7 @@ plot_intermediate_values
 ========================
 
 .. autofunction:: optuna.visualization.plot_intermediate_values
+    :no-index:
 
 The following code snippet shows how to plot intermediate values.
 

@@ -6,7 +6,6 @@ plot_edf
     .. tab-item:: Plotly
 
         .. autofunction:: optuna.visualization.plot_edf
-            :no-index:
 
         .. include:: generated/optuna.visualization.plot_edf.rst
             :start-after: .. _visualization-plot-edf-plotly-content:
@@ -15,7 +14,6 @@ plot_edf
     .. tab-item:: Matplotlib
 
         .. autofunction:: optuna.visualization.matplotlib.plot_edf
-            :no-index:
 
         .. include:: matplotlib/generated/optuna.visualization.matplotlib.edf.rst
             :start-after: .. _visualization-plot-edf-matplotlib-content:

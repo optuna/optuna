@@ -6,7 +6,6 @@ plot_contour
     .. tab-item:: Plotly
 
         .. autofunction:: optuna.visualization.plot_contour
-            :no-index:
 
         .. include:: generated/optuna.visualization.plot_contour.rst
             :start-after: .. _visualization-plot-contour-plotly-content:
@@ -15,7 +14,6 @@ plot_contour
     .. tab-item:: Matplotlib
 
         .. autofunction:: optuna.visualization.matplotlib.plot_contour
-            :no-index:
 
         .. include:: matplotlib/generated/optuna.visualization.matplotlib.contour.rst
             :start-after: .. _visualization-plot-contour-matplotlib-content:

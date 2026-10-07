@@ -4,6 +4,7 @@ plot_rank
 =========
 
 .. autofunction:: optuna.visualization.matplotlib.plot_rank
+    :no-index:
 
 The following code snippet shows how to plot the parameter relationship as a rank plot.
 

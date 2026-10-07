@@ -4,6 +4,7 @@ plot_terminator_improvement
 ===========================
 
 .. autofunction:: optuna.visualization.plot_terminator_improvement
+    :no-index:
 
 The following code snippet shows how to plot improvement potentials,
 together with cross-validation errors.

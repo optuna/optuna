@@ -6,7 +6,6 @@ plot_rank
     .. tab-item:: Plotly
 
         .. autofunction:: optuna.visualization.plot_rank
-            :no-index:
 
         .. include:: generated/optuna.visualization.plot_rank.rst
             :start-after: .. _visualization-plot-rank-plotly-content:
@@ -15,7 +14,6 @@ plot_rank
     .. tab-item:: Matplotlib
 
         .. autofunction:: optuna.visualization.matplotlib.plot_rank
-            :no-index:
 
         .. include:: matplotlib/generated/optuna.visualization.matplotlib.rank.rst
             :start-after: .. _visualization-plot-rank-matplotlib-content:

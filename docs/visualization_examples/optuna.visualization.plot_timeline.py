@@ -4,6 +4,7 @@ plot_timeline
 =============
 
 .. autofunction:: optuna.visualization.plot_timeline
+    :no-index:
 
 The following code snippet shows how to plot the timeline of a study.
 Timeline plot can visualize trials with overlapping execution time

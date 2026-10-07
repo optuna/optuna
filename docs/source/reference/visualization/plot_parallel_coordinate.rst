@@ -6,7 +6,6 @@ plot_parallel_coordinate
     .. tab-item:: Plotly
 
         .. autofunction:: optuna.visualization.plot_parallel_coordinate
-            :no-index:
 
         .. include:: generated/optuna.visualization.plot_parallel_coordinate.rst
             :start-after: .. _visualization-plot-parallel-coordinate-plotly-content:
@@ -15,7 +14,6 @@ plot_parallel_coordinate
     .. tab-item:: Matplotlib
 
         .. autofunction:: optuna.visualization.matplotlib.plot_parallel_coordinate
-            :no-index:
 
         .. include:: matplotlib/generated/optuna.visualization.matplotlib.parallel_coordinate.rst
             :start-after: .. _visualization-plot-parallel-coordinate-matplotlib-content:

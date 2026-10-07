@@ -4,6 +4,7 @@ plot_param_importances
 ======================
 
 .. autofunction:: optuna.visualization.matplotlib.plot_param_importances
+    :no-index:
 
 The following code snippet shows how to plot hyperparameter importances.
 
