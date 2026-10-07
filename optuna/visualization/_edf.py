@@ -47,7 +47,8 @@ def plot_edf(
 ) -> "go.Figure":
     """Plot the objective value EDF (empirical distribution function) of a study.
 
-    Note that only the complete trials are considered when plotting the EDF.
+    Note that only the complete trials with finite target values are considered when plotting
+    the EDF. Studies with no such trials are omitted.
 
     .. note::
 
@@ -133,10 +134,12 @@ def _get_edf_info(
         )
 
         values = np.array([target(trial) for trial in trials])
+        if len(values) == 0:
+            continue
         all_values.append(values)
         study_names.append(study.study_name)
 
-    if all(len(values) == 0 for values in all_values):
+    if len(all_values) == 0:
         _logger.warning("There are no complete trials.")
         return _EDFInfo(lines=[], x_values=np.array([]))
 
