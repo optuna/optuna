@@ -626,11 +626,12 @@ class GPSampler(BaseSampler):
 def _get_constraint_vals_and_feasibility(
     study: Study, trials: list[FrozenTrial]
 ) -> tuple[np.ndarray, np.ndarray]:
-    _constraint_vals = [list(trial.constraints.values()) for trial in trials]
-    if any(len(_constraint_vals[0]) != len(c) for c in _constraint_vals):
-        raise ValueError("The number of constraints must be the same for all trials.")
+    constraints = [trial.constraints for trial in trials]
+    constraint_keys = constraints[0].keys()
+    if any(c.keys() != constraint_keys for c in constraints):
+        raise ValueError("The constraint names must be the same for all trials.")
 
-    constraint_vals = np.array(_constraint_vals)
+    constraint_vals = np.array([[c[key] for key in constraint_keys] for c in constraints])
     assert len(constraint_vals.shape) == 2, "constraint_vals must be a 2d array."
     is_feasible = np.all(constraint_vals <= 0, axis=1)
     assert not isinstance(is_feasible, np.bool_), "MyPy Redefinition for NumPy v2.2.0."

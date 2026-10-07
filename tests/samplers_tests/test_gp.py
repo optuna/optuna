@@ -16,6 +16,7 @@ import optuna._gp.optim_mixed as optim_mixed
 import optuna._gp.prior as prior
 import optuna._gp.search_space as gp_search_space
 from optuna.samplers import GPSampler
+from optuna.samplers._gp.sampler import _get_constraint_vals_and_feasibility
 from optuna.trial import FrozenTrial
 
 
@@ -144,6 +145,58 @@ def test_constraints_func_nan(n_objectives: int) -> None:
     assert all(0 <= x <= 1 for x in trials[0].params.values())  # The params are normal.
     assert trials[0].values == list(objective(trials[0]))  # The values are normal.
     assert len(trials[0].constraints) == 0  # No constraints are set.
+
+
+@pytest.mark.parametrize("keys", [("latency", "memory"), ("1", "0")])
+def test_constraint_values_follow_names(keys: tuple[str, str]) -> None:
+    study = optuna.create_study()
+    trials = [
+        optuna.trial.create_trial(value=0, constraints={keys[0]: -1.0, keys[1]: 2.0}),
+        optuna.trial.create_trial(value=0, constraints={keys[1]: -3.0, keys[0]: 4.0}),
+        optuna.trial.create_trial(value=0, constraints={keys[0]: 0.0, keys[1]: -2.0}),
+    ]
+
+    values, is_feasible = _get_constraint_vals_and_feasibility(study, trials)
+
+    np.testing.assert_array_equal(values, [[-1.0, 2.0], [4.0, -3.0], [0.0, -2.0]])
+    np.testing.assert_array_equal(is_feasible, [False, False, True])
+
+
+@pytest.mark.parametrize("constraints", [{"memory": -1.0}, {}])
+def test_inconsistent_constraint_names(constraints: dict[str, float]) -> None:
+    study = optuna.create_study()
+    trials = [
+        optuna.trial.create_trial(value=0, constraints={"latency": -1.0}),
+        optuna.trial.create_trial(value=0, constraints=constraints),
+    ]
+
+    with pytest.raises(ValueError):
+        _get_constraint_vals_and_feasibility(study, trials)
+
+
+@pytest.mark.parametrize("n_objectives", [1, 2])
+def test_named_constraint_order_does_not_change_suggestion(n_objectives: int) -> None:
+    suggestions = []
+    for reverse_order in [False, True]:
+        study = optuna.create_study(
+            directions=["minimize"] * n_objectives,
+            sampler=GPSampler(seed=0, n_startup_trials=1),
+        )
+        for i, x in enumerate(np.linspace(0, 1, 6)):
+            constraints = {"low": 0.15 - x, "high": x - 0.85}
+            if reverse_order and i % 2:
+                constraints = dict(reversed(list(constraints.items())))
+            study.add_trial(
+                optuna.trial.create_trial(
+                    values=[(x - 0.2) ** 2, (x - 0.8) ** 2][:n_objectives],
+                    params={"x": x},
+                    distributions={"x": optuna.distributions.FloatDistribution(0, 1)},
+                    constraints=constraints,
+                )
+            )
+        suggestions.append(study.ask().suggest_float("x", 0, 1))
+
+    assert suggestions[0] == pytest.approx(suggestions[1], abs=1e-8)
 
 
 def test_behavior_without_greenlet(monkeypatch: pytest.MonkeyPatch) -> None:
