@@ -22,7 +22,6 @@ from optuna import logging
 from optuna import pruners
 from optuna import samplers
 from optuna import storages
-from optuna._deprecated import deprecated_func
 from optuna._experimental import experimental_func
 from optuna._imports import _LazyImport
 from optuna._warnings import optuna_warn
@@ -387,17 +386,6 @@ class Study:
         return copy.deepcopy(self._storage.get_study_user_attrs(self._study_id))
 
     @property
-    @deprecated_func("3.1.0", "5.0.0")
-    def system_attrs(self) -> dict[str, Any]:
-        """Return system attributes.
-
-        Returns:
-            A dictionary containing all system attributes.
-        """
-
-        return copy.deepcopy(self._storage.get_study_system_attrs(self._study_id))
-
-    @property
     def metric_names(self) -> list[str] | None:
         """Return metric names.
 
@@ -745,21 +733,6 @@ class Study:
         """
 
         self._storage.set_study_user_attr(self._study_id, key, value)
-
-    @deprecated_func("3.1.0", "5.0.0")
-    def set_system_attr(self, key: str, value: Any) -> None:
-        """Set a system attribute to the study.
-
-        Note that Optuna internally uses this method to save system messages. Please use
-        :func:`~optuna.study.Study.set_user_attr` to set users' attributes.
-
-        Args:
-            key: A key string of the attribute.
-            value: A value of the attribute. The value should be JSON serializable.
-
-        """
-
-        self._storage.set_study_system_attr(self._study_id, key, value)
 
     def trials_dataframe(
         self,

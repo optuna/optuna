@@ -599,24 +599,6 @@ class Trial(BaseTrial):
         self.storage.set_trial_user_attr(self._trial_id, key, value)
         self._cached_frozen_trial.user_attrs[key] = value
 
-    @deprecated_func("3.1.0", "5.0.0")
-    def set_system_attr(self, key: str, value: Any) -> None:
-        """Set system attributes to the trial.
-
-        Note that Optuna internally uses this method to save system messages such as failure
-        reason of trials. Please use :func:`~optuna.trial.Trial.set_user_attr` to set users'
-        attributes.
-
-        Args:
-            key:
-                A key string of the attribute.
-            value:
-                A value of the attribute. The value should be JSON serializable.
-        """
-
-        self.storage.set_trial_system_attr(self._trial_id, key, value)
-        self._cached_frozen_trial.system_attrs[key] = value
-
     def _suggest(self, name: str, distribution: BaseDistribution) -> Any:
         storage = self.storage
         trial_id = self._trial_id
@@ -697,7 +679,6 @@ class Trial(BaseTrial):
             )
 
     def _get_latest_trial(self) -> FrozenTrial:
-        # TODO(eukaryo): Remove this method after `system_attrs` property is removed.
         latest_trial = copy.copy(self._cached_frozen_trial)
         latest_trial.system_attrs = _LazyTrialSystemAttrs(self._trial_id, self.storage)
         return latest_trial
@@ -731,17 +712,6 @@ class Trial(BaseTrial):
         """
 
         return copy.deepcopy(self._cached_frozen_trial.user_attrs)
-
-    @property
-    @deprecated_func("3.1.0", "5.0.0")
-    def system_attrs(self) -> dict[str, Any]:
-        """Return system attributes.
-
-        Returns:
-            A dictionary containing all system attributes.
-        """
-
-        return copy.deepcopy(self.storage.get_trial_system_attrs(self._trial_id))
 
     @property
     def datetime_start(self) -> datetime.datetime | None:

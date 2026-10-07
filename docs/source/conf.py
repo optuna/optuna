@@ -221,12 +221,6 @@ sphinx_gallery_conf = {
     "image_scrapers": ("matplotlib",),
 }
 
-# matplotlib plot directive
-plot_include_source = True
-plot_formats = [("png", 90)]
-plot_html_show_formats = False
-plot_html_show_source_link = False
-
 # Not showing common warning messages as in
 # https://sphinx-gallery.github.io/stable/configuration.html#removing-warnings.
 warnings.filterwarnings("ignore", category=ConvergenceWarning, module="sklearn")

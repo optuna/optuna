@@ -14,8 +14,6 @@ Timeline plot can visualize trials with overlapping execution time
 
 """
 
-# sphinx_gallery_thumbnail_path = "reference/visualization/matplotlib/generated/images/sphx_glr_optuna.visualization.matplotlib.timeline_001.png"
-
 import time
 
 import optuna

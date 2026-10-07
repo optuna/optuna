@@ -13,8 +13,6 @@ together with cross-validation errors.
 
 """
 
-# sphinx_gallery_thumbnail_path = "reference/visualization/matplotlib/generated/images/sphx_glr_optuna.visualization.matplotlib.terminator_improvement_001.png"
-
 from lightgbm import LGBMClassifier
 from sklearn.datasets import load_wine
 from sklearn.model_selection import cross_val_score

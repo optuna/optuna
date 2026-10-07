@@ -12,8 +12,6 @@ The following code snippet shows how to plot the high-dimensional parameter rela
 
 """
 
-# sphinx_gallery_thumbnail_path = "reference/visualization/matplotlib/generated/images/sphx_glr_optuna.visualization.matplotlib.parallel_coordinate_001.png"
-
 import optuna
 
 

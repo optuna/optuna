@@ -99,11 +99,6 @@ class BaseTrial(abc.ABC):
     def set_user_attr(self, key: str, value: Any) -> None:
         raise NotImplementedError
 
-    @abc.abstractmethod
-    @deprecated_func("3.1.0", "5.0.0")
-    def set_system_attr(self, key: str, value: Any) -> None:
-        raise NotImplementedError
-
     @property
     @abc.abstractmethod
     def params(self) -> dict[str, Any]:
@@ -117,11 +112,6 @@ class BaseTrial(abc.ABC):
     @property
     @abc.abstractmethod
     def user_attrs(self) -> dict[str, Any]:
-        raise NotImplementedError
-
-    @property
-    @abc.abstractmethod
-    def system_attrs(self) -> dict[str, Any]:
         raise NotImplementedError
 
     @property

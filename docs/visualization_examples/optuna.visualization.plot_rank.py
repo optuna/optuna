@@ -12,8 +12,6 @@ The following code snippet shows how to plot the parameter relationship as a ran
 
 """
 
-# sphinx_gallery_thumbnail_path = "reference/visualization/matplotlib/generated/images/sphx_glr_optuna.visualization.matplotlib.rank_001.png"
-
 import optuna
 
 

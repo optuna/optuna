@@ -93,10 +93,12 @@ class GPSampler(BaseSampler):
       optimization,
     - q-batch log expected improvement (qLogEI) for single-objective optimization with
       running trials, and
-    - q-batch log constrained expected improvement (qLogCEI) for
-      single-objective constrained optimization with running trials
     - q-batch log expected hypervolume improvement (qLogEHVI) for multi-objective
-      optimization with running trials.
+      optimization with running trials, and
+    - q-batch log constrained expected improvement (qLogCEI) for
+      single-objective constrained optimization with running trials, and
+    - q-batch constrained log expected hypervolume improvement (qLogCEHVI) for
+      multi-objective constrained optimization with running trials.
 
     Note that we adopt a sequential greedy selection for batch candidates instead of joint
     optimization and constrained optimization refers to optimization with black-box inequalities.
@@ -549,20 +551,35 @@ class GPSampler(BaseSampler):
                     constraint_vals, internal_search_space, normalized_params
                 )
                 is_all_infeasible = not any(is_feasible)
-                acqf = acqf_module.LogCEHVI(
-                    gpr_list=gprs_list,
-                    search_space=internal_search_space,
-                    Y_feasible=(
-                        torch.from_numpy(standardized_score_vals[is_feasible])
-                        if not is_all_infeasible
-                        else None
-                    ),
-                    n_qmc_samples=self._n_qmc_samples_ehvi,
-                    qmc_seed=self._rng.rng.randint(_MAX_QMC_SEED_VALUE),
-                    constraints_gpr_list=constr_gpr_list,
-                    constraints_threshold_list=constr_threshold_list,
-                    normalized_params_of_running_trials=normalized_params_of_running_trials,
-                )
+                if normalized_params_of_running_trials is None:
+                    acqf = acqf_module.LogCEHVI(
+                        gpr_list=gprs_list,
+                        search_space=internal_search_space,
+                        Y_feasible=(
+                            torch.from_numpy(standardized_score_vals[is_feasible])
+                            if not is_all_infeasible
+                            else None
+                        ),
+                        n_qmc_samples=self._n_qmc_samples_ehvi,
+                        qmc_seed=self._rng.rng.randint(_MAX_QMC_SEED_VALUE),
+                        constraints_gpr_list=constr_gpr_list,
+                        constraints_threshold_list=constr_threshold_list,
+                    )
+                else:
+                    acqf = acqf_module.qLogCEHVI(
+                        gpr_list=gprs_list,
+                        search_space=internal_search_space,
+                        Y_feasible=(
+                            torch.from_numpy(standardized_score_vals[is_feasible])
+                            if not is_all_infeasible
+                            else None
+                        ),
+                        n_qmc_samples=self._n_qmc_samples_ehvi,
+                        qmc_seed=self._rng.rng.randint(_MAX_QMC_SEED_VALUE),
+                        constraints_gpr_list=constr_gpr_list,
+                        constraints_threshold_list=constr_threshold_list,
+                        normalized_params_of_running_trials=normalized_params_of_running_trials,
+                    )
                 best_params = (
                     self._get_best_params_for_multi_objective(
                         normalized_params[is_feasible],
