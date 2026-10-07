@@ -1592,7 +1592,9 @@ def get_all_study_summaries(
 
     for s in frozen_studies:
         all_trials = storage.get_all_trials(s._study_id)
-        completed_trials = [t for t in all_trials if t.state == TrialState.COMPLETE]
+        completed_trials = _get_feasible_trials(
+            [t for t in all_trials if t.state == TrialState.COMPLETE]
+        )
 
         n_trials = len(all_trials)
 
