@@ -593,7 +593,8 @@ class TPESampler(BaseSampler):
                 self._gamma = default_gamma
             else:
                 self._gamma = default_gamma_multiobjective
-        n = sum(trial.state != TrialState.RUNNING for trial in trials)  # Ignore running trials.
+        # Ignore running trials. See https://github.com/optuna/optuna/pull/4073.
+        n = sum(trial.state != TrialState.RUNNING for trial in trials)
 
         below_trials, above_trials = _split_trials(
             study,
