@@ -4,17 +4,19 @@ plot_timeline
 =============
 
 .. autofunction:: optuna.visualization.plot_timeline
+    :no-index:
 
 The following code snippet shows how to plot the timeline of a study.
 Timeline plot can visualize trials with overlapping execution time
 (e.g., in distributed environments).
+
+.. _visualization-plot-timeline-plotly-content:
 
 """
 
 import time
 
 import optuna
-from plotly.io import show
 
 
 def objective(trial):
@@ -33,5 +35,4 @@ study.optimize(
 )
 
 fig = optuna.visualization.plot_timeline(study)
-show(fig)
-
+fig

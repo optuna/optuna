@@ -4,13 +4,15 @@ plot_intermediate_values
 ========================
 
 .. autofunction:: optuna.visualization.plot_intermediate_values
+    :no-index:
 
 The following code snippet shows how to plot intermediate values.
+
+.. _visualization-plot-intermediate-values-plotly-content:
 
 """
 
 import optuna
-from plotly.io import show
 
 
 def f(x):
@@ -43,4 +45,4 @@ study = optuna.create_study(sampler=sampler)
 study.optimize(objective, n_trials=16)
 
 fig = optuna.visualization.plot_intermediate_values(study)
-show(fig)
+fig

@@ -4,8 +4,11 @@ plot_parallel_coordinate
 ========================
 
 .. autofunction:: optuna.visualization.matplotlib.plot_parallel_coordinate
+    :no-index:
 
 The following code snippet shows how to plot the high-dimensional parameter relationships.
+
+.. _visualization-plot-parallel-coordinate-matplotlib-content:
 
 """
 

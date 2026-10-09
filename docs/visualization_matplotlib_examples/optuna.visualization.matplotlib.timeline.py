@@ -4,8 +4,11 @@ plot_timeline
 =============
 
 .. autofunction:: optuna.visualization.matplotlib.plot_timeline
+    :no-index:
 
 The following code snippet shows how to plot the timeline of a study.
+
+.. _visualization-plot-timeline-matplotlib-content:
 
 """
 
