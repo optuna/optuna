@@ -4,8 +4,11 @@ plot_slice
 ============
 
 .. autofunction:: optuna.visualization.matplotlib.plot_slice
+    :no-index:
 
 The following code snippet shows how to plot the parameter relationship as slice plot.
+
+.. _visualization-plot-slice-matplotlib-content:
 
 """
 

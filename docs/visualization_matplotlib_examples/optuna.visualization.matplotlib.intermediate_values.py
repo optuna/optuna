@@ -4,8 +4,11 @@ plot_intermediate_values
 ========================
 
 .. autofunction:: optuna.visualization.matplotlib.plot_intermediate_values
+    :no-index:
 
 The following code snippet shows how to plot intermediate values.
+
+.. _visualization-plot-intermediate-values-matplotlib-content:
 
 """
 

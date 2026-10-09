@@ -4,8 +4,11 @@ plot_edf
 ========
 
 .. autofunction:: optuna.visualization.matplotlib.plot_edf
+    :no-index:
 
 The following code snippet shows how to plot EDF.
+
+.. _visualization-plot-edf-matplotlib-content:
 
 """
 

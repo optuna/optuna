@@ -4,13 +4,15 @@ plot_contour
 ============
 
 .. autofunction:: optuna.visualization.plot_contour
+    :no-index:
 
 The following code snippet shows how to plot the parameter relationship as contour plot.
+
+.. _visualization-plot-contour-plotly-content:
 
 """
 
 import optuna
-from plotly.io import show
 
 
 def objective(trial):
@@ -24,4 +26,4 @@ study = optuna.create_study(sampler=sampler)
 study.optimize(objective, n_trials=30)
 
 fig = optuna.visualization.plot_contour(study, params=["x", "y"])
-show(fig)
+fig

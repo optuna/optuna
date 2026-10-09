@@ -4,13 +4,15 @@ plot_optimization_history
 =========================
 
 .. autofunction:: optuna.visualization.plot_optimization_history
+    :no-index:
 
 The following code snippet shows how to plot optimization history.
+
+.. _visualization-plot-optimization-history-plotly-content:
 
 """
 
 import optuna
-from plotly.io import show
 
 
 def objective(trial):
@@ -24,4 +26,4 @@ study = optuna.create_study(sampler=sampler)
 study.optimize(objective, n_trials=10)
 
 fig = optuna.visualization.plot_optimization_history(study)
-show(fig)
+fig
