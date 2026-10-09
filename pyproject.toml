@@ -89,7 +89,6 @@ checking = [
   "types-redis",
   "types-setuptools",
   "types-tqdm",
-  "typing_extensions>=3.10.0.0",
 ]
 test = [
   "fakeredis[lua]",
