@@ -15,7 +15,6 @@ classifiers = [
   "Intended Audience :: Developers",
   "License :: OSI Approved :: MIT License",
   "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
@@ -29,7 +28,7 @@ classifiers = [
   "Topic :: Software Development :: Libraries",
   "Topic :: Software Development :: Libraries :: Python Modules",
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dependencies = [
   "alembic>=1.5.0",
   "colorlog",
@@ -85,7 +84,7 @@ checking = [
   "mypy",
   "mypy_boto3_s3",
   "ruff",
-  "scipy-stubs; python_version>='3.10'",
+  "scipy-stubs",
   "types-PyYAML",
   "types-redis",
   "types-setuptools",
@@ -150,7 +149,7 @@ version = {attr = "optuna.version.__version__"}
 
 [tool.ruff]
 line-length = 99
-target-version = "py39"
+target-version = "py310"
 exclude = [
   ".eggs",
   ".git",

@@ -23,7 +23,7 @@ jobs:
 
     strategy:
       matrix:
-        python-version: ['3.9']
+        python-version: ['3.10']
 
     services:
       redis:
@@ -59,10 +59,8 @@ jobs:
         uv pip uninstall alembic cmaes packaging sqlalchemy plotly scikit-learn pillow
         uv pip install alembic==1.5.0 cmaes==0.12.0 packaging==20.0 sqlalchemy==1.4.2 tqdm==4.27.0 colorlog==3.0.0 PyYAML==5.1 'pillow<10.4.0'
         uv pip uninstall matplotlib pandas scipy
-        if [ "${{ matrix.python-version }}" = "3.9" ]; then
-          uv pip install matplotlib==3.8.4 pandas==2.2.2 scipy==1.13.0 numpy==1.26.4
-        fi
-        uv pip install plotly==5.0.0 scikit-learn==0.24.2  # optional extras
+        uv pip install matplotlib==3.8.4 pandas==2.2.2 scipy==1.13.0 numpy==1.26.4
+        uv pip install plotly==5.0.0 scikit-learn==1.0.2  # optional extras
 
     - name: Output installed packages
       run: |
