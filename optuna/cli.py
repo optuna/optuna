@@ -15,6 +15,7 @@ import logging
 import os
 import sys
 from typing import Any
+from typing import NoReturn
 
 import sqlalchemy.exc
 import yaml
@@ -926,12 +927,26 @@ def _get_parser(description: str = "") -> tuple[ArgumentParser, dict[str, Argume
     return main_parser, command_name_to_subparser
 
 
+class _CommonArgumentParser(ArgumentParser):
+    def error(self, message: str) -> NoReturn:
+        raise argparse.ArgumentError(None, message)
+
+
 def _preprocess_argv(argv: list[str]) -> list[str]:
     # Some preprocess is necessary for argv because some subcommand includes space
     # (e.g. optuna storage upgrade).
     argv = argv[1:] if len(argv) > 1 else ["help"]
 
-    for i in range(len(argv)):
+    # Find command positions after the common options and their values.
+    common_parser = _add_common_arguments(_CommonArgumentParser(add_help=False))
+    common_parser.add_argument("command", nargs=argparse.REMAINDER)
+    try:
+        common_args, _ = common_parser.parse_known_args(argv)
+    except argparse.ArgumentError:
+        # Let the main parser report invalid or missing option values.
+        return argv
+
+    for i in range(len(argv) - len(common_args.command), len(argv)):
         for j in range(i, i + 2):  # Commands consist of one or two words.
             command_candidate = " ".join(argv[i : j + 1])
             if command_candidate in _COMMANDS:
