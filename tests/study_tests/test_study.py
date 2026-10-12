@@ -857,6 +857,23 @@ def test_enqueue_trial_skip_existing(
         assert len(study.trials) == expected_n_trials
 
 
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+@pytest.mark.parametrize("integer, boolean", [(1, True), (0, False)])
+@pytest.mark.parametrize("boolean_first", [False, True])
+def test_enqueue_trial_skip_existing_distinguishes_bool_from_int(
+    storage_mode: str, integer: int, boolean: bool, boolean_first: bool
+) -> None:
+    with StorageSupplier(storage_mode) as storage:
+        study = create_study(storage=storage)
+        first, second = (boolean, integer) if boolean_first else (integer, boolean)
+        study.enqueue_trial({"x": first}, skip_if_exists=True)
+        study.enqueue_trial({"x": second}, skip_if_exists=True)
+
+        assert len(study.trials) == 2
+        assert type(study.trials[0].system_attrs["fixed_params"]["x"]) is type(first)
+        assert type(study.trials[1].system_attrs["fixed_params"]["x"]) is type(second)
+
+
 @patch("optuna.study._optimize.gc.collect")
 def test_optimize_with_gc(collect_mock: Mock) -> None:
     study = create_study()
