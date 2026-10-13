@@ -34,6 +34,10 @@ jobs:
             python-version: "3.11"
           - test-trigger-type: ""
             python-version: "3.12"
+          - test-trigger-type: ""
+            python-version: "3.13"
+          - test-trigger-type: ""
+            python-version: "3.14"
 
     services:
       mysql:
