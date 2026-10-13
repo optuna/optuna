@@ -4,13 +4,15 @@ plot_rank
 =========
 
 .. autofunction:: optuna.visualization.plot_rank
+    :no-index:
 
 The following code snippet shows how to plot the parameter relationship as a rank plot.
+
+.. _visualization-plot-rank-plotly-content:
 
 """
 
 import optuna
-from plotly.io import show
 
 
 def objective(trial):
@@ -28,4 +30,4 @@ study = optuna.create_study(sampler=sampler)
 study.optimize(objective, n_trials=30)
 
 fig = optuna.visualization.plot_rank(study, params=["x", "y"])
-show(fig)
+fig

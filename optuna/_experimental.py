@@ -13,8 +13,7 @@ from optuna.exceptions import ExperimentalWarning
 
 if TYPE_CHECKING:
     from collections.abc import Callable
-
-    from typing_extensions import ParamSpec
+    from typing import ParamSpec
 
     FT = TypeVar("FT")
     FP = ParamSpec("FP")

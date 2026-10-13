@@ -4,13 +4,15 @@ plot_slice
 ==========
 
 .. autofunction:: optuna.visualization.plot_slice
+    :no-index:
 
 The following code snippet shows how to plot the parameter relationship as slice plot.
+
+.. _visualization-plot-slice-plotly-content:
 
 """
 
 import optuna
-from plotly.io import show
 
 
 def objective(trial):
@@ -24,4 +26,4 @@ study = optuna.create_study(sampler=sampler)
 study.optimize(objective, n_trials=10)
 
 fig = optuna.visualization.plot_slice(study, params=["x", "y"])
-show(fig)
+fig

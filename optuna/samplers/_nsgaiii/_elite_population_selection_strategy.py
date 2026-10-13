@@ -30,7 +30,7 @@ class NSGAIIIElitePopulationSelectionStrategy:
         *,
         population_size: int,
         constraints_func: Callable[[FrozenTrial], Sequence[float]] | None = None,
-        reference_points: np.ndarray | None = None,
+        reference_points: Sequence[Sequence[float]] | np.ndarray | None = None,
         dividing_parameter: int = 3,
         rng: LazyRandomState,
     ) -> None:
@@ -86,7 +86,7 @@ class NSGAIIIElitePopulationSelectionStrategy:
                     closest_reference_points,
                     distance_reference_points,
                 ) = _associate_individuals_with_reference_points(
-                    objective_matrix, self._reference_points
+                    objective_matrix, np.asarray(self._reference_points)
                 )
 
                 elite_population_num = len(elite_population)

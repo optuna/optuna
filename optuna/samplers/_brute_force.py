@@ -5,7 +5,6 @@ import decimal
 from functools import lru_cache
 import math
 from numbers import Real
-import sys
 from typing import Any
 from typing import cast
 from typing import TYPE_CHECKING
@@ -49,8 +48,7 @@ class _UnexpandedTreeNode:
 _UNEXPANDED_NODE = _UnexpandedTreeNode()
 
 
-# TODO(nabenabe): Simply use `slots=True` once Python 3.9 is dropped.
-@dataclass(**({"slots": True} if sys.version_info >= (3, 10) else {}))
+@dataclass(slots=True)
 class _TreeNode:
     # region (_TreeNode doc)
     # A tree representing the search space for brute force sampling.

@@ -4,13 +4,15 @@ plot_parallel_coordinate
 ========================
 
 .. autofunction:: optuna.visualization.plot_parallel_coordinate
+    :no-index:
 
 The following code snippet shows how to plot the high-dimensional parameter relationships.
+
+.. _visualization-plot-parallel-coordinate-plotly-content:
 
 """
 
 import optuna
-from plotly.io import show
 
 
 def objective(trial):
@@ -24,4 +26,4 @@ study = optuna.create_study(sampler=sampler)
 study.optimize(objective, n_trials=10)
 
 fig = optuna.visualization.plot_parallel_coordinate(study, params=["x", "y"])
-show(fig)
+fig

@@ -149,9 +149,11 @@ def test_plot_edf_with_empty_study(
     assert [line.study_name for line in info.lines] == [study.study_name]
     np.testing.assert_array_equal(info.x_values, np.linspace(1.0, 3.0, NUM_SAMPLES_X_AXIS))
     np.testing.assert_array_equal(info.lines[0].y_values, np.where(info.x_values < 3.0, 0.5, 1.0))
+    if plot_edf is plt_plot_edf:
+        plt.close("all")
     figure = plot_edf(studies)
     if isinstance(figure, Axes):
-        plt.close()
+        plt.close(figure.figure)
 
 
 @pytest.mark.parametrize("n_studies", [1, 2, 3])

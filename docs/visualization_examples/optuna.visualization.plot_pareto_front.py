@@ -4,13 +4,15 @@ plot_pareto_front
 =================
 
 .. autofunction:: optuna.visualization.plot_pareto_front
+    :no-index:
 
 The following code snippet shows how to plot the Pareto front of a study.
+
+.. _visualization-plot-pareto-front-plotly-content:
 
 """
 
 import optuna
-from plotly.io import show
 
 
 def objective(trial):
@@ -26,7 +28,7 @@ study = optuna.create_study(directions=["minimize", "minimize"])
 study.optimize(objective, n_trials=50)
 
 fig = optuna.visualization.plot_pareto_front(study)
-show(fig)
+fig
 
 # %%
 # The following code snippet shows how to plot a 2-dimensional Pareto front
@@ -35,7 +37,6 @@ show(fig)
 # of a 4-dimensional study and so on.
 
 import optuna
-from plotly.io import show
 
 
 def objective(trial):
@@ -58,4 +59,4 @@ fig = optuna.visualization.plot_pareto_front(
     target_names=["Objective 0", "Objective 1"],
 )
 
-show(fig)
+fig

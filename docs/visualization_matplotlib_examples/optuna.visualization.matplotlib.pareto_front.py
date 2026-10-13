@@ -4,8 +4,11 @@ plot_pareto_front
 =================
 
 .. autofunction:: optuna.visualization.matplotlib.plot_pareto_front
+    :no-index:
 
 The following code snippet shows how to plot the Pareto front of a study.
+
+.. _visualization-plot-pareto-front-matplotlib-content:
 
 """
 

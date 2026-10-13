@@ -62,8 +62,9 @@ class NSGAIIISampler(BaseGASampler):
 
     Args:
         reference_points:
-            A 2 dimension ``numpy.ndarray`` with objective dimension columns. Represents
-            a list of reference points which is used to determine who to survive.
+            A two-dimensional sequence of floats or a ``numpy.ndarray`` of shape
+            ``(n_reference_points, n_objectives)``. Each row represents a reference point
+            used to select surviving individuals.
             After non-dominated sort, who out of borderline front are going to survived is
             determined according to how sparse the closest reference point of each individual is.
             In the default setting the algorithm uses `uniformly` spread points to diversify the
@@ -93,7 +94,7 @@ class NSGAIIISampler(BaseGASampler):
         swapping_prob: float = 0.5,
         seed: int | None = None,
         constraints_func: Callable[[FrozenTrial], Sequence[float]] | None = None,
-        reference_points: np.ndarray | None = None,
+        reference_points: Sequence[Sequence[float]] | np.ndarray | None = None,
         dividing_parameter: int = 3,
         elite_population_selection_strategy: (
             Callable[[Study, list[FrozenTrial]], list[FrozenTrial]] | None

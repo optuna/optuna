@@ -4,8 +4,11 @@ plot_optimization_history
 =========================
 
 .. autofunction:: optuna.visualization.matplotlib.plot_optimization_history
+    :no-index:
 
 The following code snippet shows how to plot optimization history.
+
+.. _visualization-plot-optimization-history-matplotlib-content:
 
 """
 

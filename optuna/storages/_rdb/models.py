@@ -4,7 +4,6 @@ import datetime
 import enum
 import math
 from typing import Any
-from typing import Optional
 
 from sqlalchemy import asc
 from sqlalchemy import case
@@ -52,9 +51,6 @@ NOT_FOUND_MSG = "Record does not exist."
 FLOAT_PRECISION = 53
 
 BaseModel: Any = declarative_base()
-
-# TODO(not522): Replace `Optional[X]` in `Mapped[...]` with `X | None` after dropping Python 3.9
-# support. SQLAlchemy cannot resolve `X | None` from string annotations on Python 3.9.
 
 
 class StudyModel(BaseModel):
@@ -115,7 +111,7 @@ class StudyUserAttributeModel(BaseModel):
     __tablename__ = "study_user_attributes"
     __table_args__: Any = (UniqueConstraint("study_id", "key"),)
     study_user_attribute_id: Mapped[int] = _Column(Integer, primary_key=True)
-    study_id: Mapped[Optional[int]] = _Column(Integer, ForeignKey("studies.study_id"))
+    study_id: Mapped[int | None] = _Column(Integer, ForeignKey("studies.study_id"))
     key: Mapped[str] = _Column(String(MAX_INDEXED_STRING_LENGTH), nullable=True)
     value_json: Mapped[str] = _Column(Text(), nullable=True)
 
@@ -147,7 +143,7 @@ class StudySystemAttributeModel(BaseModel):
     __tablename__ = "study_system_attributes"
     __table_args__: Any = (UniqueConstraint("study_id", "key"),)
     study_system_attribute_id: Mapped[int] = _Column(Integer, primary_key=True)
-    study_id: Mapped[Optional[int]] = _Column(Integer, ForeignKey("studies.study_id"))
+    study_id: Mapped[int | None] = _Column(Integer, ForeignKey("studies.study_id"))
     key: Mapped[str] = _Column(String(MAX_INDEXED_STRING_LENGTH), nullable=True)
     value_json: Mapped[str] = _Column(Text(), nullable=True)
 
@@ -182,7 +178,7 @@ class TrialModel(BaseModel):
     # to be unique. This is to reduce code complexity as table-level locking would be required
     # otherwise. See https://github.com/optuna/optuna/pull/939#discussion_r387447632.
     number: Mapped[int] = _Column(Integer, nullable=True)
-    study_id: Mapped[Optional[int]] = _Column(Integer, ForeignKey("studies.study_id"), index=True)
+    study_id: Mapped[int | None] = _Column(Integer, ForeignKey("studies.study_id"), index=True)
     state: Mapped[TrialState] = _Column(Enum(TrialState), nullable=False)
 
     # Trial datetimes are stored as naive UTC and converted to naive local time when constructing
@@ -191,8 +187,8 @@ class TrialModel(BaseModel):
     # Unlike JournalStorage, which stores aware UTC datetimes, RDBStorage intentionally uses naive
     # UTC. Timezone-aware column types would require a schema migration where supported and are not
     # portable across all supported database backends.
-    _datetime_start_utc: Mapped[Optional[datetime.datetime]] = _Column("datetime_start", DateTime)
-    _datetime_complete_utc: Mapped[Optional[datetime.datetime]] = _Column(
+    _datetime_start_utc: Mapped[datetime.datetime | None] = _Column("datetime_start", DateTime)
+    _datetime_complete_utc: Mapped[datetime.datetime | None] = _Column(
         "datetime_complete", DateTime
     )
 
@@ -347,7 +343,7 @@ class TrialUserAttributeModel(BaseModel):
     __tablename__ = "trial_user_attributes"
     __table_args__: Any = (UniqueConstraint("trial_id", "key"),)
     trial_user_attribute_id: Mapped[int] = _Column(Integer, primary_key=True)
-    trial_id: Mapped[Optional[int]] = _Column(Integer, ForeignKey("trials.trial_id"))
+    trial_id: Mapped[int | None] = _Column(Integer, ForeignKey("trials.trial_id"))
     key: Mapped[str] = _Column(String(MAX_INDEXED_STRING_LENGTH), nullable=True)
     value_json: Mapped[str] = _Column(Text(), nullable=True)
 
@@ -379,7 +375,7 @@ class TrialSystemAttributeModel(BaseModel):
     __tablename__ = "trial_system_attributes"
     __table_args__: Any = (UniqueConstraint("trial_id", "key"),)
     trial_system_attribute_id: Mapped[int] = _Column(Integer, primary_key=True)
-    trial_id: Mapped[Optional[int]] = _Column(Integer, ForeignKey("trials.trial_id"))
+    trial_id: Mapped[int | None] = _Column(Integer, ForeignKey("trials.trial_id"))
     key: Mapped[str] = _Column(String(MAX_INDEXED_STRING_LENGTH), nullable=True)
     value_json: Mapped[str] = _Column(Text(), nullable=True)
 
@@ -411,7 +407,7 @@ class TrialParamModel(BaseModel):
     __tablename__ = "trial_params"
     __table_args__: Any = (UniqueConstraint("trial_id", "param_name"),)
     param_id: Mapped[int] = _Column(Integer, primary_key=True)
-    trial_id: Mapped[Optional[int]] = _Column(Integer, ForeignKey("trials.trial_id"))
+    trial_id: Mapped[int | None] = _Column(Integer, ForeignKey("trials.trial_id"))
     param_name: Mapped[str] = _Column(String(MAX_INDEXED_STRING_LENGTH), nullable=True)
     param_value: Mapped[float] = _Column(Float(precision=FLOAT_PRECISION), nullable=True)
     distribution_json: Mapped[str] = _Column(Text(), nullable=True)
@@ -462,7 +458,7 @@ class TrialValueModel(BaseModel):
     trial_value_id: Mapped[int] = _Column(Integer, primary_key=True)
     trial_id: Mapped[int] = _Column(Integer, ForeignKey("trials.trial_id"), nullable=False)
     objective: Mapped[int] = _Column(Integer, nullable=False)
-    value: Mapped[Optional[float]] = _Column(Float(precision=FLOAT_PRECISION), nullable=True)
+    value: Mapped[float | None] = _Column(Float(precision=FLOAT_PRECISION), nullable=True)
     value_type: Mapped[TrialValueType] = _Column(Enum(TrialValueType), nullable=False)
 
     trial = orm.relationship(
@@ -525,7 +521,7 @@ class TrialIntermediateValueModel(BaseModel):
     trial_intermediate_value_id: Mapped[int] = _Column(Integer, primary_key=True)
     trial_id: Mapped[int] = _Column(Integer, ForeignKey("trials.trial_id"), nullable=False)
     step: Mapped[int] = _Column(Integer, nullable=False)
-    intermediate_value: Mapped[Optional[float]] = _Column(
+    intermediate_value: Mapped[float | None] = _Column(
         Float(precision=FLOAT_PRECISION), nullable=True
     )
     intermediate_value_type: Mapped[TrialIntermediateValueType] = _Column(
@@ -621,8 +617,8 @@ class VersionInfoModel(BaseModel):
     version_info_id: Mapped[int] = _Column(
         Integer, primary_key=True, autoincrement=False, default=1
     )
-    schema_version: Mapped[Optional[int]] = _Column(Integer)
-    library_version: Mapped[Optional[str]] = _Column(String(MAX_VERSION_LENGTH))
+    schema_version: Mapped[int | None] = _Column(Integer)
+    library_version: Mapped[str | None] = _Column(String(MAX_VERSION_LENGTH))
 
     @classmethod
     def find(cls, session: orm.Session) -> "VersionInfoModel" | None:
