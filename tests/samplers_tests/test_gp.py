@@ -147,8 +147,17 @@ def test_constraints_func_nan(n_objectives: int) -> None:
     assert len(trials[0].constraints) == 0  # No constraints are set.
 
 
-@pytest.mark.parametrize("keys", [("latency", "memory"), ("1", "0")])
-def test_constraint_values_follow_names(keys: tuple[str, str]) -> None:
+@pytest.mark.parametrize(
+    "keys, expected_values",
+    [
+        (("latency", "memory"), [[-1.0, 2.0], [4.0, -3.0], [0.0, -2.0]]),
+        (("memory", "latency"), [[2.0, -1.0], [-3.0, 4.0], [-2.0, 0.0]]),
+        (("1", "0"), [[2.0, -1.0], [-3.0, 4.0], [-2.0, 0.0]]),
+    ],
+)
+def test_constraint_values_follow_names(
+    keys: tuple[str, str], expected_values: list[list[float]]
+) -> None:
     study = optuna.create_study()
     trials = [
         optuna.trial.create_trial(value=0, constraints={keys[0]: -1.0, keys[1]: 2.0}),
@@ -158,7 +167,7 @@ def test_constraint_values_follow_names(keys: tuple[str, str]) -> None:
 
     values, is_feasible = _get_constraint_vals_and_feasibility(study, trials)
 
-    np.testing.assert_array_equal(values, [[-1.0, 2.0], [4.0, -3.0], [0.0, -2.0]])
+    np.testing.assert_array_equal(values, expected_values)
     np.testing.assert_array_equal(is_feasible, [False, False, True])
 
 
@@ -175,7 +184,10 @@ def test_inconsistent_constraint_names(constraints: dict[str, float]) -> None:
 
 
 @pytest.mark.parametrize("n_objectives", [1, 2])
-def test_named_constraint_order_does_not_change_suggestion(n_objectives: int) -> None:
+@pytest.mark.parametrize("reverse_first", [False, True])
+def test_named_constraint_order_does_not_change_suggestion(
+    n_objectives: int, reverse_first: bool
+) -> None:
     suggestions = []
     for reverse_order in [False, True]:
         study = optuna.create_study(
@@ -184,7 +196,7 @@ def test_named_constraint_order_does_not_change_suggestion(n_objectives: int) ->
         )
         for i, x in enumerate(np.linspace(0, 1, 6)):
             constraints = {"low": float(0.15 - x), "high": float(x - 0.85)}
-            if reverse_order and i % 2:
+            if reverse_order and (i % 2 or reverse_first):
                 constraints = dict(reversed(list(constraints.items())))
             study.add_trial(
                 optuna.trial.create_trial(

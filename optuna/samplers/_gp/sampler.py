@@ -627,8 +627,8 @@ def _get_constraint_vals_and_feasibility(
     study: Study, trials: list[FrozenTrial]
 ) -> tuple[np.ndarray, np.ndarray]:
     constraints = [trial.constraints for trial in trials]
-    constraint_keys = constraints[0].keys()
-    if any(c.keys() != constraint_keys for c in constraints):
+    constraint_keys = sorted(constraints[0].keys())
+    if any(c.keys() != constraints[0].keys() for c in constraints):
         raise ValueError("The constraint names must be the same for all trials.")
 
     constraint_vals = np.array([[c[key] for key in constraint_keys] for c in constraints])
