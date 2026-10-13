@@ -204,6 +204,7 @@ def _run_trial(
     with get_heartbeat_thread(trial._trial_id, study._storage):
         try:
             value_or_values = func(trial)
+            trial._warn_if_unused_fixed_params()
         except exceptions.TrialPruned as e:
             # TODO(mamu): Handle multi-objective cases.
             state = TrialState.PRUNED

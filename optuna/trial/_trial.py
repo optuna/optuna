@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections import UserDict
 import copy
+import difflib
 import math
 from typing import Any
 from typing import overload
@@ -647,6 +648,31 @@ class Trial(BaseTrial):
             self._cached_frozen_trial.distributions[name] = distribution
             self._cached_frozen_trial.params[name] = param_value
         return param_value
+
+    def _warn_if_unused_fixed_params(self) -> None:
+        unused_params = self._fixed_params.keys() - self._cached_frozen_trial.params.keys()
+        if not unused_params:
+            return
+
+        message = (
+            f"enqueue_trial() received parameter(s) {unused_params} that were not used "
+            "in the objective function. The enqueued values were ignored."
+        )
+        if len(unused_params) == 1:
+            param_name = next(iter(unused_params))
+            suggested_param_names = self._cached_frozen_trial.params.keys()
+            matches = difflib.get_close_matches(
+                param_name.casefold(),
+                list(dict.fromkeys(name.casefold() for name in suggested_param_names)),
+                n=1,
+            )
+            if matches:
+                suggested_param_name = next(
+                    name for name in suggested_param_names if name.casefold() == matches[0]
+                )
+                message += f" Did you mean: '{suggested_param_name}'?"
+
+        optuna_warn(message)
 
     def _is_fixed_param(self, name: str, distribution: BaseDistribution) -> bool:
         if name not in self._fixed_params:

@@ -910,6 +910,10 @@ class Study:
                     This method might produce duplicated trials if called simultaneously
                     by multiple processes at the same time with same ``params`` dict.
 
+        .. note::
+            A :exc:`UserWarning` is emitted during :meth:`~optuna.study.Study.optimize`
+            if an enqueued parameter is not suggested by the objective function.
+
         .. seealso::
 
             Please refer to :ref:`enqueue_trial_tutorial` for the tutorial of specifying

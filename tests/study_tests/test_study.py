@@ -681,6 +681,34 @@ def test_enqueue_trial_with_unfixed_parameters(storage_mode: str) -> None:
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+@pytest.mark.parametrize(
+    ("params", "unused_params", "suggestion"),
+    [
+        ({"X": 0.001}, "{'X'}", " Did you mean: 'x'?"),
+        ({"x": 0.5, "extra_unused": 0.9}, "{'extra_unused'}", ""),
+    ],
+)
+def test_enqueue_trial_warns_about_unused_parameters(
+    storage_mode: str, params: dict[str, float], unused_params: str, suggestion: str
+) -> None:
+    with StorageSupplier(storage_mode) as storage:
+        study = create_study(storage=storage)
+        study.enqueue_trial(params)
+
+        def objective(trial: Trial) -> float:
+            return trial.suggest_float("x", 0.0, 1.0)
+
+        with pytest.warns(UserWarning) as warning:
+            study.optimize(objective, n_trials=1)
+
+        assert (
+            str(warning[0].message)
+            == f"enqueue_trial() received parameter(s) {unused_params} that were not used "
+            f"in the objective function. The enqueued values were ignored.{suggestion}"
+        )
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_enqueue_trial_properly_sets_user_attr(storage_mode: str) -> None:
     with StorageSupplier(storage_mode) as storage:
         study = create_study(storage=storage)
