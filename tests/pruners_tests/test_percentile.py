@@ -151,11 +151,9 @@ def test_get_best_intermediate_result_over_steps(
     trial_nan = study.ask()
     trial_nan.report(float("nan"), step=0)
     frozen_trial_nan = study._storage.get_trial(trial_nan._trial_id)
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", category=RuntimeWarning)
-        assert math.isnan(
-            _percentile._get_best_intermediate_result_over_steps(frozen_trial_nan, direction)
-        )
+    assert math.isnan(
+        _percentile._get_best_intermediate_result_over_steps(frozen_trial_nan, direction)
+    )
 
 
 def test_get_percentile_intermediate_result_over_trials() -> None:

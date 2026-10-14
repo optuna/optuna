@@ -6,6 +6,7 @@ from collections.abc import Iterable
 from collections.abc import Mapping
 from collections.abc import Sequence
 import copy
+from numbers import Integral
 from numbers import Real
 import threading
 from typing import Any
@@ -1111,7 +1112,7 @@ class Study:
 
                 is_repeated = (
                     np.isclose(float(param_value), float(existing_param), atol=0.0, equal_nan=True)
-                    if isinstance(param_value, Real)
+                    if isinstance(param_value, Real) and not isinstance(param_value, Integral)
                     else param_value == existing_param
                 )
                 repeated_params.append(bool(is_repeated))
