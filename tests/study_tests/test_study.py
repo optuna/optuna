@@ -1761,6 +1761,12 @@ def test_set_invalid_metric_names() -> None:
         study.set_metric_names(metric_names)
 
 
+def test_set_duplicate_metric_names() -> None:
+    study = create_study(directions=["minimize", "minimize"])
+    with pytest.raises(ValueError, match="Metric names must be unique"):
+        study.set_metric_names(["score", "score"])
+
+
 def test_get_metric_names() -> None:
     study = create_study()
     assert study.metric_names is None
