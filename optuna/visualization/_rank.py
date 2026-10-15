@@ -109,7 +109,11 @@ def _get_order_with_same_order_averaging(data: np.ndarray) -> np.ndarray:
     data_sorted = np.sort(data)
     for i, d in enumerate(data):
         indices = np.where(data_sorted == d)[0]
-        order[i] = sum(indices) / len(indices)
+        if len(indices) == 0:
+            # `d` is NaN (NaN != NaN yields no match); rank it as the worst (sorted last).
+            order[i] = len(data) - 1
+        else:
+            order[i] = sum(indices) / len(indices)
     return order
 
 

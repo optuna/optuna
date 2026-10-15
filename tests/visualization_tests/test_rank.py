@@ -695,3 +695,24 @@ def test_convert_color_idxs_to_scaled_rgb_colors() -> None:
     x2 = np.array([])
     result2 = _convert_color_idxs_to_scaled_rgb_colors(x2)
     np.testing.assert_array_equal(result2, [])
+
+
+def test_get_rank_info_with_nonfinite_target() -> None:
+    # https://github.com/optuna/optuna/issues/6911
+    # `plot_rank` raised `ZeroDivisionError` when a custom `target` returned NaN for
+    # some trials. NaN targets are now ranked (as the worst) instead of crashing.
+    study = create_study()
+    distributions: dict[str, BaseDistribution] = {"param_a": FloatDistribution(0.0, 1.0)}
+    for i in range(3):
+        study.add_trial(
+            create_trial(
+                value=float(i), params={"param_a": 0.1 * (i + 1)}, distributions=distributions
+            )
+        )
+
+    def target(trial: Any) -> float:
+        return float("nan") if trial.number == 0 else float(trial.number)
+
+    info = _get_rank_info(study, params=None, target=target, target_name="custom")
+    # All trials are kept; the NaN trial is ranked rather than raising ZeroDivisionError.
+    assert len(info.sub_plot_infos[0][0].trials) == 3
