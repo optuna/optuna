@@ -23,5 +23,5 @@ def download_artifact(*, artifact_store: ArtifactStore, file_path: str, artifact
     if os.path.exists(file_path):
         raise FileExistsError(f"File already exists: {file_path}")
 
-    with artifact_store.open_reader(artifact_id) as reader, open(file_path, "wb") as writer:
+    with artifact_store.open_reader(artifact_id) as reader, open(file_path, "xb") as writer:
         shutil.copyfileobj(reader, writer)
