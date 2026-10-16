@@ -107,13 +107,13 @@ def upload_artifact(
         encoding=encoding or guess_encoding,
     )
     attr_key = ARTIFACTS_ATTR_PREFIX + artifact_id
-    if isinstance(study_or_trial, (Trial, FrozenTrial)):
-        trial_id = study_or_trial._trial_id
-        storage.set_trial_system_attr(trial_id, attr_key, json.dumps(asdict(artifact)))
-    else:
-        study_id = study_or_trial._study_id
-        storage.set_study_system_attr(study_id, attr_key, json.dumps(asdict(artifact)))
-
     with open(file_path, "rb") as f:
+        if isinstance(study_or_trial, (Trial, FrozenTrial)):
+            trial_id = study_or_trial._trial_id
+            storage.set_trial_system_attr(trial_id, attr_key, json.dumps(asdict(artifact)))
+        else:
+            study_id = study_or_trial._study_id
+            storage.set_study_system_attr(study_id, attr_key, json.dumps(asdict(artifact)))
+
         artifact_store.write(artifact_id, f)
     return artifact_id
