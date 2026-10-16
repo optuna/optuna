@@ -4,6 +4,7 @@ from collections.abc import Callable
 import copy
 import json
 import os
+from pathlib import Path
 import platform
 import re
 import subprocess
@@ -149,6 +150,69 @@ def test_create_study_command_with_study_name() -> None:
         # Check if study_name is stored in the storage.
         study_id = storage.get_study_id_from_name(study_name)
         assert storage.get_study_name_from_id(study_id) == study_name
+
+
+@pytest.mark.parametrize("log_file", ["trials", "ask", "best-trial", "studies", "storage upgrade"])
+@pytest.mark.parametrize("log_option", ["--log-file", "--log-fi"])
+@pytest.mark.parametrize("command_first", [False, True])
+def test_create_study_with_command_named_log_file(
+    tmp_path: Path, log_file: str, log_option: str, command_first: bool
+) -> None:
+    storage_url = f"sqlite:///{(tmp_path / 'study.db').as_posix()}"
+    study_name = "test_study"
+    command = ["create-study", "--storage", storage_url, "--study-name", study_name]
+    options = [log_option, log_file]
+    args = ["optuna"] + (command + options if command_first else options + command)
+
+    subprocess.check_call(args, cwd=tmp_path)
+
+    assert optuna.load_study(storage=storage_url, study_name=study_name).study_name == study_name
+    assert (tmp_path / log_file).is_file()
+    assert not (tmp_path / "create-study").exists()
+
+
+@pytest.mark.parametrize("command", [["storage", "upgrade"], ["study", "set-user-attr"]])
+@pytest.mark.parametrize("command_first", [False, True])
+def test_two_word_command_with_command_named_log_file(
+    tmp_path: Path, command: list[str], command_first: bool
+) -> None:
+    storage_url = f"sqlite:///{(tmp_path / 'study.db').as_posix()}"
+    study_name = "test_study"
+    optuna.create_study(storage=storage_url, study_name=study_name)
+    args = command + ["--storage", storage_url]
+    if command == ["study", "set-user-attr"]:
+        args += ["--study-name", study_name, "--key", "test_attr", "--value", "value"]
+    options = ["--log-file", "trials"]
+
+    subprocess.check_call(
+        ["optuna"] + (args + options if command_first else options + args), cwd=tmp_path
+    )
+
+    if command == ["study", "set-user-attr"]:
+        study = optuna.load_study(storage=storage_url, study_name=study_name)
+        assert study.user_attrs == {"test_attr": "value"}
+    assert (tmp_path / "trials").is_file()
+
+
+@pytest.mark.parametrize(
+    "args, expected",
+    [
+        (["--storage", "trials", "create-study"], ["create-study", "--storage", "trials"]),
+        (["--storage=trials", "create-study"], ["create-study", "--storage=trials"]),
+        (["--log-file=trials", "create-study"], ["create-study", "--log-file=trials"]),
+        (
+            ["--log-file", "trials", "storage", "upgrade"],
+            ["storage upgrade", "--log-file", "trials"],
+        ),
+        (
+            ["--log-file", "trials", "study", "set-user-attr"],
+            ["study set-user-attr", "--log-file", "trials"],
+        ),
+        (["--storage-class", "create-study"], ["--storage-class", "create-study"]),
+    ],
+)
+def test_preprocess_argv_common_option_values(args: list[str], expected: list[str]) -> None:
+    assert optuna.cli._preprocess_argv(["optuna"] + args) == expected
 
 
 def test_create_study_command_without_storage_url() -> None:
