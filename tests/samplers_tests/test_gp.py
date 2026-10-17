@@ -158,14 +158,13 @@ def test_constraints_func_nan(n_objectives: int) -> None:
 def test_constraint_values_follow_names(
     keys: tuple[str, str], expected_values: list[list[float]]
 ) -> None:
-    study = optuna.create_study()
     trials = [
         optuna.trial.create_trial(value=0, constraints={keys[0]: -1.0, keys[1]: 2.0}),
         optuna.trial.create_trial(value=0, constraints={keys[1]: -3.0, keys[0]: 4.0}),
         optuna.trial.create_trial(value=0, constraints={keys[0]: 0.0, keys[1]: -2.0}),
     ]
 
-    values, is_feasible = _get_constraint_vals_and_feasibility(study, trials)
+    values, is_feasible = _get_constraint_vals_and_feasibility(trials)
 
     np.testing.assert_array_equal(values, expected_values)
     np.testing.assert_array_equal(is_feasible, [False, False, True])
@@ -173,14 +172,13 @@ def test_constraint_values_follow_names(
 
 @pytest.mark.parametrize("constraints", [{"memory": -1.0}, {}])
 def test_inconsistent_constraint_names(constraints: dict[str, float]) -> None:
-    study = optuna.create_study()
     trials = [
         optuna.trial.create_trial(value=0, constraints={"latency": -1.0}),
         optuna.trial.create_trial(value=0, constraints=constraints),
     ]
 
     with pytest.raises(ValueError):
-        _get_constraint_vals_and_feasibility(study, trials)
+        _get_constraint_vals_and_feasibility(trials)
 
 
 @pytest.mark.parametrize("n_objectives", [1, 2])
