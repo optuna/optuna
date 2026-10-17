@@ -615,7 +615,7 @@ class GPSampler(BaseSampler):
 
 
 def _get_constraint_vals_and_feasibility(
-    trials: list[FrozenTrial]
+    trials: list[FrozenTrial],
 ) -> tuple[np.ndarray, np.ndarray]:
     constraints = [trial.constraints for trial in trials]
     constraint_keys = sorted(constraints[0].keys())
