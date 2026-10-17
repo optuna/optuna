@@ -133,8 +133,10 @@ class WilcoxonPruner(BasePruner):
         n_startup_steps:
             The number of steps before which no trials are pruned.
             Pruning starts only after you have ``n_startup_steps`` steps of
-            available observations for comparison between the current trial
-            and the best trial.
+            available observations common to both the current trial and the
+            best trial. Note that this counts the number of shared reported
+            intermediate values, not the raw ``step`` value passed to
+            :func:`~optuna.trial.Trial.report`.
             Defaults to 2. Note that the trial is not pruned at the first and second steps even if
             the `n_startup_steps` is set to 0 or 1 due to the lack of enough data for comparison.
     """  # NOQA: E501
