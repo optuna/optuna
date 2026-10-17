@@ -240,15 +240,6 @@ class GPSampler(BaseSampler):
         constraints_func: Callable[[FrozenTrial], Sequence[float]] | None = None,
         warn_independent_sampling: bool = True,
     ) -> None:
-        # NOTE(nabenabe): These features are missing.
-        # - input constraints (use SLSQP),
-        # - constant noise insertion (replace minimum_noise directly and use deterministic=True),
-        # - q-batch (closed PR available),
-        # - input warping (cf. https://arxiv.org/pdf/2012.03826),
-        # - output warping (cf. https://arxiv.org/pdf/2012.03826).
-        # - output de-correlation (for multi-objective GP) (cf. https://arxiv.org/abs/1909.13595)
-        # - kernel hyperparameter prior enhancement
-        #     - cf. https://github.com/optuna/optuna/issues/6255#issuecomment-4357841010
         self._rng = LazyRandomState(seed)
         self._independent_sampler = independent_sampler or optuna.samplers.RandomSampler(seed=seed)
         self._intersection_search_space = optuna.search_space.IntersectionSearchSpace()
@@ -507,7 +498,7 @@ class GPSampler(BaseSampler):
             if n_objectives == 1:
                 assert len(gprs_list) == 1
                 constraint_vals, is_feasible = _get_constraint_vals_and_feasibility(
-                    study, completed_trials
+                    completed_trials
                 )
                 y_with_neginf = np.where(is_feasible, standardized_score_vals[:, 0], -np.inf)
                 # TODO(kAIto47802): If all trials are infeasible, the acquisition function
@@ -545,7 +536,7 @@ class GPSampler(BaseSampler):
                 )
             else:
                 constraint_vals, is_feasible = _get_constraint_vals_and_feasibility(
-                    study, completed_trials
+                    completed_trials
                 )
                 constr_gpr_list, constr_threshold_list = self._get_constraints_acqf_args(
                     constraint_vals, internal_search_space, normalized_params
@@ -624,7 +615,7 @@ class GPSampler(BaseSampler):
 
 
 def _get_constraint_vals_and_feasibility(
-    study: Study, trials: list[FrozenTrial]
+    trials: list[FrozenTrial]
 ) -> tuple[np.ndarray, np.ndarray]:
     constraints = [trial.constraints for trial in trials]
     constraint_keys = sorted(constraints[0].keys())
