@@ -72,7 +72,9 @@ class PatientPruner(BasePruner):
             early-stopping taken the intermediate values in the individual trial.
         patience:
             Pruning is disabled until the objective doesn't improve for
-            ``patience`` consecutive steps.
+            ``patience`` consecutive steps. Note that this counts the number of
+            reported intermediate values without improvement, rather than the raw
+            ``step`` values passed to :func:`~optuna.trial.Trial.report`.
         min_delta:
             Tolerance value to check whether or not the objective improves.
             This value should be non-negative.
