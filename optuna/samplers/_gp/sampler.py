@@ -492,13 +492,12 @@ class GPSampler(BaseSampler):
                 best_params = self._get_best_params_for_multi_objective(X_feasible, Y_feasible)
             elif not np.isneginf(threshold):
                 best_params = X_feasible[np.argmax(Y_feasible), np.newaxis]
-        match (is_constrained, is_multi_obj, normalized_params_of_running_trials is not None):
-            case (False, False, False):
+        match (is_constrained, is_multi_obj, normalized_params_of_running_trials):
+            case (False, False, None):
                 acqf: acqf_module.BaseAcquisitionFunc = acqf_module.LogEI(
                     gpr=gprs_list[0], search_space=internal_search_space, threshold=threshold
                 )
-            case (False, False, True):
-                assert normalized_params_of_running_trials is not None
+            case (False, False, np.ndarray()):
                 acqf = acqf_module.qLogEI(
                     gpr=gprs_list[0],
                     search_space=internal_search_space,
@@ -507,7 +506,7 @@ class GPSampler(BaseSampler):
                     qmc_seed=self._rng.rng.randint(_MAX_QMC_SEED_VALUE),
                     normalized_params_of_running_trials=normalized_params_of_running_trials,
                 )
-            case (False, True, False):
+            case (False, True, None):
                 acqf = acqf_module.LogEHVI(
                     gpr_list=gprs_list,
                     search_space=internal_search_space,
@@ -515,8 +514,7 @@ class GPSampler(BaseSampler):
                     n_qmc_samples=self._n_qmc_samples_ehvi,
                     qmc_seed=self._rng.rng.randint(_MAX_QMC_SEED_VALUE),
                 )
-            case (False, True, True):
-                assert normalized_params_of_running_trials is not None
+            case (False, True, np.ndarray()):
                 acqf = acqf_module.qLogEHVI(
                     gpr_list=gprs_list,
                     search_space=internal_search_space,
@@ -525,7 +523,7 @@ class GPSampler(BaseSampler):
                     qmc_seed=self._rng.rng.randint(_MAX_QMC_SEED_VALUE),
                     normalized_params_of_running_trials=normalized_params_of_running_trials,
                 )
-            case (True, False, False):
+            case (True, False, None):
                 acqf = acqf_module.LogCEI(
                     gpr=gprs_list[0],
                     search_space=internal_search_space,
@@ -533,8 +531,7 @@ class GPSampler(BaseSampler):
                     constraints_gpr_list=constr_gpr_list,
                     constraints_threshold_list=constr_threshold_list,
                 )
-            case (True, False, True):
-                assert normalized_params_of_running_trials is not None
+            case (True, False, np.ndarray()):
                 acqf = acqf_module.qLogCEI(
                     gpr=gprs_list[0],
                     search_space=internal_search_space,
@@ -545,7 +542,7 @@ class GPSampler(BaseSampler):
                     constraints_threshold_list=constr_threshold_list,
                     normalized_params_of_running_trials=normalized_params_of_running_trials,
                 )
-            case (True, True, False):
+            case (True, True, None):
                 acqf = acqf_module.LogCEHVI(
                     gpr_list=gprs_list,
                     search_space=internal_search_space,
@@ -555,8 +552,7 @@ class GPSampler(BaseSampler):
                     constraints_gpr_list=constr_gpr_list,
                     constraints_threshold_list=constr_threshold_list,
                 )
-            case (True, True, True):
-                assert normalized_params_of_running_trials is not None
+            case (True, True, np.ndarray()):
                 acqf = acqf_module.qLogCEHVI(
                     gpr_list=gprs_list,
                     search_space=internal_search_space,
