@@ -8,6 +8,7 @@ import warnings
 from _pytest.logging import LogCaptureFixture
 import numpy as np
 import pytest
+import torch
 
 import optuna
 import optuna._gp.acqf as acqf_module
@@ -17,7 +18,9 @@ import optuna._gp.prior as prior
 import optuna._gp.search_space as gp_search_space
 from optuna.samplers import GPSampler
 from optuna.samplers._gp.sampler import _get_constraint_vals_and_feasibility
+from optuna.samplers._gp.sampler import _standardize_values
 from optuna.trial import FrozenTrial
+from optuna.trial import TrialState
 
 
 def test_after_convergence(caplog: LogCaptureFixture) -> None:
@@ -255,3 +258,65 @@ def test_gpsampler_with_cuda_default_device() -> None:
             torch.set_default_device(None)
         else:
             torch.set_default_device(original_device)
+
+
+@pytest.mark.parametrize(
+    "n_objectives,is_constrained,has_running_trials,expected_acqf_type",
+    [
+        (1, False, False, acqf_module.LogEI),
+        (1, False, True, acqf_module.qLogEI),
+        (2, False, False, acqf_module.LogEHVI),
+        (2, False, True, acqf_module.qLogEHVI),
+        (1, True, False, acqf_module.LogCEI),
+        (1, True, True, acqf_module.qLogCEI),
+        (2, True, False, acqf_module.LogCEHVI),
+        (2, True, True, acqf_module.qLogCEHVI),
+    ],
+)
+def test_get_acqf_and_best_params(
+    n_objectives: int,
+    is_constrained: bool,
+    has_running_trials: bool,
+    expected_acqf_type: type[acqf_module.BaseAcquisitionFunc],
+) -> None:
+    sampler = GPSampler(seed=0)
+    study = optuna.create_study(sampler=sampler, directions=["minimize"] * n_objectives)
+
+    def objective(trial: optuna.Trial) -> list[float]:
+        x = trial.suggest_float("x", 0, 1)
+        if is_constrained:
+            trial.set_constraint("c", trial.number % 2 - 0.5)
+        return [x] * n_objectives
+
+    study.optimize(objective, n_trials=10)
+    completed_trials = study.get_trials(states=(TrialState.COMPLETE,))
+    search_space: dict[str, optuna.distributions.BaseDistribution] = {
+        "x": optuna.distributions.FloatDistribution(0, 1)
+    }
+    internal_search_space = gp_search_space.SearchSpace(search_space)
+    normalized_params = internal_search_space.get_normalized_params(completed_trials)
+    standardized_score_vals, _, _ = _standardize_values(
+        -np.array([t.values for t in completed_trials])
+    )
+    gprs_list = [
+        optuna_gp.GPRegressor(
+            is_categorical=torch.from_numpy(internal_search_space.is_categorical),
+            X_train=torch.from_numpy(normalized_params),
+            y_train=torch.from_numpy(standardized_score_vals[:, i]),
+            inverse_squared_lengthscales=torch.ones(1, dtype=torch.float64),
+            kernel_scale=torch.tensor(1.0, dtype=torch.float64),
+            noise_var=torch.tensor(0.1, dtype=torch.float64),
+        )
+        for i in range(n_objectives)
+    ]
+    for gpr in gprs_list:
+        gpr._cache_matrix()
+    acqf, _ = sampler._get_acqf_and_best_params(
+        completed_trials=completed_trials,
+        gprs_list=gprs_list,
+        internal_search_space=internal_search_space,
+        normalized_params=normalized_params,
+        normalized_params_of_running_trials=np.array([[0.5]]) if has_running_trials else None,
+        standardized_score_vals=standardized_score_vals,
+    )
+    assert type(acqf) is expected_acqf_type

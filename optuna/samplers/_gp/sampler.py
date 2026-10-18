@@ -492,6 +492,10 @@ class GPSampler(BaseSampler):
                 best_params = self._get_best_params_for_multi_objective(X_feasible, Y_feasible)
             elif not np.isneginf(threshold):
                 best_params = X_feasible[np.argmax(Y_feasible), np.newaxis]
+        # TODO(kAIto47802): If all trials are infeasible, the acquisition function for the
+        # objective function can be ignored, so skipping the computation of gpr can speed up.
+        # TODO(kAIto47802): Consider the case where all trials are feasible. We can ignore
+        # constraints in this case.
         match (is_constrained, is_multi_obj, normalized_params_of_running_trials):
             case (False, False, None):
                 acqf: acqf_module.BaseAcquisitionFunc = acqf_module.LogEI(
