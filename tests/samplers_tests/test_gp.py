@@ -260,33 +260,21 @@ def test_gpsampler_with_cuda_default_device() -> None:
             torch.set_default_device(original_device)
 
 
-@pytest.mark.parametrize(
-    "n_objectives,is_constrained,has_running_trials,expected_acqf_type",
-    [
-        (1, False, False, acqf_module.LogEI),
-        (1, False, True, acqf_module.qLogEI),
-        (2, False, False, acqf_module.LogEHVI),
-        (2, False, True, acqf_module.qLogEHVI),
-        (1, True, False, acqf_module.LogCEI),
-        (1, True, True, acqf_module.qLogCEI),
-        (2, True, False, acqf_module.LogCEHVI),
-        (2, True, True, acqf_module.qLogCEHVI),
-    ],
-)
-def test_get_acqf_and_best_params(
-    n_objectives: int,
-    is_constrained: bool,
-    has_running_trials: bool,
-    expected_acqf_type: type[acqf_module.BaseAcquisitionFunc],
-) -> None:
+def _get_acqf_and_best_params(
+    n_objectives: int, constraint: str | None, has_running_trials: bool
+) -> tuple[acqf_module.BaseAcquisitionFunc, np.ndarray | None, np.ndarray, np.ndarray]:
+    """Return the acqf, best_params, normalized params, and feasibility of completed trials."""
     sampler = GPSampler(seed=0)
     study = optuna.create_study(sampler=sampler, directions=["minimize"] * n_objectives)
 
     def objective(trial: optuna.Trial) -> list[float]:
         x = trial.suggest_float("x", 0, 1)
-        if is_constrained:
+        if constraint == "partial":
             trial.set_constraint("c", trial.number % 2 - 0.5)
-        return [x] * n_objectives
+        elif constraint == "all_infeasible":
+            trial.set_constraint("c", 0.5)
+        # All the solutions are Pareto optimal when n_objectives == 2.
+        return [x, 1 - x][:n_objectives]
 
     study.optimize(objective, n_trials=10)
     completed_trials = study.get_trials(states=(TrialState.COMPLETE,))
@@ -311,7 +299,7 @@ def test_get_acqf_and_best_params(
     ]
     for gpr in gprs_list:
         gpr._cache_matrix()
-    acqf, _ = sampler._get_acqf_and_best_params(
+    acqf, best_params = sampler._get_acqf_and_best_params(
         completed_trials=completed_trials,
         gprs_list=gprs_list,
         internal_search_space=internal_search_space,
@@ -319,4 +307,60 @@ def test_get_acqf_and_best_params(
         normalized_params_of_running_trials=np.array([[0.5]]) if has_running_trials else None,
         standardized_score_vals=standardized_score_vals,
     )
+    is_feas = (
+        _get_constraint_vals_and_feasibility(completed_trials)[1]
+        if constraint is not None
+        else np.ones(len(completed_trials), dtype=bool)
+    )
+    return acqf, best_params, normalized_params, is_feas
+
+
+@pytest.mark.parametrize(
+    "n_objectives,is_constrained,has_running_trials,expected_acqf_type",
+    [
+        (1, False, False, acqf_module.LogEI),
+        (1, False, True, acqf_module.qLogEI),
+        (2, False, False, acqf_module.LogEHVI),
+        (2, False, True, acqf_module.qLogEHVI),
+        (1, True, False, acqf_module.LogCEI),
+        (1, True, True, acqf_module.qLogCEI),
+        (2, True, False, acqf_module.LogCEHVI),
+        (2, True, True, acqf_module.qLogCEHVI),
+    ],
+)
+def test_get_acqf_and_best_params(
+    n_objectives: int,
+    is_constrained: bool,
+    has_running_trials: bool,
+    expected_acqf_type: type[acqf_module.BaseAcquisitionFunc],
+) -> None:
+    acqf, _, _, _ = _get_acqf_and_best_params(
+        n_objectives, "partial" if is_constrained else None, has_running_trials
+    )
     assert type(acqf) is expected_acqf_type
+
+
+@pytest.mark.parametrize("n_objectives", [1, 2])
+@pytest.mark.parametrize("constraint", [None, "partial", "all_infeasible"])
+@pytest.mark.parametrize("has_running_trials", [False, True])
+def test_get_acqf_and_best_params_best_params(
+    n_objectives: int, constraint: str | None, has_running_trials: bool
+) -> None:
+    _, best_params, normalized_params, is_feas = _get_acqf_and_best_params(
+        n_objectives, constraint, has_running_trials
+    )
+    if not is_feas.any():
+        # No feasible trial exists, so there is nothing to warm-start from.
+        assert best_params is None
+        return
+
+    feas_params = normalized_params[is_feas]
+    assert best_params is not None
+    assert best_params.ndim == 2
+    if n_objectives == 1:
+        # The best feasible trial minimizes x.
+        np.testing.assert_array_equal(best_params, feas_params[np.argmin(feas_params[:, 0]), None])
+    else:
+        # Every feasible solution is Pareto optimal, so the warm-start points come from them.
+        assert len(best_params) == min(GPSampler(seed=0)._n_local_search // 2, len(feas_params))
+        assert all(any(np.array_equal(p, q) for q in feas_params) for p in best_params)
