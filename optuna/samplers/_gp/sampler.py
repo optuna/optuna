@@ -476,65 +476,65 @@ class GPSampler(BaseSampler):
         constr_gpr_list: list[gp.GPRegressor] = []
         constr_threshold_list: list[float] = []
         X_feas, Y_feas = normalized_params, standardized_score_vals
-        threshold, is_all_infeas = float(standardized_score_vals[:, 0].max()), False
         if is_constrained := _is_constrained_optimization(completed_trials):
             constraint_vals, is_feas = _get_constraint_vals_and_feasibility(completed_trials)
             constr_gpr_list, constr_threshold_list = self._get_constraints_acqf_args(
                 constraint_vals, internal_search_space, normalized_params
             )
             X_feas, Y_feas = normalized_params[is_feas], standardized_score_vals[is_feas]
-            threshold = -np.inf if (is_all_infeas := not any(is_feas)) else Y_feas[:, 0].max()
+        threshold = Y_feas[:, 0].max() if len(Y_feas) else -np.inf
         best_params: np.ndarray | None = None
-        if not is_all_infeas:
-            if is_multi_obj:
-                best_params = self._get_best_params_for_multi_objective(X_feas, Y_feas)
-            elif not np.isneginf(threshold):
-                best_params = X_feas[np.argmax(Y_feas), np.newaxis]
+        if len(Y_feas):
+            best_params = (
+                self._get_best_params_for_multi_objective(X_feas, Y_feas)
+                if is_multi_obj
+                else X_feas[np.argmax(Y_feas[:, 0]), np.newaxis]
+            )
         # TODO(kAIto47802): If all trials are infeasible, the acquisition function for the
         # objective function can be ignored, so skipping the computation of gpr can speed up.
         # TODO(kAIto47802): Consider the case where all trials are feasible. We can ignore
         # constraints in this case.
         match (is_constrained, is_multi_obj, normalized_params_of_running_trials):
             case (False, False, None):
-                return acqf_module.LogEI(
+                acqf: acqf_module.BaseAcquisitionFunc = acqf_module.LogEI(
                     gpr=gprs_list[0], search_space=internal_search_space, threshold=threshold
-                ), best_params
+                )
             case (False, False, np.ndarray()):
-                return acqf_module.qLogEI(
+                acqf = acqf_module.qLogEI(
                     gpr=gprs_list[0],
                     search_space=internal_search_space,
                     threshold=threshold,
                     n_qmc_samples=self._n_qmc_samples_qei,
                     qmc_seed=self._rng.rng.randint(_MAX_QMC_SEED_VALUE),
                     normalized_params_of_running_trials=normalized_params_of_running_trials,
-                ), best_params
+                )
             case (False, True, None):
-                return acqf_module.LogEHVI(
+                acqf = acqf_module.LogEHVI(
                     gpr_list=gprs_list,
                     search_space=internal_search_space,
                     Y_train=torch.from_numpy(Y_feas),
                     n_qmc_samples=self._n_qmc_samples_ehvi,
                     qmc_seed=self._rng.rng.randint(_MAX_QMC_SEED_VALUE),
-                ), best_params
+                )
             case (False, True, np.ndarray()):
-                return acqf_module.qLogEHVI(
+                acqf = acqf_module.qLogEHVI(
                     gpr_list=gprs_list,
                     search_space=internal_search_space,
                     Y_train=torch.from_numpy(Y_feas),
                     n_qmc_samples=self._n_qmc_samples_ehvi,
                     qmc_seed=self._rng.rng.randint(_MAX_QMC_SEED_VALUE),
                     normalized_params_of_running_trials=normalized_params_of_running_trials,
-                ), best_params
+                )
             case (True, False, None):
-                return acqf_module.LogCEI(
+                acqf = acqf_module.LogCEI(
                     gpr=gprs_list[0],
                     search_space=internal_search_space,
                     threshold=threshold,
                     constraints_gpr_list=constr_gpr_list,
                     constraints_threshold_list=constr_threshold_list,
-                ), best_params
+                )
             case (True, False, np.ndarray()):
-                return acqf_module.qLogCEI(
+                acqf = acqf_module.qLogCEI(
                     gpr=gprs_list[0],
                     search_space=internal_search_space,
                     threshold=threshold,
@@ -543,30 +543,31 @@ class GPSampler(BaseSampler):
                     constraints_gpr_list=constr_gpr_list,
                     constraints_threshold_list=constr_threshold_list,
                     normalized_params_of_running_trials=normalized_params_of_running_trials,
-                ), best_params
+                )
             case (True, True, None):
-                return acqf_module.LogCEHVI(
+                acqf = acqf_module.LogCEHVI(
                     gpr_list=gprs_list,
                     search_space=internal_search_space,
-                    Y_feasible=None if is_all_infeas else torch.from_numpy(Y_feas),
+                    Y_feasible=torch.from_numpy(Y_feas) if len(Y_feas) else None,
                     n_qmc_samples=self._n_qmc_samples_ehvi,
                     qmc_seed=self._rng.rng.randint(_MAX_QMC_SEED_VALUE),
                     constraints_gpr_list=constr_gpr_list,
                     constraints_threshold_list=constr_threshold_list,
-                ), best_params
+                )
             case (True, True, np.ndarray()):
-                return acqf_module.qLogCEHVI(
+                acqf = acqf_module.qLogCEHVI(
                     gpr_list=gprs_list,
                     search_space=internal_search_space,
-                    Y_feasible=None if is_all_infeas else torch.from_numpy(Y_feas),
+                    Y_feasible=torch.from_numpy(Y_feas) if len(Y_feas) else None,
                     n_qmc_samples=self._n_qmc_samples_ehvi,
                     qmc_seed=self._rng.rng.randint(_MAX_QMC_SEED_VALUE),
                     constraints_gpr_list=constr_gpr_list,
                     constraints_threshold_list=constr_threshold_list,
                     normalized_params_of_running_trials=normalized_params_of_running_trials,
-                ), best_params
+                )
             case _:
                 assert False, "Should not reach."
+        return acqf, best_params
 
     def sample_independent(
         self,
