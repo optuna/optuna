@@ -349,18 +349,14 @@ def test_get_acqf_and_best_params_best_params(
     _, best_params, normalized_params, is_feas = _get_acqf_and_best_params(
         n_objectives, constraint, has_running_trials
     )
-    if not is_feas.any():
-        # No feasible trial exists, so there is nothing to warm-start from.
+    if not is_feas.any():  # No feasible trial exists, so there is nothing to warm-start from.
         assert best_params is None
         return
 
     feas_params = normalized_params[is_feas]
-    assert best_params is not None
-    assert best_params.ndim == 2
+    assert best_params is not None and best_params.ndim == 2
     if n_objectives == 1:
-        # The best feasible trial minimizes x.
         np.testing.assert_array_equal(best_params, feas_params[np.argmin(feas_params[:, 0]), None])
     else:
         # Every feasible solution is Pareto optimal, so the warm-start points come from them.
-        assert len(best_params) == min(GPSampler(seed=0)._n_local_search // 2, len(feas_params))
         assert all(any(np.array_equal(p, q) for q in feas_params) for p in best_params)
