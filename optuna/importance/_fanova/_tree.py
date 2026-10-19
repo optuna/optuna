@@ -57,35 +57,60 @@ class _FanovaTree:
 
         sample = np.full(self._n_features, fill_value=np.nan, dtype=np.float64)
 
-        values: list[float] | np.ndarray = []
-        weights: list[float] | np.ndarray = []
+        # Only the features in `features` are ever active, so the active mask and the
+        # marginalized search space are invariant across all midpoint combinations.
+        # Compute them once and pass them in, rather than recomputing on every call.
+        active_features = np.zeros(self._n_features, dtype=bool)
+        active_features[features] = True
+        marginalized_search_spaces = self._search_spaces.copy()
+        marginalized_search_spaces[~active_features] = [0.0, 1.0]
+
+        values_list: list[float] = []
+        weights_list: list[float] = []
 
         for midpoints, sizes in zip(product_midpoints, product_sizes):
             sample[features] = np.array(midpoints)
 
-            value, weight = self._get_marginalized_statistics(sample)
+            value, weight = self._get_marginalized_statistics(
+                sample, active_features, marginalized_search_spaces
+            )
             weight *= float(np.prod(sizes))
 
-            values = np.append(values, value)
-            weights = np.append(weights, weight)
+            values_list.append(value)
+            weights_list.append(weight)
 
-        weights = np.asarray(weights)
-        values = np.asarray(values)
+        weights = np.asarray(weights_list)
+        values = np.asarray(values_list)
         average_values = np.average(values, weights=weights)
         variance = np.average((values - average_values) ** 2, weights=weights)
 
         assert variance >= 0.0
         return variance
 
-    def _get_marginalized_statistics(self, feature_vector: np.ndarray) -> tuple[float, float]:
+    def _get_marginalized_statistics(
+        self,
+        feature_vector: np.ndarray,
+        active_features: np.ndarray | None = None,
+        search_spaces: np.ndarray | None = None,
+    ) -> tuple[float, float]:
         assert feature_vector.size == self._n_features
 
-        marginalized_features = np.isnan(feature_vector)
-        active_features = ~marginalized_features
+        # `active_features` and `search_spaces` are invariant across the midpoint
+        # combinations evaluated for a given feature set, so `get_marginal_variance`
+        # precomputes and passes them. When called directly they are derived here.
+        if active_features is None:
+            active_features = ~np.isnan(feature_vector)
+        if search_spaces is None:
+            search_spaces = self._search_spaces.copy()
+            search_spaces[~active_features] = [0.0, 1.0]
 
-        # Reduce search space cardinalities to 1 for non-active features.
-        search_spaces = self._search_spaces.copy()
-        search_spaces[marginalized_features] = [0.0, 1.0]
+        # The per-node tree accessors are inlined with local array references because
+        # this loop runs for every midpoint combination and dominates fANOVA runtime.
+        node_features = self._tree.feature
+        node_thresholds = self._tree.threshold
+        children_left = self._tree.children_left
+        children_right = self._tree.children_right
+        subtree_active_features = self._subtree_active_features
 
         # Start from the root and traverse towards the leafs.
         active_nodes = [0]
@@ -98,20 +123,27 @@ class _FanovaTree:
             node_index = active_nodes.pop()
             search_spaces = active_search_spaces.pop()
 
-            feature = self._get_node_split_feature(node_index)
+            feature = node_features[node_index]
             if feature >= 0:  # Not leaf. Avoid unnecessary call to `_is_node_leaf`.
                 # If node splits on an active feature, push the child node that we end up in.
                 response = feature_vector[feature]
                 if not np.isnan(response):
-                    if response <= self._get_node_split_threshold(node_index):
-                        next_node_index = self._get_node_left_child(node_index)
-                        next_subspace = self._get_node_left_child_subspaces(
-                            node_index, search_spaces
+                    threshold = node_thresholds[node_index]
+                    if response <= threshold:
+                        next_node_index = children_left[node_index]
+                        next_subspace = _get_subspaces(
+                            search_spaces,
+                            search_spaces_column=1,
+                            feature=feature,
+                            threshold=threshold,
                         )
                     else:
-                        next_node_index = self._get_node_right_child(node_index)
-                        next_subspace = self._get_node_right_child_subspaces(
-                            node_index, search_spaces
+                        next_node_index = children_right[node_index]
+                        next_subspace = _get_subspaces(
+                            search_spaces,
+                            search_spaces_column=0,
+                            feature=feature,
+                            threshold=threshold,
                         )
 
                     active_nodes.append(next_node_index)
@@ -120,10 +152,11 @@ class _FanovaTree:
 
                 # If subtree starting from node splits on an active feature, push both child nodes.
                 # Here, we use `any` for list because `ndarray.any` is slow.
-                if any(self._subtree_active_features[node_index][active_features].tolist()):
-                    for child_node_index in self._get_node_children(node_index):
-                        active_nodes.append(child_node_index)
-                        active_search_spaces.append(search_spaces)
+                if any(subtree_active_features[node_index][active_features].tolist()):
+                    active_nodes.append(children_left[node_index])
+                    active_search_spaces.append(search_spaces)
+                    active_nodes.append(children_right[node_index])
+                    active_search_spaces.append(search_spaces)
                     continue
 
             # If node is a leaf or the subtree does not split on any of the active features.
