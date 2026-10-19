@@ -13,6 +13,9 @@ if TYPE_CHECKING:
     from optuna.trial import FrozenTrial
 
 
+_SYSTEM_ATTR_KEYS_TO_INHERIT = ("fixed_params", "grid_id", "search_space")
+
+
 @experimental_class("2.8.0")
 class RetryHeartbeatStaleTrialCallback:
     """Retry a heartbeat-stale trial up to a maximum number of times.
@@ -70,10 +73,12 @@ class RetryHeartbeatStaleTrialCallback:
 
     def __call__(self, study: "optuna.study.Study", trial: FrozenTrial) -> None:
         system_attrs: dict[str, Any] = {
-            "failed_trial": trial.number,
-            "retry_history": [],
-            **trial.system_attrs,
+            "failed_trial": trial.system_attrs.get("failed_trial", trial.number),
+            "retry_history": list(trial.system_attrs.get("retry_history", [])),
         }
+        for key in _SYSTEM_ATTR_KEYS_TO_INHERIT:
+            if key in trial.system_attrs:
+                system_attrs[key] = trial.system_attrs[key]
         system_attrs["retry_history"].append(trial.number)
         if self._max_retry is not None:
             if self._max_retry < len(system_attrs["retry_history"]):
