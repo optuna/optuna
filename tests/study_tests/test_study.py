@@ -857,6 +857,28 @@ def test_enqueue_trial_skip_existing(
         assert len(study.trials) == expected_n_trials
 
 
+@pytest.mark.parametrize(
+    "params, expected_n_trials",
+    [
+        ([1, True], 2),
+        ([True, 1], 2),
+        ([0, False], 2),
+        ([False, 0], 2),
+        ([True, True], 1),
+        ([False, False], 1),
+    ],
+)
+def test_enqueue_trial_skip_existing_distinguishes_bool_and_int(
+    params: list[int | bool], expected_n_trials: int
+) -> None:
+    study = create_study()
+
+    for param in params:
+        study.enqueue_trial({"x": param}, skip_if_exists=True)
+
+    assert len(study.trials) == expected_n_trials
+
+
 @patch("optuna.study._optimize.gc.collect")
 def test_optimize_with_gc(collect_mock: Mock) -> None:
     study = create_study()
