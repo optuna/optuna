@@ -1102,7 +1102,9 @@ class Study:
             repeated_params: list[bool] = []
             for param_name, param_value in params.items():
                 existing_param = trial_params[param_name]
-                if not isinstance(param_value, type(existing_param)):
+                # Use exact type identity so bool is not treated as a subclass of int
+                # (isinstance(True, int) is True in Python).
+                if type(param_value) is not type(existing_param):
                     # Enqueued param has distribution that does not match existing param
                     # (e.g. trying to enqueue categorical to float param).
                     # We are not doing anything about it here, since sanitization should

@@ -843,6 +843,13 @@ def test_enqueue_trial_skip_existing_allows_unfixed(
         ([None, None], 1),
         ([0.0, float("nan")], 2),
         ([float("nan"), 0.0], 2),
+        # bool is a subclass of int; must not be treated as duplicate of 0/1
+        ([1, True], 2),
+        ([True, 1], 2),
+        ([0, False], 2),
+        ([False, 0], 2),
+        ([True, True], 1),
+        ([False, False], 1),
     ],
 )
 def test_enqueue_trial_skip_existing(
