@@ -156,7 +156,7 @@ class JournalFileSymlinkLock(BaseJournalFileLock):
         mtime = None
         while True:
             try:
-                os.symlink(self._lock_target_file, self._lock_file)
+                os.symlink(os.path.basename(self._lock_target_file), self._lock_file)
                 return True
             except OSError as err:
                 if err.errno == errno.EEXIST:
@@ -169,7 +169,7 @@ class JournalFileSymlinkLock(BaseJournalFileLock):
 
                     if self.grace_period is not None:
                         try:
-                            current_mtime = os.stat(self._lock_file).st_mtime
+                            current_mtime = os.stat(self._lock_target_file).st_mtime
                         except OSError:
                             continue
                         if current_mtime != mtime:

@@ -3,6 +3,7 @@ from __future__ import annotations
 from concurrent.futures import as_completed
 from concurrent.futures import ProcessPoolExecutor
 from concurrent.futures import ThreadPoolExecutor
+import os
 import pathlib
 import pickle
 from types import TracebackType
@@ -336,3 +337,99 @@ def test_ignore_discard_trial_operation() -> None:
 
         trials = storage.get_all_trials(study._study_id)
         assert trial2.number in [t.number for t in trials]
+
+
+@pytest.fixture
+def require_symlink_support(tmp_path: pathlib.Path) -> None:
+    target = tmp_path / "symlink-target"
+    link = tmp_path / "symlink-probe"
+    target.touch()
+    try:
+        link.symlink_to(target.name)
+    except OSError as error:
+        if getattr(error, "winerror", None) == 1314:
+            pytest.skip("Symbolic link creation requires Windows privileges or Developer Mode.")
+        raise
+    finally:
+        if link.is_symlink():
+            link.unlink()
+        target.unlink()
+
+
+@pytest.mark.usefixtures("require_symlink_support")
+@pytest.mark.parametrize("path_kind", ["basename", "nested_relative", "absolute"])
+def test_symlink_lock_resolves_journal(
+    tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch, path_kind: str
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "logs").mkdir()
+    path = pathlib.Path("study.log") if path_kind == "basename" else pathlib.Path("logs/study.log")
+    if path_kind == "absolute":
+        path = path.absolute()
+    journal.JournalFileBackend(str(path))
+    lock = journal.JournalFileSymlinkLock(str(path))
+    lock_path = pathlib.Path(str(path) + ".lock")
+    lock.acquire()
+    try:
+        assert lock_path.samefile(path)
+    finally:
+        lock.release()
+
+
+@pytest.mark.usefixtures("require_symlink_support")
+@pytest.mark.parametrize("legacy_target", [False, True])
+def test_symlink_lock_recovers_abandoned_relative_lock(
+    tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch, legacy_target: bool
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    pathlib.Path("logs").mkdir()
+    path = pathlib.Path("logs/study.log")
+    backend = journal.JournalFileBackend(
+        str(path), journal.JournalFileSymlinkLock(str(path), grace_period=3)
+    )
+    lock_path = pathlib.Path(str(path) + ".lock")
+    lock_path.symlink_to(str(path) if legacy_target else path.name)
+    # Advance a bounded clock to exercise abandoned-lock recovery without waiting.
+    with (
+        mock.patch("optuna.storages.journal._file.time.monotonic", side_effect=range(30)),
+        mock.patch("optuna.storages.journal._file.time.sleep"),
+    ):
+        study = create_study(storage=JournalStorage(backend))
+    assert study.study_name
+    assert not lock_path.is_symlink()
+
+
+@pytest.mark.usefixtures("require_symlink_support")
+def test_symlink_lock_waits_while_journal_changes(
+    tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    pathlib.Path("logs").mkdir()
+    path = pathlib.Path("logs/study.log")
+    journal.JournalFileBackend(str(path))
+    owner = journal.JournalFileSymlinkLock(str(path), grace_period=3)
+    waiter = journal.JournalFileSymlinkLock(str(path), grace_period=3)
+    owner.acquire()
+    lock_path = pathlib.Path(str(path) + ".lock")
+    updates = 0
+    initial_mtime = path.stat().st_mtime
+
+    def owner_progress(_: float) -> None:
+        nonlocal updates
+        updates += 1
+        assert lock_path.is_symlink()
+        if updates == 3:
+            owner.release()
+        else:
+            os.utime(path, (initial_mtime + updates, initial_mtime + updates))
+
+    try:
+        with (
+            mock.patch("optuna.storages.journal._file.time.monotonic", side_effect=range(30)),
+            mock.patch("optuna.storages.journal._file.time.sleep", side_effect=owner_progress),
+        ):
+            waiter.acquire()
+        assert updates == 3
+    finally:
+        if lock_path.is_symlink():
+            waiter.release()
