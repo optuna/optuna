@@ -240,15 +240,6 @@ class GPSampler(BaseSampler):
         constraints_func: Callable[[FrozenTrial], Sequence[float]] | None = None,
         warn_independent_sampling: bool = True,
     ) -> None:
-        # NOTE(nabenabe): These features are missing.
-        # - input constraints (use SLSQP),
-        # - constant noise insertion (replace minimum_noise directly and use deterministic=True),
-        # - q-batch (closed PR available),
-        # - input warping (cf. https://arxiv.org/pdf/2012.03826),
-        # - output warping (cf. https://arxiv.org/pdf/2012.03826).
-        # - output de-correlation (for multi-objective GP) (cf. https://arxiv.org/abs/1909.13595)
-        # - kernel hyperparameter prior enhancement
-        #     - cf. https://github.com/optuna/optuna/issues/6255#issuecomment-4357841010
         self._rng = LazyRandomState(seed)
         self._independent_sampler = independent_sampler or optuna.samplers.RandomSampler(seed=seed)
         self._intersection_search_space = optuna.search_space.IntersectionSearchSpace()
@@ -507,7 +498,7 @@ class GPSampler(BaseSampler):
             if n_objectives == 1:
                 assert len(gprs_list) == 1
                 constraint_vals, is_feasible = _get_constraint_vals_and_feasibility(
-                    study, completed_trials
+                    completed_trials
                 )
                 y_with_neginf = np.where(is_feasible, standardized_score_vals[:, 0], -np.inf)
                 # TODO(kAIto47802): If all trials are infeasible, the acquisition function
@@ -545,7 +536,7 @@ class GPSampler(BaseSampler):
                 )
             else:
                 constraint_vals, is_feasible = _get_constraint_vals_and_feasibility(
-                    study, completed_trials
+                    completed_trials
                 )
                 constr_gpr_list, constr_threshold_list = self._get_constraints_acqf_args(
                     constraint_vals, internal_search_space, normalized_params
@@ -624,13 +615,14 @@ class GPSampler(BaseSampler):
 
 
 def _get_constraint_vals_and_feasibility(
-    study: Study, trials: list[FrozenTrial]
+    trials: list[FrozenTrial],
 ) -> tuple[np.ndarray, np.ndarray]:
-    _constraint_vals = [list(trial.constraints.values()) for trial in trials]
-    if any(len(_constraint_vals[0]) != len(c) for c in _constraint_vals):
-        raise ValueError("The number of constraints must be the same for all trials.")
+    constraints = [trial.constraints for trial in trials]
+    constraint_keys = sorted(constraints[0].keys())
+    if any(c.keys() != constraints[0].keys() for c in constraints):
+        raise ValueError("The constraint names must be the same for all trials.")
 
-    constraint_vals = np.array(_constraint_vals)
+    constraint_vals = np.array([[c[key] for key in constraint_keys] for c in constraints])
     assert len(constraint_vals.shape) == 2, "constraint_vals must be a 2d array."
     is_feasible = np.all(constraint_vals <= 0, axis=1)
     assert not isinstance(is_feasible, np.bool_), "MyPy Redefinition for NumPy v2.2.0."

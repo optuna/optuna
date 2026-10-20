@@ -46,7 +46,6 @@ def logehvi(
 ) -> torch.Tensor:  # (..., )
     log_n_qmc_samples = float(np.log(Y_post.shape[-2]))
     # This function calculates Eq. (1) of https://arxiv.org/abs/2006.05078.
-    # TODO(nabenabe): Adapt to Eq. (3) when we support batch optimization.
     # TODO(nabenabe): Make the calculation here more numerically stable.
     # cf. https://arxiv.org/abs/2310.20708
     # Check the implementations here:
@@ -245,30 +244,11 @@ class LogPI(BaseAcquisitionFunc):
         gpr: GPRegressor,
         search_space: SearchSpace,
         threshold: float,
-        normalized_params_of_running_trials: np.ndarray | None = None,
         stabilizing_noise: float = 1e-12,
     ) -> None:
         self._gpr = gpr
         self._stabilizing_noise = stabilizing_noise
         self._threshold = threshold
-
-        if normalized_params_of_running_trials is not None:
-            normalized_params_of_running_trials_tensor = torch.from_numpy(
-                normalized_params_of_running_trials
-            )
-
-            # NOTE(sawa3030): To handle running trials, the Kriging Believer strategy is
-            # currently implemented, as it is simple and performs well in our benchmarks.
-            # We plan to implement Monte-Carlo based approaches (e.g., BoTorch’s fantasize)
-            # in the near future.
-            # See https://github.com/optuna/optuna/pull/6481 for details.
-            # For background on the Constant Liar and Kriging Believer strategies, see
-            # Ginsbourger et al., "Kriging Is Well-Suited to Parallelize Optimization" (2010).
-
-            self._gpr.append_running_data(
-                normalized_params_of_running_trials_tensor,
-                gpr.posterior(normalized_params_of_running_trials_tensor)[0],
-            )
         super().__init__(gpr.length_scales, search_space)
 
     def eval_acqf(self, x: torch.Tensor) -> torch.Tensor:
@@ -370,7 +350,6 @@ class LogCEI(BaseAcquisitionFunc):
                 _gpr,
                 search_space,
                 _threshold,
-                None,
                 stabilizing_noise,
             )
             for _gpr, _threshold in zip(constraints_gpr_list, constraints_threshold_list)
@@ -443,30 +422,10 @@ class LogEHVI(BaseAcquisitionFunc):
         Y_train: torch.Tensor,
         n_qmc_samples: int,
         qmc_seed: int,
-        normalized_params_of_running_trials: np.ndarray | None = None,
         stabilizing_noise: float = 1e-12,
     ) -> None:
         self._stabilizing_noise = stabilizing_noise
         self._gpr_list = gpr_list
-        if normalized_params_of_running_trials is not None:
-            normalized_params_of_running_trials_tensor = torch.from_numpy(
-                normalized_params_of_running_trials
-            )
-
-            # NOTE(sawa3030): To handle running trials, the Kriging Believer strategy is
-            # currently implemented, as it is simple and performs well in our benchmarks.
-            # We plan to implement Monte-Carlo based approaches (e.g., BoTorch’s fantasize)
-            # in the near future.
-            # See https://github.com/optuna/optuna/pull/6481 for details.
-            # For background on the Constant Liar and Kriging Believer strategies, see
-            # Ginsbourger et al., "Kriging Is Well-Suited to Parallelize Optimization" (2010).
-
-            for gpr in self._gpr_list:
-                gpr.append_running_data(
-                    normalized_params_of_running_trials_tensor,
-                    gpr.posterior(normalized_params_of_running_trials_tensor)[0],
-                )
-
         self._fixed_samples = sample_from_normal_sobol(
             dim=Y_train.shape[-1], n_samples=n_qmc_samples, seed=qmc_seed
         )
@@ -559,7 +518,6 @@ class LogCEHVI(BaseAcquisitionFunc):
                 Y_feasible,
                 n_qmc_samples,
                 qmc_seed,
-                None,
                 stabilizing_noise,
             )
             if Y_feasible is not None
@@ -570,7 +528,6 @@ class LogCEHVI(BaseAcquisitionFunc):
                 _gpr,
                 search_space,
                 _threshold,
-                None,
                 stabilizing_noise,
             )
             for _gpr, _threshold in zip(constraints_gpr_list, constraints_threshold_list)

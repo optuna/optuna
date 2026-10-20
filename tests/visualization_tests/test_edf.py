@@ -27,6 +27,8 @@ if plotly_imports.is_successful():
     from optuna.visualization._plotly_imports import go
 
 if plt_imports.is_successful():
+    from matplotlib.figure import Figure
+
     from optuna.visualization.matplotlib._matplotlib_imports import Axes
     from optuna.visualization.matplotlib._matplotlib_imports import plt
 
@@ -152,7 +154,7 @@ def test_plot_edf_with_empty_study(
     if plot_edf is plt_plot_edf:
         plt.close("all")
     figure = plot_edf(studies)
-    if isinstance(figure, Axes):
+    if isinstance(figure, Axes) and isinstance(figure.figure, Figure):
         plt.close(figure.figure)
 
 
