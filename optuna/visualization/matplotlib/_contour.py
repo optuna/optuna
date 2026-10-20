@@ -130,13 +130,15 @@ def _set_cmap(reverse_scale: bool) -> "Colormap":
 class _LabelEncoder:
     def __init__(self) -> None:
         self.labels: list[str] = []
+        self._label_to_index: dict[str, int] = {}
 
     def fit(self, labels: list[str]) -> "_LabelEncoder":
         self.labels = sorted(set(labels))
+        self._label_to_index = {label: i for i, label in enumerate(self.labels)}
         return self
 
     def transform(self, labels: list[str]) -> list[int]:
-        return [self.labels.index(label) for label in labels]
+        return [self._label_to_index[label] for label in labels]
 
     def get_labels(self) -> list[str]:
         return self.labels
@@ -191,6 +193,8 @@ def _calculate_griddata(info: _SubContourInfo) -> tuple[np.ndarray, _PlotValues,
     xaxis = info.xaxis
     yaxis = info.yaxis
     z_values_dict = info.z_values
+    x_indices_map = {v: i for i, v in enumerate(xaxis.indices)}
+    y_indices_map = {v: i for i, v in enumerate(yaxis.indices)}
 
     x_values = []
     y_values = []
@@ -199,8 +203,8 @@ def _calculate_griddata(info: _SubContourInfo) -> tuple[np.ndarray, _PlotValues,
         if x_value is not None and y_value is not None:
             x_values.append(x_value)
             y_values.append(y_value)
-            x_i = xaxis.indices.index(x_value)
-            y_i = yaxis.indices.index(y_value)
+            x_i = x_indices_map[x_value]
+            y_i = y_indices_map[y_value]
             z_values.append(z_values_dict[(x_i, y_i)])
 
     # Return empty values when x or y has no value.
