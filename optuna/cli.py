@@ -4,6 +4,7 @@ If you want to add a new command, you also need to update the constant `_COMMAND
 
 from __future__ import annotations
 
+import utils.session
 import argparse
 from argparse import ArgumentParser
 from argparse import Namespace

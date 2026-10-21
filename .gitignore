@@ -80,7 +80,6 @@ target/
 celerybeat-schedule
 
 # dotenv
-.env
 
 # virtualenv
 .venv/
@@ -97,7 +96,6 @@ ENV/
 .idea
 
 # VSCode
-.vscode
 .devcontainer
 
 # ruff
@@ -126,3 +124,5 @@ dask-worker-space/
 
 # PyTorch Lightning
 lightning_logs/
+config.bat
+node_modules
