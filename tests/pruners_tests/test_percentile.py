@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import math
 from typing import Literal
-import warnings
 
 import pytest
 
@@ -86,7 +85,7 @@ def test_25_percentile_pruner_intermediate_values(
     assert trial.should_prune()
 
 
-@pytest.mark.filterwarnings("ignore::RuntimeWarning")
+@pytest.mark.filterwarnings("error::RuntimeWarning")
 def test_25_percentile_pruner_intermediate_values_nan() -> None:
     pruner = optuna.pruners.PercentilePruner(25.0, 0, 0)
     study = optuna.study.create_study(pruner=pruner)
@@ -109,6 +108,7 @@ def test_25_percentile_pruner_intermediate_values_nan() -> None:
     assert not trial.should_prune()
 
 
+@pytest.mark.filterwarnings("error::RuntimeWarning")
 @pytest.mark.parametrize(
     "direction_expected", [(StudyDirection.MINIMIZE, 0.1), (StudyDirection.MAXIMIZE, 0.2)]
 )
@@ -156,6 +156,7 @@ def test_get_best_intermediate_result_over_steps(
     )
 
 
+@pytest.mark.filterwarnings("error::RuntimeWarning")
 def test_get_percentile_intermediate_result_over_trials() -> None:
     def setup_study(trial_num: int, _intermediate_values: list[list[float]]) -> Study:
         _study = optuna.study.create_study(direction="minimize")
@@ -218,17 +219,15 @@ def test_get_percentile_intermediate_result_over_trials() -> None:
     study = setup_study(9, intermediate_values)
     all_trials = study.get_trials()
     direction = study.direction
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", category=RuntimeWarning)
-        assert math.isnan(
-            _percentile._get_percentile_intermediate_result_over_trials(
-                all_trials, direction, 2, 75, 1
-            )
+    assert math.isnan(
+        _percentile._get_percentile_intermediate_result_over_trials(
+            all_trials, direction, 2, 75, 1
         )
+    )
 
-        # n_min_trials = 2.
-        assert math.isnan(
-            _percentile._get_percentile_intermediate_result_over_trials(
-                all_trials, direction, 2, 75, 2
-            )
+    # n_min_trials = 2.
+    assert math.isnan(
+        _percentile._get_percentile_intermediate_result_over_trials(
+            all_trials, direction, 2, 75, 2
         )
+    )
