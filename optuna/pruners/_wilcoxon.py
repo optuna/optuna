@@ -131,12 +131,12 @@ class WilcoxonPruner(BasePruner):
                 please specify the Pocock-corrected p-value.
 
         n_startup_steps:
-            The number of steps before which no trials are pruned.
-            Pruning starts only after you have ``n_startup_steps`` steps of
-            available observations for comparison between the current trial
-            and the best trial.
-            Defaults to 2. Note that the trial is not pruned at the first and second steps even if
-            the `n_startup_steps` is set to 0 or 1 due to the lack of enough data for comparison.
+            The minimum number of paired observations required before pruning.
+            Only step numbers reported in both the current trial and the best trial count
+            toward ``n_startup_steps``. Gaps between step numbers and observations reported
+            in only one trial do not count.
+            Defaults to 2. At least two paired observations are required even if
+            ``n_startup_steps`` is set to 0 or 1.
     """  # NOQA: E501
 
     def __init__(

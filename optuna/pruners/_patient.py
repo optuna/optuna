@@ -72,7 +72,9 @@ class PatientPruner(BasePruner):
             early-stopping taken the intermediate values in the individual trial.
         patience:
             Pruning is disabled until the objective doesn't improve for
-            ``patience`` consecutive steps.
+            ``patience`` consecutive reported steps. The patience counts reported intermediate
+            values in step order, rather than differences between step numbers. Steps without
+            a reported value do not count toward the patience.
         min_delta:
             Tolerance value to check whether or not the objective improves.
             This value should be non-negative.
