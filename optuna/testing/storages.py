@@ -141,7 +141,9 @@ class StorageSupplier(AbstractContextManager):
         elif self.storage_specifier == "grpc_rdb":
             self.tempfile = NamedTemporaryFilePool().tempfile()
             url = f"sqlite:///{self.tempfile.name}"
-            self.backend_storage = optuna.storages.RDBStorage(url)
+            self.backend_storage = optuna.storages.RDBStorage(
+                url, engine_kwargs={"connect_args": {"timeout": SQLITE3_TIMEOUT}}
+            )
             self.storage = self._create_proxy(self.backend_storage)
         elif self.storage_specifier == "grpc_proxy":
             assert "base_storage" in self.extra_args
