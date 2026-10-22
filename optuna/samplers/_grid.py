@@ -126,6 +126,12 @@ class GridSampler(BaseSampler):
 
         self._all_grids = list(itertools.product(*self._search_space.values()))
         self._param_names = sorted(search_space.keys())
+        self._param_name_to_idx = {param_name: i for i, param_name in enumerate(self._param_names)}
+        self._has_nan = any(
+            isinstance(v, Real) and np.isnan(float(v))
+            for values in self._search_space.values()
+            for v in values
+        )
         self._n_min_trials = len(self._all_grids)
         self._rng = LazyRandomState(seed or 0)
         self._rng.rng.shuffle(self._all_grids)  # type: ignore[arg-type]
@@ -200,7 +206,7 @@ class GridSampler(BaseSampler):
             raise ValueError(message)
 
         grid_id = trial.system_attrs["grid_id"]
-        param_value = self._all_grids[grid_id][self._param_names.index(param_name)]
+        param_value = self._all_grids[grid_id][self._param_name_to_idx[param_name]]
         contains = param_distribution._contains(param_distribution.to_internal_repr(param_value))
         if not contains:
             optuna_warn(
@@ -268,20 +274,31 @@ class GridSampler(BaseSampler):
 
     @staticmethod
     def _grid_value_equal(value1: GridValueType, value2: GridValueType) -> bool:
-        value1_is_nan = isinstance(value1, Real) and np.isnan(float(value1))
-        value2_is_nan = isinstance(value2, Real) and np.isnan(float(value2))
-        return (value1 == value2) or (value1_is_nan and value2_is_nan)
+        if value1 == value2:
+            return True
+        return (
+            isinstance(value1, Real)
+            and isinstance(value2, Real)
+            and np.isnan(float(value1))
+            and np.isnan(float(value2))
+        )
 
     def _same_search_space(self, search_space: Mapping[str, Sequence[GridValueType]]) -> bool:
-        if set(search_space.keys()) != set(self._search_space.keys()):
+        if search_space is self._search_space or (
+            not self._has_nan and search_space == self._search_space
+        ):
+            return True
+
+        if search_space.keys() != self._search_space.keys():
             return False
 
-        for param_name in search_space.keys():
-            if len(search_space[param_name]) != len(self._search_space[param_name]):
+        for param_name, self_values in self._search_space.items():
+            other_values = search_space[param_name]
+            if len(other_values) != len(self_values):
                 return False
 
-            for i, param_value in enumerate(search_space[param_name]):
-                if not self._grid_value_equal(param_value, self._search_space[param_name][i]):
+            for i, param_value in enumerate(other_values):
+                if not self._grid_value_equal(param_value, self_values[i]):
                     return False
 
         return True
