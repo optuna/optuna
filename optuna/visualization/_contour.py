@@ -327,6 +327,8 @@ def _get_contour_subplot_info(
         _logger.warning(f"Param {y_param} unique value length is less than 2.")
         return _SubContourInfo(xaxis=xaxis, yaxis=yaxis, z_values={})
 
+    x_indices_map = {v: i for i, v in enumerate(xaxis.indices)}
+    y_indices_map = {v: i for i, v in enumerate(yaxis.indices)}
     z_values: dict[tuple[int, int], float] = {}
     for i, trial in enumerate(trials):
         if x_param not in trial.params or y_param not in trial.params:
@@ -335,8 +337,8 @@ def _get_contour_subplot_info(
         y_value = yaxis.values[i]
         assert x_value is not None
         assert y_value is not None
-        x_i = xaxis.indices.index(x_value)
-        y_i = yaxis.indices.index(y_value)
+        x_i = x_indices_map[x_value]
+        y_i = y_indices_map[y_value]
 
         if target is None:
             value = trial.value

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from functools import lru_cache
 import itertools
 from typing import TYPE_CHECKING
 
@@ -17,6 +16,12 @@ class _FanovaTree:
         assert search_spaces.shape[1] == 2
 
         self._tree = tree
+        self._feature = np.asarray(tree.feature)
+        self._children_left = np.asarray(tree.children_left)
+        self._children_right = np.asarray(tree.children_right)
+        self._threshold = np.asarray(tree.threshold)
+        # sklearn.tree._tree.Tree.value has the shape (node_count, n_outputs, max_n_classes)
+        self._value = np.asarray(tree.value)[:, 0, 0].astype(float)
         self._search_spaces = search_spaces
 
         statistics = self._precompute_statistics()
@@ -32,7 +37,7 @@ class _FanovaTree:
     @property
     def variance(self) -> float:
         if self._variance is None:
-            leaf_node_indices = np.nonzero(np.array(self._tree.feature) < 0)[0]
+            leaf_node_indices = np.nonzero(np.array(self._feature) < 0)[0]
             statistics = self._statistics[leaf_node_indices]
             values = statistics[:, 0]
             weights = statistics[:, 1]
@@ -276,35 +281,26 @@ class _FanovaTree:
     def _n_nodes(self) -> int:
         return self._tree.node_count
 
-    @lru_cache(maxsize=None)
     def _is_node_leaf(self, node_index: int) -> bool:
-        return self._tree.feature[node_index] < 0
+        return self._feature[node_index] < 0
 
-    @lru_cache(maxsize=None)
     def _get_node_left_child(self, node_index: int) -> int:
-        return self._tree.children_left[node_index]
+        return self._children_left[node_index]
 
-    @lru_cache(maxsize=None)
     def _get_node_right_child(self, node_index: int) -> int:
-        return self._tree.children_right[node_index]
+        return self._children_right[node_index]
 
-    @lru_cache(maxsize=None)
     def _get_node_children(self, node_index: int) -> tuple[int, int]:
         return self._get_node_left_child(node_index), self._get_node_right_child(node_index)
 
-    @lru_cache(maxsize=None)
     def _get_node_value(self, node_index: int) -> float:
-        # self._tree.value: sklearn.tree._tree.Tree.value has
-        # the shape (node_count, n_outputs, max_n_classes)
-        return float(self._tree.value[node_index].reshape(-1)[0])
+        return self._value[node_index]
 
-    @lru_cache(maxsize=None)
     def _get_node_split_threshold(self, node_index: int) -> float:
-        return self._tree.threshold[node_index]
+        return self._threshold[node_index]
 
-    @lru_cache(maxsize=None)
     def _get_node_split_feature(self, node_index: int) -> int:
-        return self._tree.feature[node_index]
+        return self._feature[node_index]
 
     def _get_node_left_child_subspaces(
         self, node_index: int, search_spaces: np.ndarray
