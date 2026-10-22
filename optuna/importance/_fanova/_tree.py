@@ -111,10 +111,10 @@ class _FanovaTree:
 
         # The per-node tree accessors are inlined with local array references because
         # this loop runs for every midpoint combination and dominates fANOVA runtime.
-        node_features = self._tree.feature
-        node_thresholds = self._tree.threshold
-        children_left = self._tree.children_left
-        children_right = self._tree.children_right
+        node_features = self._feature
+        node_thresholds = self._threshold
+        children_left = self._children_left
+        children_right = self._children_right
         subtree_active_features = self._subtree_active_features
 
         # Start from the root and traverse towards the leafs.
