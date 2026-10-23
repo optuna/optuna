@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+import logging
 import math
 from typing import Any
 
 import numpy as np
 import pytest
+from pytest import LogCaptureFixture
 
+import optuna
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
@@ -22,6 +25,7 @@ from optuna.visualization._rank import _convert_color_idxs_to_scaled_rgb_colors
 from optuna.visualization._rank import _get_axis_info
 from optuna.visualization._rank import _get_order_with_same_order_averaging
 from optuna.visualization._rank import _get_rank_info
+from optuna.visualization._rank import _get_tick_info
 from optuna.visualization._rank import _RankPlotInfo
 from optuna.visualization._rank import _RankSubplotInfo
 
@@ -695,3 +699,79 @@ def test_convert_color_idxs_to_scaled_rgb_colors() -> None:
     x2 = np.array([])
     result2 = _convert_color_idxs_to_scaled_rgb_colors(x2)
     np.testing.assert_array_equal(result2, [])
+
+
+def test_get_rank_info_with_nan_target(caplog: LogCaptureFixture) -> None:
+    # https://github.com/optuna/optuna/issues/6911
+    # A NaN target value is undefined rather than the worst one, so the trial is
+    # omitted with a warning instead of being ranked. Ranking it also pushed the
+    # NaN into `_get_tick_info`, which labelled the colour bar with NaN. Before,
+    # the trial raised `ZeroDivisionError` in `_get_order_with_same_order_averaging`.
+    study = create_study()
+    distributions: dict[str, BaseDistribution] = {"param_a": FloatDistribution(0.0, 1.0)}
+    for i in range(3):
+        study.add_trial(
+            create_trial(
+                value=float(i), params={"param_a": 0.1 * (i + 1)}, distributions=distributions
+            )
+        )
+
+    def target(trial: Any) -> float:
+        return float("nan") if trial.number == 0 else float(trial.number)
+
+    optuna.logging.enable_propagation()
+    with caplog.at_level(logging.WARNING):
+        info = _get_rank_info(study, params=None, target=target, target_name="custom")
+
+    msg = "Trial 0 is omitted in visualization because its objective value is nan."
+    assert msg in caplog.text
+
+    # Trial 0 is gone and the remaining ranks are unaffected by it.
+    assert [trial.number for trial in info.sub_plot_infos[0][0].trials] == [1, 2]
+    np.testing.assert_array_equal(info.zs, [1.0, 2.0])
+    assert not any("nan" in text for text in _get_tick_info(info.zs).text)
+
+
+def test_get_rank_info_with_inf_target() -> None:
+    # `inf` compares equal to itself and does have a rank, so a trial with an
+    # infinite target value is kept and ranked, as it was before NaN handling.
+    study = create_study()
+    distributions: dict[str, BaseDistribution] = {"param_a": FloatDistribution(0.0, 1.0)}
+    for i in range(3):
+        study.add_trial(
+            create_trial(
+                value=float(i), params={"param_a": 0.1 * (i + 1)}, distributions=distributions
+            )
+        )
+
+    def target(trial: Any) -> float:
+        return float("inf") if trial.number == 2 else float(trial.number)
+
+    info = _get_rank_info(study, params=None, target=target, target_name="custom")
+
+    assert [trial.number for trial in info.sub_plot_infos[0][0].trials] == [0, 1, 2]
+    np.testing.assert_array_equal(info.zs, [0.0, 1.0, float("inf")])
+    # The infinite value ranks last, so the colours still run from one end of the
+    # scale to the other.
+    expected = _convert_color_idxs_to_scaled_rgb_colors(np.array([0.0, 0.5, 1.0]))
+    np.testing.assert_array_equal(info.colors, expected)
+
+
+def test_get_rank_info_with_only_nan_targets(caplog: LogCaptureFixture) -> None:
+    # Dropping every trial leaves the plot with no parameter to show rather than
+    # raising, and each dropped trial is still reported.
+    study = create_study()
+    distributions: dict[str, BaseDistribution] = {"param_a": FloatDistribution(0.0, 1.0)}
+    study.add_trial(create_trial(value=0.0, params={"param_a": 0.1}, distributions=distributions))
+
+    def target(trial: Any) -> float:
+        return float("nan")
+
+    optuna.logging.enable_propagation()
+    with caplog.at_level(logging.WARNING):
+        info = _get_rank_info(study, params=None, target=target, target_name="custom")
+
+    assert "Trial 0 is omitted in visualization because its objective value is nan." in caplog.text
+    assert info.params == []
+    assert info.sub_plot_infos == []
+    assert len(info.zs) == 0
