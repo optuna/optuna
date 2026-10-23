@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     from typing import BinaryIO
 
 with try_import() as _imports:
+    from google.api_core.exceptions import NotFound
     import google.cloud.storage
 
 
@@ -75,7 +76,13 @@ class GCSArtifactStore:
                 " not found"
             )
 
-        body = blob.download_as_bytes()
+        try:
+            body = blob.download_as_bytes()
+        except NotFound as e:
+            raise ArtifactNotFound(
+                f"Artifact storage with bucket: {self.bucket_name}, artifact_id: {artifact_id} was"
+                " not found"
+            ) from e
         return BytesIO(body)
 
     def write(self, artifact_id: str, content_body: "BinaryIO") -> None:
