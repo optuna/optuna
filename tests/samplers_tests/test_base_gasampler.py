@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import pickle
 from typing import Any
 from unittest.mock import MagicMock
 from unittest.mock import Mock
@@ -9,6 +10,8 @@ import pytest
 
 import optuna
 from optuna.distributions import BaseDistribution
+from optuna.samplers import NSGAIIISampler
+from optuna.samplers import NSGAIISampler
 from optuna.samplers._ga._base import BaseGASampler
 from optuna.samplers._random import RandomSampler
 from optuna.study.study import Study
@@ -45,6 +48,34 @@ class BaseGASamplerTestSampler(BaseGASampler):
         self, study: Study, trial: FrozenTrial
     ) -> dict[str, BaseDistribution]:
         raise NotImplementedError
+
+
+@pytest.mark.parametrize("sampler_class", [NSGAIISampler, NSGAIIISampler])
+@pytest.mark.parametrize("n_trials", [0, 3])
+def test_pickle_resume(
+    sampler_class: type[NSGAIISampler] | type[NSGAIIISampler], n_trials: int
+) -> None:
+    def objective(trial: optuna.Trial) -> tuple[float, float]:
+        x = trial.suggest_float("x", -2, 2)
+        y = trial.suggest_categorical("y", [-1, 0, 1])
+        return x**2 + y, (x - 1) ** 2 - y
+
+    study = optuna.create_study(
+        sampler=sampler_class(population_size=2, seed=17),
+        directions=["minimize", "minimize"],
+    )
+    study.optimize(objective, n_trials=n_trials)
+    restored = pickle.loads(pickle.dumps(study))
+    assert restored.trials == study.trials
+
+    study.optimize(objective, n_trials=4)
+    restored.optimize(objective, n_trials=4)
+    assert [(t.params, t.values) for t in restored.trials] == [
+        (t.params, t.values) for t in study.trials
+    ]
+    assert [
+        restored.sampler.get_trial_generation(restored, trial) for trial in restored.trials
+    ] == [i // 2 for i in range(n_trials + 4)]
 
 
 def test_systemattr_keys() -> None:
