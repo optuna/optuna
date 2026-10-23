@@ -452,136 +452,122 @@ class GPSampler(BaseSampler):
             )
         self._gprs_cache_list = gprs_list
 
-        best_params: np.ndarray | None
-        acqf: acqf_module.BaseAcquisitionFunc
-        if not _is_constrained_optimization(completed_trials):
-            if n_objectives == 1:
-                assert len(gprs_list) == 1
-                if normalized_params_of_running_trials is None:
-                    acqf = acqf_module.LogEI(
-                        gpr=gprs_list[0],
-                        search_space=internal_search_space,
-                        threshold=standardized_score_vals[:, 0].max(),
-                    )
-                else:
-                    acqf = acqf_module.qLogEI(
-                        gpr=gprs_list[0],
-                        search_space=internal_search_space,
-                        threshold=standardized_score_vals[:, 0].max(),
-                        n_qmc_samples=self._n_qmc_samples_qei,
-                        qmc_seed=self._rng.rng.randint(_MAX_QMC_SEED_VALUE),
-                        normalized_params_of_running_trials=normalized_params_of_running_trials,
-                    )
-                best_params = normalized_params[np.argmax(standardized_score_vals), np.newaxis]
-            else:
-                if normalized_params_of_running_trials is None:
-                    acqf = acqf_module.LogEHVI(
-                        gpr_list=gprs_list,
-                        search_space=internal_search_space,
-                        Y_train=torch.from_numpy(standardized_score_vals),
-                        n_qmc_samples=self._n_qmc_samples_ehvi,
-                        qmc_seed=self._rng.rng.randint(_MAX_QMC_SEED_VALUE),
-                    )
-                else:
-                    acqf = acqf_module.qLogEHVI(
-                        gpr_list=gprs_list,
-                        search_space=internal_search_space,
-                        Y_train=torch.from_numpy(standardized_score_vals),
-                        n_qmc_samples=self._n_qmc_samples_ehvi,
-                        qmc_seed=self._rng.rng.randint(_MAX_QMC_SEED_VALUE),
-                        normalized_params_of_running_trials=normalized_params_of_running_trials,
-                    )
-                best_params = self._get_best_params_for_multi_objective(
-                    normalized_params, standardized_score_vals
-                )
-        else:
-            if n_objectives == 1:
-                assert len(gprs_list) == 1
-                constraint_vals, is_feasible = _get_constraint_vals_and_feasibility(
-                    completed_trials
-                )
-                y_with_neginf = np.where(is_feasible, standardized_score_vals[:, 0], -np.inf)
-                # TODO(kAIto47802): If all trials are infeasible, the acquisition function
-                # for the objective function can be ignored, so skipping the computation
-                # of gpr can speed up.
-                # TODO(kAIto47802): Consider the case where all trials are feasible.
-                # We can ignore constraints in this case.
-                constr_gpr_list, constr_threshold_list = self._get_constraints_acqf_args(
-                    constraint_vals, internal_search_space, normalized_params
-                )
-                i_opt = np.argmax(y_with_neginf)
-                best_feasible_y = y_with_neginf[i_opt]
-                if normalized_params_of_running_trials is None:
-                    acqf = acqf_module.LogCEI(
-                        gpr=gprs_list[0],
-                        search_space=internal_search_space,
-                        threshold=best_feasible_y,
-                        constraints_gpr_list=constr_gpr_list,
-                        constraints_threshold_list=constr_threshold_list,
-                    )
-                else:
-                    acqf = acqf_module.qLogCEI(
-                        gpr=gprs_list[0],
-                        search_space=internal_search_space,
-                        threshold=best_feasible_y,
-                        n_qmc_samples=self._n_qmc_samples_qei,
-                        qmc_seed=self._rng.rng.randint(_MAX_QMC_SEED_VALUE),
-                        constraints_gpr_list=constr_gpr_list,
-                        constraints_threshold_list=constr_threshold_list,
-                        normalized_params_of_running_trials=normalized_params_of_running_trials,
-                    )
-                assert normalized_params.shape[:-1] == y_with_neginf.shape
-                best_params = (
-                    None if np.isneginf(best_feasible_y) else normalized_params[i_opt, np.newaxis]
-                )
-            else:
-                constraint_vals, is_feasible = _get_constraint_vals_and_feasibility(
-                    completed_trials
-                )
-                constr_gpr_list, constr_threshold_list = self._get_constraints_acqf_args(
-                    constraint_vals, internal_search_space, normalized_params
-                )
-                is_all_infeasible = not any(is_feasible)
-                if normalized_params_of_running_trials is None:
-                    acqf = acqf_module.LogCEHVI(
-                        gpr_list=gprs_list,
-                        search_space=internal_search_space,
-                        Y_feasible=(
-                            torch.from_numpy(standardized_score_vals[is_feasible])
-                            if not is_all_infeasible
-                            else None
-                        ),
-                        n_qmc_samples=self._n_qmc_samples_ehvi,
-                        qmc_seed=self._rng.rng.randint(_MAX_QMC_SEED_VALUE),
-                        constraints_gpr_list=constr_gpr_list,
-                        constraints_threshold_list=constr_threshold_list,
-                    )
-                else:
-                    acqf = acqf_module.qLogCEHVI(
-                        gpr_list=gprs_list,
-                        search_space=internal_search_space,
-                        Y_feasible=(
-                            torch.from_numpy(standardized_score_vals[is_feasible])
-                            if not is_all_infeasible
-                            else None
-                        ),
-                        n_qmc_samples=self._n_qmc_samples_ehvi,
-                        qmc_seed=self._rng.rng.randint(_MAX_QMC_SEED_VALUE),
-                        constraints_gpr_list=constr_gpr_list,
-                        constraints_threshold_list=constr_threshold_list,
-                        normalized_params_of_running_trials=normalized_params_of_running_trials,
-                    )
-                best_params = (
-                    self._get_best_params_for_multi_objective(
-                        normalized_params[is_feasible],
-                        standardized_score_vals[is_feasible],
-                    )
-                    if not is_all_infeasible
-                    else None
-                )
-
+        acqf, best_params = self._get_acqf_and_best_params(
+            completed_trials,
+            gprs_list,
+            internal_search_space,
+            normalized_params,
+            normalized_params_of_running_trials,
+            standardized_score_vals,
+        )
         normalized_param = self._optimize_acqf(acqf, best_params)
         return internal_search_space.get_unnormalized_param(normalized_param)
+
+    def _get_acqf_and_best_params(
+        self,
+        completed_trials: list[FrozenTrial],
+        gprs_list: list[gp.GPRegressor],
+        internal_search_space: gp_search_space.SearchSpace,
+        normalized_params: np.ndarray,
+        normalized_params_of_running_trials: np.ndarray | None,
+        standardized_score_vals: np.ndarray,
+    ) -> tuple[acqf_module.BaseAcquisitionFunc, np.ndarray | None]:
+        is_multi_obj = standardized_score_vals.shape[-1] > 1
+        constr_gpr_list: list[gp.GPRegressor] = []
+        constr_threshold_list: list[float] = []
+        X_feas, Y_feas = normalized_params, standardized_score_vals
+        if is_constrained := _is_constrained_optimization(completed_trials):
+            constraint_vals, is_feas = _get_constraint_vals_and_feasibility(completed_trials)
+            constr_gpr_list, constr_threshold_list = self._get_constraints_acqf_args(
+                constraint_vals, internal_search_space, normalized_params
+            )
+            X_feas, Y_feas = normalized_params[is_feas], standardized_score_vals[is_feas]
+        threshold = Y_feas[:, 0].max() if len(Y_feas) else -np.inf
+        best_params: np.ndarray | None = None
+        if len(Y_feas):
+            best_params = (
+                self._get_best_params_for_multi_objective(X_feas, Y_feas)
+                if is_multi_obj
+                else X_feas[np.argmax(Y_feas[:, 0]), np.newaxis]
+            )
+        # TODO(kAIto47802): If all trials are infeasible, the acquisition function for the
+        # objective function can be ignored, so skipping the computation of gpr can speed up.
+        # TODO(kAIto47802): Consider the case where all trials are feasible. We can ignore
+        # constraints in this case.
+        match (is_constrained, is_multi_obj, normalized_params_of_running_trials):
+            case (False, False, None):
+                acqf: acqf_module.BaseAcquisitionFunc = acqf_module.LogEI(
+                    gpr=gprs_list[0], search_space=internal_search_space, threshold=threshold
+                )
+            case (False, False, np.ndarray()):
+                acqf = acqf_module.qLogEI(
+                    gpr=gprs_list[0],
+                    search_space=internal_search_space,
+                    threshold=threshold,
+                    n_qmc_samples=self._n_qmc_samples_qei,
+                    qmc_seed=self._rng.rng.randint(_MAX_QMC_SEED_VALUE),
+                    normalized_params_of_running_trials=normalized_params_of_running_trials,
+                )
+            case (False, True, None):
+                acqf = acqf_module.LogEHVI(
+                    gpr_list=gprs_list,
+                    search_space=internal_search_space,
+                    Y_train=torch.from_numpy(Y_feas),
+                    n_qmc_samples=self._n_qmc_samples_ehvi,
+                    qmc_seed=self._rng.rng.randint(_MAX_QMC_SEED_VALUE),
+                )
+            case (False, True, np.ndarray()):
+                acqf = acqf_module.qLogEHVI(
+                    gpr_list=gprs_list,
+                    search_space=internal_search_space,
+                    Y_train=torch.from_numpy(Y_feas),
+                    n_qmc_samples=self._n_qmc_samples_ehvi,
+                    qmc_seed=self._rng.rng.randint(_MAX_QMC_SEED_VALUE),
+                    normalized_params_of_running_trials=normalized_params_of_running_trials,
+                )
+            case (True, False, None):
+                acqf = acqf_module.LogCEI(
+                    gpr=gprs_list[0],
+                    search_space=internal_search_space,
+                    threshold=threshold,
+                    constraints_gpr_list=constr_gpr_list,
+                    constraints_threshold_list=constr_threshold_list,
+                )
+            case (True, False, np.ndarray()):
+                acqf = acqf_module.qLogCEI(
+                    gpr=gprs_list[0],
+                    search_space=internal_search_space,
+                    threshold=threshold,
+                    n_qmc_samples=self._n_qmc_samples_qei,
+                    qmc_seed=self._rng.rng.randint(_MAX_QMC_SEED_VALUE),
+                    constraints_gpr_list=constr_gpr_list,
+                    constraints_threshold_list=constr_threshold_list,
+                    normalized_params_of_running_trials=normalized_params_of_running_trials,
+                )
+            case (True, True, None):
+                acqf = acqf_module.LogCEHVI(
+                    gpr_list=gprs_list,
+                    search_space=internal_search_space,
+                    Y_feasible=torch.from_numpy(Y_feas) if len(Y_feas) else None,
+                    n_qmc_samples=self._n_qmc_samples_ehvi,
+                    qmc_seed=self._rng.rng.randint(_MAX_QMC_SEED_VALUE),
+                    constraints_gpr_list=constr_gpr_list,
+                    constraints_threshold_list=constr_threshold_list,
+                )
+            case (True, True, np.ndarray()):
+                acqf = acqf_module.qLogCEHVI(
+                    gpr_list=gprs_list,
+                    search_space=internal_search_space,
+                    Y_feasible=torch.from_numpy(Y_feas) if len(Y_feas) else None,
+                    n_qmc_samples=self._n_qmc_samples_ehvi,
+                    qmc_seed=self._rng.rng.randint(_MAX_QMC_SEED_VALUE),
+                    constraints_gpr_list=constr_gpr_list,
+                    constraints_threshold_list=constr_threshold_list,
+                    normalized_params_of_running_trials=normalized_params_of_running_trials,
+                )
+            case _:
+                assert False, "Should not reach."
+        return acqf, best_params
 
     def sample_independent(
         self,
