@@ -212,18 +212,13 @@ def test_plot_contour_infeasible_trials(n_params: int) -> None:
         ]
 
     for row, col, x_param, y_param in subplots:
-        scatter = {
-            trace.name: trace
-            for trace in figure.select_traces(row=row, col=col)
-            if trace.type == "scatter"
-        }
-        assert set(scatter) == {"Feasible Trial", "Infeasible Trial"}
         for name, expected in [
             ("Feasible Trial", feasible_params),
             ("Infeasible Trial", infeasible_params),
         ]:
-            assert list(scatter[name].x) == [expected[x_param]]
-            assert list(scatter[name].y) == [expected[y_param]]
+            (scatter,) = figure.select_traces({"type": "scatter", "name": name}, row=row, col=col)
+            assert list(scatter.x) == [expected[x_param]]
+            assert list(scatter.y) == [expected[y_param]]
 
 
 def test_target_is_none_and_study_is_multi_obj() -> None:
