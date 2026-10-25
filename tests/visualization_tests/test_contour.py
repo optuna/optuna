@@ -179,6 +179,53 @@ def test_plot_contour(
     plot_contour(study, params=params)
 
 
+@pytest.mark.parametrize("n_params", [2, 3])
+def test_plot_contour_infeasible_trials(n_params: int) -> None:
+    params = ["param_a", "param_b", "param_c"][:n_params]
+    feasible_params = {"param_a": 0.0, "param_b": 2.0, "param_c": 10.0}
+    infeasible_params = {"param_a": 1.0, "param_b": 4.0, "param_c": 20.0}
+    distributions: dict[str, BaseDistribution] = {
+        name: FloatDistribution(feasible_params[name], infeasible_params[name])
+        for name in feasible_params
+    }
+    study = create_study()
+    for value, trial_params in enumerate([feasible_params, infeasible_params]):
+        study.add_trial(
+            create_trial(
+                value=float(value),
+                params=trial_params,
+                distributions=distributions,
+                constraints={"constraint": -1.0 if value == 0 else 1.0},
+            )
+        )
+
+    figure = plotly_plot_contour(study, params=params)
+    subplots: list[tuple[int | None, int | None, str, str]]
+    if n_params == 2:
+        subplots = [(None, None, params[0], params[1])]
+    else:
+        subplots = [
+            (y_i + 1, x_i + 1, x_param, y_param)
+            for y_i, y_param in enumerate(params)
+            for x_i, x_param in enumerate(params)
+            if x_param != y_param
+        ]
+
+    for row, col, x_param, y_param in subplots:
+        scatter = {
+            trace.name: trace
+            for trace in figure.select_traces(row=row, col=col)
+            if trace.type == "scatter"
+        }
+        assert set(scatter) == {"Feasible Trial", "Infeasible Trial"}
+        for name, expected in [
+            ("Feasible Trial", feasible_params),
+            ("Infeasible Trial", infeasible_params),
+        ]:
+            assert list(scatter[name].x) == [expected[x_param]]
+            assert list(scatter[name].y) == [expected[y_param]]
+
+
 def test_target_is_none_and_study_is_multi_obj() -> None:
     study = create_study(directions=["minimize", "minimize"])
     with pytest.raises(ValueError):
