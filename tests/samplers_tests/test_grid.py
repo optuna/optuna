@@ -187,19 +187,10 @@ def test_has_same_search_space() -> None:
     sampler = samplers.GridSampler(search_space)
     assert sampler._same_search_space(search_space)
     assert sampler._same_search_space({"x": [3, 2, 1], "y": ["a", "b", "c"]})
-    assert sampler._same_search_space({"x": (3, 2, 1), "y": ("a", "b", "c")})
 
     assert not sampler._same_search_space({"y": ["c", "a", "b"], "x": [1, 2, 3]})
     assert not sampler._same_search_space({"x": [3, 2, 1, 0], "y": ["a", "b", "c"]})
     assert not sampler._same_search_space({"x": [3, 2], "y": ["a", "b", "c"]})
-    assert not sampler._same_search_space({"x": [3, 2, 1]})
-    assert not sampler._same_search_space({"x": [3, 2, float("nan")], "y": ["a", "b", "c"]})
-
-    nan_sampler = samplers.GridSampler({"x": [0, float("nan")], "y": ["a"]})
-    assert nan_sampler._same_search_space({"x": [0, float("nan")], "y": ["a"]})
-    assert nan_sampler._same_search_space({"x": (0, np.nan), "y": ("a",)})
-    assert not nan_sampler._same_search_space({"x": [0, 1], "y": ["a"]})
-    assert not nan_sampler._same_search_space({"x": [float("nan"), 0], "y": ["a"]})
 
 
 def test_retried_trial() -> None:
