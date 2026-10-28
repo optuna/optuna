@@ -137,6 +137,12 @@ MIT License (see `LICENSE <https://github.com/optuna/optuna/blob/master/LICENSE>
 
 Optuna uses the codes from SciPy and fdlibm projects (see :doc:`Third-party License <license_thirdparty>`).
 
+Acknowledgement
+---------------
+
+Optuna is developed and maintained by `Preferred Networks <https://www.preferred.jp/en/>`__\ ™
+(PFN™) and `community contributors <https://github.com/optuna/optuna/graphs/contributors>`__.
+
 Reference
 ---------
 
