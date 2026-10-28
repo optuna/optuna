@@ -274,6 +274,8 @@ class GridSampler(BaseSampler):
         return (value1 == value2) or (value1_is_nan and value2_is_nan)
 
     def _same_search_space(self, search_space: Mapping[str, Sequence[GridValueType]]) -> bool:
+        if search_space == self._search_space:
+            return True
         if set(search_space.keys()) != set(self._search_space.keys()):
             return False
 
