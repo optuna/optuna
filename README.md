@@ -275,3 +275,8 @@ If you use Optuna in one of your research projects, please cite [our KDD paper](
 MIT License (see [LICENSE](./LICENSE)).
 
 Optuna uses the codes from SciPy and fdlibm projects (see [LICENSE_THIRD_PARTY](./LICENSE_THIRD_PARTY)).
+
+## Acknowledgement
+
+Optuna is developed and maintained by [Preferred Networks](https://www.preferred.jp/en/)™
+(PFN™) and [community contributors](https://github.com/optuna/optuna/graphs/contributors).
