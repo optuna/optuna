@@ -116,16 +116,6 @@ def _get_order_with_same_order_averaging(data: np.ndarray) -> np.ndarray:
 def _filter_nan_targets(
     trials: list[FrozenTrial], target: Callable[[FrozenTrial], float]
 ) -> list[FrozenTrial]:
-    """Return *trials* without the ones whose target value is NaN, warning about each.
-
-    NaN means the target value is undefined, not that it is the worst one, and
-    it has no rank among the others anyway (`_get_order_with_same_order_averaging`
-    finds no equal value for it). Left in, it also reaches `_get_tick_info`,
-    which then labels the colour bar with NaN. ``inf`` does compare equal to
-    itself and does have a rank, so those trials are kept, as before.
-
-    `_get_slice_plot_info` drops NaN the same way, through `_filter_nonfinite`.
-    """
     filtered_trials: list[FrozenTrial] = []
     for trial in trials:
         if math.isnan(target(trial)):
