@@ -105,12 +105,13 @@ def plot_rank(
 
 
 def _get_order_with_same_order_averaging(data: np.ndarray) -> np.ndarray:
-    order = np.zeros_like(data, dtype=float)
+    if np.isnan(data).any():
+        raise ValueError("Cannot compute ranks for NaN values.")
     data_sorted = np.sort(data)
-    for i, d in enumerate(data):
-        indices = np.where(data_sorted == d)[0]
-        order[i] = sum(indices) / len(indices)
-    return order
+    left = np.searchsorted(data_sorted, data, side="left")
+    right = np.searchsorted(data_sorted, data, side="right")
+    # Equal values occupy [left, right), whose average zero-based rank is the midpoint.
+    return (left + right - 1) / 2
 
 
 def _get_rank_info(

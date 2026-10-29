@@ -687,6 +687,43 @@ def test_get_order_with_same_order_averaging() -> None:
     assert np.all(x == _get_order_with_same_order_averaging(x))
 
 
+@pytest.mark.parametrize(
+    "values, expected",
+    [
+        ([], []),
+        ([42.0], [0.0]),
+        ([3, 3, 3, 3], [1.5, 1.5, 1.5, 1.5]),
+        ([9, 1, 9, 4, 1], [3.5, 0.5, 3.5, 2.0, 0.5]),
+        ([-np.inf, np.inf, 0.0, -np.inf, np.inf], [0.5, 3.5, 2.0, 0.5, 3.5]),
+        ([0.0, -0.0, 1.0], [0.5, 0.5, 2.0]),
+        ([1.0, np.nextafter(1.0, np.inf), 1.0], [0.5, 2.0, 0.5]),
+    ],
+)
+def test_get_order_with_same_order_averaging_edge_cases(
+    values: list[float], expected: list[float]
+) -> None:
+    result = _get_order_with_same_order_averaging(np.array(values))
+    np.testing.assert_array_equal(result, expected)
+    assert result.dtype == np.dtype(float)
+
+
+@pytest.mark.parametrize("n_unique", [1, 5, 100])
+def test_get_order_with_same_order_averaging_matches_reference(n_unique: int) -> None:
+    values = np.random.RandomState(0).randint(n_unique, size=100).astype(float)
+    expected = np.array(
+        [
+            np.count_nonzero(values < value) + (np.count_nonzero(values == value) - 1) / 2
+            for value in values
+        ]
+    )
+    np.testing.assert_array_equal(_get_order_with_same_order_averaging(values), expected)
+
+
+def test_get_order_with_same_order_averaging_nan() -> None:
+    with pytest.raises(ValueError, match="Cannot compute ranks for NaN values"):
+        _get_order_with_same_order_averaging(np.array([1.0, np.nan]))
+
+
 def test_convert_color_idxs_to_scaled_rgb_colors() -> None:
     x1 = np.array([0.1, 0.2])
     result1 = _convert_color_idxs_to_scaled_rgb_colors(x1)
