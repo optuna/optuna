@@ -336,3 +336,31 @@ def test_ignore_discard_trial_operation() -> None:
 
         trials = storage.get_all_trials(study._study_id)
         assert trial2.number in [t.number for t in trials]
+
+
+def test_symlink_lock_recovers_abandoned_relative_lock(
+    tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    pathlib.Path("logs").mkdir()
+    path = pathlib.Path("logs/study.log")
+    journal.JournalFileBackend(str(path))
+    lock = journal.JournalFileSymlinkLock(str(path), grace_period=3)
+    lock_path = pathlib.Path(str(path) + ".lock")
+    # Older versions created this dangling target for a relative journal path.
+    try:
+        lock_path.symlink_to(str(path))
+    except OSError as error:
+        if getattr(error, "winerror", None) == 1314:
+            pytest.skip("Symbolic link creation requires Windows privileges or Developer Mode.")
+        raise
+    # Bound retries so a regression fails instead of waiting indefinitely.
+    with (
+        mock.patch("optuna.storages.journal._file.time.monotonic", side_effect=range(30)),
+        mock.patch("optuna.storages.journal._file.time.sleep"),
+    ):
+        lock.acquire()
+    try:
+        assert lock_path.samefile(path)
+    finally:
+        lock.release()
