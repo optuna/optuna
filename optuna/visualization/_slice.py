@@ -244,6 +244,7 @@ def _generate_slice_subplot(subplot_info: _SliceSubplotInfo) -> list[Scatter]:
         else:
             infeasible.x.append(x)
             infeasible.y.append(y)
+            infeasible.trial_numbers.append(num)
 
     if subplot_info.is_numerical:
         feasible_x = feasible.x
