@@ -157,6 +157,7 @@ def _get_contour_plot(info: _ContourInfo) -> "go.Figure":
                         showscale = False
                     figure.add_trace(contour, row=y_i + 1, col=x_i + 1)
                     figure.add_trace(scatter, row=y_i + 1, col=x_i + 1)
+                    figure.add_trace(sub_plots[2], row=y_i + 1, col=x_i + 1)
 
                 xaxis = sub_plot_infos[y_i][x_i].xaxis
                 yaxis = sub_plot_infos[y_i][x_i].yaxis
