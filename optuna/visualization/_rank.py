@@ -113,6 +113,21 @@ def _get_order_with_same_order_averaging(data: np.ndarray) -> np.ndarray:
     return order
 
 
+def _filter_nan_targets(
+    trials: list[FrozenTrial], target: Callable[[FrozenTrial], float]
+) -> list[FrozenTrial]:
+    filtered_trials: list[FrozenTrial] = []
+    for trial in trials:
+        if math.isnan(target(trial)):
+            _logger.warning(
+                f"Trial {trial.number} is omitted in visualization "
+                "because its objective value is nan."
+            )
+        else:
+            filtered_trials.append(trial)
+    return filtered_trials
+
+
 def _get_rank_info(
     study: Study,
     params: list[str] | None,
@@ -121,7 +136,17 @@ def _get_rank_info(
 ) -> _RankPlotInfo:
     _check_plot_args(study, target, target_name)
 
-    trials = study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,))
+    has_custom_target = True
+    if target is None:
+
+        def target(trial: FrozenTrial) -> float:
+            return typing.cast("float", trial.value)
+
+        has_custom_target = False
+
+    trials = _filter_nan_targets(
+        study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,)), target
+    )
 
     all_params = {p_name for t in trials for p_name in t.params.keys()}
     if len(trials) == 0:
@@ -137,13 +162,6 @@ def _get_rank_info(
     if len(params) == 0:
         _logger.warning("params is an empty list.")
 
-    has_custom_target = True
-    if target is None:
-
-        def target(trial: FrozenTrial) -> float:
-            return typing.cast("float", trial.value)
-
-        has_custom_target = False
     target_values = np.array([target(trial) for trial in trials])
     raw_ranks = _get_order_with_same_order_averaging(target_values)
     color_idxs = raw_ranks / (len(trials) - 1) if len(trials) >= 2 else np.array([0.5])

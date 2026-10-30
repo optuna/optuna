@@ -286,15 +286,25 @@ def test_get_rank_info_more_than_2_params(params: list[str] | None) -> None:
         ["param_a", "param_b", "param_c"],
     ],
 )
-def test_get_rank_info_customized_target(params: list[str]) -> None:
+@pytest.mark.parametrize(
+    "value, expected_zs",
+    [(4.0, [4.0, 4.0, 2.0]), (math.nan, [4.0, 2.0])],
+)
+def test_get_rank_info_customized_target(
+    params: list[str], value: float, expected_zs: list[float]
+) -> None:
     study = prepare_study_with_trials()
     info = _get_rank_info(
-        study, params=params, target=lambda t: t.params["param_d"], target_name="param_d"
+        study,
+        params=params,
+        target=lambda t: value if t.number == 0 else t.params["param_d"],
+        target_name="param_d",
     )
     n_params = len(params)
     assert len(info.params) == n_params
     plot_shape = (1, 1) if n_params == 2 else (n_params, n_params)
     assert _get_nested_list_shape(info.sub_plot_infos) == plot_shape
+    np.testing.assert_array_equal(info.zs, expected_zs)
 
 
 @pytest.mark.parametrize(
