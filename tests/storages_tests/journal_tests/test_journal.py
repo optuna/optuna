@@ -336,3 +336,84 @@ def test_ignore_discard_trial_operation() -> None:
 
         trials = storage.get_all_trials(study._study_id)
         assert trial2.number in [t.number for t in trials]
+
+
+def test_tell_rejects_trial_from_deleted_study(tmp_path: pathlib.Path) -> None:
+    path = str(tmp_path / "journal.log")
+    storage = JournalStorage(journal.JournalFileBackend(path))
+    study = optuna.create_study(storage=storage, study_name="deleted")
+    trial = study.ask()
+    trial.suggest_float("x", 0, 1)
+    other = optuna.create_study(storage=storage, study_name="other")
+    other_trial = other.ask()
+
+    # Another worker deletes the study while its objective is running.
+    reader = JournalStorage(journal.JournalFileBackend(path))
+    optuna.delete_study(study_name=study.study_name, storage=reader)
+    with pytest.raises(KeyError):
+        study.tell(trial, 1.0)
+    other.tell(other_trial, 2.0)
+    assert other.best_value == 2.0
+
+    replacement = optuna.create_study(storage=storage, study_name="deleted")
+    replacement.tell(replacement.ask(), 3.0)
+    assert replacement.best_value == 3.0
+    assert len(replacement.trials) == 1
+
+
+def test_trial_id_lookup_rejects_deleted_study(tmp_path: pathlib.Path) -> None:
+    path = str(tmp_path / "journal.log")
+    storage = JournalStorage(journal.JournalFileBackend(path))
+    directions = [optuna.study.StudyDirection.MINIMIZE]
+    study_id = storage.create_new_study(directions, study_name="deleted")
+    trial_id = storage.create_new_trial(study_id)
+    assert storage.get_trial_id_from_study_id_trial_number(study_id, 0) == trial_id
+    other_id = storage.create_new_study(directions, study_name="other")
+    other_trial_id = storage.create_new_trial(other_id)
+
+    reader = JournalStorage(journal.JournalFileBackend(path))
+    reader.delete_study(study_id)
+    with pytest.raises(KeyError):
+        storage.get_trial_id_from_study_id_trial_number(study_id, 0)
+    assert storage.get_trial_id_from_study_id_trial_number(other_id, 0) == other_trial_id
+
+    replacement_id = storage.create_new_study(directions, study_name="deleted")
+    replacement_trial_id = storage.create_new_trial(replacement_id)
+    assert replacement_id > study_id
+    assert replacement_trial_id > trial_id
+    assert (
+        storage.get_trial_id_from_study_id_trial_number(replacement_id, 0) == replacement_trial_id
+    )
+    with pytest.raises(KeyError):
+        storage.get_trial_id_from_study_id_trial_number(study_id, 0)
+
+
+@pytest.mark.parametrize(
+    "method,args",
+    [
+        ("get_trial", ()),
+        ("set_trial_param", ("x", 0.5, optuna.distributions.FloatDistribution(0, 1))),
+        ("set_trial_intermediate_value", (0, 1.0)),
+        ("set_trial_user_attr", ("key", "value")),
+        ("set_trial_system_attr", ("key", "value")),
+        ("set_trial_state_values", (optuna.trial.TrialState.RUNNING,)),
+        ("set_trial_state_values", (optuna.trial.TrialState.COMPLETE, [1.0])),
+    ],
+)
+def test_deleted_study_trials_are_inaccessible(
+    tmp_path: pathlib.Path, method: str, args: tuple[Any, ...]
+) -> None:
+    path = str(tmp_path / "journal.log")
+    storage = JournalStorage(journal.JournalFileBackend(path))
+    study_id = storage.create_new_study([optuna.study.StudyDirection.MINIMIZE])
+    trial_id = storage.create_new_trial(study_id)
+    storage.delete_study(study_id)
+
+    with pytest.raises(KeyError):
+        getattr(storage, method)(trial_id, *args)
+
+    # Rejected writes in the journal must not prevent another worker from replaying it.
+    replayed = JournalStorage(journal.JournalFileBackend(path))
+    assert replayed.get_all_studies() == []
+    new_study_id = replayed.create_new_study([optuna.study.StudyDirection.MINIMIZE])
+    assert replayed.create_new_trial(new_study_id) > trial_id

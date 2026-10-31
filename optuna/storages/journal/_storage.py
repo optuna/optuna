@@ -301,6 +301,7 @@ class JournalStorage(BaseStorage):
     def get_trial_id_from_study_id_trial_number(self, study_id: int, trial_number: int) -> int:
         with self._thread_lock:
             self._sync_with_backend()
+            self._replay_result.get_study(study_id)
             if len(self._replay_result._study_id_to_trial_ids[study_id]) <= trial_number:
                 raise KeyError(f"No trial with {trial_number=} exists in study with {study_id=}.")
             return self._replay_result._study_id_to_trial_ids[study_id][trial_number]
@@ -338,10 +339,7 @@ class JournalStorage(BaseStorage):
                 # return statement of trial_id == _replay_result.owned_trial_id. To eliminate false
                 # positives, we verify whether another process is already evaluating the trial with
                 # trial_id. If True, it means this query does not update the trial state.
-                existing_trial = self._replay_result._trials.get(trial_id)
-                assert existing_trial is not None, (
-                    "Please report your bug on GitHub if this line fails your script."
-                )
+                existing_trial = self._replay_result.get_trial(trial_id)
                 if existing_trial.state.is_finished():
                     raise UpdateFinishedTrialError(
                         UNUPDATABLE_MSG.format(trial_number=existing_trial.number)
@@ -456,7 +454,10 @@ class JournalStorageReplayResult:
         return list(self._studies.values())
 
     def get_trial(self, trial_id: int) -> FrozenTrial:
-        if trial_id not in self._trials:
+        if (
+            trial_id not in self._trials
+            or self._trial_id_to_study_id[trial_id] not in self._studies
+        ):
             raise KeyError(NOT_FOUND_MSG)
         return self._trials[trial_id]
 
@@ -681,7 +682,10 @@ class JournalStorageReplayResult:
             self._trials[trial_id] = trial
 
     def _trial_exists_and_updatable(self, trial_id: int, log: dict[str, Any]) -> bool:
-        if trial_id not in self._trials:
+        if (
+            trial_id not in self._trials
+            or self._trial_id_to_study_id[trial_id] not in self._studies
+        ):
             if self._is_issued_by_this_worker(log):
                 raise KeyError(NOT_FOUND_MSG)
             return False
