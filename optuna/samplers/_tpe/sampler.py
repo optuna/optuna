@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 from functools import lru_cache
 import json
 import math
@@ -11,6 +12,7 @@ from typing import TypeVar
 import numpy as np
 
 from optuna import _deprecated
+from optuna import pruners
 from optuna._convert_positional_args import convert_positional_args
 from optuna._experimental import warn_experimental_argument
 from optuna._hypervolume.hssp import _solve_hssp
@@ -23,6 +25,7 @@ from optuna.samplers._lazy_random_state import LazyRandomState
 from optuna.samplers._random import RandomSampler
 from optuna.samplers._tpe.parzen_estimator import _ParzenEstimator
 from optuna.samplers._tpe.parzen_estimator import _ParzenEstimatorParameters
+from optuna.search_space import intersection_search_space
 from optuna.search_space import IntersectionSearchSpace
 from optuna.search_space.group_decomposed import _GroupDecomposedSearchSpace
 from optuna.search_space.group_decomposed import _SearchSpaceGroup
@@ -34,6 +37,7 @@ from optuna.trial import TrialState
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+    from collections.abc import Container
     from collections.abc import Sequence
 
     from optuna.distributions import BaseDistribution
@@ -440,10 +444,14 @@ class TPESampler(BaseSampler):
 
         if self._group:
             assert self._group_decomposed_search_space is not None
-            self._search_space_group = self._group_decomposed_search_space.calculate(
-                study, use_trial_cache
-            )
-            for sub_space in self._search_space_group.search_spaces:
+            if isinstance(study.pruner, pruners.HyperbandPruner):
+                search_space_group = self._get_bracket_search_space_group(study, trial)
+            else:
+                self._search_space_group = self._group_decomposed_search_space.calculate(
+                    study, use_trial_cache
+                )
+                search_space_group = self._search_space_group
+            for sub_space in search_space_group.search_spaces:
                 # Sort keys because Python's string hashing is nondeterministic.
                 for name, distribution in sorted(sub_space.items()):
                     if distribution.single():
@@ -451,20 +459,55 @@ class TPESampler(BaseSampler):
                     search_space[name] = distribution
             return search_space
 
-        for name, distribution in self._search_space.calculate(study, use_trial_cache).items():
+        if isinstance(study.pruner, pruners.HyperbandPruner):
+            inferred_search_space = copy.deepcopy(
+                intersection_search_space(
+                    self._get_trials(study, trial, use_cache=use_trial_cache), include_pruned=True
+                )
+            )
+        else:
+            inferred_search_space = self._search_space.calculate(study, use_trial_cache)
+        for name, distribution in inferred_search_space.items():
             if distribution.single():
                 continue
             search_space[name] = distribution
 
         return search_space
 
+    def _get_trials(
+        self,
+        study: Study,
+        trial: FrozenTrial,
+        states: Container[TrialState] | None = None,
+        use_cache: bool = False,
+    ) -> list[FrozenTrial]:
+        trials = study._get_trials(deepcopy=False, states=states, use_cache=use_cache)
+        if isinstance(study.pruner, pruners.HyperbandPruner):
+            bracket_id = study.pruner._get_bracket_id(study, trial)
+            trials = [t for t in trials if study.pruner._get_bracket_id(study, t) == bracket_id]
+        return trials
+
+    def _get_bracket_search_space_group(
+        self, study: Study, trial: FrozenTrial
+    ) -> _SearchSpaceGroup:
+        search_space_group = _SearchSpaceGroup()
+        for t in self._get_trials(
+            study, trial, states=(TrialState.COMPLETE, TrialState.PRUNED), use_cache=True
+        ):
+            search_space_group.add_distributions(t.distributions)
+        return copy.deepcopy(search_space_group)
+
     def sample_relative(
         self, study: Study, trial: FrozenTrial, search_space: dict[str, BaseDistribution]
     ) -> dict[str, Any]:
         if self._group:
-            assert self._search_space_group is not None
+            if isinstance(study.pruner, pruners.HyperbandPruner):
+                search_space_group = self._get_bracket_search_space_group(study, trial)
+            else:
+                assert self._search_space_group is not None
+                search_space_group = self._search_space_group
             params = {}
-            for sub_space in self._search_space_group.search_spaces:
+            for sub_space in search_space_group.search_spaces:
                 _search_space = {}
                 # Sort keys because Python's string hashing is nondeterministic.
                 for name, distribution in sorted(sub_space.items()):
@@ -497,7 +540,7 @@ class TPESampler(BaseSampler):
             return {}
 
         states = (TrialState.COMPLETE, TrialState.PRUNED)
-        trials = study._get_trials(deepcopy=False, states=states, use_cache=True)
+        trials = self._get_trials(study, trial, states=states, use_cache=True)
         # If the number of samples is insufficient, we run random trial.
         if len(trials) < self._n_startup_trials:
             return {}
@@ -512,7 +555,7 @@ class TPESampler(BaseSampler):
         param_distribution: BaseDistribution,
     ) -> Any:
         states = (TrialState.COMPLETE, TrialState.PRUNED)
-        trials = study._get_trials(deepcopy=False, states=states, use_cache=True)
+        trials = self._get_trials(study, trial, states=states, use_cache=True)
 
         # If the number of samples is insufficient, we run random trial.
         if len(trials) < self._n_startup_trials:
@@ -581,7 +624,7 @@ class TPESampler(BaseSampler):
         else:
             states = [TrialState.COMPLETE, TrialState.PRUNED]
         use_cache = not self._constant_liar
-        trials = study._get_trials(deepcopy=False, states=states, use_cache=use_cache)
+        trials = self._get_trials(study, trial, states=states, use_cache=use_cache)
 
         if self._constant_liar:
             # For constant_liar, filter out the current trial.
