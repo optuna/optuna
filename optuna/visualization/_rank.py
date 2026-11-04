@@ -105,7 +105,8 @@ def plot_rank(
 
 
 def _get_order_with_same_order_averaging(data: np.ndarray) -> np.ndarray:
-    if np.isnan(data).any():
+    # np.isnan does not support object arrays containing large Python integers.
+    if np.not_equal(data, data).any():
         raise ValueError("Cannot compute ranks for NaN values.")
     data_sorted = np.sort(data)
     left = np.searchsorted(data_sorted, data, side="left")

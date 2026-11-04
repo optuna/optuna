@@ -719,9 +719,18 @@ def test_get_order_with_same_order_averaging_matches_reference(n_unique: int) ->
     np.testing.assert_array_equal(_get_order_with_same_order_averaging(values), expected)
 
 
-def test_get_order_with_same_order_averaging_nan() -> None:
+def test_get_order_with_same_order_averaging_large_integers() -> None:
+    values = np.array([10**20 + 1, 10**20, 10**20 + 1, -(10**20)])
+    assert values.dtype == np.dtype(object)
+    np.testing.assert_array_equal(
+        _get_order_with_same_order_averaging(values), [2.5, 1.0, 2.5, 0.0]
+    )
+
+
+@pytest.mark.parametrize("dtype", [float, object])
+def test_get_order_with_same_order_averaging_nan(dtype: type) -> None:
     with pytest.raises(ValueError, match="Cannot compute ranks for NaN values"):
-        _get_order_with_same_order_averaging(np.array([1.0, np.nan]))
+        _get_order_with_same_order_averaging(np.array([1.0, np.nan], dtype=dtype))
 
 
 def test_convert_color_idxs_to_scaled_rgb_colors() -> None:
