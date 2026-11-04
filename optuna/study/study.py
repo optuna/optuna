@@ -198,7 +198,8 @@ class Study:
         trials = self.get_trials(deepcopy=False)
         is_constrained = _is_constrained_optimization(trials)
 
-        return _get_pareto_front_trials(self, consider_constraint=is_constrained)
+        # Only the Pareto-optimal trials are copied to avoid deep-copying every trial.
+        return copy.deepcopy(_get_pareto_front_trials(self, consider_constraint=is_constrained))
 
     @property
     def direction(self) -> StudyDirection:

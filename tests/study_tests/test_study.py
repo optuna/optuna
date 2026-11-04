@@ -1280,6 +1280,23 @@ def test_best_trials() -> None:
     assert {tuple(t.values) for t in study.best_trials} == {(1, 1), (2, 2)}
 
 
+def test_best_trials_returns_copies_of_pareto_trials_only() -> None:
+    study = create_study(directions=["minimize", "maximize"])
+    study.optimize(lambda t: [2, 2], n_trials=1)
+    study.optimize(lambda t: [1, 1], n_trials=1)
+    study.optimize(lambda t: [3, 1], n_trials=1)
+
+    with patch("optuna.study.study.copy.deepcopy", wraps=copy.deepcopy) as mock_deepcopy:
+        best_trials = study.best_trials
+
+    assert {t.number for t in best_trials} == {0, 1}
+    copied = [t for call in mock_deepcopy.call_args_list for t in call.args[0]]
+    assert {t.number for t in copied} == {0, 1}
+
+    best_trials[0].user_attrs["mutated"] = True
+    assert all("mutated" not in t.user_attrs for t in study.trials)
+
+
 def test_best_trials_constrained_optimization() -> None:
     study = create_study(directions=["minimize", "maximize"])
     storage = study._storage

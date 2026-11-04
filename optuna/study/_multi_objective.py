@@ -43,7 +43,9 @@ def _get_pareto_front_trials_by_trials(
 def _get_pareto_front_trials(
     study: "optuna.study.Study", consider_constraint: bool = False
 ) -> list[FrozenTrial]:
-    return _get_pareto_front_trials_by_trials(study.trials, study.directions, consider_constraint)
+    # The returned trials are not copied, so callers must not mutate them.
+    trials = study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,))
+    return _get_pareto_front_trials_by_trials(trials, study.directions, consider_constraint)
 
 
 def _fast_non_domination_rank(
