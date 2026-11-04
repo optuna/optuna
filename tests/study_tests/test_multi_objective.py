@@ -164,6 +164,27 @@ def test_fast_non_domination_rank_invalid() -> None:
         )
 
 
+@pytest.mark.parametrize("seed", [0, 1, 2])
+def test_two_objective_ranks_match_dominance_layers(seed: int) -> None:
+    rng = np.random.RandomState(seed)
+    values = rng.randint(-5, 6, size=(64, 2)).astype(float)
+    values[:4] = [[-np.inf, -np.inf], [-np.inf, np.inf], [np.inf, -np.inf], [np.inf, np.inf]]
+    dominates = (values[:, None] <= values[None, :]).all(axis=2) & (
+        values[:, None] < values[None, :]
+    ).any(axis=2)
+    remaining = np.ones(len(values), dtype=bool)
+    expected = np.empty(len(values), dtype=int)
+    rank = 0
+    while remaining.any():
+        front = remaining & ~dominates[remaining].any(axis=0)
+        expected[front] = rank
+        remaining[front] = False
+        rank += 1
+
+    np.testing.assert_array_equal(_fast_non_domination_rank(values), expected)
+    np.testing.assert_array_equal(_fast_non_domination_rank(values, n_below=len(values)), expected)
+
+
 def test_normalize_value() -> None:
     assert _normalize_value(1.0, StudyDirection.MINIMIZE) == 1.0
     assert _normalize_value(1.0, StudyDirection.MAXIMIZE) == -1.0

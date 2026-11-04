@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from bisect import bisect_right
 from collections.abc import Sequence
 from typing import cast
 from typing import TYPE_CHECKING
@@ -198,12 +199,31 @@ def _calculate_nondomination_rank(
         indices = indices[~on_front]
         unique_lexsorted_loss_values = unique_lexsorted_loss_values[~on_front]
         rank += 1
+        # Keep the vectorized first front and the early exit for partial ranking.
+        if n_objectives == 2 and n_below == n_unique:
+            ranks[indices] = rank + _calculate_nondomination_rank_2d(unique_lexsorted_loss_values)
+            return ranks[order_inv.reshape(-1)]
 
     ranks[indices] = rank  # Rank worse than the top n_below is defined as the worst rank.
     # NOTE(nabenabe): We can remove `.reshape(-1)` if ``numpy==2.0.0`` is not used.
     # https://github.com/numpy/numpy/issues/26738
     # TODO: Remove `.reshape(-1)` once `numpy==2.0.0` is obsolete.
     return ranks[order_inv.reshape(-1)]
+
+
+def _calculate_nondomination_rank_2d(unique_lexsorted_loss_values: np.ndarray) -> np.ndarray:
+    # In lexicographic order, dominance chains are non-decreasing in the second objective.
+    # Keep the smallest second objective ending a chain of each length.
+    tails: list[float] = []
+    ranks = np.empty(len(unique_lexsorted_loss_values), dtype=int)
+    for i, value in enumerate(unique_lexsorted_loss_values[:, 1]):
+        rank = bisect_right(tails, value)
+        ranks[i] = rank
+        if rank == len(tails):
+            tails.append(value)
+        else:
+            tails[rank] = value
+    return ranks
 
 
 def _dominates(
