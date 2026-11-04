@@ -60,6 +60,15 @@ class BaseGASampler(BaseSampler, abc.ABC):
         self._cached_unseen_trial_start = 0
         self._thread_lock = threading.Lock()
 
+    def __getstate__(self) -> dict[str, Any]:
+        state = self.__dict__.copy()
+        del state["_thread_lock"]
+        return state
+
+    def __setstate__(self, state: dict[str, Any]) -> None:
+        self.__dict__.update(state)
+        self._thread_lock = threading.Lock()
+
     @property
     def population_size(self) -> int | None:
         return self._population_size
