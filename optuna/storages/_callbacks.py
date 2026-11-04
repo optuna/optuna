@@ -74,7 +74,7 @@ class RetryHeartbeatStaleTrialCallback:
             "retry_history": [],
             **trial.system_attrs,
         }
-        system_attrs["retry_history"].append(trial.number)
+        system_attrs["retry_history"] = [*system_attrs["retry_history"], trial.number]
         if self._max_retry is not None:
             if self._max_retry < len(system_attrs["retry_history"]):
                 return
