@@ -71,7 +71,7 @@ class PatientPruner(BasePruner):
             trial to be pruned. If it is :obj:`None`, this pruner is equivalent to
             early-stopping taken the intermediate values in the individual trial.
         patience:
-            Pruning is disabled until the objective doesn't improve for `patience` consecutive
+            Pruning is disabled until the objective doesn't improve for ``patience`` consecutive
             reported steps. Note that patience counts the number of reported intermediate values
             sequentially, rather than evaluating gaps between step numbers;
             steps without a reported value are skipped and don't count toward patience.
