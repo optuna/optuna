@@ -132,7 +132,7 @@ class WilcoxonPruner(BasePruner):
 
         n_startup_steps:
             The minimum number of paired observations required before pruning.
-            Only step numbers reported in both the current trial and the best trial count toward `n_startup_steps`.
+            Only step numbers reported in both the current trial and the best trial count toward ``n_startup_steps``.
             Gaps in step numbering and observations reported in only one of the trials do not count.
             Defaults to 2. Note that the trial is not pruned at the first and second steps even if
             the `n_startup_steps` is set to 0 or 1 due to the lack of enough data for comparison.
