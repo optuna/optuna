@@ -1,3 +1,5 @@
+import pytest
+
 import optuna
 from optuna.storages import RetryHeartbeatStaleTrialCallback
 from optuna.testing.storages import StorageSupplier
@@ -52,3 +54,23 @@ def test_retry_history_with_more_than_max_retry() -> None:
 
         # After max_retry retries, the parameter should be different from the original.
         assert study.trials[0].params["x"] != study.trials[-1].params["x"]
+
+
+@pytest.mark.parametrize("max_retry", [1, 2, None])
+def test_retry_does_not_mutate_failed_trial_history(max_retry: int | None) -> None:
+    study = optuna.create_study()
+    callback = RetryHeartbeatStaleTrialCallback(max_retry=max_retry)
+    failed_trial = study.tell(study.ask(), state=TrialState.FAIL)
+    callback(study, failed_trial)
+
+    failed_retry = study.tell(study.ask(), state=TrialState.FAIL)
+    assert callback.retry_history(failed_retry) == [0]
+    callback(study, failed_retry)
+
+    assert callback.retry_history(failed_retry) == [0]
+    assert callback.retry_history(study.trials[1]) == [0]
+    if max_retry == 1:
+        assert len(study.trials) == 2
+    else:
+        assert len(study.trials) == 3
+        assert callback.retry_history(study.trials[2]) == [0, 1]
