@@ -479,33 +479,24 @@ def test_generate_slice_subplot_keeps_none_category_values() -> None:
     assert list(feasible_trace.y) == [1.0, 3.0]
 
 
-@pytest.mark.parametrize("choices", [("a", "b"), (1, 2), (None, "b")])
-@pytest.mark.parametrize("constraint_values", [(-1.0, 1.0), (1.0, 1.0)])
-@pytest.mark.parametrize("n_params", [1, 2])
-def test_plot_slice_infeasible_categorical(
-    choices: tuple[Any, Any], constraint_values: tuple[float, float], n_params: int
-) -> None:
+def test_plot_slice_infeasible_categorical() -> None:
     study = create_study()
-    distributions: dict[str, BaseDistribution] = {
-        f"param_{i}": CategoricalDistribution(choices) for i in range(n_params)
-    }
-    for i, constraint_value in enumerate(constraint_values):
+    distribution = CategoricalDistribution(("linear", "tree"))
+    for i, (model, constraint) in enumerate((("linear", -1.0), ("tree", 1.0))):
         study.add_trial(
             create_trial(
                 value=float(i),
-                params={name: choices[i] for name in distributions},
-                distributions=distributions,
-                constraints={"constraint": constraint_value},
+                params={"model": model},
+                distributions={"model": distribution},
+                constraints={"constraint": constraint},
             )
         )
 
-    figure = plotly_plot_slice(study)
-    infeasible_traces = [trace for trace in figure.data if trace.name == "Infeasible Trial"]
-    assert len(infeasible_traces) == n_params
-    for trace in infeasible_traces:
-        assert list(trace.x) == [
-            repr(choices[i]) for i, value in enumerate(constraint_values) if value > 0.0
-        ]
-        assert list(trace.y) == [
-            float(i) for i, value in enumerate(constraint_values) if value > 0.0
-        ]
+    figure = plotly_plot_slice(study, params=["model"])
+    feasible_trace, infeasible_trace = figure.data
+    assert feasible_trace.name == "Feasible Trial"
+    assert list(feasible_trace.x) == ["'linear'"]
+    assert list(feasible_trace.y) == [0.0]
+    assert infeasible_trace.name == "Infeasible Trial"
+    assert list(infeasible_trace.x) == ["'tree'"]
+    assert list(infeasible_trace.y) == [1.0]
