@@ -477,3 +477,26 @@ def test_generate_slice_subplot_keeps_none_category_values() -> None:
     feasible_trace = traces[0]
     assert list(feasible_trace.x) == ["None", "'100'"]
     assert list(feasible_trace.y) == [1.0, 3.0]
+
+
+def test_plot_slice_infeasible_categorical() -> None:
+    study = create_study()
+    distribution = CategoricalDistribution(("linear", "tree"))
+    for i, (model, constraint) in enumerate((("linear", -1.0), ("tree", 1.0))):
+        study.add_trial(
+            create_trial(
+                value=float(i),
+                params={"model": model},
+                distributions={"model": distribution},
+                constraints={"constraint": constraint},
+            )
+        )
+
+    figure = plotly_plot_slice(study, params=["model"])
+    feasible_trace, infeasible_trace = figure.data
+    assert feasible_trace.name == "Feasible Trial"
+    assert list(feasible_trace.x) == ["'linear'"]
+    assert list(feasible_trace.y) == [0.0]
+    assert infeasible_trace.name == "Infeasible Trial"
+    assert list(infeasible_trace.x) == ["'tree'"]
+    assert list(infeasible_trace.y) == [1.0]
