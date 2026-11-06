@@ -94,7 +94,7 @@ def test_get_generation(args: dict[str, Any]) -> None:
             ]
         )
     )
-    mock_trial = Mock(system_attrs={})
+    mock_trial = Mock(system_attrs={}, state=TrialState.RUNNING)
 
     assert test_sampler.get_trial_generation(mock_study, mock_trial) == args["generation"]
 
