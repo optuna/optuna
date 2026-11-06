@@ -186,6 +186,39 @@ def test_hyperband_tpe_ignores_other_bracket_values(
     assert (suggestions[0] == random_suggestion) == (n_trials_per_bracket < 10)
 
 
+def test_hyperband_tpe_ignores_running_trials_in_other_brackets() -> None:
+    distribution = optuna.distributions.FloatDistribution(0.0, 1.0)
+    suggestions = []
+    with mock.patch.object(
+        optuna.pruners.HyperbandPruner,
+        "_get_bracket_id",
+        side_effect=lambda study, trial: trial.number % 2,
+    ):
+        for local_x, other_x in ((0.7, 0.2), (0.7, 0.7), (0.2, 0.2)):
+            study = optuna.create_study(
+                sampler=optuna.samplers.TPESampler(seed=7, n_startup_trials=1, constant_liar=True),
+                pruner=optuna.pruners.HyperbandPruner(max_resource=2, reduction_factor=2),
+            )
+            for x, value in ((0.3, 1.0), (0.6, 0.0)):
+                study.add_trial(
+                    optuna.trial.create_trial(
+                        value=value, params={"x": x}, distributions={"x": distribution}
+                    )
+                )
+            for x in (local_x, other_x):
+                study.add_trial(
+                    optuna.trial.create_trial(
+                        state=optuna.trial.TrialState.RUNNING,
+                        params={"x": x},
+                        distributions={"x": distribution},
+                    )
+                )
+            suggestions.append(study.ask().suggest_float("x", 0.0, 1.0))
+
+    assert suggestions[0] == suggestions[1]
+    assert suggestions[0] != suggestions[2]
+
+
 @pytest.mark.parametrize("group", [False, True])
 def test_hyperband_tpe_infers_each_bracket_search_space(group: bool) -> None:
     sampler = optuna.samplers.TPESampler(seed=7, n_startup_trials=1, group=group)

@@ -274,6 +274,7 @@ class HyperbandPruner(BasePruner):
             _VALID_ATTRS = (
                 "get_trials",
                 "_get_trials",
+                "_get_filtered_trials",
                 "directions",
                 "direction",
                 "_directions",
@@ -307,7 +308,15 @@ class HyperbandPruner(BasePruner):
                 deepcopy: bool = True,
                 states: Container[TrialState] | None = None,
             ) -> list["optuna.trial.FrozenTrial"]:
-                trials = super()._get_trials(deepcopy=deepcopy, states=states)
+                return self._get_filtered_trials(deepcopy, states)
+
+            def _get_filtered_trials(
+                self,
+                deepcopy: bool = True,
+                states: Container[TrialState] | None = None,
+                use_cache: bool = False,
+            ) -> list["optuna.trial.FrozenTrial"]:
+                trials = super()._get_trials(deepcopy=deepcopy, states=states, use_cache=use_cache)
                 pruner = self.pruner
                 assert isinstance(pruner, HyperbandPruner)
                 return [t for t in trials if pruner._get_bracket_id(self, t) == self._bracket_id]

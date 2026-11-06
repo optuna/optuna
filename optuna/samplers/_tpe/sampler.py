@@ -12,7 +12,6 @@ from typing import TypeVar
 import numpy as np
 
 from optuna import _deprecated
-from optuna import pruners
 from optuna._convert_positional_args import convert_positional_args
 from optuna._experimental import warn_experimental_argument
 from optuna._hypervolume.hssp import _solve_hssp
@@ -444,9 +443,8 @@ class TPESampler(BaseSampler):
 
         if self._group:
             assert self._group_decomposed_search_space is not None
-            if isinstance(study.pruner, pruners.HyperbandPruner):
-                search_space_group = self._get_bracket_search_space_group(study, trial)
-            else:
+            search_space_group = self._get_filtered_search_space_group(study)
+            if search_space_group is None:
                 self._search_space_group = self._group_decomposed_search_space.calculate(
                     study, use_trial_cache
                 )
@@ -459,11 +457,10 @@ class TPESampler(BaseSampler):
                     search_space[name] = distribution
             return search_space
 
-        if isinstance(study.pruner, pruners.HyperbandPruner):
+        trials = study._get_filtered_trials(deepcopy=False, use_cache=use_trial_cache)
+        if trials is not None:
             inferred_search_space = copy.deepcopy(
-                intersection_search_space(
-                    self._get_trials(study, trial, use_cache=use_trial_cache), include_pruned=True
-                )
+                intersection_search_space(trials, include_pruned=True)
             )
         else:
             inferred_search_space = self._search_space.calculate(study, use_trial_cache)
@@ -477,33 +474,32 @@ class TPESampler(BaseSampler):
     def _get_trials(
         self,
         study: Study,
-        trial: FrozenTrial,
         states: Container[TrialState] | None = None,
         use_cache: bool = False,
     ) -> list[FrozenTrial]:
-        trials = study._get_trials(deepcopy=False, states=states, use_cache=use_cache)
-        if isinstance(study.pruner, pruners.HyperbandPruner):
-            bracket_id = study.pruner._get_bracket_id(study, trial)
-            trials = [t for t in trials if study.pruner._get_bracket_id(study, t) == bracket_id]
-        return trials
+        trials = study._get_filtered_trials(deepcopy=False, states=states, use_cache=use_cache)
+        if trials is not None:
+            return trials
+        return study._get_trials(deepcopy=False, states=states, use_cache=use_cache)
 
-    def _get_bracket_search_space_group(
-        self, study: Study, trial: FrozenTrial
-    ) -> _SearchSpaceGroup:
+    def _get_filtered_search_space_group(self, study: Study) -> _SearchSpaceGroup | None:
+        trials = study._get_filtered_trials(
+            deepcopy=False, states=(TrialState.COMPLETE, TrialState.PRUNED), use_cache=True
+        )
+        if trials is None:
+            return None
+
         search_space_group = _SearchSpaceGroup()
-        for t in self._get_trials(
-            study, trial, states=(TrialState.COMPLETE, TrialState.PRUNED), use_cache=True
-        ):
-            search_space_group.add_distributions(t.distributions)
+        for trial in trials:
+            search_space_group.add_distributions(trial.distributions)
         return copy.deepcopy(search_space_group)
 
     def sample_relative(
         self, study: Study, trial: FrozenTrial, search_space: dict[str, BaseDistribution]
     ) -> dict[str, Any]:
         if self._group:
-            if isinstance(study.pruner, pruners.HyperbandPruner):
-                search_space_group = self._get_bracket_search_space_group(study, trial)
-            else:
+            search_space_group = self._get_filtered_search_space_group(study)
+            if search_space_group is None:
                 assert self._search_space_group is not None
                 search_space_group = self._search_space_group
             params = {}
@@ -540,7 +536,7 @@ class TPESampler(BaseSampler):
             return {}
 
         states = (TrialState.COMPLETE, TrialState.PRUNED)
-        trials = self._get_trials(study, trial, states=states, use_cache=True)
+        trials = self._get_trials(study, states=states, use_cache=True)
         # If the number of samples is insufficient, we run random trial.
         if len(trials) < self._n_startup_trials:
             return {}
@@ -555,7 +551,7 @@ class TPESampler(BaseSampler):
         param_distribution: BaseDistribution,
     ) -> Any:
         states = (TrialState.COMPLETE, TrialState.PRUNED)
-        trials = self._get_trials(study, trial, states=states, use_cache=True)
+        trials = self._get_trials(study, states=states, use_cache=True)
 
         # If the number of samples is insufficient, we run random trial.
         if len(trials) < self._n_startup_trials:
@@ -624,7 +620,7 @@ class TPESampler(BaseSampler):
         else:
             states = [TrialState.COMPLETE, TrialState.PRUNED]
         use_cache = not self._constant_liar
-        trials = self._get_trials(study, trial, states=states, use_cache=use_cache)
+        trials = self._get_trials(study, states=states, use_cache=use_cache)
 
         if self._constant_liar:
             # For constant_liar, filter out the current trial.
