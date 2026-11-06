@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 from functools import lru_cache
 import json
 import math
@@ -23,6 +24,7 @@ from optuna.samplers._lazy_random_state import LazyRandomState
 from optuna.samplers._random import RandomSampler
 from optuna.samplers._tpe.parzen_estimator import _ParzenEstimator
 from optuna.samplers._tpe.parzen_estimator import _ParzenEstimatorParameters
+from optuna.search_space import intersection_search_space
 from optuna.search_space import IntersectionSearchSpace
 from optuna.search_space.group_decomposed import _GroupDecomposedSearchSpace
 from optuna.search_space.group_decomposed import _SearchSpaceGroup
@@ -34,6 +36,7 @@ from optuna.trial import TrialState
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+    from collections.abc import Container
     from collections.abc import Sequence
 
     from optuna.distributions import BaseDistribution
@@ -440,10 +443,13 @@ class TPESampler(BaseSampler):
 
         if self._group:
             assert self._group_decomposed_search_space is not None
-            self._search_space_group = self._group_decomposed_search_space.calculate(
-                study, use_trial_cache
-            )
-            for sub_space in self._search_space_group.search_spaces:
+            search_space_group = self._get_filtered_search_space_group(study)
+            if search_space_group is None:
+                self._search_space_group = self._group_decomposed_search_space.calculate(
+                    study, use_trial_cache
+                )
+                search_space_group = self._search_space_group
+            for sub_space in search_space_group.search_spaces:
                 # Sort keys because Python's string hashing is nondeterministic.
                 for name, distribution in sorted(sub_space.items()):
                     if distribution.single():
@@ -451,20 +457,53 @@ class TPESampler(BaseSampler):
                     search_space[name] = distribution
             return search_space
 
-        for name, distribution in self._search_space.calculate(study, use_trial_cache).items():
+        trials = study._get_filtered_trials(deepcopy=False, use_cache=use_trial_cache)
+        if trials is not None:
+            inferred_search_space = copy.deepcopy(
+                intersection_search_space(trials, include_pruned=True)
+            )
+        else:
+            inferred_search_space = self._search_space.calculate(study, use_trial_cache)
+        for name, distribution in inferred_search_space.items():
             if distribution.single():
                 continue
             search_space[name] = distribution
 
         return search_space
 
+    def _get_trials(
+        self,
+        study: Study,
+        states: Container[TrialState] | None = None,
+        use_cache: bool = False,
+    ) -> list[FrozenTrial]:
+        trials = study._get_filtered_trials(deepcopy=False, states=states, use_cache=use_cache)
+        if trials is not None:
+            return trials
+        return study._get_trials(deepcopy=False, states=states, use_cache=use_cache)
+
+    def _get_filtered_search_space_group(self, study: Study) -> _SearchSpaceGroup | None:
+        trials = study._get_filtered_trials(
+            deepcopy=False, states=(TrialState.COMPLETE, TrialState.PRUNED), use_cache=True
+        )
+        if trials is None:
+            return None
+
+        search_space_group = _SearchSpaceGroup()
+        for trial in trials:
+            search_space_group.add_distributions(trial.distributions)
+        return copy.deepcopy(search_space_group)
+
     def sample_relative(
         self, study: Study, trial: FrozenTrial, search_space: dict[str, BaseDistribution]
     ) -> dict[str, Any]:
         if self._group:
-            assert self._search_space_group is not None
+            search_space_group = self._get_filtered_search_space_group(study)
+            if search_space_group is None:
+                assert self._search_space_group is not None
+                search_space_group = self._search_space_group
             params = {}
-            for sub_space in self._search_space_group.search_spaces:
+            for sub_space in search_space_group.search_spaces:
                 _search_space = {}
                 # Sort keys because Python's string hashing is nondeterministic.
                 for name, distribution in sorted(sub_space.items()):
@@ -497,7 +536,7 @@ class TPESampler(BaseSampler):
             return {}
 
         states = (TrialState.COMPLETE, TrialState.PRUNED)
-        trials = study._get_trials(deepcopy=False, states=states, use_cache=True)
+        trials = self._get_trials(study, states=states, use_cache=True)
         # If the number of samples is insufficient, we run random trial.
         if len(trials) < self._n_startup_trials:
             return {}
@@ -512,7 +551,7 @@ class TPESampler(BaseSampler):
         param_distribution: BaseDistribution,
     ) -> Any:
         states = (TrialState.COMPLETE, TrialState.PRUNED)
-        trials = study._get_trials(deepcopy=False, states=states, use_cache=True)
+        trials = self._get_trials(study, states=states, use_cache=True)
 
         # If the number of samples is insufficient, we run random trial.
         if len(trials) < self._n_startup_trials:
@@ -581,7 +620,7 @@ class TPESampler(BaseSampler):
         else:
             states = [TrialState.COMPLETE, TrialState.PRUNED]
         use_cache = not self._constant_liar
-        trials = study._get_trials(deepcopy=False, states=states, use_cache=use_cache)
+        trials = self._get_trials(study, states=states, use_cache=use_cache)
 
         if self._constant_liar:
             # For constant_liar, filter out the current trial.

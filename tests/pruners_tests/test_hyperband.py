@@ -142,6 +142,118 @@ def test_hyperband_filter_study(
                 assert len(trials) == expected_n_trials_per_bracket
 
 
+@pytest.mark.parametrize("n_trials_per_bracket", [6, 11], ids=["startup", "post_startup"])
+@pytest.mark.parametrize("constant_liar", [False, True])
+def test_hyperband_tpe_ignores_other_bracket_values(
+    n_trials_per_bracket: int, constant_liar: bool
+) -> None:
+    n_trials = 2 * n_trials_per_bracket
+    distributions: dict[str, optuna.distributions.BaseDistribution] = {
+        name: optuna.distributions.FloatDistribution(0.0, 1.0) for name in ("x", "y")
+    }
+    suggestions = []
+    with mock.patch.object(
+        optuna.pruners.HyperbandPruner,
+        "_get_bracket_id",
+        side_effect=lambda study, trial: trial.number % 2,
+    ):
+        for other_bracket_value in (-1.0, 1.0):
+            study = optuna.create_study(
+                sampler=optuna.samplers.TPESampler(seed=7, constant_liar=constant_liar),
+                pruner=optuna.pruners.HyperbandPruner(max_resource=2, reduction_factor=2),
+            )
+            for number in range(n_trials):
+                params = {
+                    "x": (number + 1) / (n_trials + 1),
+                    "y": (number * 7 % n_trials + 1) / (n_trials + 1),
+                }
+                value = (
+                    sum((value - 0.5) ** 2 for value in params.values())
+                    if number % 2 == 0
+                    else other_bracket_value * (1.0 + sum(params.values()))
+                )
+                study.add_trial(
+                    optuna.trial.create_trial(
+                        value=value, params=params, distributions=distributions
+                    )
+                )
+            trial = study.ask()
+            suggestions.append({name: trial.suggest_float(name, 0.0, 1.0) for name in ("x", "y")})
+
+    assert suggestions[0] == suggestions[1]
+    random_trial = optuna.create_study(sampler=optuna.samplers.RandomSampler(seed=7)).ask()
+    random_suggestion = {name: random_trial.suggest_float(name, 0.0, 1.0) for name in ("x", "y")}
+    assert (suggestions[0] == random_suggestion) == (n_trials_per_bracket < 10)
+
+
+def test_hyperband_tpe_ignores_running_trials_in_other_brackets() -> None:
+    distribution = optuna.distributions.FloatDistribution(0.0, 1.0)
+    suggestions = []
+    with mock.patch.object(
+        optuna.pruners.HyperbandPruner,
+        "_get_bracket_id",
+        side_effect=lambda study, trial: trial.number % 2,
+    ):
+        for local_x, other_x in ((0.7, 0.2), (0.7, 0.7), (0.2, 0.2)):
+            study = optuna.create_study(
+                sampler=optuna.samplers.TPESampler(seed=7, n_startup_trials=1, constant_liar=True),
+                pruner=optuna.pruners.HyperbandPruner(max_resource=2, reduction_factor=2),
+            )
+            for x, value in ((0.3, 1.0), (0.6, 0.0)):
+                study.add_trial(
+                    optuna.trial.create_trial(
+                        value=value, params={"x": x}, distributions={"x": distribution}
+                    )
+                )
+            for x in (local_x, other_x):
+                study.add_trial(
+                    optuna.trial.create_trial(
+                        state=optuna.trial.TrialState.RUNNING,
+                        params={"x": x},
+                        distributions={"x": distribution},
+                    )
+                )
+            suggestions.append(study.ask().suggest_float("x", 0.0, 1.0))
+
+    assert suggestions[0] == suggestions[1]
+    assert suggestions[0] != suggestions[2]
+
+
+@pytest.mark.parametrize("group", [False, True])
+def test_hyperband_tpe_infers_each_bracket_search_space(group: bool) -> None:
+    sampler = optuna.samplers.TPESampler(seed=7, n_startup_trials=1, group=group)
+    study = optuna.create_study(
+        sampler=sampler,
+        pruner=optuna.pruners.HyperbandPruner(max_resource=2, reduction_factor=2),
+    )
+    distribution = optuna.distributions.FloatDistribution(0.0, 1.0)
+    search_spaces: list[dict[str, optuna.distributions.BaseDistribution]] = [
+        {name: distribution for name in names} for names in (("x", "y"), ("x", "z"))
+    ]
+    for search_space in search_spaces:
+        study.add_trial(
+            optuna.trial.create_trial(
+                value=0.0,
+                params=dict.fromkeys(search_space, 0.5),
+                distributions=search_space,
+            )
+        )
+
+    with mock.patch.object(
+        optuna.pruners.HyperbandPruner,
+        "_get_bracket_id",
+        side_effect=lambda study, trial: trial.number % 2,
+    ):
+        for search_space in [*search_spaces, search_spaces[0]]:
+            with mock.patch.object(
+                sampler, "_sample_relative", wraps=sampler._sample_relative
+            ) as sample_relative:
+                trial = study.ask(fixed_distributions=search_space)
+            assert trial.relative_search_space == search_space
+            assert [call.args[2] for call in sample_relative.call_args_list] == [search_space]
+            study.tell(trial, 0.0)
+
+
 @pytest.mark.parametrize(
     "pruner_init_func",
     [
