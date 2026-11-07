@@ -81,6 +81,11 @@ class Backoff:
         assert False, "must not reach here"
 
     def write(self, artifact_id: str, content_body: BinaryIO) -> None:
+        try:
+            initial_position = content_body.tell()
+        except OSError:
+            initial_position = 0
+
         for i in range(self._max_retries):
             try:
                 self._backend.write(artifact_id, content_body)
@@ -92,7 +97,7 @@ class Backoff:
                     raise
                 else:
                     _logger.error(f"Failed to open artifact={artifact_id} n_retry={i}", exc_info=e)
-            content_body.seek(0)
+            content_body.seek(initial_position)
             time.sleep(self._get_sleep_secs(i))
 
     def remove(self, artifact_id: str) -> None:
