@@ -533,7 +533,10 @@ def test_copy_study(from_storage_mode: str, to_storage_mode: str) -> None:
 
 @pytest.mark.parametrize("from_storage_mode", STORAGE_MODES)
 @pytest.mark.parametrize("to_storage_mode", STORAGE_MODES)
-def test_copy_study_to_study_name(from_storage_mode: str, to_storage_mode: str) -> None:
+@pytest.mark.parametrize("to_study_name", ["bar", ""])
+def test_copy_study_to_study_name(
+    from_storage_mode: str, to_storage_mode: str, to_study_name: str
+) -> None:
     with (
         StorageSupplier(from_storage_mode) as from_storage,
         StorageSupplier(to_storage_mode) as to_storage,
@@ -552,10 +555,10 @@ def test_copy_study_to_study_name(from_storage_mode: str, to_storage_mode: str) 
             from_study_name=from_study.study_name,
             from_storage=from_storage,
             to_storage=to_storage,
-            to_study_name="bar",
+            to_study_name=to_study_name,
         )
 
-        _ = load_study(study_name="bar", storage=to_storage)
+        _ = load_study(study_name=to_study_name, storage=to_storage)
 
 
 def test_nested_optimization() -> None:
