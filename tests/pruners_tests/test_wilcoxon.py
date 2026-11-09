@@ -118,6 +118,21 @@ def test_wilcoxon_pruner_warn_bad_best_trial(
             trial.should_prune()
 
 
+@pytest.mark.filterwarnings("ignore:WilcoxonPruner finds steps existing in the current trial")
+def test_wilcoxon_pruner_does_not_pair_distinct_large_steps() -> None:
+    study = optuna.create_study(pruner=optuna.pruners.WilcoxonPruner())
+    steps = [2**53 + 4 * i for i in range(8)]
+    study.add_trial(
+        optuna.trial.create_trial(value=0.0, intermediate_values=dict.fromkeys(steps, 0.0))
+    )
+
+    trial = study.ask()
+    for step in steps:
+        trial.report(1.0, step + 1)
+
+    assert not trial.should_prune()
+
+
 def test_wilcoxon_pruner_if_average_is_best_then_not_prune() -> None:
     pruner = optuna.pruners.WilcoxonPruner(p_threshold=0.5)
     study = optuna.study.create_study(direction="minimize", pruner=pruner)

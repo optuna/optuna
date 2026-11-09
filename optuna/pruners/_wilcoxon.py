@@ -156,7 +156,9 @@ class WilcoxonPruner(BasePruner):
         if len(trial.intermediate_values) == 0:
             return False
 
-        steps, step_values = np.array(list(trial.intermediate_values.items())).T
+        # Keep step IDs exact when pairing observations, independently of the float scores.
+        steps = np.asarray(list(trial.intermediate_values), dtype=object)
+        step_values = np.asarray(list(trial.intermediate_values.values()), dtype=float)
 
         if np.any(~np.isfinite(step_values)):
             optuna_warn(
@@ -178,7 +180,8 @@ class WilcoxonPruner(BasePruner):
             )
             return False
 
-        best_steps, best_step_values = np.array(list(best_trial.intermediate_values.items())).T
+        best_steps = np.asarray(list(best_trial.intermediate_values), dtype=object)
+        best_step_values = np.asarray(list(best_trial.intermediate_values.values()), dtype=float)
 
         if np.any(~np.isfinite(best_step_values)):
             optuna_warn(
