@@ -181,9 +181,9 @@ read and write data transparently. Translating the above process into simple pse
     import boto3
     from botocore.config import Config
     import optuna
-    from optuna.artifact import upload_artifact
-    from optuna.artifact import download_artifact
-    from optuna.artifact.boto3 import Boto3ArtifactStore
+    from optuna.artifacts import upload_artifact
+    from optuna.artifacts import download_artifact
+    from optuna.artifacts import Boto3ArtifactStore
 
 
     artifact_store = Boto3ArtifactStore(
