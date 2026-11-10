@@ -11,6 +11,7 @@ from optuna import TrialPruned
 from optuna.study import create_study
 from optuna.testing.objectives import fail_objective
 from optuna.testing.objectives import pruned_objective
+from optuna.trial import FrozenTrial
 from optuna.trial import Trial
 from optuna.visualization._optimization_history import _get_optimization_history_info_list
 from optuna.visualization._optimization_history import _get_optimization_history_plot
@@ -417,7 +418,7 @@ def test_error_bar_with_nan_target(direction: Literal["minimize", "maximize"]) -
             study.enqueue_trial({"x": x})
         study.optimize(objective, n_trials=3)
 
-    def target_with_nan(t: Trial) -> float:
+    def target_with_nan(t: FrozenTrial) -> float:
         if t.number == 1:
             return float("nan")
         return t.values[0]
@@ -450,7 +451,7 @@ def test_error_bar_with_partial_nan_target(direction: Literal["minimize", "maxim
             study.enqueue_trial({"x": x})
         study.optimize(objective, n_trials=2)
 
-    def target_with_partial_nan(t: Trial) -> float:
+    def target_with_partial_nan(t: FrozenTrial) -> float:
         if t.number == 0 and t.params["x"] == 0.1:
             return float("nan")
         return t.values[0]
