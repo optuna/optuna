@@ -80,34 +80,51 @@ def _calc_crowding_distance(population: list[FrozenTrial]) -> defaultdict[int, f
     """
 
     manhattan_distances: defaultdict[int, float] = defaultdict(float)
-    if len(population) == 0:
+    n_pop = len(population)
+    if n_pop == 0:
         return manhattan_distances
 
-    for i in range(len(population[0].values)):
-        population.sort(key=lambda x: x.values[i])
+    values = np.array([trial.values for trial in population], dtype=np.float64)
+    distances = np.zeros(n_pop, dtype=np.float64)
+    order = np.arange(n_pop)
+    padded = np.empty(n_pop + 2, dtype=np.float64)
+    padded[0] = -np.inf
+    padded[-1] = np.inf
+    has_non_constant_dim = False
+
+    for i in range(values.shape[1]):
+        col = values[order, i]
+        order = order[np.argsort(col, kind="mergesort")]
+        sorted_col = values[order, i]
 
         # If all trials in population have the same value in the i-th dimension, ignore the
         # objective dimension since it does not make difference.
-        if population[0].values[i] == population[-1].values[i]:
+        if sorted_col[0] == sorted_col[-1]:
             continue
 
-        vs = [-float("inf")] + [trial.values[i] for trial in population] + [float("inf")]
-
-        # Smallest finite value.
-        v_min = next(x for x in vs if x != -float("inf"))
-
-        # Largest finite value.
-        v_max = next(x for x in reversed(vs) if x != float("inf"))
+        has_non_constant_dim = True
+        low_idx = int(np.searchsorted(sorted_col, -np.inf, side="right"))
+        high_idx = int(np.searchsorted(sorted_col, np.inf, side="left")) - 1
+        v_min = float(sorted_col[low_idx]) if low_idx < n_pop else float("inf")
+        v_max = float(sorted_col[high_idx]) if high_idx >= 0 else -float("inf")
 
         width = v_max - v_min
         if width <= 0:
             # width == 0 or width == -inf
             width = 1.0
 
-        for j in range(len(population)):
+        padded[1:-1] = sorted_col
+        left = padded[:-2]
+        right = padded[2:]
+        with np.errstate(invalid="ignore"):
             # inf - inf and (-inf) - (-inf) is considered to be zero.
-            gap = 0.0 if vs[j] == vs[j + 2] else vs[j + 2] - vs[j]
-            manhattan_distances[population[j].number] += gap / width
+            gaps = np.where(left == right, 0.0, right - left)
+        distances[order] += gaps / width
+
+    if has_non_constant_dim:
+        for trial, dist in zip(population, distances.tolist()):
+            manhattan_distances[trial.number] = dist
+    population[:] = [population[idx] for idx in order.tolist()]
     return manhattan_distances
 
 
