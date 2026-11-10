@@ -405,6 +405,72 @@ optimization_history_info_lists = [
 ]
 
 
+@pytest.mark.parametrize("direction", ["minimize", "maximize"])
+def test_error_bar_with_nan_target(direction: Literal["minimize", "maximize"]) -> None:
+    def objective(trial: Trial) -> float:
+        return trial.suggest_float("x", 0, 1)
+
+    studies = [create_study(direction=direction) for _ in range(3)]
+    suggested_params = [[0.1, 0.2, 0.3], [0.4, 0.5, 0.6], [0.7, 0.8, 0.9]]
+    for params, study in zip(suggested_params, studies):
+        for x in params:
+            study.enqueue_trial({"x": x})
+        study.optimize(objective, n_trials=3)
+
+    def target_with_nan(t: Trial) -> float:
+        if t.number == 1:
+            return float("nan")
+        return t.values[0]
+
+    info_list = _get_optimization_history_info_list(
+        studies, target=target_with_nan, target_name="Target", error_bar=True
+    )
+
+    assert len(info_list) == 1
+    info = info_list[0]
+    assert 1 not in info.trial_numbers
+    assert 0 in info.trial_numbers
+    assert 2 in info.trial_numbers
+    for val in info.values_info.values:
+        assert not math.isnan(val)
+    assert info.values_info.stds is not None
+    for std in info.values_info.stds:
+        assert not math.isnan(std)
+
+
+@pytest.mark.parametrize("direction", ["minimize", "maximize"])
+def test_error_bar_with_partial_nan_target(direction: Literal["minimize", "maximize"]) -> None:
+    def objective(trial: Trial) -> float:
+        return trial.suggest_float("x", 0, 1)
+
+    studies = [create_study(direction=direction) for _ in range(3)]
+    suggested_params = [[0.1, 0.2], [0.3, 0.4], [0.5, 0.6]]
+    for params, study in zip(suggested_params, studies):
+        for x in params:
+            study.enqueue_trial({"x": x})
+        study.optimize(objective, n_trials=2)
+
+    def target_with_partial_nan(t: Trial) -> float:
+        if t.number == 0 and t.params["x"] == 0.1:
+            return float("nan")
+        return t.values[0]
+
+    info_list = _get_optimization_history_info_list(
+        studies, target=target_with_partial_nan, target_name="Target", error_bar=True
+    )
+
+    assert len(info_list) == 1
+    info = info_list[0]
+    assert 0 in info.trial_numbers
+    assert 1 in info.trial_numbers
+    for val in info.values_info.values:
+        assert not math.isnan(val)
+    idx_0 = info.trial_numbers.index(0)
+    assert info.values_info.values[idx_0] == np.mean([0.3, 0.5]).item()
+    assert info.values_info.stds is not None
+    assert info.values_info.stds[idx_0] == np.std([0.3, 0.5]).item()
+
+
 @pytest.mark.parametrize("target_name", ["Objective Value", "Target Name"])
 @pytest.mark.parametrize("info_list", optimization_history_info_lists)
 def test_get_optimization_history_plot(
