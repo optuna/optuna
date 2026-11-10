@@ -159,9 +159,10 @@ class BaseGASampler(BaseSampler, abc.ABC):
         generation = self._cached_generation
         if len(self._cached_generation_numbers) >= self._population_size:
             generation += 1
-        study._storage.set_trial_system_attr(
-            trial._trial_id, self._get_generation_key(), generation
-        )
+        if not trial.state.is_finished():
+            study._storage.set_trial_system_attr(
+                trial._trial_id, self._get_generation_key(), generation
+            )
         return generation
 
     def get_population(self, study: Study, generation: int) -> list[FrozenTrial]:
