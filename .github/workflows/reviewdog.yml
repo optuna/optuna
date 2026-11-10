@@ -42,6 +42,6 @@ jobs:
         uv run ruff format .
 
     - name: Reviewdog
-      uses: reviewdog/action-suggester@ac5ce6d94e35c00530447dc63c271e38e4fd36c6 # v1.26.3
+      uses: reviewdog/action-suggester@295fd4e5482381f33925c46ca5c2f66c69370267 # v1.27.0
       with:
         tool_name: formatters
