@@ -294,7 +294,7 @@ class BaseStorage(abc.ABC):
                 If no trial with the matching ``study_id`` and ``trial_number`` exists.
         """
         trials = self.get_all_trials(study_id, deepcopy=False)
-        if len(trials) <= trial_number:
+        if not 0 <= trial_number < len(trials):
             raise KeyError(f"No trial with {trial_number=} exists in study with {study_id=}.")
         return trials[trial_number]._trial_id
 

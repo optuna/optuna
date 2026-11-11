@@ -228,7 +228,7 @@ class InMemoryStorage(BaseStorage):
                 raise KeyError(f"No study with study_id {study_id} exists.")
 
             trials = study.trials
-            if len(trials) <= trial_number:
+            if not 0 <= trial_number < len(trials):
                 raise KeyError(
                     f"No trial with trial number {trial_number} exists "
                     f"in study with study_id {study_id}."
