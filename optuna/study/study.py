@@ -1510,7 +1510,7 @@ def copy_study(
 
     from_study = load_study(study_name=from_study_name, storage=from_storage)
     to_study = create_study(
-        study_name=to_study_name or from_study_name,
+        study_name=from_study_name if to_study_name is None else to_study_name,
         storage=to_storage,
         directions=from_study.directions,
         load_if_exists=False,
