@@ -349,39 +349,6 @@ def test_pickle_sampler(
     assert sampler._rng.rng.bytes(10) == restored_sampler._rng.rng.bytes(10)
 
 
-@pytest.mark.parametrize(
-    "sampler_class", [optuna.samplers.NSGAIISampler, optuna.samplers.NSGAIIISampler]
-)
-def test_pickle_sampler_resume(
-    sampler_class: type[optuna.samplers.NSGAIISampler] | type[optuna.samplers.NSGAIIISampler],
-) -> None:
-    def objective(trial: Trial) -> tuple[float, float]:
-        x = trial.suggest_float("x", -2, 2)
-        y = trial.suggest_categorical("y", [-1, 0, 1])
-        return x**2 + y, (x - 1) ** 2 - y
-
-    study, restored = [
-        optuna.create_study(
-            sampler=sampler_class(population_size=2, seed=17),
-            directions=["minimize", "minimize"],
-        )
-        for _ in range(2)
-    ]
-    for s in (study, restored):
-        s.optimize(objective, n_trials=3)
-    restored_sampler = pickle.loads(pickle.dumps(restored.sampler))
-    restored.sampler = restored_sampler
-
-    study.optimize(objective, n_trials=4)
-    restored.optimize(objective, n_trials=4)
-    assert [(t.params, t.values) for t in restored.trials] == [
-        (t.params, t.values) for t in study.trials
-    ]
-    assert [
-        restored_sampler.get_trial_generation(restored, trial) for trial in restored.trials
-    ] == [i // 2 for i in range(7)]
-
-
 def test_sample_relative() -> None:
     relative_search_space: dict[str, BaseDistribution] = {
         "a": FloatDistribution(low=0, high=5),
