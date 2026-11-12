@@ -27,6 +27,7 @@ changelog:
     - title: Continuous Integration
       labels:
         - CI
+        - dependencies  # dependabot
     - title: Other
       labels:
         - other
