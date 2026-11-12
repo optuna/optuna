@@ -301,7 +301,7 @@ class JournalStorage(BaseStorage):
     def get_trial_id_from_study_id_trial_number(self, study_id: int, trial_number: int) -> int:
         with self._thread_lock:
             self._sync_with_backend()
-            if len(self._replay_result._study_id_to_trial_ids[study_id]) <= trial_number:
+            if not 0 <= trial_number < len(self._replay_result._study_id_to_trial_ids[study_id]):
                 raise KeyError(f"No trial with {trial_number=} exists in study with {study_id=}.")
             return self._replay_result._study_id_to_trial_ids[study_id][trial_number]
 

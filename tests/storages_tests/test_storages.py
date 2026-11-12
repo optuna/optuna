@@ -75,6 +75,17 @@ class TestStorage(StorageTestCase):
             assert storage._version_manager != restored_storage._version_manager
 
 
+@pytest.mark.parametrize("trial_number", [-1, -2])
+def test_get_trial_id_rejects_negative_number(storage: BaseStorage, trial_number: int) -> None:
+    study_id = storage.create_new_study(directions=[StudyDirection.MINIMIZE])
+    storage.create_new_trial(study_id)
+
+    with pytest.raises(KeyError):
+        storage.get_trial_id_from_study_id_trial_number(study_id, trial_number)
+    with pytest.raises(KeyError):
+        BaseStorage.get_trial_id_from_study_id_trial_number(storage, study_id, trial_number)
+
+
 def test_get_storage() -> None:
     assert isinstance(optuna.storages.get_storage(None), InMemoryStorage)
     assert isinstance(optuna.storages.get_storage("sqlite:///:memory:"), _CachedStorage)

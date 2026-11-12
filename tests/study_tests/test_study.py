@@ -1619,6 +1619,22 @@ def test_tell_invalid() -> None:
         study.tell("1", 1.0)  # type: ignore
 
 
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+@pytest.mark.parametrize("trial_number", [-1, -2])
+def test_tell_rejects_negative_number(storage_mode: str, trial_number: int) -> None:
+    with StorageSupplier(storage_mode) as storage:
+        study = create_study(storage=storage)
+        study.ask()
+        trial = study.ask()
+        before = study.trials
+
+        with pytest.raises(ValueError, match="since it has not been created"):
+            study.tell(trial_number, 1.0)
+
+        assert study.trials == before
+        assert study.tell(trial.number, 1.0).value == 1.0
+
+
 def test_tell_duplicate_tell() -> None:
     study = create_study()
 

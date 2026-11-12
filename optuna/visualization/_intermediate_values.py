@@ -85,7 +85,7 @@ def _get_intermediate_plot(info: _IntermediatePlotInfo) -> "go.Figure":
     if len(trial_infos) == 0:
         return go.Figure(data=[], layout=layout)
 
-    default_marker = {"maxdisplayed": 10}
+    default_marker: dict[str, int | str] = {"maxdisplayed": 10}
 
     traces = [
         go.Scatter(
