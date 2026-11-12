@@ -200,6 +200,8 @@ def test_search_space_transform_untransform_params() -> None:
 @pytest.mark.parametrize(
     "distribution",
     [
+        FloatDistribution(0, 1),
+        FloatDistribution(1, 10, log=True),
         FloatDistribution(0, 1, step=0.2),
         IntDistribution(2, 4),
         IntDistribution(1, 10, log=True),
@@ -210,11 +212,6 @@ def test_transform_untransform_params_at_bounds(
 ) -> None:
     EPS = 1e-12
 
-    # Skip the following two conditions that do not clip in `_untransform_numerical_param`:
-    # 1. `IntDistribution(log=True)` without `transform_log`
-    if not transform_log and (isinstance(distribution, IntDistribution) and distribution.log):
-        return
-
     trans = _SearchSpaceTransform({"x0": distribution}, transform_log, transform_step)
 
     # Manually create round-off errors.
@@ -224,7 +221,10 @@ def test_transform_untransform_params_at_bounds(
     trans_lower_param = _untransform_numerical_param(lower_bound, distribution, transform_log)
     trans_upper_param = _untransform_numerical_param(upper_bound, distribution, transform_log)
     assert trans_lower_param == distribution.low  # type: ignore
-    assert trans_upper_param == distribution.high  # type: ignore
+    if isinstance(distribution, FloatDistribution) and distribution.step is None:
+        assert trans_upper_param == np.nextafter(distribution.high, distribution.high - 1)
+    else:
+        assert trans_upper_param == distribution.high  # type: ignore
 
 
 def test_untransform_numerical_param_int_uses_equal_width_bins() -> None:

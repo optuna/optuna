@@ -288,14 +288,14 @@ def _untransform_numerical_param(
             if d.single():
                 param = trans_param
             else:
-                param = float(min(trans_param, np.nextafter(d.high, d.high - 1)))
+                param = float(np.clip(trans_param, d.low, np.nextafter(d.high, d.high - 1)))
     elif isinstance(d, IntDistribution):
         if d.log:
             if transform_log:
                 param = int(round(math.exp(trans_param)))
-                param = min(max(param, d.low), d.high)
             else:
-                param = int(trans_param)
+                param = int(round(trans_param))
+            param = min(max(param, d.low), d.high)
         else:
             step_index = math.floor((trans_param - d.low) / d.step + 0.5)
             param = step_index * d.step + d.low
