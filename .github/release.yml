@@ -1,0 +1,35 @@
+changelog:
+  categories:
+    - title: Breaking Changes
+      labels:
+        - compatibility
+    - title: New Features
+      labels:
+        - feature
+    - title: Enhancements
+      labels:
+        - enhancement
+    - title: Bug Fixes
+      labels:
+        - bug
+    - title: Installation
+      labels:
+        - installation
+    - title: Documentation
+      labels:
+        - document
+    - title: Tests
+      labels:
+        - test
+    - title: Code Fixes
+      labels:
+        - code-fix
+    - title: Continuous Integration
+      labels:
+        - CI
+    - title: Other
+      labels:
+        - other
+    - title: No Category
+      labels:
+        - '*'
