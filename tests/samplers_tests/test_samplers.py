@@ -334,8 +334,17 @@ def test_reproducible_in_other_process(sampler_name: str, unset_seed_in_test: No
 
 
 @pytest.mark.parametrize("seed", [0, 169208])
-def test_pickle_random_sampler(seed: int) -> None:
-    sampler = optuna.samplers.RandomSampler(seed)
+@pytest.mark.parametrize(
+    "sampler_class",
+    [optuna.samplers.RandomSampler, optuna.samplers.NSGAIISampler, optuna.samplers.NSGAIIISampler],
+)
+def test_pickle_sampler(
+    sampler_class: type[optuna.samplers.RandomSampler]
+    | type[optuna.samplers.NSGAIISampler]
+    | type[optuna.samplers.NSGAIIISampler],
+    seed: int,
+) -> None:
+    sampler = sampler_class(seed=seed)
     restored_sampler = pickle.loads(pickle.dumps(sampler))
     assert sampler._rng.rng.bytes(10) == restored_sampler._rng.rng.bytes(10)
 
