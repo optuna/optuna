@@ -79,6 +79,12 @@ def test_init_scott_parzen_estimator(dist_type: str) -> None:
             np.array([1.9556729] * 2 + [4]),
             np.array([0.5] * 2 + [0.0]),
         ),
+        (
+            np.array([0, 0, 0, 0]),
+            np.array([1.5]),
+            np.array([4.0]),
+            np.array([1.0]),
+        ),
     ],
 )
 def test_build_int_scott_parzen_estimator(
@@ -210,3 +216,29 @@ def test_assert_in_build_parzen_estimator() -> None:
             n_steps=50,
             prior_weight=1.0,
         )
+
+
+@pytest.mark.parametrize("prior_weight", [0.0, 1.0])
+@pytest.mark.parametrize(
+    "distribution",
+    [
+        IntDistribution(1, 8),
+        IntDistribution(1, 8, log=True),
+        FloatDistribution(-2.0, 3.0),
+        FloatDistribution(0.01, 10.0, log=True),
+        CategoricalDistribution(["a", "b", "c"]),
+    ],
+)
+def test_empty_trial_grid_yields_normalized_prior(
+    distribution: BaseDistribution, prior_weight: float
+) -> None:
+    estimator, size = build_parzen_estimator_on_grid(
+        "x", distribution, trials=[], n_steps=9, prior_weight=prior_weight
+    )
+    density = estimator.pdf(np.arange(size))
+    assert density.shape == (size,)
+    assert np.all(np.isfinite(density))
+    assert np.all(density > 0)
+    np.testing.assert_allclose(density.sum(), 1.0)
+    np.testing.assert_allclose(density, density[::-1])
+
