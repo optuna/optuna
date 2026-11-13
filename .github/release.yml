@@ -1,0 +1,39 @@
+changelog:
+  categories:
+    - title: Breaking Changes
+      labels:
+        - compatibility
+    - title: New Features
+      labels:
+        - feature
+    - title: Enhancements
+      labels:
+        - enhancement
+    - title: Bug Fixes
+      labels:
+        - bug
+    - title: Installation
+      labels:
+        - installation
+    - title: Documentation
+      labels:
+        - document
+    - title: Tests
+      labels:
+        - test
+    - title: Code Fixes
+      labels:
+        - code-fix
+    - title: Continuous Integration
+      labels:
+        - CI
+        - dependencies  # dependabot
+    - title: Other
+      labels:
+        - other
+    # "No Category" collects PRs that are missing a category label. Before
+    # publishing, give each of them a proper label and move it to the matching
+    # section. This section is not meant to remain in the final release note.
+    - title: No Category
+      labels:
+        - '*'
