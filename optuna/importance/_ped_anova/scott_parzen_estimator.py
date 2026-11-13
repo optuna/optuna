@@ -81,11 +81,20 @@ class ScottParzenEstimator:
         assert step is not None and np.isclose(step, 1.0), "MyPy redefinition."
 
         low, high = search_space.low, search_space.high
+        if search_space.log:
+            low, high = math.log(low), math.log(high)
+        if len(observations) == 0:
+            return _BatchedDiscreteTruncNormDistributions(
+                mu=np.array([(low + high) / 2.0]),
+                sigma=np.array([high - low + 1], dtype=np.float64),
+                low=low,
+                high=high,
+                step=1,
+            )
         weights_cum = np.cumsum(weights)
         weights_sum = weights_cum[-1]
         if search_space.log:
             observations = np.log(observations)
-            low, high = math.log(low), math.log(high)
 
         mean_est = (observations @ weights) / weights_sum
         sigma_est = np.sqrt(((observations - mean_est) ** 2 @ weights) / max(1, weights_sum - 1))

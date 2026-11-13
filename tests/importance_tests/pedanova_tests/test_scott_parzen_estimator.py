@@ -79,6 +79,12 @@ def test_init_scott_parzen_estimator(dist_type: str) -> None:
             np.array([1.9556729] * 2 + [4]),
             np.array([0.5] * 2 + [0.0]),
         ),
+        (
+            np.array([0, 0, 0, 0]),
+            np.array([1.5]),
+            np.array([4.0]),
+            np.array([1.0]),
+        ),
     ],
 )
 def test_build_int_scott_parzen_estimator(
