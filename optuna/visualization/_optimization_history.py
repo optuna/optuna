@@ -144,18 +144,23 @@ def _get_optimization_history_info_list(
                 assert best_values_info is not None
                 values_info = best_values_info
             for n, v, s in zip(trial_numbers, values_info.values, values_info.states):
-                if not math.isinf(v):
-                    if not use_best_value and s == _ValueState.Feasible:
-                        values[n].append(v)
-                    elif use_best_value:
-                        values[n].append(v)
+                if not math.isfinite(v):
+                    if math.isnan(v) and s == _ValueState.Feasible:
+                        _logger.warning(
+                            f"Trial {n} is omitted in visualization "
+                            "because its objective value is nan."
+                        )
+                elif not use_best_value and s == _ValueState.Feasible:
+                    values[n].append(v)
+                elif use_best_value:
+                    values[n].append(v)
                 states[n].append(s)
         trial_numbers_union: list[int] = []
         value_states: list[_ValueState] = []
         value_means: list[float] = []
         value_stds: list[float] = []
         for i in range(max_num_trial):
-            if len(states[i]) > 0 and _ValueState.Feasible in states[i]:
+            if len(states[i]) > 0 and _ValueState.Feasible in states[i] and len(values[i]) > 0:
                 value_states.append(_ValueState.Feasible)
                 trial_numbers_union.append(i)
                 value_means.append(np.mean(values[i]).item())
