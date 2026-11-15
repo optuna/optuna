@@ -241,4 +241,3 @@ def test_empty_trial_grid_yields_normalized_prior(
     assert np.all(density > 0)
     np.testing.assert_allclose(density.sum(), 1.0)
     np.testing.assert_allclose(density, density[::-1])
-
