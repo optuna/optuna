@@ -382,7 +382,7 @@ def test_color_map(direction: Literal["minimize", "maximize"]) -> None:
     ],
 )
 def test_plot_pareto_front_targets_metric_names_length_mismatch(
-    directions: list[str],
+    directions: list[Literal["minimize", "maximize"]],
     metric_names: list[str],
     target_values: list[float],
     expected_target_names: list[str],
