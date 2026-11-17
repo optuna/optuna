@@ -349,6 +349,44 @@ def test_pickle_sampler(
     assert sampler._rng.rng.bytes(10) == restored_sampler._rng.rng.bytes(10)
 
 
+@pytest.mark.parametrize(
+    "sampler_class", [optuna.samplers.NSGAIISampler, optuna.samplers.NSGAIIISampler]
+)
+def test_ga_sampler_resume_copied_study(
+    sampler_class: type[optuna.samplers.NSGAIISampler] | type[optuna.samplers.NSGAIIISampler],
+) -> None:
+    def objective(trial: Trial) -> tuple[float, float]:
+        x = trial.suggest_float("x", 0, 1)
+        return x, 1 - x
+
+    from_storage = optuna.storages.InMemoryStorage()
+    to_storage = optuna.storages.InMemoryStorage()
+    optuna.create_study(storage=to_storage).optimize(lambda trial: 0.0, n_trials=1)
+    sampler = sampler_class(population_size=2, crossover_prob=1, seed=3)
+    study = optuna.create_study(
+        storage=from_storage, sampler=sampler, directions=["minimize", "minimize"]
+    )
+    study.optimize(objective, n_trials=3)
+    cache_key = f"{sampler_class.__name__}:parent:1"
+    parent_ids = from_storage.get_study_system_attrs(study._study_id)[cache_key]
+    # Older copies can retain IDs belonging to another storage.
+    from_storage.set_study_system_attr(study._study_id, cache_key, parent_ids + [100])
+
+    optuna.copy_study(
+        from_study_name=study.study_name, from_storage=from_storage, to_storage=to_storage
+    )
+    copied_sampler = sampler_class(population_size=2, crossover_prob=1, seed=3)
+    copied = optuna.load_study(
+        study_name=study.study_name, storage=to_storage, sampler=copied_sampler
+    )
+    copied.optimize(objective, n_trials=1)
+
+    assert [trial.number for trial in copied_sampler.get_parent_population(copied, 1)] == [
+        trial.number for trial in sampler.get_parent_population(study, 1)
+    ]
+    assert all(trial.state == optuna.trial.TrialState.COMPLETE for trial in copied.trials)
+
+
 def test_sample_relative() -> None:
     relative_search_space: dict[str, BaseDistribution] = {
         "a": FloatDistribution(low=0, high=5),

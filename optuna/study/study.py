@@ -8,6 +8,7 @@ from collections.abc import Sequence
 import copy
 from numbers import Integral
 from numbers import Real
+import re
 import threading
 from typing import Any
 from typing import cast
@@ -1516,12 +1517,15 @@ def copy_study(
         load_if_exists=False,
     )
 
-    for key, value in from_study._storage.get_study_system_attrs(from_study._study_id).items():
+    system_attrs = from_study._storage.get_study_system_attrs(from_study._study_id)
+    for key, value in system_attrs.items():
         to_study._storage.set_study_system_attr(to_study._study_id, key, value)
 
     for key, value in from_study.user_attrs.items():
         to_study.set_user_attr(key, value)
 
+    trial_id_map: dict[int, int] = {}
+    parent_cache_prefixes: set[str] = set()
     # Trials are deep copied on `add_trials`.
     for trial in from_study.get_trials(deepcopy=False):
         if trial.values is not None and len(to_study.directions) != len(trial.values):
@@ -1530,7 +1534,28 @@ def copy_study(
                 f"number of objectives {len(to_study.directions)} in the study (determined by "
                 "Study.directions)."
             )
-        to_study._storage.create_new_trial(to_study._study_id, template_trial=trial)
+        trial_id_map[trial._trial_id] = to_study._storage.create_new_trial(
+            to_study._study_id, template_trial=trial
+        )
+        parent_cache_prefixes.update(
+            key.removesuffix(":generation") + ":parent:"
+            for key in trial.system_attrs
+            if key.endswith(":generation")
+        )
+
+    for key, value in system_attrs.items():
+        # GA parent caches contain storage-specific trial IDs, including in existing studies.
+        if not isinstance(value, list) or not all(type(trial_id) is int for trial_id in value):
+            continue
+        if any(
+            key.startswith(prefix) and re.fullmatch(r"0|-?[1-9][0-9]*", key[len(prefix) :])
+            for prefix in parent_cache_prefixes
+        ):
+            to_study._storage.set_study_system_attr(
+                to_study._study_id,
+                key,
+                [trial_id_map[trial_id] for trial_id in value if trial_id in trial_id_map],
+            )
 
 
 def get_all_study_summaries(
