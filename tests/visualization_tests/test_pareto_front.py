@@ -354,3 +354,45 @@ def test_color_map(direction: Literal["minimize", "maximize"]) -> None:
     marker = plot_pareto_front(study).data[0]["marker"]
     assert COLOR_SCALE == [v[1] for v in marker["colorscale"]]
     assert "reversecale" not in marker
+
+
+@pytest.mark.parametrize(
+    "directions,metric_names,target_values,expected_target_names",
+    [
+        (["minimize"], ["m0"], [1.0, 2.0], ["Objective 0", "Objective 1"]),
+        (
+            ["minimize", "minimize"],
+            ["m0", "m1"],
+            [1.0, 2.0, 3.0],
+            ["Objective 0", "Objective 1", "Objective 2"],
+        ),
+        (
+            ["minimize"] * 4,
+            ["m0", "m1", "m2", "m3"],
+            [1.0, 2.0],
+            ["Objective 0", "Objective 1"],
+        ),
+    ],
+)
+@pytest.mark.parametrize(
+    "plotter",
+    [
+        optuna.visualization.plot_pareto_front,
+        optuna.visualization.matplotlib.plot_pareto_front,
+    ],
+)
+def test_plot_pareto_front_targets_metric_names_length_mismatch(
+    directions: list[str],
+    metric_names: list[str],
+    target_values: list[float],
+    expected_target_names: list[str],
+    plotter: Callable[..., Any],
+) -> None:
+    study = optuna.create_study(directions=directions)
+    study.set_metric_names(metric_names)
+    study.add_trial(create_trial(values=[float(i) for i in range(len(directions))]))
+
+    info = _get_pareto_front_info(study, targets=lambda _: target_values)
+    assert info.target_names == expected_target_names
+
+    plotter(study, targets=lambda _: target_values)

@@ -268,7 +268,7 @@ def _get_pareto_front_info(
 
     if target_names is None:
         metric_names = study.metric_names
-        if metric_names is None:
+        if metric_names is None or len(metric_names) != n_targets:
             target_names = [f"Objective {i}" for i in range(n_targets)]
         else:
             target_names = metric_names
