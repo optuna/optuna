@@ -77,9 +77,7 @@ class MeanDecreaseImpurityImportanceEvaluator(BaseImportanceEvaluator):
             )
 
         distributions = _get_distributions(study, params=params)
-        if params is None:
-            params = list(distributions.keys())
-        assert params is not None
+        params = list(distributions)
         if len(params) == 0:
             return {}
 

@@ -6,17 +6,22 @@ from typing import Any
 from _pytest.fixtures import SubRequest
 import pytest
 
+from optuna.distributions import BaseDistribution
+from optuna.distributions import CategoricalDistribution
+from optuna.distributions import FloatDistribution
 from optuna.exceptions import ExperimentalWarning
 from optuna.importance import BaseImportanceEvaluator
 from optuna.importance import FanovaImportanceEvaluator
 from optuna.importance import get_param_importances
 from optuna.importance import MeanDecreaseImpurityImportanceEvaluator
 from optuna.importance import PedAnovaImportanceEvaluator
+from optuna.study import create_study
 from optuna.testing.pytest_importance import _get_study
 from optuna.testing.pytest_importance import BasicImportanceEvaluatorTestCase
 from optuna.testing.pytest_importance import ConditionalImportanceEvaluatorTestCase
 from optuna.testing.pytest_importance import MultiObjectiveImportanceEvaluatorTestCase
 from optuna.testing.pytest_importance import NonConditionalImportanceEvaluatorTestCase
+from optuna.trial import create_trial
 
 
 def _mean_decrease_impurity_evaluator(
@@ -105,3 +110,48 @@ def test_get_param_importances_unnormalized_experimental() -> None:
     study = _get_study(seed=0, n_trials=3, is_multi_obj=False)
     with pytest.warns(ExperimentalWarning):
         get_param_importances(study, normalize=False)
+
+
+@pytest.mark.parametrize("params", [["a", "b", "z"], ["a", "z"]])
+@pytest.mark.parametrize(
+    "distribution, values",
+    [
+        (FloatDistribution(0.0, 1.0), [i / 15 for i in range(16)]),
+        (CategoricalDistribution(["low", "medium", "high"]), ["low", "medium", "high"] * 6),
+    ],
+)
+def test_mean_decrease_impurity_parameter_order(
+    params: list[str], distribution: BaseDistribution, values: list[Any]
+) -> None:
+    study = create_study()
+    study.add_trials(
+        [
+            create_trial(
+                value=float(i),
+                params={"a": value, "b": 0.25, "z": 0.5},
+                distributions={
+                    "a": distribution,
+                    "b": FloatDistribution(0.0, 1.0),
+                    "z": FloatDistribution(0.0, 1.0),
+                },
+            )
+            for i, value in enumerate(values)
+        ]
+    )
+    original_params = params.copy()
+    reversed_params = list(reversed(params))
+    evaluator = MeanDecreaseImpurityImportanceEvaluator(seed=0)
+
+    expected = get_param_importances(study, evaluator=evaluator, params=params)
+    assert params == original_params
+    actual = get_param_importances(study, evaluator=evaluator, params=reversed_params)
+    assert reversed_params == list(reversed(original_params))
+    assert expected["a"] > 0.0
+    assert expected["z"] == 0.0
+    assert actual == expected
+
+    assert evaluator.evaluate(study, params=reversed_params) == evaluator.evaluate(
+        study, params=params
+    )
+    assert params == original_params
+    assert reversed_params == list(reversed(original_params))
