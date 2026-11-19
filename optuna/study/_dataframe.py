@@ -112,7 +112,8 @@ def _trials_dataframe(
 
     records, columns = _create_records_and_aggregate_column(study, attrs)
 
-    df = pd.DataFrame(records, columns=pd.MultiIndex.from_tuples(columns))
+    # Explicitly specify two levels so pandas can also construct an empty MultiIndex.
+    df = pd.DataFrame(records, columns=pd.MultiIndex.from_tuples(columns, names=(None, None)))
 
     if not multi_index:
         df.columns = _flatten_columns(columns)

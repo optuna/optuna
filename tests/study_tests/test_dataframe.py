@@ -17,6 +17,19 @@ def test_study_trials_dataframe_with_no_trials() -> None:
     assert trials_df.empty
 
 
+@pytest.mark.parametrize("attrs", [(), ("params",), ("user_attrs",)])
+@pytest.mark.parametrize("multi_index", [True, False])
+def test_trials_dataframe_with_no_columns(attrs: tuple[str, ...], multi_index: bool) -> None:
+    study = create_study()
+    study.add_trials([create_trial(value=1.0), create_trial(value=2.0)])
+
+    df = study.trials_dataframe(attrs=attrs, multi_index=multi_index)
+
+    assert df.shape == (2, 0)
+    pd.testing.assert_index_equal(df.index, pd.RangeIndex(2))
+    assert df.columns.nlevels == (2 if multi_index else 1)
+
+
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 @pytest.mark.parametrize(
     "attrs",
