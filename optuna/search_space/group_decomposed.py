@@ -20,21 +20,34 @@ class _SearchSpaceGroup:
         return self._search_spaces
 
     def add_distributions(self, distributions: dict[str, BaseDistribution]) -> None:
+        if not distributions:
+            return
+
         dist_keys = set(distributions.keys())
         next_search_spaces = []
 
         for search_space in self._search_spaces:
-            keys = set(search_space.keys())
+            if not dist_keys:
+                next_search_spaces.append(search_space)
+                continue
 
-            next_search_spaces.append({name: search_space[name] for name in keys & dist_keys})
-            next_search_spaces.append({name: search_space[name] for name in keys - dist_keys})
+            keys = search_space.keys()
+            overlap = keys & dist_keys
+            if not overlap:
+                next_search_spaces.append(search_space)
+                continue
 
-            dist_keys -= keys
+            if len(overlap) == len(search_space):
+                next_search_spaces.append(search_space)
+            else:
+                next_search_spaces.append({name: search_space[name] for name in overlap})
+                next_search_spaces.append({name: search_space[name] for name in keys - dist_keys})
 
-        next_search_spaces.append({name: distributions[name] for name in dist_keys})
-        self._search_spaces = list(
-            filter(lambda search_space: len(search_space) > 0, next_search_spaces)
-        )
+            dist_keys -= overlap
+
+        if dist_keys:
+            next_search_spaces.append({name: distributions[name] for name in dist_keys})
+        self._search_spaces = next_search_spaces
 
 
 class _GroupDecomposedSearchSpace:
@@ -42,6 +55,7 @@ class _GroupDecomposedSearchSpace:
         self._search_space = _SearchSpaceGroup()
         self._study_id: int | None = None
         self._include_pruned = include_pruned
+        self._processed_trial_numbers: set[int] = set()
 
     def calculate(self, study: Study, use_cache: bool = False) -> _SearchSpaceGroup:
         if self._study_id is None:
@@ -63,6 +77,9 @@ class _GroupDecomposedSearchSpace:
         for trial in study._get_trials(
             deepcopy=False, states=states_of_interest, use_cache=use_cache
         ):
+            if trial.number in self._processed_trial_numbers:
+                continue
             self._search_space.add_distributions(trial.distributions)
+            self._processed_trial_numbers.add(trial.number)
 
         return copy.deepcopy(self._search_space)

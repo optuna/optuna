@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 import pytest
 
 from optuna import create_study
@@ -213,3 +215,32 @@ def test_group_decomposed_search_space_with_different_studies() -> None:
         with pytest.raises(ValueError):
             # `_GroupDecomposedSearchSpace` isn't supposed to be used for multiple studies.
             search_space.calculate(study1)
+
+
+def test_group_decomposed_search_space_incremental() -> None:
+    search_space = _GroupDecomposedSearchSpace()
+    study = create_study()
+
+    with patch.object(
+        search_space._search_space,
+        "add_distributions",
+        wraps=search_space._search_space.add_distributions,
+    ) as mock_add:
+        study.optimize(lambda t: t.suggest_int("x", 0, 10), n_trials=3)
+        res1 = search_space.calculate(study)
+        assert mock_add.call_count == 3
+        assert res1.search_spaces == [{"x": IntDistribution(low=0, high=10)}]
+
+        # Calling calculate again without new trials should not re-process completed trials.
+        res2 = search_space.calculate(study)
+        assert mock_add.call_count == 3
+        assert res2.search_spaces == [{"x": IntDistribution(low=0, high=10)}]
+
+        # Adding 2 more trials should only process the 2 new trials.
+        study.optimize(lambda t: t.suggest_float("y", -1.0, 1.0), n_trials=2)
+        res3 = search_space.calculate(study)
+        assert mock_add.call_count == 5
+        assert res3.search_spaces == [
+            {"x": IntDistribution(low=0, high=10)},
+            {"y": FloatDistribution(low=-1.0, high=1.0)},
+        ]
