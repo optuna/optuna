@@ -142,6 +142,24 @@ def test_hyperband_filter_study(
                 assert len(trials) == expected_n_trials_per_bracket
 
 
+@pytest.mark.parametrize("use_cache", [False, True])
+def test_bracket_study_filters_private_get_trials(use_cache: bool) -> None:
+    # Samplers read trials through `_get_trials`, so it must be filtered like `get_trials`.
+    pruner = optuna.pruners.HyperbandPruner(
+        min_resource=MIN_RESOURCE, max_resource=MAX_RESOURCE, reduction_factor=REDUCTION_FACTOR
+    )
+    study = optuna.study.create_study(sampler=optuna.samplers.RandomSampler(), pruner=pruner)
+    with mock.patch(
+        "optuna.pruners.HyperbandPruner._get_bracket_id",
+        new=mock.Mock(side_effect=lambda study, trial: trial.number % N_BRACKETS),
+    ):
+        study.optimize(lambda t: t.suggest_float("value", 0.0, 1.0), n_trials=8)
+        bracket_study = pruner._create_bracket_study(study, 1)
+        trials = bracket_study._get_trials(deepcopy=False, use_cache=use_cache)
+
+    assert [t.number for t in trials] == [1, 5]
+
+
 @pytest.mark.parametrize(
     "pruner_init_func",
     [
@@ -259,3 +277,26 @@ def test_hyperband_pruner_and_brute_force_sampler() -> None:
 
     trials = study.trials
     assert len(trials) == 9
+
+
+@pytest.mark.parametrize(
+    "sampler_init_func",
+    [
+        lambda: optuna.samplers.NSGAIISampler(population_size=2, seed=0),
+        lambda: optuna.samplers.NSGAIIISampler(population_size=2, seed=0),
+    ],
+)
+def test_hyperband_pruner_and_ga_sampler(
+    sampler_init_func: Callable[[], optuna.samplers.BaseSampler],
+) -> None:
+    pruner = optuna.pruners.HyperbandPruner(
+        min_resource=MIN_RESOURCE, max_resource=MAX_RESOURCE, reduction_factor=REDUCTION_FACTOR
+    )
+    study = optuna.study.create_study(sampler=sampler_init_func(), pruner=pruner)
+    with mock.patch(
+        "optuna.pruners.HyperbandPruner._get_bracket_id",
+        new=mock.Mock(side_effect=lambda study, trial: trial.number % N_BRACKETS),
+    ):
+        study.optimize(lambda t: t.suggest_float("value", 0.0, 1.0), n_trials=10)
+
+    assert len(study.trials) == 10

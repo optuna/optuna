@@ -9,6 +9,7 @@ from optuna.pruners._percentile import PercentilePruner
 from optuna.pruners._successive_halving import SuccessiveHalvingPruner
 from optuna.pruners._threshold import ThresholdPruner
 from optuna.pruners._wilcoxon import WilcoxonPruner
+from optuna.samplers._ga import BaseGASampler
 
 
 if TYPE_CHECKING:
@@ -30,7 +31,8 @@ __all__ = [
 
 
 def _filter_study(study: "Study", trial: "FrozenTrial") -> "Study":
-    if isinstance(study.pruner, HyperbandPruner):
+    # GA samplers count generations over all trials, so they must not get a bracket view.
+    if isinstance(study.pruner, HyperbandPruner) and not isinstance(study.sampler, BaseGASampler):
         # Create `_BracketStudy` to use trials that have the same bracket id.
         pruner: HyperbandPruner = study.pruner
         return pruner._create_bracket_study(study, pruner._get_bracket_id(study, trial))
