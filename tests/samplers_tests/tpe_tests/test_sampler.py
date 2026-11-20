@@ -1205,10 +1205,12 @@ def _split_trials_spy() -> tuple[list[list[FrozenTrial]], Callable[..., Any]]:
     return seen, spy
 
 
-def test_failed_trial_marked_infeasible_is_used() -> None:
+@pytest.mark.parametrize("constant_liar", [True, False])
+def test_failed_trial_marked_infeasible_is_used(constant_liar: bool) -> None:
     # A trial that sets a violated constraint and then fails (e.g. out of memory) has no value,
     # but it tells the sampler that its region is infeasible. TPE must use it as infeasible.
-    study = optuna.create_study(sampler=TPESampler(n_startup_trials=0, seed=0))
+    sampler = TPESampler(n_startup_trials=0, seed=0, constant_liar=constant_liar)
+    study = optuna.create_study(sampler=sampler)
     dist = optuna.distributions.FloatDistribution(-1.0, 1.0)
     for i in range(5):
         study.add_trial(
@@ -1234,8 +1236,10 @@ def test_failed_trial_marked_infeasible_is_used() -> None:
     assert failed[0] in above
 
 
-def test_failed_trial_without_violated_constraint_is_ignored() -> None:
-    study = optuna.create_study(sampler=TPESampler(n_startup_trials=0, seed=0))
+@pytest.mark.parametrize("constant_liar", [True, False])
+def test_failed_trial_without_violated_constraint_is_ignored(constant_liar: bool) -> None:
+    sampler = TPESampler(n_startup_trials=0, seed=0, constant_liar=constant_liar)
+    study = optuna.create_study(sampler=sampler)
     dist = optuna.distributions.FloatDistribution(-1.0, 1.0)
     for i in range(5):
         study.add_trial(
@@ -1258,7 +1262,8 @@ def test_failed_trial_without_violated_constraint_is_ignored() -> None:
     assert seen and all(t.state != TrialState.FAIL for t in seen[-1])
 
 
-def test_failed_infeasible_trials_steer_sampling_away() -> None:
+@pytest.mark.parametrize("constant_liar", [True, False])
+def test_failed_infeasible_trials_steer_sampling_away(constant_liar: bool) -> None:
     # End to end: trials in x > 0 run out of memory. They mark themselves infeasible and raise.
     # With failed infeasible trials used, TPE should propose x > 0 far less often.
     def objective(trial: optuna.Trial) -> float:
@@ -1268,7 +1273,8 @@ def test_failed_infeasible_trials_steer_sampling_away() -> None:
             raise RuntimeError("CUDA out of memory")
         return (x + 0.5) ** 2
 
-    study = optuna.create_study(sampler=TPESampler(n_startup_trials=10, seed=0))
+    sampler = TPESampler(n_startup_trials=10, seed=0, constant_liar=constant_liar)
+    study = optuna.create_study(sampler=sampler)
     study.optimize(objective, n_trials=60, catch=(RuntimeError,))
     late = [t.params["x"] for t in study.trials[30:]]
     assert sum(x > 0 for x in late) <= 3, late
