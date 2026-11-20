@@ -18,14 +18,11 @@ from optuna.study._constrained_optimization import _CONSTRAINTS_KEY
 from optuna.trial import Trial
 
 
-@pytest.mark.parametrize("use_hyperband", [False, True])
-def test_hyperopt_parameters(use_hyperband: bool) -> None:
+def test_hyperopt_parameters() -> None:
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", FutureWarning)
         sampler = TPESampler(**TPESampler.hyperopt_parameters())
-    study = optuna.create_study(
-        sampler=sampler, pruner=optuna.pruners.HyperbandPruner() if use_hyperband else None
-    )
+    study = optuna.create_study(sampler=sampler)
     study.optimize(lambda t: t.suggest_float("x", 10, 20), n_trials=50)
 
 

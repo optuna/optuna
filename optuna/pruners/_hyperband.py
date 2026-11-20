@@ -1,18 +1,27 @@
 from __future__ import annotations
 
 import binascii
+import copy
 import math
+import threading
+from typing import Any
+from typing import cast
 from typing import TYPE_CHECKING
 
 import optuna
+from optuna import logging
+from optuna._warnings import optuna_warn
+from optuna.pruners._base import BasePruner
+from optuna.pruners._successive_halving import SuccessiveHalvingPruner
+from optuna.trial._state import TrialState
 
 
 if TYPE_CHECKING:
     from collections.abc import Container
-from optuna import logging
-from optuna.pruners._base import BasePruner
-from optuna.pruners._successive_halving import SuccessiveHalvingPruner
-from optuna.trial._state import TrialState
+
+    from optuna.storages import BaseStorage
+    from optuna.study import Study
+    from optuna.trial import FrozenTrial
 
 
 _logger = logging.get_logger(__name__)
@@ -20,6 +29,11 @@ _logger = logging.get_logger(__name__)
 
 class HyperbandPruner(BasePruner):
     """Pruner using Hyperband.
+
+    This pruner makes pruning decisions within each bracket. To also use bracket-specific
+    history for sampling, set the study's sampler to :class:`~optuna.samplers.HyperbandSampler`
+    and specify an integer ``max_resource``. With an unwrapped sampler, the pruner emits a
+    warning during pruning and continues to make bracket-specific pruning decisions.
 
     As SuccessiveHalving (SHA) requires the number of configurations
     :math:`n` as its hyperparameter.  For a given finite budget :math:`B`,
@@ -31,25 +45,21 @@ class HyperbandPruner(BasePruner):
     .. note::
         * In the Hyperband paper, the counterpart of :class:`~optuna.samplers.RandomSampler`
           is used.
-        * Optuna uses :class:`~optuna.samplers.TPESampler` by default.
-        * `The benchmark result
-          <https://github.com/optuna/optuna/pull/828#issuecomment-575457360>`__
-          shows that :class:`optuna.pruners.HyperbandPruner` supports both samplers.
+        * :class:`~optuna.samplers.HyperbandSampler` uses :class:`~optuna.samplers.TPESampler`
+          by default.
+        * The `original benchmark results
+          <https://github.com/optuna/optuna/pull/828#issuecomment-575457360>`__ cover the earlier
+          integration of ``HyperbandPruner`` with both samplers.
 
     .. note::
-        If you use ``HyperbandPruner`` with :class:`~optuna.samplers.TPESampler`,
-        it's recommended to consider setting larger ``n_trials`` or ``timeout`` to make full use of
-        the characteristics of :class:`~optuna.samplers.TPESampler`
-        because :class:`~optuna.samplers.TPESampler` uses some (by default, :math:`10`)
-        :class:`~optuna.trial.Trial`\\ s for its startup.
+        When using the default :class:`~optuna.samplers.HyperbandSampler`, consider setting larger
+        ``n_trials`` or ``timeout`` to give each bracket's TPE sampler time to finish startup.
 
-        As Hyperband runs multiple :class:`~optuna.pruners.SuccessiveHalvingPruner` and collects
-        trials based on the current :class:`~optuna.trial.Trial`\\ 's bracket ID, each bracket
-        needs to observe more than :math:`10` :class:`~optuna.trial.Trial`\\ s
-        for :class:`~optuna.samplers.TPESampler` to adapt its search space.
-
-        Thus, for example, if ``HyperbandPruner`` has :math:`4` pruners in it,
-        at least :math:`4 \\times 10` trials are consumed for startup.
+        Each bracket uses its own :class:`~optuna.samplers.TPESampler`, which needs
+        ``n_startup_trials`` completed or pruned trials (10 by default) before using their results.
+        With four brackets, at least :math:`4 \\times 10` trials are consumed for startup.
+        Trials are distributed unevenly across brackets, so some brackets may require a larger
+        overall trial budget to finish startup.
 
     .. note::
         Hyperband has several :class:`~optuna.pruners.SuccessiveHalvingPruner`\\ s. Each
@@ -72,7 +82,7 @@ class HyperbandPruner(BasePruner):
 
     Example:
 
-        We minimize an objective function with Hyperband pruning algorithm.
+        Maximize validation accuracy with Hyperband pruning and bracket-specific sampling.
 
         .. testcode::
 
@@ -107,6 +117,7 @@ class HyperbandPruner(BasePruner):
 
             study = optuna.create_study(
                 direction="maximize",
+                sampler=optuna.samplers.HyperbandSampler(),
                 pruner=optuna.pruners.HyperbandPruner(
                     min_resource=1, max_resource=n_train_iter, reduction_factor=3
                 ),
@@ -145,6 +156,8 @@ class HyperbandPruner(BasePruner):
             See the details for :class:`~optuna.pruners.SuccessiveHalvingPruner`.
     """
 
+    _initialization_lock = threading.Lock()
+
     def __init__(
         self,
         min_resource: int = 1,
@@ -173,10 +186,22 @@ class HyperbandPruner(BasePruner):
                 f"are mutually incompatible, bootstrap_count is {self._bootstrap_count}"
             )
 
-    def prune(self, study: "optuna.study.Study", trial: "optuna.trial.FrozenTrial") -> bool:
-        if len(self._pruners) == 0:
+        if isinstance(max_resource, int):
+            self._initialize_brackets(max_resource)
+
+    def prune(self, study: optuna.study.Study, trial: optuna.trial.FrozenTrial) -> bool:
+        # Subclasses can define their own sampler pairing.
+        if type(self) is HyperbandPruner and not isinstance(
+            study.sampler, optuna.samplers.HyperbandSampler
+        ):
+            optuna_warn(
+                "HyperbandPruner is being used without HyperbandSampler. "
+                "Wrap the sampler with HyperbandSampler and set an integer max_resource "
+                "to use only the current bracket's history when proposing new trials."
+            )
+        if not self._pruners:
             self._try_initialization(study)
-            if len(self._pruners) == 0:
+            if not self._pruners:
                 return False
 
         bracket_id = self._get_bracket_id(study, trial)
@@ -184,72 +209,59 @@ class HyperbandPruner(BasePruner):
         bracket_study = self._create_bracket_study(study, bracket_id)
         return self._pruners[bracket_id].prune(bracket_study, trial)
 
-    def _try_initialization(self, study: "optuna.study.Study") -> None:
-        if self._max_resource == "auto":
+    def _try_initialization(self, study: Study) -> None:
+        max_resource = self._max_resource
+        if not isinstance(max_resource, int):
             trials = study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,))
             n_steps = [t.last_step for t in trials if t.last_step is not None]
-
             if not n_steps:
                 return
 
-            self._max_resource = max(n_steps) + 1
+            max_resource = max(n_steps) + 1
 
-        assert isinstance(self._max_resource, int)
+        with self._initialization_lock:
+            if not self._pruners:
+                self._initialize_brackets(max_resource)
 
-        if self._n_brackets is None:
-            # In the original paper http://www.jmlr.org/papers/volume18/16-558/16-558.pdf, the
-            # inputs of Hyperband are `R`: max resource and `\eta`: reduction factor. The
-            # number of brackets (this is referred as `s_{max} + 1` in the paper) is calculated
-            # by s_{max} + 1 = \floor{\log_{\eta} (R)} + 1 in Algorithm 1 of the original paper.
-            # In this implementation, we combine this formula and that of ASHA paper
-            # https://arxiv.org/abs/1502.07943 as
-            # `n_brackets = floor(log_{reduction_factor}(max_resource / min_resource)) + 1`
-            self._n_brackets = (
-                math.floor(
-                    math.log(self._max_resource / self._min_resource, self._reduction_factor)
-                )
-                + 1
-            )
+    def _initialize_brackets(self, max_resource: int) -> None:
+        # Algorithm 1 of the Hyperband paper uses R = max_resource / min_resource.
+        resource_ratio = max_resource / self._min_resource
+        n_brackets = math.floor(math.log(resource_ratio, self._reduction_factor)) + 1
+        _logger.debug(f"Hyperband has {n_brackets} brackets")
 
-        _logger.debug(f"Hyperband has {self._n_brackets} brackets")
-
-        for bracket_id in range(self._n_brackets):
-            trial_allocation_budget = self._calculate_trial_allocation_budget(bracket_id)
-            self._total_trial_allocation_budget += trial_allocation_budget
-            self._trial_allocation_budgets.append(trial_allocation_budget)
-
-            pruner = SuccessiveHalvingPruner(
+        # Use the paper's trial counts as relative weights for assigning trials to brackets.
+        budgets = [
+            math.ceil(n_brackets * self._reduction_factor**s / (s + 1))
+            for s in reversed(range(n_brackets))
+        ]
+        pruners = [
+            SuccessiveHalvingPruner(
                 min_resource=self._min_resource,
                 reduction_factor=self._reduction_factor,
                 min_early_stopping_rate=bracket_id,
                 bootstrap_count=self._bootstrap_count,
             )
-            self._pruners.append(pruner)
+            for bracket_id in range(n_brackets)
+        ]
+        self._n_brackets = n_brackets
+        self._trial_allocation_budgets = budgets
+        self._total_trial_allocation_budget = sum(budgets)
+        self._pruners = pruners
+        self._max_resource = max_resource
 
-    def _calculate_trial_allocation_budget(self, bracket_id: int) -> int:
-        """Compute the trial allocated budget for a bracket of ``bracket_id``.
-
-        In the `original paper <http://www.jmlr.org/papers/volume18/16-558/16-558.pdf>`, the
-        number of trials per one bracket is referred as ``n`` in Algorithm 1. Since we do not know
-        the total number of trials in the leaning scheme of Optuna, we calculate the ratio of the
-        number of trials here instead.
-        """
-
-        assert self._n_brackets is not None
-        s = self._n_brackets - 1 - bracket_id
-        return math.ceil(self._n_brackets * (self._reduction_factor**s) / (s + 1))
-
-    def _get_bracket_id(
-        self, study: "optuna.study.Study", trial: "optuna.trial.FrozenTrial"
-    ) -> int:
+    def _get_bracket_id(self, study: Study, trial: FrozenTrial) -> int:
         """Compute the index of bracket for a trial of ``trial_number``.
 
         The index of a bracket is noted as :math:`s` in
         `Hyperband paper <http://www.jmlr.org/papers/volume18/16-558/16-558.pdf>`__.
         """
 
-        if len(self._pruners) == 0:
-            return 0
+        if not self._pruners:
+            # A pruner restored from an older pickle may still need to build its brackets.
+            if isinstance(self._max_resource, int):
+                self._try_initialization(study)
+            if not self._pruners:
+                return 0
 
         assert self._n_brackets is not None
         n = (
@@ -264,63 +276,37 @@ class HyperbandPruner(BasePruner):
         assert False, "This line should be unreachable."
 
     def _create_bracket_study(
-        self, study: "optuna.study.Study", bracket_id: int
-    ) -> "optuna.study.Study":
-        # This class is assumed to be passed to
-        # `SuccessiveHalvingPruner.prune` in which `get_trials`,
-        # `direction`, and `storage` are used.
-        # But for safety, prohibit the other attributes explicitly.
-        class _BracketStudy(optuna.study.Study):
-            _VALID_ATTRS = (
-                "get_trials",
-                "_get_trials",
-                "directions",
-                "direction",
-                "_directions",
-                "_storage",
-                "_study_id",
-                "pruner",
-                "study_name",
-                "_bracket_id",
-                "sampler",
-                "trials",
-                "_is_multi_objective",
-                "stop",
-                "_study",
-                "_thread_local",
-            )
+        self,
+        study: Study,
+        bracket_id: int,
+    ) -> Study:
+        bracket_study = copy.copy(study)
+        bracket_study._storage = cast("BaseStorage", _BracketStorage(study, self, bracket_id))
+        bracket_study.stop = study.stop  # type: ignore[method-assign]
+        return bracket_study
 
-            def __init__(
-                self, study: "optuna.study.Study", pruner: HyperbandPruner, bracket_id: int
-            ) -> None:
-                super().__init__(
-                    study_name=study.study_name,
-                    storage=study._storage,
-                    sampler=study.sampler,
-                    pruner=pruner,
-                )
-                self._study = study
-                self._bracket_id = bracket_id
 
-            def get_trials(
-                self,
-                deepcopy: bool = True,
-                states: Container[TrialState] | None = None,
-            ) -> list["optuna.trial.FrozenTrial"]:
-                trials = super()._get_trials(deepcopy=deepcopy, states=states)
-                pruner = self.pruner
-                assert isinstance(pruner, HyperbandPruner)
-                return [t for t in trials if pruner._get_bracket_id(self, t) == self._bracket_id]
+class _BracketStorage:
+    def __init__(self, study: Study, pruner: HyperbandPruner, bracket_id: int) -> None:
+        self._study = study
+        self._storage = study._storage
+        self._pruner = pruner
+        self._bracket_id = bracket_id
 
-            def stop(self) -> None:
-                # `stop` should stop the original study's optimization loop instead of
-                # `_BracketStudy`.
-                self._study.stop()
+    def __getattr__(self, name: str) -> Any:
+        return getattr(object.__getattribute__(self, "_storage"), name)
 
-            def __getattribute__(self, attr_name):  # type: ignore
-                if attr_name not in _BracketStudy._VALID_ATTRS:
-                    raise AttributeError(f"_BracketStudy does not have attribute of '{attr_name}'")
-                else:
-                    return object.__getattribute__(self, attr_name)
-
-        return _BracketStudy(study, self, bracket_id)
+    def get_all_trials(
+        self,
+        study_id: int,
+        deepcopy: bool = True,
+        states: Container[TrialState] | None = None,
+    ) -> list[FrozenTrial]:
+        trials = self._storage.get_all_trials(study_id, deepcopy=False, states=states)
+        if study_id == self._study._study_id:
+            trials = [
+                trial
+                for trial in trials
+                if self._pruner._get_bracket_id(self._study, trial) == self._bracket_id
+            ]
+        return copy.deepcopy(trials) if deepcopy else trials

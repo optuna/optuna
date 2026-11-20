@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING
 
 import optuna
 from optuna import logging
-from optuna import pruners
 from optuna._warnings import optuna_warn
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
@@ -167,7 +166,6 @@ def _tell_with_warning(
     # Post-processing and storing the trial.
     try:
         # Sampler defined trial post-processing.
-        study = pruners._filter_study(study, frozen_trial)
         study.sampler.after_trial(study, frozen_trial, state, values)
     finally:
         study._storage.set_trial_state_values(frozen_trial._trial_id, state, values)
