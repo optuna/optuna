@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 import random
+from typing import Any
 from typing import Literal
 from unittest.mock import Mock
 from unittest.mock import patch
@@ -14,8 +15,11 @@ import optuna
 from optuna import distributions
 from optuna.samplers import _tpe
 from optuna.samplers import TPESampler
+from optuna.study import Study
 from optuna.study._constrained_optimization import _CONSTRAINTS_KEY
+from optuna.trial import FrozenTrial
 from optuna.trial import Trial
+from optuna.trial import TrialState
 
 
 @pytest.mark.parametrize("use_hyperband", [False, True])
@@ -1188,3 +1192,83 @@ def test_constant_liar_with_running_trial(multivariate: bool, multiobjective: bo
     trial.suggest_float("y", 0, 10)
     trial.suggest_categorical("z", [0, 1, 2])
     study.tell(trial, [0, 0] if multiobjective else 0)
+
+
+def _split_trials_spy() -> tuple[list[list[FrozenTrial]], Callable[..., Any]]:
+    seen: list[list[FrozenTrial]] = []
+    original = _tpe.sampler._split_trials
+
+    def spy(study: Study, trials: list[FrozenTrial], n_below: int) -> Any:
+        seen.append(list(trials))
+        return original(study, trials, n_below)
+
+    return seen, spy
+
+
+def test_failed_trial_marked_infeasible_is_used() -> None:
+    # A trial that sets a violated constraint and then fails (e.g. out of memory) has no value,
+    # but it tells the sampler that its region is infeasible. TPE must use it as infeasible.
+    study = optuna.create_study(sampler=TPESampler(n_startup_trials=0, seed=0))
+    dist = optuna.distributions.FloatDistribution(-1.0, 1.0)
+    for i in range(5):
+        study.add_trial(
+            optuna.trial.create_trial(
+                value=float(i), params={"x": -0.1 * (i + 1)}, distributions={"x": dist}
+            )
+        )
+    study.add_trial(
+        optuna.trial.create_trial(
+            state=TrialState.FAIL,
+            params={"x": 0.9},
+            distributions={"x": dist},
+            constraints={"oom": 1.0},
+        )
+    )
+    seen, spy = _split_trials_spy()
+    with patch.object(_tpe.sampler, "_split_trials", spy):
+        study.ask({"x": dist})
+    assert seen, "TPE did not split trials"
+    failed = [t for t in seen[-1] if t.state == TrialState.FAIL]
+    assert [t.params["x"] for t in failed] == [0.9]
+    below, above = _tpe.sampler._split_trials(study, seen[-1], 1)
+    assert failed[0] in above
+
+
+def test_failed_trial_without_violated_constraint_is_ignored() -> None:
+    study = optuna.create_study(sampler=TPESampler(n_startup_trials=0, seed=0))
+    dist = optuna.distributions.FloatDistribution(-1.0, 1.0)
+    for i in range(5):
+        study.add_trial(
+            optuna.trial.create_trial(
+                value=float(i), params={"x": -0.1 * (i + 1)}, distributions={"x": dist}
+            )
+        )
+    for constraints in (None, {"oom": 0.0}):
+        study.add_trial(
+            optuna.trial.create_trial(
+                state=TrialState.FAIL,
+                params={"x": 0.9},
+                distributions={"x": dist},
+                constraints=constraints,
+            )
+        )
+    seen, spy = _split_trials_spy()
+    with patch.object(_tpe.sampler, "_split_trials", spy):
+        study.ask({"x": dist})
+    assert seen and all(t.state != TrialState.FAIL for t in seen[-1])
+
+
+def test_failed_infeasible_trials_steer_sampling_away() -> None:
+    # End to end: trials in x > 0 run out of memory. They mark themselves infeasible and raise.
+    # With failed infeasible trials used, TPE should propose x > 0 far less often.
+    def objective(trial: optuna.Trial) -> float:
+        x = trial.suggest_float("x", -1.0, 1.0)
+        if x > 0:
+            trial.set_constraint("oom", 1.0)
+            raise RuntimeError("CUDA out of memory")
+        return (x + 0.5) ** 2
+
+    study = optuna.create_study(sampler=TPESampler(n_startup_trials=10, seed=0))
+    study.optimize(objective, n_trials=60, catch=(RuntimeError,))
+    late = [t.params["x"] for t in study.trials[30:]]
+    assert sum(x > 0 for x in late) <= 3, late
