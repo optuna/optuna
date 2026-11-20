@@ -302,12 +302,15 @@ class HyperbandPruner(BasePruner):
                 self._study = study
                 self._bracket_id = bracket_id
 
-            def get_trials(
+            # Filter here rather than in `get_trials`: samplers call `_get_trials` directly,
+            # and `Study.get_trials` delegates to it.
+            def _get_trials(
                 self,
                 deepcopy: bool = True,
                 states: Container[TrialState] | None = None,
+                use_cache: bool = False,
             ) -> list["optuna.trial.FrozenTrial"]:
-                trials = super()._get_trials(deepcopy=deepcopy, states=states)
+                trials = super()._get_trials(deepcopy=deepcopy, states=states, use_cache=use_cache)
                 pruner = self.pruner
                 assert isinstance(pruner, HyperbandPruner)
                 return [t for t in trials if pruner._get_bracket_id(self, t) == self._bracket_id]

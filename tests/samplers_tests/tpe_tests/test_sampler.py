@@ -461,6 +461,22 @@ def test_sample_independent_n_startup_trial() -> None:
     assert sample_method.call_count == 0
 
 
+def test_n_startup_trials_per_hyperband_bracket() -> None:
+    sampler = TPESampler(n_startup_trials=4, seed=0)
+    study = optuna.create_study(sampler=sampler, pruner=optuna.pruners.HyperbandPruner())
+    with patch(
+        "optuna.pruners.HyperbandPruner._get_bracket_id",
+        new=Mock(side_effect=lambda study, trial: trial.number % 2),
+    ):
+        study.optimize(lambda t: t.suggest_float("x", 0.0, 1.0), n_trials=6)
+        # Trial 6 is in bracket 0, which has only three completed trials (0, 2 and 4).
+        with patch.object(
+            optuna.samplers.RandomSampler, "sample_independent", return_value=0.5
+        ) as sample_method:
+            study.optimize(lambda t: t.suggest_float("x", 0.0, 1.0), n_trials=1)
+    assert sample_method.call_count == 1
+
+
 def test_sample_independent_misc_arguments() -> None:
     study = optuna.create_study()
     dist = optuna.distributions.FloatDistribution(1.0, 100.0)
