@@ -5,6 +5,7 @@
 - Look at the call sites. If edge cases are not reachable from the call site, they are not a bug.
 - _EPS is used everywhere in clamp to prevent gradients from yielding nan. Do NOT remove.
 """
+
 from __future__ import annotations
 
 from abc import ABC
