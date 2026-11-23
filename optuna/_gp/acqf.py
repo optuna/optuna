@@ -90,6 +90,19 @@ def _get_non_dominated_box_bounds(
     return torch.from_numpy(-ubs), torch.from_numpy(-lbs)
 
 
+def _validate_non_empty_running(a: np.ndarray) -> None:
+    assert a.ndim == 2 and a.shape[0] > 0, "Must be non-empty running trials."
+
+
+def _validate_constraint_args(gpr_list: list[GPRegressor], t_list: list[float]) -> None:
+    assert len(gpr_list) == len(t_list) and gpr_list, "Constraints must exist and be valid."
+
+
+def _validate_multi_obj_args(gpr_list: list[GPRegressor], Y: torch.Tensor | None) -> None:
+    assert len(gpr_list) > 1, "Must be multi-objective."
+    assert Y is None or (Y.ndim == 2 and len(gpr_list) == Y.shape[-1]), "Must be compatible."
+
+
 def standard_logei(z: torch.Tensor) -> torch.Tensor:
     """
     Return E_{x ~ N(0, 1)}[max(0, x+z)]
@@ -223,7 +236,7 @@ class qLogEI(BaseAcquisitionFunc):
         qmc_seed: int,
         normalized_params_of_running_trials: np.ndarray,
     ) -> None:
-        assert normalized_params_of_running_trials.size > 0
+        _validate_non_empty_running(normalized_params_of_running_trials)
         self._threshold = threshold
         self._cond_gpr = ConditionalGPRegressor(
             gpr=gpr,
@@ -279,7 +292,7 @@ class qLogPI(BaseAcquisitionFunc):
         normalized_params_of_running_trials: np.ndarray,
         tau: float = 1e-2,
     ) -> None:
-        assert normalized_params_of_running_trials.size > 0
+        _validate_non_empty_running(normalized_params_of_running_trials)
         self._threshold = threshold
         self._tau = tau
         self._cond_gpr = ConditionalGPRegressor(
@@ -346,9 +359,7 @@ class LogCEI(BaseAcquisitionFunc):
         constraints_gpr_list: list[GPRegressor],
         constraints_threshold_list: list[float],
     ) -> None:
-        assert (
-            len(constraints_gpr_list) == len(constraints_threshold_list) and constraints_gpr_list
-        )
+        _validate_constraint_args(constraints_gpr_list, constraints_threshold_list)
         self._acqf = LogEI(gpr, search_space, threshold)
         self._constraints_acqf_list = [
             LogPI(_gpr, search_space, _threshold)
@@ -375,10 +386,8 @@ class qLogCEI(BaseAcquisitionFunc):
         constraints_threshold_list: list[float],
         normalized_params_of_running_trials: np.ndarray,
     ) -> None:
-        assert (
-            len(constraints_gpr_list) == len(constraints_threshold_list) and constraints_gpr_list
-        )
-        assert normalized_params_of_running_trials.size > 0
+        _validate_constraint_args(constraints_gpr_list, constraints_threshold_list)
+        _validate_non_empty_running(normalized_params_of_running_trials)
         self._acqf: PerSampleLogUtilityType = qLogEI(
             gpr,
             search_space,
@@ -421,6 +430,7 @@ class LogEHVI(BaseAcquisitionFunc):
         n_qmc_samples: int,
         qmc_seed: int,
     ) -> None:
+        _validate_multi_obj_args(gpr_list, Y_train)
         self._gpr_list = gpr_list
         self._fixed_samples = sample_from_normal_sobol(
             dim=Y_train.shape[-1], n_samples=n_qmc_samples, seed=qmc_seed
@@ -469,7 +479,8 @@ class qLogEHVI(BaseAcquisitionFunc):
         qmc_seed: int,
         normalized_params_of_running_trials: np.ndarray,
     ) -> None:
-        assert normalized_params_of_running_trials.size > 0
+        _validate_non_empty_running(normalized_params_of_running_trials)
+        _validate_multi_obj_args(gpr_list, Y_train)
         self._cond_gpr = ListConditionalGPRegressor(
             gpr_list=gpr_list,
             X_running=torch.from_numpy(normalized_params_of_running_trials),
@@ -502,9 +513,8 @@ class LogCEHVI(BaseAcquisitionFunc):
         constraints_gpr_list: list[GPRegressor],
         constraints_threshold_list: list[float],
     ) -> None:
-        assert (
-            len(constraints_gpr_list) == len(constraints_threshold_list) and constraints_gpr_list
-        )
+        _validate_multi_obj_args(gpr_list, Y_feasible)
+        _validate_constraint_args(constraints_gpr_list, constraints_threshold_list)
         self._acqf = (
             LogEHVI(gpr_list, search_space, Y_feasible, n_qmc_samples, qmc_seed)
             if Y_feasible is not None
@@ -540,10 +550,9 @@ class qLogCEHVI(BaseAcquisitionFunc):
         normalized_params_of_running_trials: np.ndarray,
         tau: float = 1e-2,
     ) -> None:
-        assert (
-            len(constraints_gpr_list) == len(constraints_threshold_list) and constraints_gpr_list
-        )
-        assert normalized_params_of_running_trials.size > 0
+        _validate_multi_obj_args(gpr_list, Y_feasible)
+        _validate_constraint_args(constraints_gpr_list, constraints_threshold_list)
+        _validate_non_empty_running(normalized_params_of_running_trials)
         self._constraints_acqf_list: list[qLogPI] = []
         self._marginal_constraints_acqf_list: list[LogPI] = []
         self._cond_gpr: ListConditionalGPRegressor | None = None
