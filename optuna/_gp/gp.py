@@ -50,6 +50,7 @@ else:
     torch = _LazyImport("torch")
 
 logger = get_logger(__name__)
+_EPS = 1e-12  # A small positive value to stabilize gradients' computation.
 
 
 def warn_and_convert_inf(values: np.ndarray) -> np.ndarray:
@@ -356,12 +357,7 @@ class ConditionalGPRegressor:
     """
 
     def __init__(
-        self,
-        gpr: GPRegressor,
-        X_running: torch.Tensor,
-        n_qmc_samples: int,
-        qmc_seed: int,
-        stabilizing_noise: float,
+        self, gpr: GPRegressor, X_running: torch.Tensor, n_qmc_samples: int, qmc_seed: int
     ) -> None:
         self._gpr = gpr
         self._X_running = X_running
@@ -371,10 +367,9 @@ class ConditionalGPRegressor:
             dim=X_running.shape[0] + 1, n_samples=n_qmc_samples, seed=qmc_seed
         )
         self._fixed_samples_x = fixed_samples[..., -1]
-        self._stabilizing_noise = stabilizing_noise
         with torch.no_grad():
             mean_r, cov_rr_post = gpr.posterior(X_running, joint=True)
-            cov_rr_post.diagonal(dim1=-2, dim2=-1).add_(stabilizing_noise)
+            cov_rr_post.diagonal(dim1=-2, dim2=-1).add_(_EPS)
             self._cov_rr_post_chol = torch.linalg.cholesky(cov_rr_post)
             # fantasy_samples.shape = (n_qmc_samples, n_runnings)
             self._fantasy_samples = mean_r + fixed_samples[:, :-1].matmul(
@@ -411,9 +406,7 @@ class ConditionalGPRegressor:
         cond_mean = mu_x.unsqueeze(-1) + cov_fx_fXr_post.matmul(self._cov_rr_post_inv_delta_r)
         # cov: cov_xx - cov_xr @ inv(cov_rr) @ cov_rx
         V = _solve_cholesky(self._cov_rr_post_chol, cov_fx_fXr_post, left=False)
-        cond_cov = (
-            cov_xx_post + self._stabilizing_noise - torch.linalg.vecdot(V, cov_fx_fXr_post)
-        ).clamp_min_(0.0)
+        cond_cov = (cov_xx_post + _EPS - torch.linalg.vecdot(V, cov_fx_fXr_post)).clamp_min_(0.0)
         samples = cond_mean + cond_cov.sqrt().unsqueeze(-1) * self._fixed_samples_x
         if not return_fantasy:
             return samples.squeeze(0) if is_single else samples
@@ -442,15 +435,10 @@ class ListConditionalGPRegressor:
         X_running: torch.Tensor,
         n_qmc_samples: int,
         qmc_seed: int,
-        stabilizing_noise: float,
     ) -> None:
         self._cond_gpr_list = [
             ConditionalGPRegressor(
-                gpr=gpr,
-                X_running=X_running,
-                n_qmc_samples=n_qmc_samples,
-                qmc_seed=qmc_seed + i,
-                stabilizing_noise=stabilizing_noise,
+                gpr=gpr, X_running=X_running, n_qmc_samples=n_qmc_samples, qmc_seed=qmc_seed + i
             )
             for i, gpr in enumerate(gpr_list)
         ]
