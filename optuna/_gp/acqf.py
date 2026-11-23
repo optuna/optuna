@@ -1,3 +1,10 @@
+"""Common notes for the implementation design.
+
+- Assume torch.float64 everywhere under `_gp/` including this file.
+- GPSampler is the user of this module.
+- Look at the call sites. If edge cases are not reachable from the call site, they are not a bug.
+- _EPS is used everywhere in clamp to prevent gradients from yielding nan. Do NOT remove.
+"""
 from __future__ import annotations
 
 from abc import ABC
@@ -59,7 +66,8 @@ def logehvi(
 
 
 def _get_reference_point(Y: torch.Tensor) -> np.ndarray:
-    # NOTE(nabenabe): Y is to be maximized, loss_vals is to be minimized.
+    # NOTE(nabenabe): We maximize Y, whereas we minimize loss_vals.
+    assert Y.ndim == 2 and Y.shape[0], "Y must be non-empty 2D tensor."
     loss_vals = -Y.numpy()
     ref_point = np.max(loss_vals, axis=0)
     return np.nextafter(np.maximum(1.1 * ref_point, 0.9 * ref_point), np.inf)
@@ -89,6 +97,7 @@ def standard_logei(z: torch.Tensor) -> torch.Tensor:
         https://arxiv.org/pdf/2310.20708.pdf
 
     NOTE: We do not use the third condition because [-10**100, 10**100] is an overly high range.
+    NOTE: The gradient is nan for z < -38.6 but this is expected and we do not support this range.
     """
     # First condition (most z falls into this condition, so we calculate it first)
     # NOTE: ei(z) = z * cdf(z) + pdf(z)
@@ -108,6 +117,7 @@ def standard_logei(z: torch.Tensor) -> torch.Tensor:
 
 def logei(mean: torch.Tensor, var: torch.Tensor, f0: float) -> torch.Tensor:
     # Return E_{y ~ N(mean, var)}[max(0, y-f0)]
+    # NOTE: var=0 gives nan. The call site has the responsibility. No asssertion here for speed.
     return standard_logei((mean - f0) / (sigma := var.sqrt_())) + sigma.log()
 
 
@@ -142,7 +152,6 @@ class _PerSampleParetoBaseline:
         self._non_dominated_box_lower_bounds = torch.nn.utils.rnn.pad_sequence(
             [lbs for lbs, _ in bounds], batch_first=True
         )
-        # NOTE(nabenabe): EPS prevents gradients from becoming nan.
         self._non_dominated_box_intervals = torch.nn.utils.rnn.pad_sequence(
             [(ubs - lbs).clamp_min_(_EPS) for lbs, ubs in bounds],
             batch_first=True,
@@ -151,7 +160,6 @@ class _PerSampleParetoBaseline:
 
     def compute_per_sample_log_hvi(self, Y_post: torch.Tensor) -> torch.Tensor:
         diff = Y_post.unsqueeze(-2) - self._non_dominated_box_lower_bounds
-        # NOTE(nabenabe): EPS prevents gradients from becoming nan.
         diff.clamp_(
             min=torch.tensor(_EPS, dtype=torch.float64), max=self._non_dominated_box_intervals
         )
@@ -175,6 +183,7 @@ class BaseAcquisitionFunc(ABC):
         assert x.ndim == 1
         x_tensor = torch.from_numpy(x).requires_grad_(True)
         val = self.eval_acqf(x_tensor)
+        assert val.requires_grad
         val.backward()  # type: ignore
         return val.item(), x_tensor.grad.detach().numpy()  # type: ignore
 
@@ -196,6 +205,8 @@ class LogEI(BaseAcquisitionFunc):
         mean, var = self._gpr.posterior(x)
         # If there are no feasible trials, max_Y is set to -np.inf.
         # If max_Y is set to -np.inf, we set logEI to zero to ignore it.
+        # NOTE(nabe): The zeros below have no grad_fn, but this is not reachable by design.
+        # This happens only if LogEI is directly called with threshold=-inf.
         return (
             logei(mean=mean, var=var + self._stabilizing_noise, f0=self._threshold)
             if not np.isneginf(self._threshold)

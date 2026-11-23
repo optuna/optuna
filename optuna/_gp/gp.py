@@ -21,6 +21,7 @@ Notation for q-batch acquisition functions with running trials:
 q-batch: The set consisting of the running trials and one candidate currently being evaluated.
 fantasy_samples: Hypothetical objective values at the running trials for each QMC sample.
 candidate: A new parameter value whose acquisition value is being evaluated.
+Assume torch.float64 everywhere under `_gp/` including this file.
 """
 
 from __future__ import annotations
