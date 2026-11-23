@@ -8,6 +8,7 @@ from optuna._gp import acqf as acqf_module
 from optuna._gp.gp import GPRegressor
 from optuna._gp.search_space import SearchSpace
 from optuna.distributions import FloatDistribution
+from optuna.terminator.improvement import _acqf as terminator_acqf
 
 
 def verify_eval_acqf(x: np.ndarray, acqf: acqf_module.BaseAcquisitionFunc) -> None:
@@ -58,7 +59,7 @@ parametrized_additional_values = pytest.mark.parametrize(
 
 
 @pytest.mark.parametrize(
-    "acqf_cls", [acqf_module.LogEI, acqf_module.LCB, acqf_module.UCB, acqf_module.LogPI]
+    "acqf_cls", [acqf_module.LogEI, terminator_acqf.LCB, terminator_acqf.UCB, acqf_module.LogPI]
 )
 @parametrized_x
 def test_eval_acqf(
@@ -68,7 +69,7 @@ def test_eval_acqf(
 ) -> None:
     Y = np.array([1.0, 2.0, 3.0])
     kwargs = dict(gpr=get_gpr(Y), search_space=search_space)
-    if acqf_cls in [acqf_module.LCB, acqf_module.UCB]:
+    if acqf_cls in [terminator_acqf.LCB, terminator_acqf.UCB]:
         kwargs.update(beta=2.0)
     else:
         kwargs.update(threshold=np.max(Y))

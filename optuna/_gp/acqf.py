@@ -299,38 +299,6 @@ class qLogPI(BaseAcquisitionFunc):
         return _compute_mean_max_utility(self.compute_per_sample_log_utility(x))
 
 
-class UCB(BaseAcquisitionFunc):
-    def __init__(
-        self,
-        gpr: GPRegressor,
-        search_space: SearchSpace,
-        beta: float,
-    ) -> None:
-        self._gpr = gpr
-        self._beta = beta
-        super().__init__(gpr.length_scales, search_space)
-
-    def eval_acqf(self, x: torch.Tensor) -> torch.Tensor:
-        mean, var = self._gpr.posterior(x)
-        return mean + torch.sqrt(self._beta * var)
-
-
-class LCB(BaseAcquisitionFunc):
-    def __init__(
-        self,
-        gpr: GPRegressor,
-        search_space: SearchSpace,
-        beta: float,
-    ) -> None:
-        self._gpr = gpr
-        self._beta = beta
-        super().__init__(gpr.length_scales, search_space)
-
-    def eval_acqf(self, x: torch.Tensor) -> torch.Tensor:
-        mean, var = self._gpr.posterior(x)
-        return mean - torch.sqrt(self._beta * var)
-
-
 class LogCEI(BaseAcquisitionFunc):
     def __init__(
         self,
