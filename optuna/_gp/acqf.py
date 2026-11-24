@@ -373,7 +373,6 @@ class qLogCEI(BaseAcquisitionFunc):
         assert (
             len(constraints_gpr_list) == len(constraints_threshold_list) and constraints_gpr_list
         )
-        assert len(normalized_params_of_running_trials) > 0, "Running trials are required."
         self._constraints_acqf_list: list[qLogPI] = []
         self._marginal_constraints_acqf_list: list[LogPI] = []
         self._cond_gpr: ConditionalGPRegressor | None = None
@@ -593,7 +592,6 @@ class qLogCEHVI(BaseAcquisitionFunc):
         assert (
             len(constraints_gpr_list) == len(constraints_threshold_list) and constraints_gpr_list
         )
-        assert len(normalized_params_of_running_trials) > 0, "Running trials are required."
         self._constraints_acqf_list: list[qLogPI] = []
         self._marginal_constraints_acqf_list: list[LogPI] = []
         self._cond_gpr: ListConditionalGPRegressor | None = None
