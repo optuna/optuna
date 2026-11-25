@@ -88,6 +88,9 @@ def test_abbreviated_json_to_distribution() -> None:
     unknown_json = '{"type": "unknown", "low": 1.0, "high": 2.0}'
     pytest.raises(ValueError, lambda: distributions.json_to_distribution(unknown_json))
 
+    with pytest.raises(ValueError, match="must contain either a 'name' or a 'type' field"):
+        distributions.json_to_distribution('{"low": 1.0, "high": 2.0}')
+
     invalid_distribution = (
         '{"type": "float", "low": 0.0, "high": -100.0}',
         '{"type": "float", "low": 7.3, "high": 7.2, "log": true}',
