@@ -61,10 +61,11 @@ def plot_timeline(study: Study, n_recent_trials: int | None = None) -> "go.Figur
 
 
 def _get_max_datetime_complete(study: Study) -> datetime.datetime:
+    trials = study.get_trials(deepcopy=False)
     max_run_duration = max(
         [
             t.datetime_complete - t.datetime_start
-            for t in study.trials
+            for t in trials
             if t.datetime_complete is not None and t.datetime_start is not None
         ],
         default=None,
@@ -73,7 +74,7 @@ def _get_max_datetime_complete(study: Study) -> datetime.datetime:
         return datetime.datetime.now()
 
     return max(
-        [t.datetime_complete for t in study.trials if t.datetime_complete is not None],
+        [t.datetime_complete for t in trials if t.datetime_complete is not None],
         default=datetime.datetime.now(),
     )
 
