@@ -586,6 +586,9 @@ def json_to_distribution(json_str: str) -> BaseDistribution:
         raise ValueError(f"Unknown distribution class: {json_dict['name']}")
 
     else:
+        if "type" not in json_dict:
+            raise ValueError("Distribution JSON must contain either a 'name' or a 'type' field.")
+
         # Deserialize a distribution from an abbreviated format.
         if json_dict["type"] == "categorical":
             return CategoricalDistribution(json_dict["choices"])
