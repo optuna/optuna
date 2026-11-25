@@ -165,6 +165,10 @@ def _get_optimization_history_info_list(
                 trial_numbers_union.append(i)
                 value_means.append(np.mean(values[i]).item())
                 value_stds.append(np.std(values[i]).item())
+            elif len(states[i]) > 0 and _ValueState.Feasible in states[i]:
+                # All feasible values were non-finite. Omit this trial number
+                # rather than treating it as infeasible.
+                continue
             else:
                 value_states.append(_ValueState.Infeasible)
         return trial_numbers_union, _ValuesInfo(value_means, value_stds, label_name, value_states)
