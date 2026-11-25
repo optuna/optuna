@@ -14,11 +14,11 @@ from optuna.trial import TrialState
 
 
 if TYPE_CHECKING:
-    from optuna._gp import acqf as acqf_module
     from optuna._gp import gp
     from optuna._gp import optim_sample
     from optuna._gp import prior
     from optuna._gp import search_space as gp_search_space
+    from optuna.terminator.improvement import _acqf as acqf_module
     from optuna.trial import FrozenTrial
 
 else:
@@ -26,7 +26,7 @@ else:
 
     gp = _LazyImport("optuna._gp.gp")
     optim_sample = _LazyImport("optuna._gp.optim_sample")
-    acqf_module = _LazyImport("optuna._gp.acqf")
+    acqf_module = _LazyImport("optuna.terminator.improvement._acqf")
     prior = _LazyImport("optuna._gp.prior")
     gp_search_space = _LazyImport("optuna._gp.search_space")
 
@@ -51,7 +51,6 @@ def _compute_standardized_regret_bound(
     gpr: gp.GPRegressor,
     search_space: gp_search_space.SearchSpace,
     normalized_top_n_params: np.ndarray,
-    standarized_top_n_values: np.ndarray,
     delta: float = 0.1,
     optimize_n_samples: int = 2048,
     rng: np.random.RandomState | None = None,
@@ -171,7 +170,6 @@ class RegretBoundEvaluator(BaseImprovementEvaluator):
             gpr,
             search_space,
             normalized_top_n_params,
-            standarized_top_n_values,
             rng=self._rng.rng,
         )
         return standardized_regret_bound * top_n_values_std  # regret bound

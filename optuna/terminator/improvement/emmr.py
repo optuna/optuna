@@ -21,7 +21,6 @@ if TYPE_CHECKING:
     import scipy.stats as scipy_stats
     import torch
 
-    from optuna._gp import acqf as acqf_module
     from optuna._gp import gp
     from optuna._gp import prior
     from optuna._gp import search_space as gp_search_space
@@ -31,7 +30,6 @@ else:
 
     torch = _LazyImport("torch")
     gp = _LazyImport("optuna._gp.gp")
-    acqf_module = _LazyImport("optuna._gp.acqf")
     prior = _LazyImport("optuna._gp.prior")
     gp_search_space = _LazyImport("optuna._gp.search_space")
     scipy_stats = _LazyImport("scipy.stats")
@@ -190,7 +188,6 @@ class EMMREvaluator(BaseImprovementEvaluator):
             gpr_t1,
             search_space,
             normalized_params[:-1, :],
-            standarized_score_vals[:-1],
             self._delta,
             rng=self._rng.rng,
         )
