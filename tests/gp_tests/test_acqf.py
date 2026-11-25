@@ -5,9 +5,17 @@ import pytest
 import torch
 
 from optuna._gp import acqf as acqf_module
+from optuna._gp import gp as gp_module
 from optuna._gp.gp import GPRegressor
 from optuna._gp.search_space import SearchSpace
 from optuna.distributions import FloatDistribution
+
+
+@pytest.fixture(autouse=True)
+def disable_stabilizing_eps(monkeypatch: pytest.MonkeyPatch) -> None:
+    # Verify that the conditional GPR (used by q-acqfs) works even without the stabilizing noise.
+    # NOTE: acqf._EPS is not patched because the clamps there require EPS > 0 to avoid nan grads.
+    monkeypatch.setattr(gp_module, "_EPS", 0.0)
 
 
 def verify_eval_acqf(x: np.ndarray, acqf: acqf_module.BaseAcquisitionFunc) -> None:
@@ -86,7 +94,6 @@ def test_eval_qlogei(x: np.ndarray, search_space: SearchSpace) -> None:
         n_qmc_samples=32,
         qmc_seed=42,
         normalized_params_of_running_trials=np.array([[0.4, 0.6]]),
-        stabilizing_noise=0.0,
     )
     verify_eval_acqf(x, acqf)
 
@@ -101,7 +108,6 @@ def test_eval_qlogpi(x: np.ndarray, search_space: SearchSpace) -> None:
         n_qmc_samples=32,
         qmc_seed=42,
         normalized_params_of_running_trials=np.array([[0.4, 0.6]]),
-        stabilizing_noise=0.0,
     )
     verify_eval_acqf(x, acqf)
 
@@ -126,7 +132,6 @@ def test_eval_qlogcei(
         constraints_gpr_list=[get_gpr(vals) for vals in c.T],
         constraints_threshold_list=[0.0] * len(c.T),
         normalized_params_of_running_trials=np.array([[0.4, 0.6]]),
-        stabilizing_noise=0.0,
     )
     verify_eval_acqf(x, acqf)
 
@@ -146,7 +151,6 @@ def test_eval_acqf_with_constraints(
         gpr=get_gpr(Y),
         search_space=search_space,
         threshold=-np.inf if is_all_infeasible else np.max(Y[is_feasible]),
-        stabilizing_noise=0.0,
         constraints_gpr_list=[get_gpr(vals) for vals in c.T],
         constraints_threshold_list=[0.0] * len(c.T),
     )
@@ -168,7 +172,6 @@ def test_eval_multi_objective_acqf(
         Y_train=torch.from_numpy(Y),
         n_qmc_samples=32,
         qmc_seed=42,
-        stabilizing_noise=0.0,
     )
     verify_eval_acqf(x, acqf)
 
@@ -189,7 +192,6 @@ def test_eval_qlogehvi(
         n_qmc_samples=32,
         qmc_seed=42,
         normalized_params_of_running_trials=np.array([[0.4, 0.6]]),
-        stabilizing_noise=0.0,
     )
     verify_eval_acqf(x, acqf)
 
@@ -214,7 +216,6 @@ def test_eval_multi_objective_acqf_with_constraints(
         qmc_seed=42,
         constraints_gpr_list=[get_gpr(vals) for vals in c.T],
         constraints_threshold_list=[0.0] * len(c.T),
-        stabilizing_noise=0.0,
     )
     verify_eval_acqf(x, acqf)
 
@@ -254,6 +255,5 @@ def test_eval_q_logcehvi(
         constraints_gpr_list=[get_gpr(vals) for vals in c.T],
         constraints_threshold_list=[0.0] * len(c.T),
         normalized_params_of_running_trials=np.array([[0.4, 0.6]]),
-        stabilizing_noise=0.0,
     )
     verify_eval_acqf(x, acqf)

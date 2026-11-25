@@ -4,6 +4,7 @@ import numpy as np
 import pytest
 import torch
 
+from optuna._gp.gp import _EPS
 from optuna._gp.gp import ConditionalGPRegressor
 from optuna._gp.gp import GPRegressor
 from optuna._gp.gp import warn_and_convert_inf
@@ -150,7 +151,6 @@ def test_conditional_gpr_matches_joint(n_running: int, batch_size: int) -> None:
     n_trials = 10
     dim = 3
     n_qmc_samples = 64
-    stabilizing_noise = 1e-12
     X_train = torch.rand(n_trials, dim, dtype=torch.float64)
     y_train = torch.sin(X_train.sum(-1))
     gpr = GPRegressor(
@@ -178,12 +178,11 @@ def test_conditional_gpr_matches_joint(n_running: int, batch_size: int) -> None:
         X_running=X_running,
         n_qmc_samples=n_qmc_samples,
         qmc_seed=qmc_seed,
-        stabilizing_noise=stabilizing_noise,
     )
     samples_cond = cond_gpr.sample_joint_posterior(x_new)
 
     mu, cov = gpr.posterior(joint_x, joint=True)
-    cov.diagonal(dim1=-2, dim2=-1).add_(stabilizing_noise)
+    cov.diagonal(dim1=-2, dim2=-1).add_(_EPS)
     fixed_samples = sample_from_normal_sobol(
         dim=n_running + 1, n_samples=n_qmc_samples, seed=qmc_seed
     )

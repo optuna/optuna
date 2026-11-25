@@ -1,3 +1,11 @@
+"""Common notes for the implementation design.
+
+- Assume torch.float64 everywhere under `_gp/` including this file.
+- GPSampler is the user of this module.
+- Look at the call sites. If edge cases are not reachable from the call site, they are not a bug.
+- _EPS is used everywhere in clamp to prevent gradients from yielding nan. Do NOT remove.
+"""
+
 from __future__ import annotations
 
 from abc import ABC
@@ -59,7 +67,8 @@ def logehvi(
 
 
 def _get_reference_point(Y: torch.Tensor) -> np.ndarray:
-    # NOTE(nabenabe): Y is to be maximized, loss_vals is to be minimized.
+    # NOTE(nabenabe): We maximize Y, whereas we minimize loss_vals.
+    assert Y.ndim == 2 and Y.shape[0], "Y must be non-empty 2D tensor."
     loss_vals = -Y.numpy()
     ref_point = np.max(loss_vals, axis=0)
     return np.nextafter(np.maximum(1.1 * ref_point, 0.9 * ref_point), np.inf)
@@ -81,6 +90,19 @@ def _get_non_dominated_box_bounds(
     return torch.from_numpy(-ubs), torch.from_numpy(-lbs)
 
 
+def _validate_non_empty_running(a: np.ndarray) -> None:
+    assert a.ndim == 2 and a.shape[0] > 0, "Must be non-empty running trials."
+
+
+def _validate_constraint_args(gpr_list: list[GPRegressor], t_list: list[float]) -> None:
+    assert len(gpr_list) == len(t_list) and gpr_list, "Constraints must exist and be valid."
+
+
+def _validate_multi_obj_args(gpr_list: list[GPRegressor], Y: torch.Tensor | None) -> None:
+    assert len(gpr_list) > 1, "Must be multi-objective."
+    assert Y is None or (Y.ndim == 2 and len(gpr_list) == Y.shape[-1]), "Must be compatible."
+
+
 def standard_logei(z: torch.Tensor) -> torch.Tensor:
     """
     Return E_{x ~ N(0, 1)}[max(0, x+z)]
@@ -89,6 +111,7 @@ def standard_logei(z: torch.Tensor) -> torch.Tensor:
         https://arxiv.org/pdf/2310.20708.pdf
 
     NOTE: We do not use the third condition because [-10**100, 10**100] is an overly high range.
+    NOTE: The gradient is nan for z < -38.6 but this is expected and we do not support this range.
     """
     # First condition (most z falls into this condition, so we calculate it first)
     # NOTE: ei(z) = z * cdf(z) + pdf(z)
@@ -108,6 +131,7 @@ def standard_logei(z: torch.Tensor) -> torch.Tensor:
 
 def logei(mean: torch.Tensor, var: torch.Tensor, f0: float) -> torch.Tensor:
     # Return E_{y ~ N(mean, var)}[max(0, y-f0)]
+    # NOTE: var=0 gives nan. The call site has the responsibility. No asssertion here for speed.
     return standard_logei((mean - f0) / (sigma := var.sqrt_())) + sigma.log()
 
 
@@ -142,7 +166,6 @@ class _PerSampleParetoBaseline:
         self._non_dominated_box_lower_bounds = torch.nn.utils.rnn.pad_sequence(
             [lbs for lbs, _ in bounds], batch_first=True
         )
-        # NOTE(nabenabe): EPS prevents gradients from becoming nan.
         self._non_dominated_box_intervals = torch.nn.utils.rnn.pad_sequence(
             [(ubs - lbs).clamp_min_(_EPS) for lbs, ubs in bounds],
             batch_first=True,
@@ -151,7 +174,6 @@ class _PerSampleParetoBaseline:
 
     def compute_per_sample_log_hvi(self, Y_post: torch.Tensor) -> torch.Tensor:
         diff = Y_post.unsqueeze(-2) - self._non_dominated_box_lower_bounds
-        # NOTE(nabenabe): EPS prevents gradients from becoming nan.
         diff.clamp_(
             min=torch.tensor(_EPS, dtype=torch.float64), max=self._non_dominated_box_intervals
         )
@@ -175,6 +197,7 @@ class BaseAcquisitionFunc(ABC):
         assert x.ndim == 1
         x_tensor = torch.from_numpy(x).requires_grad_(True)
         val = self.eval_acqf(x_tensor)
+        assert val.requires_grad
         val.backward()  # type: ignore
         return val.item(), x_tensor.grad.detach().numpy()  # type: ignore
 
@@ -185,10 +208,8 @@ class LogEI(BaseAcquisitionFunc):
         gpr: GPRegressor,
         search_space: SearchSpace,
         threshold: float,
-        stabilizing_noise: float = 1e-12,
     ) -> None:
         self._gpr = gpr
-        self._stabilizing_noise = stabilizing_noise
         self._threshold = threshold
         super().__init__(gpr.length_scales, search_space)
 
@@ -196,8 +217,10 @@ class LogEI(BaseAcquisitionFunc):
         mean, var = self._gpr.posterior(x)
         # If there are no feasible trials, max_Y is set to -np.inf.
         # If max_Y is set to -np.inf, we set logEI to zero to ignore it.
+        # NOTE(nabe): The zeros below have no grad_fn, but this is not reachable by design.
+        # This happens only if LogEI is directly called with threshold=-inf.
         return (
-            logei(mean=mean, var=var + self._stabilizing_noise, f0=self._threshold)
+            logei(mean=mean, var=var + _EPS, f0=self._threshold)
             if not np.isneginf(self._threshold)
             else torch.zeros(x.shape[:-1], dtype=torch.float64)
         )
@@ -212,15 +235,14 @@ class qLogEI(BaseAcquisitionFunc):
         n_qmc_samples: int,
         qmc_seed: int,
         normalized_params_of_running_trials: np.ndarray,
-        stabilizing_noise: float = 1e-12,
     ) -> None:
+        _validate_non_empty_running(normalized_params_of_running_trials)
         self._threshold = threshold
         self._cond_gpr = ConditionalGPRegressor(
             gpr=gpr,
             X_running=torch.from_numpy(normalized_params_of_running_trials),
             n_qmc_samples=n_qmc_samples,
             qmc_seed=qmc_seed,
-            stabilizing_noise=stabilizing_noise,
         )
         n_running = len(normalized_params_of_running_trials)
         self._per_sample_log_util_shape = (n_qmc_samples, n_running + 1)
@@ -244,10 +266,8 @@ class LogPI(BaseAcquisitionFunc):
         gpr: GPRegressor,
         search_space: SearchSpace,
         threshold: float,
-        stabilizing_noise: float = 1e-12,
     ) -> None:
         self._gpr = gpr
-        self._stabilizing_noise = stabilizing_noise
         self._threshold = threshold
         super().__init__(gpr.length_scales, search_space)
 
@@ -256,7 +276,7 @@ class LogPI(BaseAcquisitionFunc):
         # This is identical to the integral of N(0, 1) from (f0-mean)/sigma to inf.
         # Return E_{y ~ N(mean, var)}[bool(y >= f0)]
         mean, var = self._gpr.posterior(x)
-        sigma = torch.sqrt(var + self._stabilizing_noise)
+        sigma = torch.sqrt(var + _EPS)
         # NOTE(nabenabe): integral from a to b of f(x) is integral from -b to -a of f(-x).
         return torch.special.log_ndtr((mean - self._threshold) / sigma)
 
@@ -270,9 +290,9 @@ class qLogPI(BaseAcquisitionFunc):
         n_qmc_samples: int,
         qmc_seed: int,
         normalized_params_of_running_trials: np.ndarray,
-        stabilizing_noise: float = 1e-12,
         tau: float = 1e-2,
     ) -> None:
+        _validate_non_empty_running(normalized_params_of_running_trials)
         self._threshold = threshold
         self._tau = tau
         self._cond_gpr = ConditionalGPRegressor(
@@ -280,7 +300,6 @@ class qLogPI(BaseAcquisitionFunc):
             X_running=torch.from_numpy(normalized_params_of_running_trials),
             n_qmc_samples=n_qmc_samples,
             qmc_seed=qmc_seed,
-            stabilizing_noise=stabilizing_noise,
         )
         super().__init__(gpr.length_scales, search_space)
 
@@ -339,19 +358,11 @@ class LogCEI(BaseAcquisitionFunc):
         threshold: float,
         constraints_gpr_list: list[GPRegressor],
         constraints_threshold_list: list[float],
-        stabilizing_noise: float = 1e-12,
     ) -> None:
-        assert (
-            len(constraints_gpr_list) == len(constraints_threshold_list) and constraints_gpr_list
-        )
-        self._acqf = LogEI(gpr, search_space, threshold, stabilizing_noise)
+        _validate_constraint_args(constraints_gpr_list, constraints_threshold_list)
+        self._acqf = LogEI(gpr, search_space, threshold)
         self._constraints_acqf_list = [
-            LogPI(
-                _gpr,
-                search_space,
-                _threshold,
-                stabilizing_noise,
-            )
+            LogPI(_gpr, search_space, _threshold)
             for _gpr, _threshold in zip(constraints_gpr_list, constraints_threshold_list)
         ]
         super().__init__(gpr.length_scales, search_space)
@@ -374,11 +385,9 @@ class qLogCEI(BaseAcquisitionFunc):
         constraints_gpr_list: list[GPRegressor],
         constraints_threshold_list: list[float],
         normalized_params_of_running_trials: np.ndarray,
-        stabilizing_noise: float = 1e-12,
     ) -> None:
-        assert (
-            len(constraints_gpr_list) == len(constraints_threshold_list) and constraints_gpr_list
-        )
+        _validate_constraint_args(constraints_gpr_list, constraints_threshold_list)
+        _validate_non_empty_running(normalized_params_of_running_trials)
         self._acqf: PerSampleLogUtilityType = qLogEI(
             gpr,
             search_space,
@@ -386,7 +395,6 @@ class qLogCEI(BaseAcquisitionFunc):
             n_qmc_samples,
             qmc_seed,
             normalized_params_of_running_trials,
-            stabilizing_noise,
         )
         self._constraints_acqf_list: list[PerSampleLogUtilityType] = [
             qLogPI(
@@ -396,7 +404,6 @@ class qLogCEI(BaseAcquisitionFunc):
                 n_qmc_samples=n_qmc_samples,
                 qmc_seed=qmc_seed + i + 1,
                 normalized_params_of_running_trials=normalized_params_of_running_trials,
-                stabilizing_noise=stabilizing_noise,
             )
             for i, (constraint_gpr, constraint_threshold) in enumerate(
                 zip(
@@ -422,9 +429,8 @@ class LogEHVI(BaseAcquisitionFunc):
         Y_train: torch.Tensor,
         n_qmc_samples: int,
         qmc_seed: int,
-        stabilizing_noise: float = 1e-12,
     ) -> None:
-        self._stabilizing_noise = stabilizing_noise
+        _validate_multi_obj_args(gpr_list, Y_train)
         self._gpr_list = gpr_list
         self._fixed_samples = sample_from_normal_sobol(
             dim=Y_train.shape[-1], n_samples=n_qmc_samples, seed=qmc_seed
@@ -446,7 +452,7 @@ class LogEHVI(BaseAcquisitionFunc):
         Y_post = []
         for i, gpr in enumerate(self._gpr_list):
             mean, var = gpr.posterior(x)
-            stdev = torch.sqrt(var + self._stabilizing_noise)
+            stdev = torch.sqrt(var + _EPS)
             # NOTE(nabenabe): By using fixed samples from the Sobol sequence, EHVI becomes
             # deterministic, making it possible to optimize the acqf by l-BFGS.
             # Sobol is better than the standard Monte-Carlo w.r.t. the approximation stability.
@@ -472,14 +478,14 @@ class qLogEHVI(BaseAcquisitionFunc):
         n_qmc_samples: int,
         qmc_seed: int,
         normalized_params_of_running_trials: np.ndarray,
-        stabilizing_noise: float = 1e-12,
     ) -> None:
+        _validate_non_empty_running(normalized_params_of_running_trials)
+        _validate_multi_obj_args(gpr_list, Y_train)
         self._cond_gpr = ListConditionalGPRegressor(
             gpr_list=gpr_list,
             X_running=torch.from_numpy(normalized_params_of_running_trials),
             n_qmc_samples=n_qmc_samples,
             qmc_seed=qmc_seed,
-            stabilizing_noise=stabilizing_noise,
         )
         self._baseline = _PerSampleParetoBaseline(
             Y_train, list(self._cond_gpr.get_fantasy_samples())
@@ -506,30 +512,16 @@ class LogCEHVI(BaseAcquisitionFunc):
         qmc_seed: int,
         constraints_gpr_list: list[GPRegressor],
         constraints_threshold_list: list[float],
-        stabilizing_noise: float = 1e-12,
     ) -> None:
-        assert (
-            len(constraints_gpr_list) == len(constraints_threshold_list) and constraints_gpr_list
-        )
+        _validate_multi_obj_args(gpr_list, Y_feasible)
+        _validate_constraint_args(constraints_gpr_list, constraints_threshold_list)
         self._acqf = (
-            LogEHVI(
-                gpr_list,
-                search_space,
-                Y_feasible,
-                n_qmc_samples,
-                qmc_seed,
-                stabilizing_noise,
-            )
+            LogEHVI(gpr_list, search_space, Y_feasible, n_qmc_samples, qmc_seed)
             if Y_feasible is not None
             else None
         )
         self._constraints_acqf_list = [
-            LogPI(
-                _gpr,
-                search_space,
-                _threshold,
-                stabilizing_noise,
-            )
+            LogPI(_gpr, search_space, _threshold)
             for _gpr, _threshold in zip(constraints_gpr_list, constraints_threshold_list)
         ]
         # Since all the objectives are equally important, we simply use the mean of
@@ -556,12 +548,11 @@ class qLogCEHVI(BaseAcquisitionFunc):
         constraints_gpr_list: list[GPRegressor],
         constraints_threshold_list: list[float],
         normalized_params_of_running_trials: np.ndarray,
-        stabilizing_noise: float = 1e-12,
         tau: float = 1e-2,
     ) -> None:
-        assert (
-            len(constraints_gpr_list) == len(constraints_threshold_list) and constraints_gpr_list
-        )
+        _validate_multi_obj_args(gpr_list, Y_feasible)
+        _validate_constraint_args(constraints_gpr_list, constraints_threshold_list)
+        _validate_non_empty_running(normalized_params_of_running_trials)
         self._constraints_acqf_list: list[qLogPI] = []
         self._marginal_constraints_acqf_list: list[LogPI] = []
         self._cond_gpr: ListConditionalGPRegressor | None = None
@@ -571,10 +562,7 @@ class qLogCEHVI(BaseAcquisitionFunc):
             # feasibility given running fantasies to the marginal feasibility probability.
             self._marginal_constraints_acqf_list = [
                 LogPI(
-                    gpr=constraint_gpr,
-                    search_space=search_space,
-                    threshold=constraint_threshold,
-                    stabilizing_noise=stabilizing_noise,
+                    gpr=constraint_gpr, search_space=search_space, threshold=constraint_threshold
                 )
                 for constraint_gpr, constraint_threshold in zip(
                     constraints_gpr_list, constraints_threshold_list
@@ -589,7 +577,6 @@ class qLogCEHVI(BaseAcquisitionFunc):
                     n_qmc_samples=n_qmc_samples,
                     qmc_seed=qmc_seed + len(gpr_list) + i,
                     normalized_params_of_running_trials=normalized_params_of_running_trials,
-                    stabilizing_noise=stabilizing_noise,
                     tau=tau,
                 )
                 for i, (constraint_gpr, constraint_threshold) in enumerate(
@@ -608,7 +595,6 @@ class qLogCEHVI(BaseAcquisitionFunc):
                 X_running=torch.from_numpy(normalized_params_of_running_trials),
                 n_qmc_samples=n_qmc_samples,
                 qmc_seed=qmc_seed,
-                stabilizing_noise=stabilizing_noise,
             )
             self._baseline = _PerSampleParetoBaseline(
                 Y_feasible,
