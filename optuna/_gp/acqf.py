@@ -16,16 +16,10 @@ from optuna.study._multi_objective import _is_pareto_front
 
 
 if TYPE_CHECKING:
-    from typing import Protocol
-
     import torch
 
     from optuna._gp.gp import GPRegressor
     from optuna._gp.search_space import SearchSpace
-
-    class PerSampleLogUtilityType(Protocol):
-        def compute_per_sample_log_utility(self, x: torch.Tensor) -> torch.Tensor:
-            raise NotImplementedError
 else:
     from optuna._imports import _LazyImport
 
@@ -379,39 +373,75 @@ class qLogCEI(BaseAcquisitionFunc):
         assert (
             len(constraints_gpr_list) == len(constraints_threshold_list) and constraints_gpr_list
         )
-        self._acqf: PerSampleLogUtilityType = qLogEI(
-            gpr,
-            search_space,
-            threshold,
-            n_qmc_samples,
-            qmc_seed,
-            normalized_params_of_running_trials,
-            stabilizing_noise,
-        )
-        self._constraints_acqf_list: list[PerSampleLogUtilityType] = [
-            qLogPI(
-                gpr=constraint_gpr,
-                search_space=search_space,
-                threshold=constraint_threshold,
+        self._constraints_acqf_list: list[qLogPI] = []
+        self._marginal_constraints_acqf_list: list[LogPI] = []
+        self._cond_gpr: ConditionalGPRegressor | None = None
+        self._baseline: torch.Tensor | None = None
+        if np.isneginf(threshold):
+            # Without an EI term, the tower property reduces the expectation over conditional
+            # feasibility given running fantasies to the marginal feasibility probability.
+            self._marginal_constraints_acqf_list = [
+                LogPI(
+                    gpr=constraint_gpr,
+                    search_space=search_space,
+                    threshold=constraint_threshold,
+                    stabilizing_noise=stabilizing_noise,
+                )
+                for constraint_gpr, constraint_threshold in zip(
+                    constraints_gpr_list, constraints_threshold_list
+                )
+            ]
+        else:
+            self._constraints_acqf_list = [
+                qLogPI(
+                    gpr=constraint_gpr,
+                    search_space=search_space,
+                    threshold=constraint_threshold,
+                    n_qmc_samples=n_qmc_samples,
+                    qmc_seed=qmc_seed + i + 1,
+                    normalized_params_of_running_trials=normalized_params_of_running_trials,
+                    stabilizing_noise=stabilizing_noise,
+                )
+                for i, (constraint_gpr, constraint_threshold) in enumerate(
+                    zip(constraints_gpr_list, constraints_threshold_list)
+                )
+            ]
+            is_fantasy_feasible = torch.all(
+                torch.stack(
+                    [acqf.is_fantasy_above_threshold() for acqf in self._constraints_acqf_list],
+                    dim=-1,
+                ),
+                dim=-1,
+            )
+            self._cond_gpr = ConditionalGPRegressor(
+                gpr=gpr,
+                X_running=torch.from_numpy(normalized_params_of_running_trials),
                 n_qmc_samples=n_qmc_samples,
-                qmc_seed=qmc_seed + i + 1,
-                normalized_params_of_running_trials=normalized_params_of_running_trials,
+                qmc_seed=qmc_seed,
                 stabilizing_noise=stabilizing_noise,
             )
-            for i, (constraint_gpr, constraint_threshold) in enumerate(
-                zip(
-                    constraints_gpr_list,
-                    constraints_threshold_list,
-                )
-            )
-        ]
+            fantasy = self._cond_gpr.get_fantasy_samples()
+            masked_fantasy = torch.where(is_fantasy_feasible, fantasy, -math.inf)
+            self._baseline = masked_fantasy.amax(dim=-1).clamp_min_(threshold)
         super().__init__(gpr.length_scales, search_space)
 
     def eval_acqf(self, x: torch.Tensor) -> torch.Tensor:
-        log_feasible_improvement = self._acqf.compute_per_sample_log_utility(x) + sum(
-            acqf.compute_per_sample_log_utility(x) for acqf in self._constraints_acqf_list
+        if self._baseline is None:
+            return torch.stack(
+                [acqf.eval_acqf(x) for acqf in self._marginal_constraints_acqf_list]
+            ).sum(dim=0)
+
+        assert self._cond_gpr is not None
+        constraint_log_feasibility = sum(
+            acqf.compute_candidate_log_utility(x) for acqf in self._constraints_acqf_list
         )
-        return _compute_mean_max_utility(log_feasible_improvement)
+        # NOTE(nabenabe): See Eq. (10) of https://arxiv.org/pdf/2310.20708
+        y_post = self._cond_gpr.sample_joint_posterior(x, return_fantasy=False)
+        log_improvement = (y_post - self._baseline).clamp_min_(_EPS).log()
+        log_feasible_improvement = constraint_log_feasibility + log_improvement
+        return torch.special.logsumexp(log_feasible_improvement, dim=-1) - math.log(
+            log_feasible_improvement.shape[-1]
+        )
 
 
 class LogEHVI(BaseAcquisitionFunc):
