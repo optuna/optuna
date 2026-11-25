@@ -1774,10 +1774,11 @@ def test_set_metric_names_experimental_warning() -> None:
 
 
 def test_set_invalid_metric_names() -> None:
-    metric_names = ["v0", "v1", "v2"]
     study = create_study(directions=["minimize", "minimize"])
-    with pytest.raises(ValueError):
-        study.set_metric_names(metric_names)
+    with pytest.raises(ValueError, match="number of objectives"):
+        study.set_metric_names(["v0", "v1", "v2"])
+    with pytest.raises(ValueError, match="unique"):
+        study.set_metric_names(["score", "score"])
 
 
 def test_get_metric_names() -> None:
