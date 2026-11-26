@@ -43,13 +43,9 @@ class HyperbandPruner(BasePruner):
         because :class:`~optuna.samplers.TPESampler` uses some (by default, :math:`10`)
         :class:`~optuna.trial.Trial`\\ s for its startup.
 
-        As Hyperband runs multiple :class:`~optuna.pruners.SuccessiveHalvingPruner` and collects
-        trials based on the current :class:`~optuna.trial.Trial`\\ 's bracket ID, each bracket
-        needs to observe more than :math:`10` :class:`~optuna.trial.Trial`\\ s
-        for :class:`~optuna.samplers.TPESampler` to adapt its search space.
-
-        Thus, for example, if ``HyperbandPruner`` has :math:`4` pruners in it,
-        at least :math:`4 \\times 10` trials are consumed for startup.
+        Hyperband uses the current trial's bracket to make pruning decisions.
+        :class:`~optuna.samplers.TPESampler` counts completed and pruned trials across the
+        entire study for its startup threshold.
 
     .. note::
         Hyperband has several :class:`~optuna.pruners.SuccessiveHalvingPruner`\\ s. Each
