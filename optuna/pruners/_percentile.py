@@ -50,6 +50,17 @@ def _get_percentile_intermediate_result_over_trials(
     if direction == StudyDirection.MAXIMIZE:
         percentile = 100 - percentile
 
+    if np.isinf(intermediate_values).any():
+        # nanpercentile can produce NaN even at an exact rank by multiplying infinity by zero.
+        values = intermediate_values[~np.isnan(intermediate_values)]
+        rank = (values.size - 1) * percentile / 100
+        lower, upper = math.floor(rank), math.ceil(rank)
+        values.partition((lower, upper))
+        if lower == upper:
+            return float(values[lower])
+        weight = rank - lower
+        return (1 - weight) * float(values[lower]) + weight * float(values[upper])
+
     return float(
         np.nanpercentile(
             intermediate_values,
