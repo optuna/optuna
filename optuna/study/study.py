@@ -1052,9 +1052,16 @@ class Study:
 
         Args:
             metric_names: A list of metric names for the objective function.
+
+        Raises:
+            ValueError:
+                If the length of ``metric_names`` does not match the number of objectives,
+                or if ``metric_names`` contains duplicate names.
         """
         if len(self.directions) != len(metric_names):
             raise ValueError("The number of objectives must match the length of the metric names.")
+        if len(set(metric_names)) != len(metric_names):
+            raise ValueError("Metric names must be unique.")
 
         self._storage.set_study_system_attr(
             self._study_id, _SYSTEM_ATTR_METRIC_NAMES, metric_names
