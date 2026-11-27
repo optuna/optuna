@@ -10,7 +10,6 @@ from typing import TYPE_CHECKING
 import optuna
 from optuna import distributions
 from optuna import logging
-from optuna import pruners
 from optuna._deprecated import deprecated_func
 from optuna._warnings import optuna_warn
 from optuna.distributions import BaseDistribution
@@ -61,9 +60,8 @@ class Trial(BaseTrial):
         self.storage = self.study._storage
 
         self._cached_frozen_trial = self.storage.get_trial(self._trial_id)
-        study = pruners._filter_study(self.study, self._cached_frozen_trial)
 
-        self.study.sampler.before_trial(study, self._cached_frozen_trial)
+        study.sampler.before_trial(study, self._cached_frozen_trial)
 
         # NOTE(not522): Evaluate it lazily to get as latest search as possible.
         self.relative_search_space: dict[str, BaseDistribution] | None = None
@@ -73,12 +71,11 @@ class Trial(BaseTrial):
     @property
     def relative_params(self) -> dict[str, Any]:
         if self._relative_params is None:
-            study = pruners._filter_study(self.study, self._cached_frozen_trial)
             self.relative_search_space = self.study.sampler.infer_relative_search_space(
-                study, self._cached_frozen_trial
+                self.study, self._cached_frozen_trial
             )
             self._relative_params = self.study.sampler.sample_relative(
-                study, self._cached_frozen_trial, self.relative_search_space
+                self.study, self._cached_frozen_trial, self.relative_search_space
             )
         return self._relative_params
 
@@ -617,9 +614,8 @@ class Trial(BaseTrial):
             elif self._is_relative_param(name, distribution):
                 param_value = self.relative_params[name]
             else:
-                study = pruners._filter_study(self.study, trial)
                 param_value = self.study.sampler.sample_independent(
-                    study, trial, name, distribution
+                    self.study, trial, name, distribution
                 )
 
             # `param_value` is validated here (invalid value like `np.nan` raises ValueError).

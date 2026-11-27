@@ -5,6 +5,7 @@ from optuna.samplers._cmaes import CmaEsSampler
 from optuna.samplers._ga import BaseGASampler
 from optuna.samplers._gp.sampler import GPSampler
 from optuna.samplers._grid import GridSampler
+from optuna.samplers._hyperband import HyperbandSampler
 from optuna.samplers._nsgaiii._sampler import NSGAIIISampler
 from optuna.samplers._partial_fixed import PartialFixedSampler
 from optuna.samplers._qmc import QMCSampler
@@ -19,6 +20,7 @@ __all__ = [
     "BruteForceSampler",
     "CmaEsSampler",
     "GridSampler",
+    "HyperbandSampler",
     "NSGAIISampler",
     "NSGAIIISampler",
     "PartialFixedSampler",

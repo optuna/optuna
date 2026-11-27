@@ -92,6 +92,7 @@ The :mod:`~optuna.samplers` module defines a base class for parameter sampling a
     BaseSampler
     RandomSampler
     TPESampler
+    HyperbandSampler
     GPSampler
     CmaEsSampler
     NSGAIISampler

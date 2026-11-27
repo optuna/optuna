@@ -112,6 +112,7 @@ for _ in range(n_trials):
 #    # define study with hyperband pruner.
 #    study = optuna.create_study(
 #        direction="maximize",
+#        sampler=optuna.samplers.HyperbandSampler(),
 #        pruner=optuna.pruners.HyperbandPruner(
 #            min_resource=1, max_resource=n_train_iter, reduction_factor=3
 #        ),
