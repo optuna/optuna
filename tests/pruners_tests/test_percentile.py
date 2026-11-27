@@ -85,6 +85,34 @@ def test_25_percentile_pruner_intermediate_values(
     assert trial.should_prune()
 
 
+@pytest.mark.parametrize(
+    ("direction", "percentile", "history", "value", "expected"),
+    [
+        ("minimize", 50.0, [1.0, 2.0, math.inf, math.nan], 3.0, True),
+        ("maximize", 25.0, [1.0, math.inf], 2.0, True),
+        ("minimize", 25.0, [-math.inf, 1.0], 0.0, True),
+        ("minimize", 50.0, [-math.inf, math.inf], 0.0, False),
+    ],
+)
+def test_percentile_pruner_infinite_history(
+    direction: Literal["minimize", "maximize"],
+    percentile: float,
+    history: list[float],
+    value: float,
+    expected: bool,
+) -> None:
+    pruner = optuna.pruners.PercentilePruner(percentile, n_startup_trials=0)
+    study = optuna.create_study(direction=direction, pruner=pruner)
+    for intermediate_value in history:
+        study.add_trial(
+            optuna.trial.create_trial(value=0.0, intermediate_values={0: intermediate_value})
+        )
+
+    trial = study.ask()
+    trial.report(value, step=0)
+    assert trial.should_prune() == expected
+
+
 @pytest.mark.filterwarnings("error::RuntimeWarning")
 def test_25_percentile_pruner_intermediate_values_nan() -> None:
     pruner = optuna.pruners.PercentilePruner(25.0, 0, 0)
