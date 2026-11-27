@@ -577,11 +577,17 @@ class TPESampler(BaseSampler):
         self, study: Study, trial: FrozenTrial, search_space: dict[str, BaseDistribution]
     ) -> dict[str, Any]:
         if self._constant_liar:
-            states = [TrialState.COMPLETE, TrialState.PRUNED, TrialState.RUNNING]
+            states = [TrialState.COMPLETE, TrialState.PRUNED, TrialState.FAIL, TrialState.RUNNING]
         else:
-            states = [TrialState.COMPLETE, TrialState.PRUNED]
+            states = [TrialState.COMPLETE, TrialState.PRUNED, TrialState.FAIL]
         use_cache = not self._constant_liar
         trials = study._get_trials(deepcopy=False, states=states, use_cache=use_cache)
+        # A failed trial has no value, so it is used only when it was marked infeasible with
+        # `Trial.set_constraint` before it failed (e.g. it ran out of memory). It then joins the
+        # infeasible trials, so the sampler learns to avoid that region instead of ignoring it.
+        trials = [
+            t for t in trials if t.state != TrialState.FAIL or _get_infeasible_trial_score(t) > 0
+        ]
 
         if self._constant_liar:
             # For constant_liar, filter out the current trial.
